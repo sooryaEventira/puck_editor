@@ -56,10 +56,7 @@ src/
 └── index.css        # Global styles
 ```
 
-## Learning Resources
 
-- [Puck Documentation](https://puckeditor.com/docs)
-- [Puck GitHub Repository](https://github.com/measuredco/puck)
 
 ## Next Steps
 
