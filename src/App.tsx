@@ -106,6 +106,18 @@ interface SliderProps {
   backgroundColor?: string
 }
 
+interface ImageProps {
+  src: string
+  alt?: string
+  width?: string
+  height?: string
+  borderRadius?: string
+  objectFit?: 'cover' | 'contain' | 'fill' | 'scale-down' | 'none'
+  alignment?: 'left' | 'center' | 'right'
+  caption?: string
+  showCaption?: boolean
+}
+
 // Component implementations
 const Heading = ({ text, level = 1, color = '#333', align = 'left' }: HeadingProps) => {
   const headingStyle: React.CSSProperties = {
@@ -292,7 +304,7 @@ const FlexContainer = ({ children, direction = 'row', justify = 'flex-start', al
 }
 
 // Grid Container Component
-const GridContainer = ({ children, columns = 2, gap = '16px', rowGap = '16px' }: GridContainerProps) => {
+const GridContainer = ({ columns = 2, gap = '16px', rowGap = '16px' }: GridContainerProps) => {
   return (
     <div style={{
       display: 'grid',
@@ -560,6 +572,82 @@ const Slider = ({
               onClick={() => goToSlide(index)}
             />
           ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Custom Image Component
+const Image = ({ 
+  src, 
+  alt = '', 
+  width = '100%', 
+  height = 'auto', 
+  borderRadius = '0px',
+  objectFit = 'cover',
+  alignment = 'center',
+  caption = '',
+  showCaption = false
+}: ImageProps) => {
+  const containerStyle: React.CSSProperties = {
+    margin: '16px 0',
+    textAlign: alignment,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: alignment === 'left' ? 'flex-start' : alignment === 'right' ? 'flex-end' : 'center'
+  }
+
+  const imageStyle: React.CSSProperties = {
+    width: width,
+    height: height,
+    borderRadius: borderRadius,
+    objectFit: objectFit,
+    maxWidth: '100%',
+    display: 'block'
+  }
+
+  const captionStyle: React.CSSProperties = {
+    marginTop: '8px',
+    fontSize: '14px',
+    color: '#666',
+    fontStyle: 'italic',
+    textAlign: alignment
+  }
+
+  // Fallback image for errors
+  const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=';
+
+  return (
+    <div style={containerStyle}>
+      {src ? (
+        <img 
+          src={src} 
+          alt={alt}
+          style={imageStyle}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = fallbackImage;
+          }}
+        />
+      ) : (
+        <div style={{
+          ...imageStyle,
+          backgroundColor: '#f8f9fa',
+          border: '2px dashed #dee2e6',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#6c757d',
+          fontSize: '14px',
+          minHeight: '200px'
+        }}>
+          📷 No image URL provided
+        </div>
+      )}
+      {showCaption && caption && (
+        <div style={captionStyle}>
+          {caption}
         </div>
       )}
     </div>
@@ -1028,6 +1116,92 @@ const config = {
         backgroundColor: '#f8f9fa' as const
       },
       render: Slider
+    },
+    Image: {
+      fields: {
+        src: { 
+          type: 'text' as const,
+          label: 'Image URL'
+        },
+        alt: { 
+          type: 'text' as const,
+          label: 'Alt Text (for accessibility)'
+        },
+        width: { 
+          type: 'select' as const,
+          options: [
+            { label: 'Auto', value: 'auto' },
+            { label: '100%', value: '100%' },
+            { label: '75%', value: '75%' },
+            { label: '50%', value: '50%' },
+            { label: '25%', value: '25%' },
+            { label: '300px', value: '300px' },
+            { label: '400px', value: '400px' },
+            { label: '500px', value: '500px' }
+          ]
+        },
+        height: { 
+          type: 'select' as const,
+          options: [
+            { label: 'Auto', value: 'auto' },
+            { label: '200px', value: '200px' },
+            { label: '300px', value: '300px' },
+            { label: '400px', value: '400px' },
+            { label: '500px', value: '500px' }
+          ]
+        },
+        borderRadius: { 
+          type: 'select' as const,
+          options: [
+            { label: 'None', value: '0px' },
+            { label: 'Small (4px)', value: '4px' },
+            { label: 'Medium (8px)', value: '8px' },
+            { label: 'Large (16px)', value: '16px' },
+            { label: 'Round', value: '50%' }
+          ]
+        },
+        objectFit: { 
+          type: 'select' as const,
+          options: [
+            { label: 'Cover (fill)', value: 'cover' },
+            { label: 'Contain (fit)', value: 'contain' },
+            { label: 'Fill (stretch)', value: 'fill' },
+            { label: 'Scale Down', value: 'scale-down' },
+            { label: 'None', value: 'none' }
+          ]
+        },
+        alignment: { 
+          type: 'select' as const,
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
+          ]
+        },
+        showCaption: { 
+          type: 'radio' as const,
+          options: [
+            { label: 'Yes', value: true },
+            { label: 'No', value: false }
+          ]
+        },
+        caption: { 
+          type: 'text' as const,
+          label: 'Image Caption'
+        }
+      },
+      defaultProps: {
+        src: 'https://picsum.photos/400/300',
+        alt: 'Image description',
+        width: '100%' as const,
+        height: 'auto' as const,
+        borderRadius: '8px' as const,
+        objectFit: 'cover' as const,
+        alignment: 'center' as const,
+        showCaption: false,
+        caption: ''
+      },
+      render: Image
     }
   }
 }
