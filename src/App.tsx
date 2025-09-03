@@ -1,5 +1,6 @@
 import React from 'react'
 import { Puck } from '@measured/puck'
+import { DropZone } from "@measured/puck";
 import '@measured/puck/puck.css'
 
 // Type definitions for component props
@@ -83,8 +84,30 @@ interface PositionedElementProps {
   zIndex?: string
 }
 
+interface HeroSectionProps {
+  title: string
+  subtitle?: string
+  buttonText?: string
+  buttonLink?: string
+  backgroundColor?: string
+  textColor?: string
+  backgroundImage?: string
+  height?: string
+  alignment?: 'left' | 'center' | 'right'
+}
+
+interface SliderProps {
+  slides: string
+  autoplay?: boolean
+  autoplaySpeed?: number
+  showDots?: boolean
+  showArrows?: boolean
+  height?: string
+  backgroundColor?: string
+}
+
 // Component implementations
-const Heading: React.FC<HeadingProps> = ({ text, level = 1, color = '#333', align = 'left' }) => {
+const Heading = ({ text, level = 1, color = '#333', align = 'left' }: HeadingProps) => {
   const headingStyle: React.CSSProperties = {
     margin: '16px 0',
     color: color,
@@ -101,7 +124,7 @@ const Heading: React.FC<HeadingProps> = ({ text, level = 1, color = '#333', alig
   }
 }
 
-const Text: React.FC<TextProps> = ({ text, size = '16px', color = '#555', align = 'left' }) => {
+const Text = ({ text, size = '16px', color = '#555', align = 'left' }: TextProps) => {
   return (
     <p style={{ 
       margin: '12px 0', 
@@ -115,7 +138,7 @@ const Text: React.FC<TextProps> = ({ text, size = '16px', color = '#555', align 
   )
 }
 
-const Button: React.FC<ButtonProps> = ({ text, variant = 'primary', size = 'medium' }) => {
+const Button = ({ text, variant = 'primary', size = 'medium' }: ButtonProps) => {
   const sizeStyles: Record<string, React.CSSProperties> = {
     small: { padding: '8px 16px', fontSize: '14px' },
     medium: { padding: '12px 24px', fontSize: '16px' },
@@ -145,7 +168,7 @@ const Button: React.FC<ButtonProps> = ({ text, variant = 'primary', size = 'medi
   )
 }
 
-const Card: React.FC<CardProps> = ({ title, description, backgroundColor = '#fff' }) => {
+const Card = ({ title, description, backgroundColor = '#fff' }: CardProps) => {
   return (
     <div style={{
       backgroundColor: backgroundColor,
@@ -161,7 +184,7 @@ const Card: React.FC<CardProps> = ({ title, description, backgroundColor = '#fff
   )
 }
 
-const List: React.FC<ListProps> = ({ items, type = 'ul' }) => {
+const List = ({ items, type = 'ul' }: ListProps) => {
   const listItems = items.split('\n').filter(item => item.trim())
   
   if (type === 'ol') {
@@ -187,7 +210,7 @@ const List: React.FC<ListProps> = ({ items, type = 'ul' }) => {
   )
 }
 
-const Divider: React.FC<DividerProps> = ({ color = '#ddd', thickness = '1px' }) => {
+const Divider = ({ color = '#ddd', thickness = '1px' }: DividerProps) => {
   return (
     <hr style={{
       border: 'none',
@@ -197,7 +220,7 @@ const Divider: React.FC<DividerProps> = ({ color = '#ddd', thickness = '1px' }) 
   )
 }
 
-const Spacer: React.FC<SpacerProps> = ({ height = '20px' }) => {
+const Spacer = ({ height = '20px' }: SpacerProps) => {
   return (
     <div style={{
       height: height,
@@ -207,7 +230,7 @@ const Spacer: React.FC<SpacerProps> = ({ height = '20px' }) => {
 }
 
 // Container Component with flexible positioning
-const Container: React.FC<ContainerProps> = ({ children, backgroundColor = 'transparent', padding = '20px', layout = 'vertical', gap = '16px' }) => {
+const Container = ({ children, backgroundColor = 'transparent', padding = '20px', layout = 'vertical', gap = '16px' }: ContainerProps) => {
   const layoutStyles: Record<string, React.CSSProperties> = {
     vertical: {
       display: 'flex',
@@ -248,7 +271,7 @@ const Container: React.FC<ContainerProps> = ({ children, backgroundColor = 'tran
   )
 }
 
-const FlexContainer: React.FC<FlexContainerProps> = ({ children, direction = 'row', justify = 'flex-start', align = 'stretch', gap = '16px', wrap = 'nowrap' }) => {
+const FlexContainer = ({ children, direction = 'row', justify = 'flex-start', align = 'stretch', gap = '16px', wrap = 'nowrap' }: FlexContainerProps) => {
   return (
     <div style={{
       display: 'flex',
@@ -269,7 +292,7 @@ const FlexContainer: React.FC<FlexContainerProps> = ({ children, direction = 'ro
 }
 
 // Grid Container Component
-const GridContainer: React.FC<GridContainerProps> = ({ children, columns = 2, gap = '16px', rowGap = '16px' }) => {
+const GridContainer = ({ children, columns = 2, gap = '16px', rowGap = '16px' }: GridContainerProps) => {
   return (
     <div style={{
       display: 'grid',
@@ -283,13 +306,13 @@ const GridContainer: React.FC<GridContainerProps> = ({ children, columns = 2, ga
       border: '1px solid #e9ecef',
       minHeight: '100px'
     }}>
-      {children}
+      <DropZone zone="children" />
     </div>
   )
 }
 
 // Simple Container Component for testing
-const SimpleContainer: React.FC<SimpleContainerProps> = ({ children, backgroundColor = '#f0f8ff', padding = '20px' }) => {
+const SimpleContainer = ({ children, backgroundColor = '#f0f8ff', padding = '20px' }: SimpleContainerProps) => {
   return (
     <div style={{
       backgroundColor: backgroundColor,
@@ -305,7 +328,7 @@ const SimpleContainer: React.FC<SimpleContainerProps> = ({ children, backgroundC
 }
 
 // Positioned Component
-const PositionedElement: React.FC<PositionedElementProps> = ({ children, position = 'static', top = 'auto', left = 'auto', right = 'auto', bottom = 'auto', zIndex = 'auto' }) => {
+const PositionedElement = ({ children, position = 'static', top = 'auto', left = 'auto', right = 'auto', bottom = 'auto', zIndex = 'auto' }: PositionedElementProps) => {
   return (
     <div style={{
       position: position,
@@ -317,6 +340,228 @@ const PositionedElement: React.FC<PositionedElementProps> = ({ children, positio
       margin: '16px 0'
     }}>
       {children}
+    </div>
+  )
+}
+
+// Custom Hero Section Component
+const HeroSection = ({ 
+  title, 
+  subtitle = '', 
+  buttonText = 'Learn More', 
+  buttonLink = '#', 
+  backgroundColor = '#007bff', 
+  textColor = 'white',
+  backgroundImage = '',
+  height = '400px',
+  alignment = 'center'
+}: HeroSectionProps) => {
+  const heroStyle: React.CSSProperties = {
+    background: backgroundImage ? `url(${backgroundImage})` : backgroundColor,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    color: textColor,
+    height: height,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: alignment === 'left' ? 'flex-start' : alignment === 'right' ? 'flex-end' : 'center',
+    padding: '60px 20px',
+    margin: '16px 0',
+    borderRadius: '8px',
+    position: 'relative'
+  }
+
+  const contentStyle: React.CSSProperties = {
+    textAlign: alignment,
+    maxWidth: '600px',
+    zIndex: 2,
+    position: 'relative'
+  }
+
+  const buttonStyle: React.CSSProperties = {
+    backgroundColor: textColor === 'white' ? 'white' : '#007bff',
+    color: textColor === 'white' ? '#007bff' : 'white',
+    padding: '12px 24px',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    marginTop: '20px',
+    textDecoration: 'none',
+    display: 'inline-block'
+  }
+
+  return (
+    <div style={heroStyle}>
+      <div style={contentStyle}>
+        <h1 style={{ margin: '0 0 16px 0', fontSize: '3rem', fontWeight: 'bold' }}>
+          {title}
+        </h1>
+        {subtitle && (
+          <p style={{ margin: '0 0 20px 0', fontSize: '1.2rem', opacity: 0.9 }}>
+            {subtitle}
+          </p>
+        )}
+        {buttonText && (
+          <a href={buttonLink} style={buttonStyle}>
+            {buttonText}
+          </a>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Custom Slider Component
+const Slider = ({ 
+  slides, 
+  autoplay = true, 
+  autoplaySpeed = 3000, 
+  showDots = true, 
+  showArrows = true,
+  height = '400px',
+  backgroundColor = '#f8f9fa'
+}: SliderProps) => {
+  const [currentSlide, setCurrentSlide] = React.useState(0)
+  const slideList = slides.split('\n').filter(slide => slide.trim())
+  
+  React.useEffect(() => {
+    if (autoplay && slideList.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % slideList.length)
+      }, autoplaySpeed)
+      return () => clearInterval(interval)
+    }
+  }, [autoplay, autoplaySpeed, slideList.length])
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slideList.length)
+  }
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slideList.length) % slideList.length)
+  }
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index)
+  }
+
+  const sliderStyle: React.CSSProperties = {
+    position: 'relative',
+    height: height,
+    backgroundColor: backgroundColor,
+    margin: '16px 0',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }
+
+  const slideStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '40px',
+    textAlign: 'center',
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    color: '#333',
+    background: `linear-gradient(135deg, ${backgroundColor} 0%, #e9ecef 100%)`
+  }
+
+  const arrowStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    cursor: 'pointer',
+    fontSize: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2
+  }
+
+  const dotsStyle: React.CSSProperties = {
+    position: 'absolute',
+    bottom: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    display: 'flex',
+    gap: '8px',
+    zIndex: 2
+  }
+
+  const dotStyle: React.CSSProperties = {
+    width: '12px',
+    height: '12px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    cursor: 'pointer',
+    transition: 'background-color 0.3s'
+  }
+
+  const activeDotStyle: React.CSSProperties = {
+    ...dotStyle,
+    backgroundColor: 'white'
+  }
+
+  if (slideList.length === 0) {
+    return (
+      <div style={sliderStyle}>
+        <div style={slideStyle}>
+          Add slide content (one per line)
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={sliderStyle}>
+      {/* Current Slide */}
+      <div style={slideStyle}>
+        {slideList[currentSlide] || 'No slides available'}
+      </div>
+
+      {/* Navigation Arrows */}
+      {showArrows && slideList.length > 1 && (
+        <>
+          <button 
+            style={{ ...arrowStyle, left: '20px' }}
+            onClick={prevSlide}
+          >
+            ‹
+          </button>
+          <button 
+            style={{ ...arrowStyle, right: '20px' }}
+            onClick={nextSlide}
+          >
+            ›
+          </button>
+        </>
+      )}
+
+      {/* Dots Navigation */}
+      {showDots && slideList.length > 1 && (
+        <div style={dotsStyle}>
+          {slideList.map((_, index) => (
+            <button
+              key={index}
+              style={index === currentSlide ? activeDotStyle : dotStyle}
+              onClick={() => goToSlide(index)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -617,7 +862,9 @@ const config = {
         rowGap: '16px'
       },
       render: GridContainer,
-      acceptsChildren: true
+      zones: {
+        children: ['Text', 'Button', 'Heading', 'Card'], // ✅ move allowed components here
+      },
     },
     SimpleContainer: {
       fields: {
@@ -666,13 +913,128 @@ const config = {
       },
       render: PositionedElement,
       acceptsChildren: true
+    },
+    HeroSection: {
+      fields: {
+        title: { type: 'text' as const },
+        subtitle: { type: 'textarea' as const },
+        buttonText: { type: 'text' as const },
+        buttonLink: { type: 'text' as const },
+        backgroundColor: { type: 'text' as const },
+        textColor: { 
+          type: 'select' as const,
+          options: [
+            { label: 'White', value: 'white' },
+            { label: 'Black', value: 'black' },
+            { label: 'Blue', value: '#007bff' },
+            { label: 'Green', value: '#28a745' }
+          ]
+        },
+        backgroundImage: { type: 'text' as const },
+        height: { 
+          type: 'select' as const,
+          options: [
+            { label: 'Small (300px)', value: '300px' },
+            { label: 'Medium (400px)', value: '400px' },
+            { label: 'Large (500px)', value: '500px' },
+            { label: 'Extra Large (600px)', value: '600px' }
+          ]
+        },
+        alignment: {
+          type: 'select' as const,
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
+          ]
+        }
+      },
+      defaultProps: {
+        title: 'Welcome to Our Amazing Product',
+        subtitle: 'Discover the future of web development with our innovative solutions and cutting-edge technology.',
+        buttonText: 'Get Started',
+        buttonLink: '#',
+        backgroundColor: '#007bff',
+        textColor: 'white' as const,
+        backgroundImage: '',
+        height: '400px' as const,
+        alignment: 'center' as const
+      },
+      render: HeroSection
+    },
+    Slider: {
+      fields: {
+        slides: { 
+          type: 'textarea' as const,
+          label: 'Slide Content (one per line)'
+        },
+        autoplay: { 
+          type: 'radio' as const,
+          options: [
+            { label: 'Yes', value: true },
+            { label: 'No', value: false }
+          ]
+        },
+        autoplaySpeed: { 
+          type: 'select' as const,
+          options: [
+            { label: 'Fast (2s)', value: 2000 },
+            { label: 'Normal (3s)', value: 3000 },
+            { label: 'Slow (5s)', value: 5000 },
+            { label: 'Very Slow (8s)', value: 8000 }
+          ]
+        },
+        showDots: { 
+          type: 'radio' as const,
+          options: [
+            { label: 'Yes', value: true },
+            { label: 'No', value: false }
+          ]
+        },
+        showArrows: { 
+          type: 'radio' as const,
+          options: [
+            { label: 'Yes', value: true },
+            { label: 'No', value: false }
+          ]
+        },
+        height: { 
+          type: 'select' as const,
+          options: [
+            { label: 'Small (300px)', value: '300px' },
+            { label: 'Medium (400px)', value: '400px' },
+            { label: 'Large (500px)', value: '500px' },
+            { label: 'Extra Large (600px)', value: '600px' }
+          ]
+        },
+        backgroundColor: { 
+          type: 'select' as const,
+          options: [
+            { label: 'Light Gray', value: '#f8f9fa' },
+            { label: 'Blue', value: '#007bff' },
+            { label: 'Green', value: '#28a745' },
+            { label: 'Purple', value: '#6f42c1' },
+            { label: 'Orange', value: '#fd7e14' }
+          ]
+        }
+      },
+      defaultProps: {
+        slides: 'Welcome to Slide 1\nThis is Slide 2\nAnd here is Slide 3',
+        autoplay: true,
+        autoplaySpeed: 3000,
+        showDots: true,
+        showArrows: true,
+        height: '400px' as const,
+        backgroundColor: '#f8f9fa' as const
+      },
+      render: Slider
     }
   }
 }
 
 const initialData = {
   content: [
-    
+
   ],
   root: { props: {} }
 }
@@ -680,7 +1042,7 @@ const initialData = {
 const App: React.FC = () => {
   return (
     <div style={{ height: '100vh' }}>
-      <Puck config={config} data={initialData} />
+      <Puck config={config as any} data={initialData} />
     </div>
   )
 }
