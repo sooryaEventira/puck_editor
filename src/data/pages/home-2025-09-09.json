@@ -1,0 +1,23 @@
+{
+  "root": {
+    "props": {}
+  },
+  "content": [
+    {
+      "type": "HeroSection",
+      "props": {
+        "title": "Welcome to Our Amazing Product",
+        "subtitle": "Discover the future of web development with our innovative solutions and cutting-edge technology.",
+        "buttonText": "Get Started",
+        "buttonLink": "#",
+        "backgroundColor": "#007bff",
+        "textColor": "white",
+        "backgroundImage": "",
+        "height": "400px",
+        "alignment": "center",
+        "id": "HeroSection-caed5383-cad1-4be3-a1da-2991107876d4"
+      }
+    }
+  ],
+  "zones": {}
+}

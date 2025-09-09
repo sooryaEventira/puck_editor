@@ -1,0 +1,26 @@
+{
+  "root": {
+    "props": {}
+  },
+  "content": [
+    {
+      "type": "List",
+      "props": {
+        "items": "First item\nSecond item\nThird item",
+        "type": "ul",
+        "id": "List-3e1975d5-a029-4dd2-a87b-e4557a6b9f1b"
+      }
+    },
+    {
+      "type": "Heading",
+      "props": {
+        "text": "Heading",
+        "level": 1,
+        "color": "#333",
+        "align": "left",
+        "id": "Heading-1578f668-d576-4f9d-bf73-f5c74b70c886"
+      }
+    }
+  ],
+  "zones": {}
+}

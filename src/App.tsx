@@ -1214,9 +1214,412 @@ const initialData = {
 }
 
 const App: React.FC = () => {
+  const [currentData, setCurrentData] = React.useState(initialData)
+  const [showPreview, setShowPreview] = React.useState(false)
+  const [currentPage, setCurrentPage] = React.useState('home')
+  const [currentPageName, setCurrentPageName] = React.useState('Home Page')
+  const [pages, setPages] = React.useState<Array<{id: string, name: string, filename: string, lastModified: string}>>([])
+  const [showPageManager, setShowPageManager] = React.useState(false)
+  const [showPageNameDialog, setShowPageNameDialog] = React.useState(false)
+
+  // Function to load all pages from server
+  const loadPages = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/pages')
+      const result = await response.json()
+      
+      if (result.success) {
+        const pageList = result.pages.map((page: any) => {
+          // Try to extract page name from filename or use a default
+          let pageName = page.filename.replace('.json', '')
+          if (pageName.startsWith('page-data-')) {
+            pageName = pageName.replace('page-data-', '').replace(/-/g, ' ')
+          }
+          return {
+            id: page.filename.replace('.json', ''),
+            name: pageName,
+            filename: page.filename,
+            lastModified: page.modified
+          }
+        })
+        setPages(pageList)
+      }
+    } catch (error) {
+      console.error('Error loading pages:', error)
+    }
+  }
+
+  // Function to load a specific page
+  const loadPage = async (filename: string) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/pages/${filename}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        setCurrentData(result.data)
+        const pageId = filename.replace('.json', '')
+        setCurrentPage(pageId)
+        
+        // Find the page name from the pages list
+        const page = pages.find(p => p.filename === filename)
+        if (page) {
+          setCurrentPageName(page.name)
+        } else {
+          setCurrentPageName(pageId.replace('page-data-', '').replace(/-/g, ' '))
+        }
+        
+        setShowPageManager(false)
+      }
+    } catch (error) {
+      console.error('Error loading page:', error)
+    }
+  }
+
+  // Function to create a new page
+  const createNewPage = () => {
+    setCurrentData(initialData)
+    setCurrentPage('new-page')
+    setCurrentPageName('New Page')
+    setShowPageManager(false)
+    setShowPageNameDialog(true)
+  }
+
+  // Function to confirm new page creation
+  const confirmNewPage = (pageName: string) => {
+    setCurrentPageName(pageName)
+    setShowPageNameDialog(false)
+  }
+
+  // Function to handle publish and save JSON data directly to project
+  const handlePublish = async (data: any) => {
+    try {
+      const timestamp = new Date().toISOString().split('T')[0]
+      
+      // Create a unique filename based on page name
+      let filename: string
+      if (currentPage === 'new-page') {
+        // For new pages, create filename from page name
+        const sanitizedName = currentPageName.toLowerCase().replace(/[^a-z0-9]/g, '-')
+        filename = `${sanitizedName}-${timestamp}.json`
+      } else {
+        // For existing pages, keep the same filename
+        filename = `${currentPage}.json`
+      }
+      
+      // Save to localStorage for backup
+      localStorage.setItem('puck-page-data', JSON.stringify(data, null, 2))
+      localStorage.setItem('puck-page-timestamp', timestamp)
+      
+      // Try to save directly to project directory via API
+      try {
+        const response = await fetch('http://localhost:3001/api/save-page', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            data: data,
+            filename: filename
+          })
+        })
+        
+        const result = await response.json()
+        
+        if (result.success) {
+          // Reload pages list after saving
+          await loadPages()
+          
+          // Update current page ID after saving
+          if (currentPage === 'new-page') {
+            const newPageId = filename.replace('.json', '')
+            setCurrentPage(newPageId)
+          }
+          
+          alert(`✅ Page "${currentPageName}" saved successfully!
+          
+📁 File saved to: ${result.path}
+📊 Components: ${result.components}
+📝 Filename: ${result.filename}
+
+The data has been saved directly to your project directory!`)
+          
+          console.log('=== PUCK PAGE DATA SAVED ===')
+          console.log('✅ Saved directly to project directory')
+          console.log('📁 Path:', result.path)
+          console.log('📊 Components:', result.components)
+          console.log('============================')
+        } else {
+          throw new Error(result.message || 'Failed to save via API')
+        }
+        
+      } catch (apiError) {
+        console.warn('API save failed, falling back to download method:', apiError)
+        
+        // Fallback: Create downloadable file
+        const jsonData = JSON.stringify(data, null, 2)
+        const blob = new Blob([jsonData], { type: 'application/json' })
+        const link = document.createElement('a')
+        link.download = filename
+        link.href = window.URL.createObjectURL(blob)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        alert(`⚠️ API server not running - File downloaded instead
+        
+📁 Please start the server: npm run server
+📄 File downloaded: ${filename}
+📂 Move to: src/data/pages/${filename}`)
+      }
+      
+    } catch (error) {
+      console.error('Error saving page data:', error)
+      alert('Error saving page data. Please try again.')
+    }
+  }
+
+  // Function to handle data changes
+  const handleDataChange = (data: any) => {
+    setCurrentData(data)
+  }
+
+  // Function to toggle preview mode
+  const togglePreview = () => {
+    setShowPreview(!showPreview)
+  }
+
+  // Load pages on component mount
+  React.useEffect(() => {
+    loadPages()
+  }, [])
+
   return (
-    <div style={{ height: '100vh' }}>
-      <Puck config={config as any} data={initialData} />
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Controls */}
+      <div style={{ 
+        padding: '10px 20px', 
+        backgroundColor: '#f8f9fa', 
+        borderBottom: '1px solid #dee2e6',
+        display: 'flex',
+        gap: '10px',
+        alignItems: 'center',
+        flexWrap: 'wrap'
+      }}>
+        <button
+          onClick={() => setShowPageManager(!showPageManager)}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          📄 Pages ({pages.length})
+        </button>
+        <button
+          onClick={createNewPage}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          ➕ New Page
+        </button>
+        <button
+          onClick={togglePreview}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: showPreview ? '#dc3545' : '#6c757d',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          {showPreview ? '✏️ Edit Mode' : '👁️ Preview'}
+        </button>
+        <div style={{ marginLeft: 'auto', fontSize: '12px', color: '#6c757d' }}>
+          {currentData.content?.length || 0} components • Page: {currentPageName}
+        </div>
+      </div>
+
+      {/* Page Manager */}
+      {showPageManager && (
+        <div style={{
+          padding: '20px',
+          backgroundColor: '#fff',
+          borderBottom: '1px solid #dee2e6',
+          maxHeight: '300px',
+          overflow: 'auto'
+        }}>
+          <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>📄 Page Manager</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '15px' }}>
+            {pages.map((page) => (
+              <div
+                key={page.id}
+                style={{
+                  padding: '15px',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '8px',
+                  backgroundColor: currentPage === page.id ? '#e3f2fd' : '#f8f9fa',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onClick={() => loadPage(page.filename)}
+              >
+                <h4 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '16px' }}>
+                  {page.name}
+                </h4>
+                <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '12px' }}>
+                  Modified: {new Date(page.lastModified).toLocaleDateString()}
+                </p>
+                <p style={{ margin: '0', color: '#888', fontSize: '11px' }}>
+                  {page.filename}
+                </p>
+              </div>
+            ))}
+            {pages.length === 0 && (
+              <div style={{
+                gridColumn: '1 / -1',
+                textAlign: 'center',
+                padding: '40px',
+                color: '#666'
+              }}>
+                <p>No pages created yet. Click "New Page" to get started!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Page Name Dialog */}
+      {showPageNameDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '30px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            minWidth: '400px',
+            maxWidth: '500px'
+          }}>
+            <h3 style={{ margin: '0 0 20px 0', color: '#333' }}>📝 Name Your New Page</h3>
+            <p style={{ margin: '0 0 15px 0', color: '#666' }}>
+              Give your page a descriptive name (e.g., "Home", "About Us", "Contact")
+            </p>
+            <input
+              type="text"
+              value={currentPageName}
+              onChange={(e) => setCurrentPageName(e.target.value)}
+              placeholder="Enter page name..."
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '16px',
+                marginBottom: '20px'
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  confirmNewPage(currentPageName)
+                }
+              }}
+              autoFocus
+            />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowPageNameDialog(false)}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => confirmNewPage(currentPageName)}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Create Page
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {showPreview ? (
+          <div style={{ 
+            height: '100%', 
+            overflow: 'auto', 
+            padding: '20px',
+            backgroundColor: 'white'
+          }}>
+            <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+              {currentData.content?.length === 0 ? (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '60px 20px', 
+                  color: '#6c757d',
+                  fontSize: '18px'
+                }}>
+                  <h2>No content to preview</h2>
+                  <p>Switch back to edit mode to add components</p>
+                </div>
+              ) : (
+                currentData.content?.map((item: any, index: number) => {
+                  const Component = config.components[item.type as keyof typeof config.components]?.render
+                  return Component ? (
+                    <div key={index}>
+                      <Component {...item.props} />
+                    </div>
+                  ) : null
+                })
+              )}
+            </div>
+          </div>
+        ) : (
+          <Puck 
+            config={config as any} 
+            data={currentData}
+            onPublish={handlePublish}
+            onChange={handleDataChange}
+          />
+        )}
+      </div>
     </div>
   )
 }
