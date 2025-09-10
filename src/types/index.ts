@@ -111,6 +111,8 @@ export interface ImageProps {
   alignment?: 'left' | 'center' | 'right'
   caption?: string
   showCaption?: boolean
+  uploadedFile?: File | null
+  uploadedImageUrl?: string
 }
 
 export interface Page {
@@ -123,4 +125,5 @@ export interface Page {
 export interface PageData {
   content: any[]
   root: { props: any }
+  zones: any
 }

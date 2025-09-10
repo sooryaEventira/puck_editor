@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react'
 import { Page, PageData } from '../types'
 
 export const usePageManagement = () => {
-  const [currentData, setCurrentData] = useState<PageData>({ content: [], root: { props: {} } })
+  const [currentData, setCurrentData] = useState<PageData>({ 
+    content: [], 
+    root: { props: {} }, 
+    zones: {} 
+  })
   const [currentPage, setCurrentPage] = useState('home')
   const [currentPageName, setCurrentPageName] = useState('Home Page')
   const [pages, setPages] = useState<Page[]>([])
@@ -64,8 +68,17 @@ export const usePageManagement = () => {
 
   // Function to create a new page
   const createNewPage = () => {
-    setCurrentData({ content: [], root: { props: {} } })
-    setCurrentPage('new-page')
+    // Create a proper Puck data structure with all required properties
+    const newPageData = {
+      content: [],
+      root: {
+        props: {}
+      },
+      zones: {}
+    }
+    // Force a complete reset by setting data first, then updating page info
+    setCurrentData(newPageData)
+    setCurrentPage(`new-page-${Date.now()}`) // Use timestamp to ensure unique page ID
     setCurrentPageName('New Page')
     setShowPageManager(false)
     setShowPageNameDialog(true)

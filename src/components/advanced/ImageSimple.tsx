@@ -1,18 +1,28 @@
 import React from 'react'
-import { ImageProps } from '../../types'
 
-const Image = ({ 
-  src, 
-  alt = '', 
-  width = '100%', 
-  height = 'auto', 
+interface SimpleImageProps {
+  src?: string
+  alt?: string
+  width?: string
+  height?: string
+  borderRadius?: string
+  objectFit?: 'cover' | 'contain' | 'fill' | 'scale-down' | 'none'
+  alignment?: 'left' | 'center' | 'right'
+  caption?: string
+  showCaption?: boolean
+}
+
+const ImageSimple = ({ 
+  src = 'https://picsum.photos/400/300', 
+  alt = 'Test image',
+  width = '100%',
+  height = 'auto',
   borderRadius = '0px',
   objectFit = 'cover',
   alignment = 'center',
   caption = '',
   showCaption = false
-}: ImageProps) => {
-
+}: SimpleImageProps) => {
   const containerStyle: React.CSSProperties = {
     margin: '16px 0',
     textAlign: alignment,
@@ -38,9 +48,6 @@ const Image = ({
     textAlign: alignment
   }
 
-  // Fallback image for errors
-  const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=';
-
   return (
     <div style={containerStyle}>
       {src ? (
@@ -50,7 +57,7 @@ const Image = ({
           style={imageStyle}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = fallbackImage;
+            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=';
           }}
         />
       ) : (
@@ -77,4 +84,4 @@ const Image = ({
   )
 }
 
-export default Image
+export default ImageSimple

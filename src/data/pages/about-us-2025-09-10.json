@@ -1,0 +1,20 @@
+{
+  "root": {
+    "props": {
+      "title": "About Us"
+    }
+  },
+  "content": [
+    {
+      "type": "Heading",
+      "props": {
+        "text": "Heading",
+        "level": 1,
+        "color": "#333",
+        "align": "left",
+        "id": "Heading-4352f98b-f718-40cc-bdc6-a5d48ae3ffa5"
+      }
+    }
+  ],
+  "zones": {}
+}

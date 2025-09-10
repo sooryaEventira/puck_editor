@@ -17,3 +17,220 @@ body {
   height: 100vh;
   width: 100vw;
 }
+
+/* Fix Puck editor scrolling issues */
+.puck-sidebar {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+}
+
+.puck-sidebar-content {
+  overflow-y: auto !important;
+  max-height: calc(100vh - 60px) !important;
+}
+
+.puck-property-panel {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+}
+
+.puck-property-panel-content {
+  overflow-y: auto !important;
+  max-height: calc(100vh - 60px) !important;
+}
+
+/* Ensure all Puck panels are scrollable */
+[data-puck-sidebar] {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+}
+
+[data-puck-property-panel] {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+}
+
+/* Fix any container that might be preventing scrolling */
+.puck-container {
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+
+.puck-layout {
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+
+/* Ensure the main content area doesn't interfere */
+.puck-main-content {
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+
+/* Additional Puck scrolling fixes */
+.puck {
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.puck__layout {
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Fix component list scrolling */
+.puck__component-list {
+  overflow-y: auto !important;
+  max-height: calc(100vh - 120px) !important;
+}
+
+/* Fix property panel scrolling */
+.puck__property-panel {
+  overflow-y: auto !important;
+  max-height: calc(100vh - 120px) !important;
+}
+
+/* Fix category scrolling */
+.puck__category {
+  overflow-y: auto !important;
+}
+
+/* Ensure all scrollable areas work */
+.puck [role="tabpanel"] {
+  overflow-y: auto !important;
+  max-height: calc(100vh - 200px) !important;
+}
+
+/* Fix any nested scrollable areas */
+.puck .puck__sidebar,
+.puck .puck__property-panel,
+.puck [data-puck-sidebar],
+.puck [data-puck-property-panel] {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+}
+
+/* Fix component outline visibility */
+.puck [data-puck-component] {
+  outline: 2px dashed transparent !important;
+  transition: outline 0.2s ease !important;
+}
+
+.puck [data-puck-component]:hover {
+  outline: 2px dashed #007bff !important;
+  outline-offset: 2px !important;
+}
+
+.puck [data-puck-component].puck__component--selected {
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px !important;
+}
+
+/* Fix component selection styles */
+.puck .puck__component {
+  outline: 2px dashed transparent !important;
+  transition: outline 0.2s ease !important;
+}
+
+.puck .puck__component:hover {
+  outline: 2px dashed #007bff !important;
+  outline-offset: 2px !important;
+}
+
+.puck .puck__component--selected {
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px !important;
+}
+
+/* Fix any other component selection classes */
+.puck [data-puck-selected="true"] {
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px !important;
+}
+
+.puck [data-puck-hover="true"] {
+  outline: 2px dashed #007bff !important;
+  outline-offset: 2px !important;
+}
+
+/* Ensure component boundaries are visible */
+.puck .puck__component-wrapper {
+  outline: 1px dashed rgba(0, 123, 255, 0.3) !important;
+  transition: outline 0.2s ease !important;
+}
+
+.puck .puck__component-wrapper:hover {
+  outline: 2px dashed #007bff !important;
+  outline-offset: 1px !important;
+}
+
+.puck .puck__component-wrapper--selected {
+  outline: 2px solid #007bff !important;
+  outline-offset: 1px !important;
+}
+
+/* Fix canvas component outlines */
+.puck .puck__canvas [data-puck-component] {
+  outline: 2px dashed transparent !important;
+  transition: outline 0.2s ease !important;
+}
+
+.puck .puck__canvas [data-puck-component]:hover {
+  outline: 2px dashed #007bff !important;
+  outline-offset: 2px !important;
+}
+
+.puck .puck__canvas [data-puck-component].puck__component--selected {
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px !important;
+}
+
+/* Additional outline fixes for different Puck versions */
+.puck [data-puck-draggable] {
+  outline: 2px dashed transparent !important;
+  transition: outline 0.2s ease !important;
+}
+
+.puck [data-puck-draggable]:hover {
+  outline: 2px dashed #007bff !important;
+  outline-offset: 2px !important;
+}
+
+.puck [data-puck-draggable].puck__component--selected {
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px !important;
+}
+
+/* Fix for component drop zones */
+.puck [data-puck-drop-zone] {
+  outline: 2px dashed #28a745 !important;
+  outline-offset: 2px !important;
+  background-color: rgba(40, 167, 69, 0.1) !important;
+}
+
+/* Fix for component boundaries */
+.puck .puck__component-boundary {
+  outline: 1px dashed rgba(0, 123, 255, 0.5) !important;
+  transition: outline 0.2s ease !important;
+}
+
+.puck .puck__component-boundary:hover {
+  outline: 2px dashed #007bff !important;
+  outline-offset: 1px !important;
+}
+
+/* Ensure all interactive elements have proper outlines */
+.puck [data-puck-interactive] {
+  outline: 2px dashed transparent !important;
+  transition: outline 0.2s ease !important;
+}
+
+.puck [data-puck-interactive]:hover {
+  outline: 2px dashed #007bff !important;
+  outline-offset: 2px !important;
+}
+
+.puck [data-puck-interactive].puck__component--selected {
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px !important;
+}

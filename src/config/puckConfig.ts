@@ -7,6 +7,7 @@ import {
 import { 
   HeroSection, Slider, Image 
 } from '../components/advanced'
+import ImageSimple from '../components/advanced/ImageSimple'
 
 // Enhanced config with multiple components, categories, and icons
 export const config = {
@@ -663,7 +664,7 @@ export const config = {
         showCaption: false,
         caption: ''
       },
-      render: Image
+      render: ImageSimple
     }
   }
 }

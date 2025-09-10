@@ -44,7 +44,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Controls */}
       <div style={{ 
         padding: '10px 20px', 
@@ -97,9 +97,6 @@ const App: React.FC = () => {
         >
           {showPreview ? '✏️ Edit Mode' : '👁️ Preview'}
         </button>
-        <div style={{ marginLeft: 'auto', fontSize: '12px', color: '#6c757d' }}>
-          {currentData.content?.length || 0} components • Page: {currentPageName}
-        </div>
       </div>
 
       {/* Page Manager */}
@@ -120,11 +117,12 @@ const App: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div style={{ flex: 1, overflow: 'hidden', height: 'calc(100vh - 60px)' }}>
         {showPreview ? (
           <Preview data={currentData} />
         ) : (
           <Puck 
+            key={currentPage} // Force re-render when page changes
             config={config as any} 
             data={currentData}
             onPublish={handlePublish}
