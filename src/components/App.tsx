@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Puck } from '@measured/puck'
 import '@measured/puck/puck.css'
 
@@ -42,6 +42,96 @@ const App: React.FC = () => {
   const togglePreview = () => {
     setShowPreview(!showPreview)
   }
+
+  // Function to force purple text color on all Puck elements
+  const forcePurpleText = () => {
+    const stylePurpleText = (element: HTMLElement) => {
+      element.style.color = '#6f42c1'
+      element.style.setProperty('color', '#6f42c1', 'important')
+      // Also try setting the computed style
+      element.style.cssText += 'color: #6f42c1 !important;'
+    }
+
+    // First, let's see what's actually in the DOM
+    console.log('🔍 Checking DOM structure...')
+    console.log('Root element:', document.getElementById('root'))
+    console.log('All elements with "puck" in class:', document.querySelectorAll('[class*="puck"]'))
+    console.log('All divs:', document.querySelectorAll('div'))
+    
+    // Try different selectors to find Puck elements
+    const possibleSelectors = [
+      '.puck',
+      '[class*="puck"]',
+      '[class*="Puck"]',
+      '[class*="editor"]',
+      '[class*="Editor"]',
+      'div[class*="puck"]',
+      'div[class*="Puck"]'
+    ]
+    
+    let foundElements = 0
+    possibleSelectors.forEach(selector => {
+      const elements = document.querySelectorAll(selector)
+      if (elements.length > 0) {
+        console.log(`✅ Found ${elements.length} elements with selector: ${selector}`)
+        elements.forEach(element => {
+          if (element instanceof HTMLElement) {
+            stylePurpleText(element)
+            foundElements++
+          }
+        })
+      }
+    })
+
+    // Find all text elements in any container that might be Puck
+    const allElements = document.querySelectorAll('*')
+    let textElementsStyled = 0
+    
+    allElements.forEach(element => {
+      if (element instanceof HTMLElement && 
+          element.textContent && 
+          element.textContent.trim().length > 0 &&
+          element.textContent.length < 100) { // Only short text elements (likely UI text)
+        stylePurpleText(element)
+        textElementsStyled++
+      }
+    })
+
+    console.log('🎨 Styled', foundElements, 'Puck elements and', textElementsStyled, 'text elements')
+  }
+
+  // Apply purple text when component mounts and when not in preview mode
+  useEffect(() => {
+    if (!showPreview) {
+      // Apply immediately
+      forcePurpleText()
+      
+      // Apply multiple times with different delays to ensure Puck has loaded
+      const timeouts = [
+        setTimeout(forcePurpleText, 1000),
+        setTimeout(forcePurpleText, 2000),
+        setTimeout(forcePurpleText, 3000),
+        setTimeout(forcePurpleText, 5000),
+        setTimeout(forcePurpleText, 10000)
+      ]
+      
+      // Apply when DOM changes (Puck loads new content)
+      const observer = new MutationObserver(() => {
+        forcePurpleText()
+      })
+      
+      observer.observe(document.body, { childList: true, subtree: true })
+      
+      // Also apply every 2 seconds to catch any missed elements
+      const interval = setInterval(forcePurpleText, 2000)
+      
+      return () => {
+        timeouts.forEach(clearTimeout)
+        observer.disconnect()
+        clearInterval(interval)
+      }
+    }
+  }, [showPreview])
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

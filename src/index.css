@@ -226,11 +226,245 @@ body {
 }
 
 .puck [data-puck-interactive]:hover {
-  outline: 2px dashed #007bff !important;
+  outline: 2px dashed #6f42c1 !important;
   outline-offset: 2px !important;
 }
 
 .puck [data-puck-interactive].puck__component--selected {
-  outline: 2px solid #007bff !important;
+  outline: 2px solid #6f42c1 !important;
   outline-offset: 2px !important;
+}
+
+/* Purple Text Color for Puck Editor Interface */
+.puck {
+  color: #6f42c1 !important;
+}
+
+/* Target all text elements in Puck editor */
+.puck * {
+  color: #6f42c1 !important;
+}
+
+/* Override specific text elements */
+.puck h1, .puck h2, .puck h3, .puck h4, .puck h5, .puck h6,
+.puck p, .puck span, .puck div, .puck label, .puck a,
+.puck button, .puck input, .puck textarea, .puck select {
+  color: #6f42c1 !important;
+}
+
+/* Target Puck's specific text classes */
+.puck .puck__text,
+.puck .puck__label,
+.puck .puck__title,
+.puck .puck__description,
+.puck .puck__content {
+  color: #6f42c1 !important;
+}
+
+/* Target sidebar and property panel text */
+.puck .puck__sidebar *,
+.puck .puck__property-panel *,
+.puck .puck__toolbar *,
+.puck .puck__header * {
+  color: #6f42c1 !important;
+}
+
+/* Target component list text */
+.puck .puck__component-list *,
+.puck .puck__category *,
+.puck .puck__component-item * {
+  color: #6f42c1 !important;
+}
+
+/* Target form field labels and text */
+.puck .puck__field *,
+.puck .puck__field-label,
+.puck .puck__field-input,
+.puck .puck__field-textarea,
+.puck .puck__field-select {
+  color: #6f42c1 !important;
+}
+
+/* Target any remaining text elements */
+.puck [class*="text"],
+.puck [class*="label"],
+.puck [class*="title"],
+.puck [class*="content"] {
+  color: #6f42c1 !important;
+}
+
+/* Ultra aggressive targeting for all text */
+.puck * {
+  color: #6f42c1 !important;
+}
+
+/* Force override for any text that might be styled inline */
+.puck *[style*="color"] {
+  color: #6f42c1 !important;
+}
+
+/* Target specific Puck editor elements more aggressively */
+.puck .puck__sidebar,
+.puck .puck__property-panel,
+.puck .puck__toolbar,
+.puck .puck__header,
+.puck .puck__canvas {
+  color: #6f42c1 !important;
+}
+
+.puck .puck__sidebar *,
+.puck .puck__property-panel *,
+.puck .puck__toolbar *,
+.puck .puck__header *,
+.puck .puck__canvas * {
+  color: #6f42c1 !important;
+}
+
+/* Target any element with text content */
+.puck div, .puck span, .puck p, .puck h1, .puck h2, .puck h3, .puck h4, .puck h5, .puck h6,
+.puck a, .puck button, .puck label, .puck input, .puck textarea, .puck select,
+.puck li, .puck ul, .puck ol, .puck td, .puck th, .puck tr {
+  color: #6f42c1 !important;
+}
+
+/* Nuclear option - target everything in Puck */
+.puck {
+  color: #6f42c1 !important;
+}
+
+.puck * {
+  color: #6f42c1 !important;
+  background-color: inherit !important;
+}
+
+/* Override any existing color styles */
+.puck *[style*="color:"] {
+  color: #6f42c1 !important;
+}
+
+/* Target specific text nodes and elements */
+.puck .puck__component-list,
+.puck .puck__category,
+.puck .puck__component-item,
+.puck .puck__field,
+.puck .puck__field-label,
+.puck .puck__field-input,
+.puck .puck__field-textarea,
+.puck .puck__field-select {
+  color: #6f42c1 !important;
+}
+
+.puck .puck__component-list *,
+.puck .puck__category *,
+.puck .puck__component-item *,
+.puck .puck__field *,
+.puck .puck__field-label *,
+.puck .puck__field-input *,
+.puck .puck__field-textarea *,
+.puck .puck__field-select * {
+  color: #6f42c1 !important;
+}
+
+/* Ultra high specificity targeting */
+html body #root .puck,
+html body #root .puck *,
+html body #root .puck div,
+html body #root .puck span,
+html body #root .puck p,
+html body #root .puck h1,
+html body #root .puck h2,
+html body #root .puck h3,
+html body #root .puck h4,
+html body #root .puck h5,
+html body #root .puck h6,
+html body #root .puck a,
+html body #root .puck button,
+html body #root .puck label,
+html body #root .puck input,
+html body #root .puck textarea,
+html body #root .puck select,
+html body #root .puck li,
+html body #root .puck ul,
+html body #root .puck ol {
+  color: #6f42c1 !important;
+}
+
+/* Force override any existing styles */
+.puck *[style*="color:"] {
+  color: #6f42c1 !important;
+}
+
+/* Target any element that might have text */
+.puck [class*="text"],
+.puck [class*="label"],
+.puck [class*="title"],
+.puck [class*="content"],
+.puck [class*="name"],
+.puck [class*="item"] {
+  color: #6f42c1 !important;
+}
+
+/* Nuclear option - override everything */
+.puck, .puck * {
+  color: #6f42c1 !important;
+}
+
+/* Target all possible text elements globally */
+* {
+  color: #6f42c1 !important;
+}
+
+/* Override any existing color styles with maximum specificity */
+html body #root * {
+  color: #6f42c1 !important;
+}
+
+/* Target specific text elements that might not be caught */
+div, span, p, h1, h2, h3, h4, h5, h6, a, button, label, input, textarea, select, li, ul, ol, td, th, tr, strong, em, b, i, u, small, big, sub, sup {
+  color: #6f42c1 !important;
+}
+
+/* Force override with maximum specificity */
+html body #root div .puck,
+html body #root div .puck *,
+html body #root div .puck div,
+html body #root div .puck span,
+html body #root div .puck p,
+html body #root div .puck h1,
+html body #root div .puck h2,
+html body #root div .puck h3,
+html body #root div .puck h4,
+html body #root div .puck h5,
+html body #root div .puck h6,
+html body #root div .puck a,
+html body #root div .puck button,
+html body #root div .puck label,
+html body #root div .puck input,
+html body #root div .puck textarea,
+html body #root div .puck select,
+html body #root div .puck li,
+html body #root div .puck ul,
+html body #root div .puck ol,
+html body #root div .puck td,
+html body #root div .puck th,
+html body #root div .puck tr {
+  color: #6f42c1 !important;
+}
+
+/* Target any element with any class that might contain text */
+.puck [class] {
+  color: #6f42c1 !important;
+}
+
+/* Override any inline styles */
+.puck *[style] {
+  color: #6f42c1 !important;
+}
+
+/* Force color on all possible text elements */
+.puck div, .puck span, .puck p, .puck h1, .puck h2, .puck h3, .puck h4, .puck h5, .puck h6,
+.puck a, .puck button, .puck label, .puck input, .puck textarea, .puck select,
+.puck li, .puck ul, .puck ol, .puck td, .puck th, .puck tr, .puck strong, .puck em,
+.puck b, .puck i, .puck u, .puck small, .puck big, .puck sub, .puck sup {
+  color: #6f42c1 !important;
 }

@@ -1,7 +1,7 @@
 import React from 'react'
 import { ButtonProps } from '../../types'
 
-const Button = ({ text, variant = 'primary', size = 'medium' }: ButtonProps) => {
+const Button = ({ text, variant = 'primary', size = 'medium', textColor }: ButtonProps) => {
   const sizeStyles: Record<string, React.CSSProperties> = {
     small: { padding: '8px 16px', fontSize: '14px' },
     medium: { padding: '12px 24px', fontSize: '16px' },
@@ -9,10 +9,10 @@ const Button = ({ text, variant = 'primary', size = 'medium' }: ButtonProps) => 
   }
   
   const variantStyles: Record<string, React.CSSProperties> = {
-    primary: { backgroundColor: '#007bff', color: 'white' },
-    secondary: { backgroundColor: '#6c757d', color: 'white' },
-    success: { backgroundColor: '#28a745', color: 'white' },
-    danger: { backgroundColor: '#dc3545', color: 'white' }
+    primary: { backgroundColor: '#007bff', color: textColor || 'white' },
+    secondary: { backgroundColor: '#6c757d', color: textColor || 'white' },
+    success: { backgroundColor: '#28a745', color: textColor || 'white' },
+    danger: { backgroundColor: '#dc3545', color: textColor || 'white' }
   }
   
   return (

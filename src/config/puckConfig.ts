@@ -118,7 +118,10 @@ export const config = {
             { label: 'H4', value: 4 }
           ]
         },
-        color: { type: 'text' as const },
+        color: { 
+          type: 'text' as const,
+          label: 'Text Color (e.g., #ff0000, red, blue)'
+        },
         align: {
           type: 'select' as const,
           options: [
@@ -149,7 +152,10 @@ export const config = {
             { label: 'Large (18px)', value: '18px' }
           ]
         },
-        color: { type: 'text' as const },
+        color: { 
+          type: 'text' as const,
+          label: 'Text Color (e.g., #ff0000, red, blue)'
+        },
         align: {
           type: 'select' as const,
           options: [
@@ -188,12 +194,17 @@ export const config = {
             { label: 'Medium', value: 'medium' },
             { label: 'Large', value: 'large' }
           ]
+        },
+        textColor: { 
+          type: 'text' as const,
+          label: 'Text Color (e.g., #ff0000, red, blue)'
         }
       },
       defaultProps: {
         text: 'Click me',
         variant: 'primary' as const,
-        size: 'medium' as const
+        size: 'medium' as const,
+        textColor: 'white'
       },
       render: Button
     },
@@ -202,12 +213,22 @@ export const config = {
       fields: {
         title: { type: 'text' as const },
         description: { type: 'textarea' as const },
-        backgroundColor: { type: 'text' as const }
+        backgroundColor: { type: 'text' as const },
+        titleColor: { 
+          type: 'text' as const,
+          label: 'Title Color (e.g., #ff0000, red, blue)'
+        },
+        textColor: { 
+          type: 'text' as const,
+          label: 'Text Color (e.g., #ff0000, red, blue)'
+        }
       },
       defaultProps: {
         title: 'Card Title',
         description: 'This is a card component with a title and description. You can customize the background color and content.',
-        backgroundColor: '#fff'
+        backgroundColor: '#fff',
+        titleColor: '#333',
+        textColor: '#666'
       },
       render: Card
     },
@@ -221,18 +242,26 @@ export const config = {
             { label: 'Unordered List', value: 'ul' },
             { label: 'Ordered List', value: 'ol' }
           ]
+        },
+        textColor: { 
+          type: 'text' as const,
+          label: 'Text Color (e.g., #ff0000, red, blue)'
         }
       },
       defaultProps: {
         items: 'First item\nSecond item\nThird item',
-        type: 'ul' as const
+        type: 'ul' as const,
+        textColor: '#555'
       },
       render: List
     },
     Divider: {
       label: "➖ Divider",
       fields: {
-        color: { type: 'text' as const },
+        color: { 
+          type: 'text' as const,
+          label: 'Text Color (e.g., #ff0000, red, blue)'
+        },
         thickness: { 
           type: 'select' as const, 
           options: [

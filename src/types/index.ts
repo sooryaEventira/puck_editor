@@ -17,17 +17,21 @@ export interface ButtonProps {
   text: string
   variant?: 'primary' | 'secondary' | 'success' | 'danger'
   size?: 'small' | 'medium' | 'large'
+  textColor?: string
 }
 
 export interface CardProps {
   title: string
   description: string
   backgroundColor?: string
+  titleColor?: string
+  textColor?: string
 }
 
 export interface ListProps {
   items: string
   type?: 'ul' | 'ol'
+  textColor?: string
 }
 
 export interface DividerProps {
