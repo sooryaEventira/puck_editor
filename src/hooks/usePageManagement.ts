@@ -1,15 +1,136 @@
 import { useState, useEffect } from 'react'
-import { Page, PageData } from '../types'
+import { Page } from '../types'
+
+// Default JSON data structure
+const defaultJsonData: any = {
+  home: {
+    title: "Home",
+    slug: "/",
+    data: {
+      "/": {
+        root: {
+          props: { title: "Puck + React Router 7 demo" },
+        },
+        content: [
+          {
+            type: "HeadingBlock",
+            props: {
+              title: "Edit this page by adding /edit to the end of the URL",
+              id: "HeadingBlock-1694032984497",
+            },
+          },
+          {
+            type: "HeadingBlock",
+            props: {
+              title: "Heading",
+              id: "HeadingBlock-f201eaff-4358-4d47-ae34-8147d6f52384",
+            },
+          },
+        ],
+        zones: {},
+      },
+    },
+  },
+  page1: {
+    title: "Second Page",
+    slug: "/page1",
+    data: {
+      "/": {
+        root: {
+          props: { title: "Puck + React Router 7 demo" },
+        },
+        content: [
+          {
+            type: "HeadingBlock",
+            props: {
+              title: "secondpage",
+              id: "HeadingBlock-1694032984497",
+            },
+          },
+          {
+            type: "HeadingBlock",
+            props: {
+              title: "Second page",
+              id: "HeadingBlock-f201eaff-4358-4d47-ae34-8147d6f52384",
+            },
+          },
+          {
+            type: "HeadingBlock",
+            props: {
+              title: "Second Page",
+              id: "HeadingBlock-255c9b3d-88be-4c5b-ace9-deeb71cb0c40",
+            },
+          },
+        ],
+        zones: {},
+      },
+    },
+  },
+}
+
+// Function to convert HeadingBlock to Heading for compatibility
+const convertHeadingBlock = (item: any) => {
+  if (item.type === "HeadingBlock") {
+    return {
+      type: "Heading",
+      props: {
+        text: item.props.title,
+        level: 1,
+        color: '#333',
+        align: 'left' as const
+      }
+    }
+  }
+  return item
+}
+
+// Function to convert JSON structure to Puck-compatible format
+const convertJsonToPuckData = (jsonData: any, pageKey: string = 'home') => {
+  const page = jsonData[pageKey]
+  if (!page || !page.data || !page.data["/"]) {
+    return { content: [], root: { props: {} }, zones: {} }
+  }
+  
+  const puckData = page.data["/"]
+  const convertedContent = puckData.content?.map(convertHeadingBlock) || []
+  
+  // Ensure each content item has a proper id
+  const contentWithIds = convertedContent.map((item: any, index: number) => ({
+    ...item,
+    id: item.id || `${item.type}-${index}-${Date.now()}`
+  }))
+  
+  return {
+    content: contentWithIds,
+    root: {
+      props: puckData.root?.props || {}
+    },
+    zones: puckData.zones || {}
+  }
+}
+
+// Function to convert JSON structure to pages list
+const convertJsonToPagesList = (jsonData: any): Page[] => {
+  return Object.keys(jsonData).map(key => {
+    const page = jsonData[key]
+    return {
+      id: key,
+      name: page.title,
+      filename: `${key}.json`,
+      lastModified: new Date().toISOString()
+    }
+  })
+}
 
 export const usePageManagement = () => {
-  const [currentData, setCurrentData] = useState<PageData>({ 
-    content: [], 
-    root: { props: {} }, 
-    zones: {} 
-  })
+  const [currentData, setCurrentData] = useState<any>(() => 
+    convertJsonToPuckData(defaultJsonData, 'home')
+  )
   const [currentPage, setCurrentPage] = useState('home')
-  const [currentPageName, setCurrentPageName] = useState('Home Page')
-  const [pages, setPages] = useState<Page[]>([])
+  const [currentPageName, setCurrentPageName] = useState('Home')
+  const [pages, setPages] = useState<Page[]>(() => 
+    convertJsonToPagesList(defaultJsonData)
+  )
   const [showPageManager, setShowPageManager] = useState(false)
   const [showPageNameDialog, setShowPageNameDialog] = useState(false)
 
@@ -33,22 +154,51 @@ export const usePageManagement = () => {
             lastModified: page.modified
           }
         })
-        setPages(pageList)
+        // Merge with default pages
+        const defaultPages = convertJsonToPagesList(defaultJsonData)
+        setPages([...defaultPages, ...pageList])
+      } else {
+        // If server fails, use default pages
+        setPages(convertJsonToPagesList(defaultJsonData))
       }
     } catch (error) {
       console.error('Error loading pages:', error)
+      // If server fails, use default pages
+      setPages(convertJsonToPagesList(defaultJsonData))
     }
   }
 
   // Function to load a specific page
   const loadPage = async (filename: string) => {
     try {
+      // First check if it's a default page
+      const pageId = filename.replace('.json', '')
+      
+      if (defaultJsonData[pageId]) {
+        const pageData = convertJsonToPuckData(defaultJsonData, pageId)
+        setCurrentData(pageData)
+        setCurrentPage(pageId)
+        setCurrentPageName(defaultJsonData[pageId].title)
+        setShowPageManager(false)
+        return pageData // Return the data for Events page to use
+      }
+      
+      // Also check if the filename is just the page ID (without .json)
+      if (defaultJsonData[filename]) {
+        const pageData = convertJsonToPuckData(defaultJsonData, filename)
+        setCurrentData(pageData)
+        setCurrentPage(filename)
+        setCurrentPageName(defaultJsonData[filename].title)
+        setShowPageManager(false)
+        return pageData // Return the data for Events page to use
+      }
+
+      // If not a default page, try to load from server
       const response = await fetch(`http://localhost:3001/api/pages/${filename}`)
       const result = await response.json()
       
       if (result.success) {
         setCurrentData(result.data)
-        const pageId = filename.replace('.json', '')
         setCurrentPage(pageId)
         
         // Find the page name from the pages list
@@ -60,10 +210,12 @@ export const usePageManagement = () => {
         }
         
         setShowPageManager(false)
+        return result.data // Return the data for Events page to use
       }
     } catch (error) {
       console.error('Error loading page:', error)
     }
+    return null // Return null if loading fails
   }
 
   // Function to create a new page
@@ -87,6 +239,9 @@ export const usePageManagement = () => {
   // Function to confirm new page creation
   const confirmNewPage = (pageName: string) => {
     setCurrentPageName(pageName)
+    // Update the current page ID to use the sanitized page name
+    const sanitizedName = pageName.toLowerCase().replace(/[^a-z0-9]/g, '-')
+    setCurrentPage(`new-page-${sanitizedName}`)
     setShowPageNameDialog(false)
   }
 

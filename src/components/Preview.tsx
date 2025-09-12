@@ -7,6 +7,10 @@ interface PreviewProps {
 }
 
 const Preview: React.FC<PreviewProps> = ({ data }) => {
+  console.log('Preview - data:', data)
+  console.log('Preview - data.content:', data.content)
+  console.log('Preview - data.content?.length:', data.content?.length)
+  
   return (
     <div style={{ 
       height: '100%', 
@@ -27,12 +31,19 @@ const Preview: React.FC<PreviewProps> = ({ data }) => {
           </div>
         ) : (
           data.content?.map((item: any, index: number) => {
+            console.log('Preview - rendering item:', item)
             const Component = config.components[item.type as keyof typeof config.components]?.render
+            console.log('Preview - Component found:', Component)
             return Component ? (
               <div key={index}>
                 <Component {...item.props} />
               </div>
-            ) : null
+            ) : (
+              <div key={index} style={{ padding: '10px', border: '1px solid red', margin: '10px 0' }}>
+                <p>Component not found: {item.type}</p>
+                <pre>{JSON.stringify(item, null, 2)}</pre>
+              </div>
+            )
           })
         )}
       </div>

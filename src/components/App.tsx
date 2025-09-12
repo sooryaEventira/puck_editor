@@ -7,9 +7,12 @@ import { usePageManagement } from '../hooks/usePageManagement'
 import { usePublish } from '../hooks/usePublish'
 import { PageManager, PageNameDialog } from './page'
 import Preview from './Preview'
+import { GlobalNavbar } from './layout'
+import { EventsPage } from './pages'
 
 const App: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false)
+  const [currentView, setCurrentView] = useState<'editor' | 'events'>('editor')
   
   const {
     currentData,
@@ -41,6 +44,22 @@ const App: React.FC = () => {
   // Function to toggle preview mode
   const togglePreview = () => {
     setShowPreview(!showPreview)
+  }
+
+  // Navbar handlers
+  const handleCreateEvent = () => {
+    console.log('Navigate to /events')
+    setCurrentView('events')
+  }
+
+  const handleProfileClick = () => {
+    console.log('Profile clicked')
+    // TODO: Implement profile functionality
+    alert('Profile clicked - This would typically open a profile menu or navigate to profile page')
+  }
+
+  const handleBackToEditor = () => {
+    setCurrentView('editor')
   }
 
   // Function to force purple text color on all Puck elements
@@ -97,7 +116,99 @@ const App: React.FC = () => {
       }
     })
 
+    // Style Publish Button specifically
+    stylePublishButton()
+
     console.log('🎨 Styled', foundElements, 'Puck elements and', textElementsStyled, 'text elements')
+  }
+
+  // Function to style the Publish button specifically
+  const stylePublishButton = () => {
+    console.log('🎨 Looking for Publish button...')
+    
+    // Multiple selectors to find the publish button
+    const buttonSelectors = [
+      'button',
+      'button[type="submit"]',
+      '.puck__button',
+      '[data-puck-button]',
+      'button[data-testid="publish"]',
+      'button[aria-label*="Publish"]',
+      'button[title*="Publish"]',
+      '.puck__toolbar button',
+      '.puck__header button',
+      '.puck__actions button',
+      '.puck__footer button',
+      '[role="button"]',
+      '[type="button"]',
+      '[type="submit"]',
+      '*[class*="button"]',
+      '*[class*="Button"]',
+      '*[class*="btn"]',
+      '*[class*="Btn"]'
+    ]
+    
+    let publishButtonsStyled = 0
+    
+    buttonSelectors.forEach(selector => {
+      try {
+        const buttons = document.querySelectorAll(selector)
+        console.log(`🔍 Found ${buttons.length} elements with selector: ${selector}`)
+        
+        buttons.forEach(button => {
+          if (button instanceof HTMLElement) {
+            const buttonText = button.textContent?.trim().toLowerCase() || ''
+            const buttonClasses = button.className || ''
+            const buttonId = button.id || ''
+            
+            console.log('🔍 Button found:', {
+              element: button,
+              text: buttonText,
+              classes: buttonClasses,
+              id: buttonId,
+              type: button.getAttribute('type'),
+              role: button.getAttribute('role')
+            })
+            
+            // Check if this button contains "publish" text specifically
+            if (buttonText.includes('publish') || 
+                button.getAttribute('data-testid') === 'publish' ||
+                button.getAttribute('aria-label')?.toLowerCase().includes('publish') ||
+                button.getAttribute('title')?.toLowerCase().includes('publish')) {
+              
+              // Apply purple background and white text
+              button.style.backgroundColor = '#6f42c1'
+              button.style.setProperty('background-color', '#6f42c1', 'important')
+              button.style.color = 'white'
+              button.style.setProperty('color', 'white', 'important')
+              button.style.borderColor = '#6f42c1'
+              button.style.setProperty('border-color', '#6f42c1', 'important')
+              
+              // Force override any existing styles
+              button.setAttribute('style', button.getAttribute('style') + '; background-color: #6f42c1 !important; color: white !important; border-color: #6f42c1 !important;')
+              
+              // Style any child elements
+              const childElements = button.querySelectorAll('*')
+              childElements.forEach(child => {
+                if (child instanceof HTMLElement) {
+                  child.style.color = 'white'
+                  child.style.setProperty('color', 'white', 'important')
+                  child.style.backgroundColor = 'transparent'
+                  child.style.setProperty('background-color', 'transparent', 'important')
+                }
+              })
+              
+              publishButtonsStyled++
+              console.log('🎨 Styled Publish button:', button, 'Text:', buttonText)
+            }
+          }
+        })
+      } catch (e) {
+        console.log('❌ Error with selector:', selector, e)
+      }
+    })
+    
+    console.log('🎨 Styled', publishButtonsStyled, 'Publish buttons')
   }
 
   // Apply purple text when component mounts and when not in preview mode
@@ -133,8 +244,33 @@ const App: React.FC = () => {
     }
   }, [showPreview])
 
+  // Render Events Page
+  if (currentView === 'events') {
+    return (
+      <div style={{ height: '100vh' }}>
+        {/* Global Navbar */}
+        <GlobalNavbar 
+          onCreateEvent={handleCreateEvent}
+          onProfileClick={handleProfileClick}
+        />
+        
+        {/* Events Page Content */}
+        <div style={{ marginTop: '64px', height: 'calc(100vh - 64px)' }}>
+          <EventsPage onBackToEditor={handleBackToEditor} />
+        </div>
+      </div>
+    )
+  }
+
+  // Render Editor Page
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Global Navbar */}
+      <GlobalNavbar 
+        onCreateEvent={handleCreateEvent}
+        onProfileClick={handleProfileClick}
+      />
+      
       {/* Controls */}
       <div style={{ 
         padding: '10px 20px', 
@@ -143,7 +279,8 @@ const App: React.FC = () => {
         display: 'flex',
         gap: '10px',
         alignItems: 'center',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        marginTop: '64px' // Account for fixed navbar height
       }}>
         <button
           onClick={() => setShowPageManager(!showPageManager)}
@@ -207,17 +344,20 @@ const App: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div style={{ flex: 1, overflow: 'hidden', height: 'calc(100vh - 60px)' }}>
+      <div style={{ flex: 1, overflow: 'hidden', height: 'calc(100vh - 124px)' }}>
         {showPreview ? (
           <Preview data={currentData} />
         ) : (
-          <Puck 
-            key={currentPage} // Force re-render when page changes
-            config={config as any} 
-            data={currentData}
-            onPublish={handlePublish}
-            onChange={handleDataChange}
-          />
+          <>
+            {console.log('🎨 Rendering Puck with data:', currentData)}
+            <Puck 
+              key={currentPage} // Force re-render when page changes
+              config={config as any} 
+              data={currentData}
+              onPublish={handlePublish as any}
+              onChange={handleDataChange as any}
+            />
+          </>
         )}
       </div>
     </div>

@@ -34,6 +34,29 @@
       html body #root .puck ol {
         color: #6f42c1 !important;
       }
+      
+      /* Force ONLY Publish Button to be Purple with White Text */
+      .puck button[data-testid="publish"],
+      .puck button[aria-label*="Publish"],
+      .puck button[title*="Publish"],
+      html body #root .puck button[data-testid="publish"],
+      html body #root .puck button[aria-label*="Publish"],
+      html body #root .puck button[title*="Publish"] {
+        background-color: #6f42c1 !important;
+        color: white !important;
+        border-color: #6f42c1 !important;
+      }
+      
+      /* Override any existing button styles for publish button only */
+      .puck button[data-testid="publish"] *,
+      .puck button[aria-label*="Publish"] *,
+      .puck button[title*="Publish"] *,
+      html body #root .puck button[data-testid="publish"] *,
+      html body #root .puck button[aria-label*="Publish"] *,
+      html body #root .puck button[title*="Publish"] * {
+        color: white !important;
+        background-color: transparent !important;
+      }
     </style>
   </head>
   <body>

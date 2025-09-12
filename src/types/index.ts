@@ -128,6 +128,11 @@ export interface Page {
 
 export interface PageData {
   content: any[]
-  root: { props: any }
+  root: { 
+    [x: string]: any
+    readOnly?: { [x: string]: boolean | undefined; [x: number]: boolean | undefined } | undefined
+    props?: { [x: string]: any; [x: number]: any } | undefined
+    title?: string | undefined
+  }
   zones: any
 }

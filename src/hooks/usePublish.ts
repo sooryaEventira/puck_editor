@@ -1,21 +1,21 @@
 import { PageData } from '../types'
 
 export const usePublish = (
-  currentData: PageData,
-  setCurrentData: (data: PageData) => void,
+  currentData: any,
+  setCurrentData: (data: any) => void,
   currentPage: string,
   currentPageName: string,
   setCurrentPage: (page: string) => void,
   loadPages: () => Promise<void>
 ) => {
   // Function to handle publish and save JSON data directly to project
-  const handlePublish = async (data: PageData) => {
+  const handlePublish = async (data: any) => {
     try {
       const timestamp = new Date().toISOString().split('T')[0]
       
       // Create a unique filename based on page name
       let filename: string
-      if (currentPage === 'new-page') {
+      if (currentPage.startsWith('new-page')) {
         // For new pages, create filename from page name
         const sanitizedName = currentPageName.toLowerCase().replace(/[^a-z0-9]/g, '-')
         filename = `${sanitizedName}-${timestamp}.json`
@@ -48,7 +48,7 @@ export const usePublish = (
           await loadPages()
           
           // Update current page ID after saving
-          if (currentPage === 'new-page') {
+          if (currentPage.startsWith('new-page')) {
             const newPageId = filename.replace('.json', '')
             setCurrentPage(newPageId)
           }
@@ -97,7 +97,7 @@ The data has been saved directly to your project directory!`)
   }
 
   // Function to handle data changes
-  const handleDataChange = (data: PageData) => {
+  const handleDataChange = (data: any) => {
     setCurrentData(data)
   }
 
