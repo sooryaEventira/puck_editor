@@ -10,6 +10,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
   const [isWebpageMenuOpen, setIsWebpageMenuOpen] = useState(true)
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null)
   const [selectedPageData, setSelectedPageData] = useState<any>(null)
+  const [activeTab, setActiveTab] = useState<'edit' | 'settings'>('edit')
   
   const { pages, loadPage } = usePageManagement()
 
@@ -59,16 +60,8 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
               <style>
                 body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
                 .preview-container { max-width: 1200px; margin: 0 auto; }
-                .preview-header { 
-                  background: #f8f9fa; 
-                  padding: 20px; 
-                  border-radius: 8px; 
-                  margin-bottom: 20px;
-                  text-align: center;
-                }
                 .preview-content {
-                  border: 1px solid #dee2e6;
-                  border-radius: 8px;
+
                   padding: 20px;
                   background: white;
                 }
@@ -76,21 +69,35 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
             </head>
             <body>
               <div class="preview-container">
-                <div class="preview-header">
-                  <h1>${selectedPage?.name || 'Page Preview'}</h1>
-                  <p>Preview of your Puck page content</p>
-                </div>
                 <div class="preview-content">
-                  <p><strong>Page Title:</strong> ${selectedPageData.root?.props?.title || 'Untitled'}</p>
-                  <p><strong>Content Items:</strong> ${selectedPageData.content?.length || 0} components</p>
-                  <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
-                    <strong>Content Preview:</strong>
-                    ${selectedPageData.content?.map((item: any) => 
-                      `<div style="margin: 10px 0; padding: 10px; background: white; border-left: 3px solid #007bff;">
-                        <strong>${item.type}:</strong> ${item.props?.text || item.props?.title || item.props?.content || 'No content'}
-                      </div>`
-                    ).join('') || '<p>No content available</p>'}
-                  </div>
+                  ${selectedPageData.content?.map((item: any) => {
+                    // Render Heading components
+                    if (item.type === 'Heading') {
+                      const level = item.props?.level || 1
+                      const text = item.props?.text || ''
+                      const color = item.props?.color || '#333'
+                      const align = item.props?.align || 'left'
+                      const headingStyle = `margin: 16px 0; color: ${color}; font-weight: bold; text-align: ${align};`
+                      return `<h${level} style="${headingStyle}">${text}</h${level}>`
+                    }
+                    // Render Checkbox components
+                    if (item.type === 'Checkbox') {
+                      const label = item.props?.label || ''
+                      const checked = typeof item.props?.checked === 'string' ? item.props.checked === 'true' : Boolean(item.props?.checked)
+                      return `
+                        <div style="padding: 8px;  margin: 8px 0;">
+                          <label style="display: flex; align-items: center; cursor: pointer; margin: 0; font-size: 14px; color: #374151;">
+                            <input type="checkbox" ${checked ? 'checked' : ''} style="margin-right: 8px; width: 16px; height: 16px;" readonly />
+                            ${label}
+                          </label>
+                        </div>
+                      `
+                    }
+                    // Fallback for other components
+                    return `<div style="margin: 10px 0; padding: 10px; background: white; border-left: 3px solid #007bff;">
+                      <strong>${item.type}:</strong> ${item.props?.text || item.props?.title || item.props?.content || 'No content'}
+                    </div>`
+                  }).join('') || '<p>No content available</p>'}
                 </div>
               </div>
             </body>
@@ -102,7 +109,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
   }
 
   const sidebarStyle: React.CSSProperties = {
-    width: '300px',
+    width: '200px',
     backgroundColor: '#f8f9fa',
     borderRight: '1px solid #dee2e6',
     height: '100vh',
@@ -159,7 +166,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
       {/* Left Sidebar */}
       <div style={sidebarStyle}>
         <div style={{ padding: '0 20px 20px' }}>
-          {/* Removed Webpage Navigation title */}
+        
         </div>
 
         {/* Webpage Menu */}
@@ -212,18 +219,18 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
 
       {/* Right Content Area */}
       <div style={contentAreaStyle}>
-        {/* Header with View Webpage Button */}
+        {/* Header with Webpage Name and Tabs */}
         <div style={headerStyle}>
           <div>
             <h1 style={{ margin: 0, fontSize: '24px', color: '#333' }}>
-              {selectedPageData ? selectedPageData.root?.props?.title || 'Untitled Page' : 'Select a Page'}
+              {selectedPageId ? pages.find(p => p.id === selectedPageId)?.name || 'Untitled Page' : 'Select a Page'}
             </h1>
             <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '14px' }}>
-              {selectedPageId ? `Preview: ${pages.find(p => p.id === selectedPageId)?.name} Page` : 'Choose a webpage from the sidebar'}
+              {selectedPageId ? '' : 'Choose a webpage from the sidebar'}
             </p>
           </div>
           <div>
-            <button
+            {/* <button
               onClick={onBackToEditor}
               style={{
                 padding: '8px 16px',
@@ -237,7 +244,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
               }}
             >
               ← Back to Editor
-            </button>
+            </button> */}
             <button
               onClick={handleViewWebpage}
               disabled={!selectedPageData}
@@ -257,19 +264,121 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
           </div>
         </div>
 
-        {/* Page Preview Content */}
+        {/* Tabs */}
+        {selectedPageId && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: '1px solid #e9ecef',
+            backgroundColor: '#f8f9fa',
+            padding: '0 20px'
+          }}>
+            <div style={{ display: 'flex' }}>
+              <button
+                onClick={() => setActiveTab('edit')}
+                style={{
+                  padding: '12px 24px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: activeTab === 'edit' ? '#007bff' : '#6c757d',
+                  borderBottom: activeTab === 'edit' ? '2px solid #007bff' : '2px solid transparent',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: activeTab === 'edit' ? '600' : '400',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                ✏️ Edit
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                style={{
+                  padding: '12px 24px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: activeTab === 'settings' ? '#007bff' : '#6c757d',
+                  borderBottom: activeTab === 'settings' ? '2px solid #007bff' : '2px solid transparent',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: activeTab === 'settings' ? '600' : '400',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                ⚙️ Settings
+              </button>
+            </div>
+            <button
+              onClick={() => {
+                // Navigate to Puck editor with current page
+                if (onBackToEditor) {
+                  onBackToEditor();
+                }
+              }}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#218838'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#28a745'}
+            >
+              ➕ ADD
+            </button>
+          </div>
+        )}
+
+        {/* Tab Content */}
         <div style={{ flex: 1, overflow: 'hidden' }}>
           {selectedPageData ? (
             <div style={{ height: '100%', padding: '20px', backgroundColor: '#f8f9fa' }}>
-              <div style={{ 
-                backgroundColor: 'white', 
-                borderRadius: '8px', 
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                height: '100%',
-                overflow: 'auto'
-              }}>
-                <Preview data={selectedPageData} />
-              </div>
+              {activeTab === 'edit' ? (
+                <div style={{ 
+                  backgroundColor: 'white', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  height: '100%',
+                  overflow: 'auto'
+                }}>
+                  <Preview data={selectedPageData} />
+                </div>
+              ) : (
+                <div style={{ 
+                  backgroundColor: 'white', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  height: '100%',
+                  padding: '20px',
+                  overflow: 'auto'
+                }}>
+                  <h3 style={{ margin: '0 0 20px 0', color: '#333' }}>Page Settings</h3>
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#555' }}>
+                      Page Name
+                    </label>
+                    <input
+                      type="text"
+                      value={pages.find(p => p.id === selectedPageId)?.name || ''}
+                      readOnly
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        backgroundColor: '#f8f9fa',
+                        color: '#666'
+                      }}
+                    />
+                  </div>
+
+                </div>
+              )}
             </div>
           ) : (
             <div style={{

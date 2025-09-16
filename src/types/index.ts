@@ -1,7 +1,10 @@
+import React from 'react'
+
 // Type definitions for component props
 export interface HeadingProps {
   text: string
-  level?: 1 | 2 | 3 | 4
+  level?: 1 | 2 | 3 | 4 | 5 | 6
+  size?: 'XXXL' | 'XXL' | 'XL' | 'L' | 'M' | 'S' | 'XS'
   color?: string
   align?: 'left' | 'center' | 'right' | 'justify'
 }
@@ -43,6 +46,16 @@ export interface SpacerProps {
   height?: string
 }
 
+export interface CheckboxProps {
+  label: string
+  checked?: boolean | string
+  onChange?: (checked: boolean) => void
+  disabled?: boolean | string
+  size?: 'small' | 'medium' | 'large'
+  variant?: 'default' | 'primary' | 'success'
+}
+
+
 export interface ContainerProps {
   children?: React.ReactNode
   backgroundColor?: string
@@ -83,16 +96,27 @@ export interface PositionedElementProps {
   zIndex?: string
 }
 
+export interface HeroButton {
+  text: string
+  link: string
+  color: string
+  textColor: string
+  size: 'small' | 'medium' | 'large'
+}
+
 export interface HeroSectionProps {
   title: string
   subtitle?: string
-  buttonText?: string
-  buttonLink?: string
+  buttons?: HeroButton[]
   backgroundColor?: string
   textColor?: string
   backgroundImage?: string
   height?: string
   alignment?: 'left' | 'center' | 'right'
+  overlayOpacity?: number
+  titleSize?: string
+  subtitleSize?: string
+  buttonSpacing?: string
 }
 
 export interface SliderProps {
@@ -117,6 +141,60 @@ export interface ImageProps {
   showCaption?: boolean
   uploadedFile?: File | null
   uploadedImageUrl?: string
+}
+
+export interface TwoColumnContentProps {
+  leftTitle: string
+  leftContent: string
+  rightTitle: string
+  rightContent: string
+  showRightIcon?: boolean
+  backgroundColor?: string
+  textColor?: string
+  titleColor?: string
+  padding?: string
+  gap?: string
+  borderRadius?: string
+  borderColor?: string
+  borderWidth?: string
+}
+
+export interface SpeakerCardProps {
+  photo: string | React.ReactElement
+  uploadedImage: string | React.ReactElement
+  name: string | React.ReactElement
+  designation: string | React.ReactElement
+}
+
+export interface NavigationProps {
+  logo: string | React.ReactElement
+  logoText: string | React.ReactElement
+  menuItems: string | React.ReactElement
+  backgroundColor?: string
+  textColor?: string
+  logoColor?: string
+  linkColor?: string
+  hoverColor?: string
+  padding?: string
+  alignment?: 'left' | 'center' | 'right'
+}
+
+export interface HeroVideoProps {
+  videoUrl: string | React.ReactElement
+  title: string | React.ReactElement
+  subtitle: string | React.ReactElement
+  buttonText: string | React.ReactElement
+  buttonLink: string | React.ReactElement
+  backgroundColor?: string
+  textColor?: string
+  titleSize?: 'XXXL' | 'XXL' | 'XL' | 'L' | 'M' | 'S' | 'XS'
+  subtitleSize?: 'XL' | 'L' | 'M' | 'S' | 'XS'
+  buttonColor?: string
+  buttonTextColor?: string
+  buttonSize?: 'small' | 'medium' | 'large'
+  overlayOpacity?: number
+  alignment?: 'left' | 'center' | 'right'
+  height?: string
 }
 
 export interface Page {

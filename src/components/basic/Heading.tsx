@@ -1,12 +1,27 @@
 import React from 'react'
 import { HeadingProps } from '../../types'
 
-const Heading = ({ text, level = 1, color = '#333', align = 'left' }: HeadingProps) => {
+const Heading = ({ text, level = 1, size, color = '#333', align = 'left' }: HeadingProps) => {
+  // Size mapping
+  const getSizeValue = (size?: string) => {
+    switch (size) {
+      case 'XXXL': return '4rem'
+      case 'XXL': return '3.5rem'
+      case 'XL': return '3rem'
+      case 'L': return '2.5rem'
+      case 'M': return '2rem'
+      case 'S': return '1.5rem'
+      case 'XS': return '1.25rem'
+      default: return undefined // Use default browser sizing
+    }
+  }
+
   const headingStyle: React.CSSProperties = {
     margin: '16px 0',
     color: color,
     fontWeight: 'bold',
-    textAlign: align
+    textAlign: align,
+    fontSize: getSizeValue(size)
   }
   
   switch (level) {
@@ -14,6 +29,8 @@ const Heading = ({ text, level = 1, color = '#333', align = 'left' }: HeadingPro
     case 2: return <h2 style={headingStyle}>{text}</h2>
     case 3: return <h3 style={headingStyle}>{text}</h3>
     case 4: return <h4 style={headingStyle}>{text}</h4>
+    case 5: return <h5 style={headingStyle}>{text}</h5>
+    case 6: return <h6 style={headingStyle}>{text}</h6>
     default: return <h1 style={headingStyle}>{text}</h1>
   }
 }

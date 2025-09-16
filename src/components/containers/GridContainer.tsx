@@ -1,8 +1,10 @@
-import React from 'react'
 import { DropZone } from "@measured/puck"
 import { GridContainerProps } from '../../types'
 
 const GridContainer = ({ columns = 2, gap = '16px', rowGap = '16px' }: GridContainerProps) => {
+  // Create array of column indices
+  const columnIndices = Array.from({ length: columns }, (_, i) => i)
+  
   return (
     <div style={{
       display: 'grid',
@@ -16,7 +18,11 @@ const GridContainer = ({ columns = 2, gap = '16px', rowGap = '16px' }: GridConta
       border: '1px solid #e9ecef',
       minHeight: '100px'
     }}>
-      <DropZone zone="children" />
+      {columnIndices.map((index) => (
+        <div key={index} style={{ minHeight: '50px' }}>
+          <DropZone zone={`column-${index}`} />
+        </div>
+      ))}
     </div>
   )
 }

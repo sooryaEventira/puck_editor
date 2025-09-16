@@ -13,19 +13,30 @@ const defaultJsonData: any = {
         },
         content: [
           {
-            type: "HeadingBlock",
+            type: "Heading",
             props: {
-              title: "Edit this page by adding /edit to the end of the URL",
+              text: "Edit this page by adding /edit to the end of the URL",
+              level: 1,
               id: "HeadingBlock-1694032984497",
             },
           },
           {
-            type: "HeadingBlock",
+            type: "Heading",
             props: {
-              title: "Heading",
+              text: "Heading",
+              level: 2,
               id: "HeadingBlock-f201eaff-4358-4d47-ae34-8147d6f52384",
             },
           },
+          {
+            type: "Checkbox",
+            props: {
+              label: "I agree to terms",
+              checked: false,
+              id: "CheckboxBlock-001"
+            }
+          }
+          
         ],
         zones: {},
       },
@@ -41,23 +52,26 @@ const defaultJsonData: any = {
         },
         content: [
           {
-            type: "HeadingBlock",
+            type: "Heading",
             props: {
-              title: "secondpage",
+              text: "secondpage",
+              level: 1,
               id: "HeadingBlock-1694032984497",
             },
           },
           {
-            type: "HeadingBlock",
+            type: "Heading",
             props: {
-              title: "Second page",
+              text: "Second page",
+              level: 2,
               id: "HeadingBlock-f201eaff-4358-4d47-ae34-8147d6f52384",
             },
           },
           {
-            type: "HeadingBlock",
+            type: "Heading",
             props: {
-              title: "Second Page",
+              text: "Second Page",
+              level: 3,
               id: "HeadingBlock-255c9b3d-88be-4c5b-ace9-deeb71cb0c40",
             },
           },

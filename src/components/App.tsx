@@ -48,12 +48,12 @@ const App: React.FC = () => {
 
   // Navbar handlers
   const handleCreateEvent = () => {
-    console.log('Navigate to /events')
+
     setCurrentView('events')
   }
 
   const handleProfileClick = () => {
-    console.log('Profile clicked')
+  
     // TODO: Implement profile functionality
     alert('Profile clicked - This would typically open a profile menu or navigate to profile page')
   }
@@ -62,20 +62,16 @@ const App: React.FC = () => {
     setCurrentView('editor')
   }
 
-  // Function to force purple text color on all Puck elements
+  // Function to force black text color on all Puck elements
   const forcePurpleText = () => {
     const stylePurpleText = (element: HTMLElement) => {
-      element.style.color = '#6f42c1'
-      element.style.setProperty('color', '#6f42c1', 'important')
+      element.style.color = '#000000'
+      element.style.setProperty('color', '#000000', 'important')
       // Also try setting the computed style
-      element.style.cssText += 'color: #6f42c1 !important;'
+      element.style.cssText += 'color: #000000 !important;'
     }
 
-    // First, let's see what's actually in the DOM
-    console.log('🔍 Checking DOM structure...')
-    console.log('Root element:', document.getElementById('root'))
-    console.log('All elements with "puck" in class:', document.querySelectorAll('[class*="puck"]'))
-    console.log('All divs:', document.querySelectorAll('div'))
+    
     
     // Try different selectors to find Puck elements
     const possibleSelectors = [
@@ -92,7 +88,7 @@ const App: React.FC = () => {
     possibleSelectors.forEach(selector => {
       const elements = document.querySelectorAll(selector)
       if (elements.length > 0) {
-        console.log(`✅ Found ${elements.length} elements with selector: ${selector}`)
+      
         elements.forEach(element => {
           if (element instanceof HTMLElement) {
             stylePurpleText(element)
@@ -119,12 +115,12 @@ const App: React.FC = () => {
     // Style Publish Button specifically
     stylePublishButton()
 
-    console.log('🎨 Styled', foundElements, 'Puck elements and', textElementsStyled, 'text elements')
+   
   }
 
   // Function to style the Publish button specifically
   const stylePublishButton = () => {
-    console.log('🎨 Looking for Publish button...')
+
     
     // Multiple selectors to find the publish button
     const buttonSelectors = [
@@ -153,23 +149,13 @@ const App: React.FC = () => {
     buttonSelectors.forEach(selector => {
       try {
         const buttons = document.querySelectorAll(selector)
-        console.log(`🔍 Found ${buttons.length} elements with selector: ${selector}`)
+        
         
         buttons.forEach(button => {
           if (button instanceof HTMLElement) {
             const buttonText = button.textContent?.trim().toLowerCase() || ''
-            const buttonClasses = button.className || ''
-            const buttonId = button.id || ''
-            
-            console.log('🔍 Button found:', {
-              element: button,
-              text: buttonText,
-              classes: buttonClasses,
-              id: buttonId,
-              type: button.getAttribute('type'),
-              role: button.getAttribute('role')
-            })
-            
+
+
             // Check if this button contains "publish" text specifically
             if (buttonText.includes('publish') || 
                 button.getAttribute('data-testid') === 'publish' ||
@@ -199,16 +185,16 @@ const App: React.FC = () => {
               })
               
               publishButtonsStyled++
-              console.log('🎨 Styled Publish button:', button, 'Text:', buttonText)
+             
             }
           }
         })
       } catch (e) {
-        console.log('❌ Error with selector:', selector, e)
+      
       }
     })
     
-    console.log('🎨 Styled', publishButtonsStyled, 'Publish buttons')
+  
   }
 
   // Apply purple text when component mounts and when not in preview mode
@@ -349,7 +335,36 @@ const App: React.FC = () => {
           <Preview data={currentData} />
         ) : (
           <>
-            {console.log('🎨 Rendering Puck with data:', currentData)}
+            <style>
+              {`
+                /* Fix Puck sidebar scrolling */
+                .puck {
+                  height: 100% !important;
+                }
+                .puck__sidebar {
+                  height: 100% !important;
+                  overflow-y: auto !important;
+                  max-height: calc(100vh - 124px) !important;
+                }
+                .puck__sidebar-content {
+                  height: auto !important;
+                  min-height: 100% !important;
+                }
+                /* Ensure component list is scrollable */
+                [class*="puck__component-list"],
+                [class*="puck__components"],
+                [class*="puck__component-categories"] {
+                  max-height: none !important;
+                  overflow-y: auto !important;
+                }
+                /* Fix any nested scrollable areas */
+                .puck__sidebar [class*="scroll"],
+                .puck__sidebar [class*="overflow"] {
+                  overflow-y: auto !important;
+                  max-height: none !important;
+                }
+              `}
+            </style>
             <Puck 
               key={currentPage} // Force re-render when page changes
               config={config as any} 

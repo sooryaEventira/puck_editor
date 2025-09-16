@@ -1,0 +1,28 @@
+{
+  "root": {
+    "props": {}
+  },
+  "content": [
+    {
+      "type": "Heading",
+      "props": {
+        "text": "Heading",
+        "level": 1,
+        "color": "#333",
+        "align": "left",
+        "id": "Heading-3dda9641-d00c-44f0-a7c1-d88c68cab351"
+      }
+    },
+    {
+      "type": "Text",
+      "props": {
+        "text": "This is some sample text. You can edit this content using the Puck editor!",
+        "size": "16px",
+        "color": "#555",
+        "align": "left",
+        "id": "Text-fc6c943f-5062-4e00-8bdf-01726ebe33c6"
+      }
+    }
+  ],
+  "zones": {}
+}

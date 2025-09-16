@@ -1,0 +1,30 @@
+{
+  "root": {
+    "props": {
+      "title": "Puck + React Router 7 demo"
+    }
+  },
+  "content": [
+    {
+      "type": "Heading",
+      "props": {
+        "text": "Edit this page by adding /edit to the end of the URL",
+        "level": 1,
+        "color": "#333",
+        "align": "left"
+      },
+      "id": "Heading-0-1757934813192"
+    },
+    {
+      "type": "Heading",
+      "props": {
+        "text": "Heading",
+        "level": 1,
+        "color": "#333",
+        "align": "left"
+      },
+      "id": "Heading-1-1757934813192"
+    }
+  ],
+  "zones": {}
+}

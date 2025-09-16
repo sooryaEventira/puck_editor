@@ -1,11 +1,11 @@
 import { 
-  Heading, Text, Button, Card, List, Divider, Spacer 
+  Heading, Text, Button, Card, List, Divider, Spacer, Checkbox 
 } from '../components/basic'
 import { 
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import { 
-  HeroSection, Slider, Image 
+  HeroSection, HeroVideo, Slider, SpeakerCard, Navigation
 } from '../components/advanced'
 import ImageSimple from '../components/advanced/ImageSimple'
 
@@ -17,7 +17,7 @@ export const config = {
       title: "Basic Elements",
       icon: "fa-solid fa-font",
       defaultExpanded: true,
-      components: ["Heading", "Text", "Button", "Divider", "Spacer"],
+      components: ["Heading", "Text", "Button", "Checkbox", "Divider", "Spacer"],
       subcategories: {
         typography: {
           title: "Typography",
@@ -27,7 +27,7 @@ export const config = {
         interactive: {
           title: "Interactive",
           icon: "fa-solid fa-hand-pointer",
-          components: ["Button"]
+          components: ["Button", "Checkbox"]
         },
         spacing: {
           title: "Spacing",
@@ -89,7 +89,7 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "Slider", "Image"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "Navigation"],
       subcategories: {
         sections: {
           title: "Sections",
@@ -115,7 +115,22 @@ export const config = {
             { label: 'H1', value: 1 },
             { label: 'H2', value: 2 },
             { label: 'H3', value: 3 },
-            { label: 'H4', value: 4 }
+            { label: 'H4', value: 4 },
+            { label: 'H5', value: 5 },
+            { label: 'H6', value: 6 }
+          ]
+        },
+        size: {
+          type: 'select' as const,
+          label: 'Size',
+          options: [
+            { label: 'XXXL (4rem)', value: 'XXXL' },
+            { label: 'XXL (3.5rem)', value: 'XXL' },
+            { label: 'XL (3rem)', value: 'XL' },
+            { label: 'L (2.5rem)', value: 'L' },
+            { label: 'M (2rem)', value: 'M' },
+            { label: 'S (1.5rem)', value: 'S' },
+            { label: 'XS (1.25rem)', value: 'XS' }
           ]
         },
         color: { 
@@ -135,6 +150,7 @@ export const config = {
       defaultProps: {
         text: 'Heading',
         level: 1,
+        size: 'M' as const,
         color: '#333',
         align: 'left' as const
       },
@@ -295,6 +311,25 @@ export const config = {
       },
       render: Spacer
     },
+    Checkbox: {
+      label: "☑️ Checkbox",
+      fields: {
+        label: { type: "text", label: "Label" },
+        checked: { 
+          type: "radio", 
+          label: "State",
+          options: [
+            { label: "Unchecked", value: "false" },
+            { label: "Checked", value: "true" }
+          ]
+        },
+      },
+      defaultProps: {
+        label: "Check this option",
+        checked: "false"
+      },
+      render: Checkbox
+    },
     Container: {
       label: "📦 Container",
       fields: {
@@ -438,7 +473,12 @@ export const config = {
       },
       render: GridContainer,
       zones: {
-        children: ['Text', 'Button', 'Heading', 'Card'], // ✅ move allowed components here
+        'column-0': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer'],
+        'column-1': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer'],
+        'column-2': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer'],
+        'column-3': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer'],
+        'column-4': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer'],
+        'column-5': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer']
       },
     },
     SimpleContainer: {
@@ -494,13 +534,138 @@ export const config = {
     HeroSection: {
       label: "🪟 HeroSection",
       fields: {
-        title: { type: 'text' as const },
-        subtitle: { type: 'textarea' as const },
-        buttonText: { type: 'text' as const },
-        buttonLink: { type: 'text' as const },
-        backgroundColor: { type: 'text' as const },
+        title: { 
+          type: 'text' as const,
+          label: 'Event Title',
+          contentEditable: true
+        },
+        subtitle: { 
+          type: 'textarea' as const,
+          label: 'Location | Date',
+          contentEditable: true
+        },
+        buttons: {
+          type: 'array' as const,
+          label: 'Buttons',
+          arrayFields: {
+            text: { 
+              type: 'text' as const,
+              label: 'Button Text',
+              contentEditable: true
+            },
+            link: { 
+              type: 'text' as const,
+              label: 'Button Link (URL)'
+            },
+            color: { 
+              type: 'text' as const,
+              label: 'Button Color (hex code)'
+            },
+            textColor: {
+              type: 'select' as const,
+              label: 'Button Text Color',
+              options: [
+                { label: 'White', value: 'white' },
+                { label: 'Black', value: 'black' },
+                { label: 'Blue', value: '#007bff' },
+                { label: 'Green', value: '#28a745' },
+                { label: 'Red', value: '#dc3545' },
+                { label: 'Orange', value: '#fd7e14' },
+                { label: 'Yellow', value: '#ffc107' }
+              ]
+            },
+            size: {
+              type: 'select' as const,
+              label: 'Button Size',
+              options: [
+                { label: 'Small', value: 'small' },
+                { label: 'Medium', value: 'medium' },
+                { label: 'Large', value: 'large' }
+              ]
+            }
+          }
+        },
+        backgroundImage: { 
+          type: 'text' as const,
+          label: 'Background Image URL'
+        },
+        backgroundColor: { 
+          type: 'text' as const,
+          label: 'Background Color (fallback)'
+        },
         textColor: { 
           type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'White', value: 'white' },
+            { label: 'Black', value: 'black' },
+            { label: 'Blue', value: '#007bff' },
+            { label: 'Green', value: '#28a745' },
+            { label: 'Purple', value: '#8b5cf6' },
+            { label: 'Red', value: '#dc3545' },
+            { label: 'Orange', value: '#fd7e14' },
+            { label: 'Yellow', value: '#ffc107' }
+          ]
+        },
+        height: { 
+          type: 'select' as const,
+          label: 'Section Height',
+          options: [
+            { label: 'Small (300px)', value: '300px' },
+            { label: 'Medium (400px)', value: '400px' },
+            { label: 'Large (500px)', value: '500px' },
+            { label: 'Extra Large (600px)', value: '600px' },
+            { label: 'Full Screen (100vh)', value: '100vh' }
+          ]
+        },
+        alignment: {
+          type: 'select' as const,
+          label: 'Content Alignment',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
+          ]
+        },
+        overlayOpacity: {
+          type: 'select' as const,
+          label: 'Background Overlay Opacity',
+          options: [
+            { label: 'None (0)', value: 0 },
+            { label: 'Light (0.2)', value: 0.2 },
+            { label: 'Medium (0.4)', value: 0.4 },
+            { label: 'Dark (0.6)', value: 0.6 },
+            { label: 'Very Dark (0.8)', value: 0.8 }
+          ]
+        },
+        titleSize: {
+          type: 'select' as const,
+          label: 'Title Size',
+          options: [
+            { label: 'Small (2rem)', value: '2rem' },
+            { label: 'Medium (2.5rem)', value: '2.5rem' },
+            { label: 'Large (3rem)', value: '3rem' },
+            { label: 'Extra Large (3.5rem)', value: '3.5rem' },
+            { label: 'Huge (4rem)', value: '4rem' }
+          ]
+        },
+        subtitleSize: {
+          type: 'select' as const,
+          label: 'Subtitle Size',
+          options: [
+            { label: 'Small (1rem)', value: '1rem' },
+            { label: 'Medium (1.125rem)', value: '1.125rem' },
+            { label: 'Large (1.25rem)', value: '1.25rem' },
+            { label: 'Extra Large (1.5rem)', value: '1.5rem' }
+          ]
+        },
+        buttonColor: {
+          type: 'text' as const,
+          label: 'Button Color (hex code)'
+        },
+        buttonTextColor: {
+          type: 'select' as const,
+          label: 'Button Text Color',
           options: [
             { label: 'White', value: 'white' },
             { label: 'Black', value: 'black' },
@@ -508,35 +673,38 @@ export const config = {
             { label: 'Green', value: '#28a745' }
           ]
         },
-        backgroundImage: { type: 'text' as const },
-        height: { 
+        buttonSpacing: {
           type: 'select' as const,
+          label: 'Button Spacing',
           options: [
-            { label: 'Small (300px)', value: '300px' },
-            { label: 'Medium (400px)', value: '400px' },
-            { label: 'Large (500px)', value: '500px' },
-            { label: 'Extra Large (600px)', value: '600px' }
-          ]
-        },
-        alignment: {
-          type: 'select' as const,
-          options: [
-            { label: 'Left', value: 'left' },
-            { label: 'Center', value: 'center' },
-            { label: 'Right', value: 'right' }
+            { label: 'Small (8px)', value: '8px' },
+            { label: 'Medium (12px)', value: '12px' },
+            { label: 'Large (16px)', value: '16px' },
+            { label: 'Extra Large (24px)', value: '24px' }
           ]
         }
       },
       defaultProps: {
-        title: 'Welcome to Our Amazing Product',
-        subtitle: 'Discover the future of web development with our innovative solutions and cutting-edge technology.',
-        buttonText: 'Get Started',
-        buttonLink: '#',
-        backgroundColor: '#007bff',
+        title: 'Event Title',
+        subtitle: 'Location | Date',
+        buttons: [
+          {
+            text: 'Register Now',
+            link: '#register',
+            color: '#6938EF',
+            textColor: 'white',
+            size: 'large'
+          }
+        ],
+        backgroundColor: '#1a1a1a',
         textColor: 'white' as const,
-        backgroundImage: '',
-        height: '400px' as const,
-        alignment: 'center' as const
+        backgroundImage: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80',
+        height: '500px' as const,
+        alignment: 'center' as const,
+        overlayOpacity: 0.4,
+        titleSize: '3.5rem',
+        subtitleSize: '1.25rem',
+        buttonSpacing: '12px' as const
       },
       render: HeroSection
     },
@@ -563,20 +731,7 @@ export const config = {
             { label: 'Very Slow (8s)', value: 8000 }
           ]
         },
-        showDots: { 
-          type: 'radio' as const,
-          options: [
-            { label: 'Yes', value: true },
-            { label: 'No', value: false }
-          ]
-        },
-        showArrows: { 
-          type: 'radio' as const,
-          options: [
-            { label: 'Yes', value: true },
-            { label: 'No', value: false }
-          ]
-        },
+
         height: { 
           type: 'select' as const,
           options: [
@@ -670,13 +825,7 @@ export const config = {
             { label: 'Right', value: 'right' }
           ]
         },
-        showCaption: { 
-          type: 'radio' as const,
-          options: [
-            { label: 'Yes', value: true },
-            { label: 'No', value: false }
-          ]
-        },
+
         caption: { 
           type: 'text' as const,
           label: 'Image Caption'
@@ -694,6 +843,237 @@ export const config = {
         caption: ''
       },
       render: ImageSimple
+    },
+    SpeakerCard: {
+      label: "👤 Speaker Card",
+      fields: {
+        photo: {
+          type: 'text' as const,
+          label: 'Photo URL',
+          placeholder: 'https://example.com/photo.jpg',
+          contentEditable: true
+        },
+        uploadedImage: {
+          type: 'text' as const,
+          label: 'Uploaded Image (File Path)',
+          placeholder: 'File path will appear here after upload'
+        },
+        name: {
+          type: 'text' as const,
+          label: 'Name',
+          contentEditable: true
+        },
+        designation: {
+          type: 'text' as const,
+          label: 'Designation',
+          contentEditable: true
+        }
+      },
+      defaultProps: {
+        photo: 'https://picsum.photos/413/165?random=1',
+        uploadedImage: null,
+        name: 'Alex Thompson',
+        designation: 'Senior Developer'
+      },
+      render: SpeakerCard
+    },
+    Navigation: {
+      label: "🧭 Navigation",
+      fields: {
+        logo: {
+          type: 'text' as const,
+          label: 'Logo URL',
+          placeholder: 'https://example.com/logo.png',
+          contentEditable: true
+        },
+        logoText: {
+          type: 'text' as const,
+          label: 'Logo Text',
+          placeholder: 'Your Brand',
+          contentEditable: true
+        },
+        menuItems: {
+          type: 'text' as const,
+          label: 'Menu Items',
+          placeholder: 'About|/about,Speakers|/speakers,Schedule|/schedule,Information|/information,Contact|/contact,Register|/register',
+          contentEditable: true
+        },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color',
+          placeholder: '#ffffff'
+        },
+        textColor: {
+          type: 'text' as const,
+          label: 'Text Color',
+          placeholder: '#333333'
+        },
+        logoColor: {
+          type: 'text' as const,
+          label: 'Logo Color',
+          placeholder: '#333333'
+        },
+        linkColor: {
+          type: 'text' as const,
+          label: 'Link Color',
+          placeholder: '#333333'
+        },
+        hoverColor: {
+          type: 'text' as const,
+          label: 'Hover Color',
+          placeholder: '#007bff'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '1rem 2rem'
+        },
+        alignment: {
+          type: 'select' as const,
+          label: 'Alignment',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
+          ]
+        }
+      },
+      defaultProps: {
+        logo: 'https://via.placeholder.com/40x40/007bff/ffffff?text=L',
+        logoText: 'EventPro',
+        menuItems: 'About|/about,Speakers|/speakers,Schedule|/schedule,Information|/information,Contact|/contact,Register|/register',
+        backgroundColor: '#ffffff',
+        textColor: '#333333',
+        logoColor: '#333333',
+        linkColor: '#333333',
+        hoverColor: '#007bff',
+        padding: '1rem 2rem',
+        alignment: 'left'
+      },
+      render: Navigation
+    },
+    HeroVideo: {
+      label: "🎬 Hero Video",
+      fields: {
+        videoUrl: {
+          type: 'text' as const,
+          label: 'Video URL',
+          placeholder: 'https://example.com/video.mp4',
+          contentEditable: true
+        },
+        title: {
+          type: 'text' as const,
+          label: 'Title',
+          contentEditable: true
+        },
+        subtitle: {
+          type: 'text' as const,
+          label: 'Subtitle',
+          contentEditable: true
+        },
+        buttonText: {
+          type: 'text' as const,
+          label: 'Button Text',
+          contentEditable: true
+        },
+        buttonLink: {
+          type: 'text' as const,
+          label: 'Button Link',
+          placeholder: '/register',
+          contentEditable: true
+        },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color',
+          placeholder: '#000000'
+        },
+        textColor: {
+          type: 'text' as const,
+          label: 'Text Color',
+          placeholder: '#ffffff'
+        },
+        titleSize: {
+          type: 'select' as const,
+          label: 'Title Size',
+          options: [
+            { label: 'XXXL', value: 'XXXL' },
+            { label: 'XXL', value: 'XXL' },
+            { label: 'XL', value: 'XL' },
+            { label: 'L', value: 'L' },
+            { label: 'M', value: 'M' },
+            { label: 'S', value: 'S' },
+            { label: 'XS', value: 'XS' }
+          ]
+        },
+        subtitleSize: {
+          type: 'select' as const,
+          label: 'Subtitle Size',
+          options: [
+            { label: 'XL', value: 'XL' },
+            { label: 'L', value: 'L' },
+            { label: 'M', value: 'M' },
+            { label: 'S', value: 'S' },
+            { label: 'XS', value: 'XS' }
+          ]
+        },
+        buttonColor: {
+          type: 'text' as const,
+          label: 'Button Color',
+          placeholder: '#007bff'
+        },
+        buttonTextColor: {
+          type: 'text' as const,
+          label: 'Button Text Color',
+          placeholder: '#ffffff'
+        },
+        buttonSize: {
+          type: 'select' as const,
+          label: 'Button Size',
+          options: [
+            { label: 'Small', value: 'small' },
+            { label: 'Medium', value: 'medium' },
+            { label: 'Large', value: 'large' }
+          ]
+        },
+        overlayOpacity: {
+          type: 'text' as const,
+          label: 'Overlay Opacity',
+          placeholder: '0.4'
+        },
+        alignment: {
+          type: 'select' as const,
+          label: 'Text Alignment',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
+          ]
+        },
+        height: {
+          type: 'text' as const,
+          label: 'Height',
+          placeholder: '500px'
+        }
+      },
+      defaultProps: {
+        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        title: 'Welcome to Our Event',
+        subtitle: 'Join us for an amazing experience with industry leaders and innovative solutions',
+        buttonText: 'Register Now',
+        buttonLink: '/register',
+        backgroundColor: '#000000',
+        textColor: '#ffffff',
+        titleSize: 'XL',
+        subtitleSize: 'L',
+        buttonColor: '#007bff',
+        buttonTextColor: '#ffffff',
+        buttonSize: 'medium',
+        overlayOpacity: 0.4,
+        alignment: 'center',
+        height: '500px'
+      },
+      render: HeroVideo
     }
+
   }
 }

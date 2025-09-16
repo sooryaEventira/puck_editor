@@ -61,11 +61,7 @@ export const usePublish = (
 
 The data has been saved directly to your project directory!`)
           
-          console.log('=== PUCK PAGE DATA SAVED ===')
-          console.log('✅ Saved directly to project directory')
-          console.log('📁 Path:', result.path)
-          console.log('📊 Components:', result.components)
-          console.log('============================')
+
         } else {
           throw new Error(result.message || 'Failed to save via API')
         }
