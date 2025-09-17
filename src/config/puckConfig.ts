@@ -5,7 +5,7 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import { 
-  HeroSection, HeroVideo, Slider, SpeakerCard, Navigation
+  HeroSection, HeroVideo, Slider, SpeakerCard, Navigation, CountdownTimer
 } from '../components/advanced'
 import ImageSimple from '../components/advanced/ImageSimple'
 
@@ -89,17 +89,22 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "Navigation"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "Navigation", "CountdownTimer"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["HeroSection"]
+          components: ["HeroSection", "HeroVideo"]
         },
         media: {
           title: "Media",
           icon: "fa-solid fa-image",
           components: ["Image", "Slider"]
+        },
+        interactive: {
+          title: "Interactive",
+          icon: "fa-solid fa-hand-pointer",
+          components: ["SpeakerCard", "Navigation", "CountdownTimer"]
         }
       }
     }
@@ -951,6 +956,28 @@ export const config = {
         alignment: 'left'
       },
       render: Navigation
+    },
+    CountdownTimer: {
+      label: "⏰ Countdown Timer",
+      fields: {
+        heading: {
+          type: 'text' as const,
+          label: 'Heading',
+          placeholder: 'Abstract submission deadline in',
+          contentEditable: true
+        },
+        targetDate: {
+          type: 'text' as const,
+          label: 'Target Date & Time',
+          placeholder: '2024-12-31T23:59:59',
+          contentEditable: true
+        }
+      },
+      defaultProps: {
+        heading: 'Abstract submission deadline in',
+        targetDate: '2025-12-31T23:59:59'
+      },
+      render: CountdownTimer
     },
     HeroVideo: {
       label: "🎬 Hero Video",

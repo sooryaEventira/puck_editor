@@ -197,6 +197,11 @@ export interface HeroVideoProps {
   height?: string
 }
 
+export interface CountdownTimerProps {
+  heading: string | React.ReactElement
+  targetDate: string | React.ReactElement
+}
+
 export interface Page {
   id: string
   name: string
