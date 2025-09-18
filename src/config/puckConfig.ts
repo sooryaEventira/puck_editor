@@ -5,7 +5,7 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import { 
-  HeroSection, HeroVideo, Slider, SpeakerCard, Navigation, CountdownTimer, ProgressCircleStats
+  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, Navigation, CountdownTimer, ProgressCircleStats
 } from '../components/advanced'
 import ImageSimple from '../components/advanced/ImageSimple'
 
@@ -89,7 +89,7 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "Navigation", "CountdownTimer", "ProgressCircleStats"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "Navigation", "CountdownTimer", "ProgressCircleStats"],
       subcategories: {
         sections: {
           title: "Sections",
@@ -104,7 +104,7 @@ export const config = {
         interactive: {
           title: "Interactive",
           icon: "fa-solid fa-hand-pointer",
-          components: ["SpeakerCard", "Navigation", "CountdownTimer", "ProgressCircleStats"]
+          components: ["SpeakerCard", "SpeakersSection", "Navigation", "CountdownTimer", "ProgressCircleStats"]
         }
       }
     }
@@ -881,6 +881,68 @@ export const config = {
         designation: 'Senior Developer'
       },
       render: SpeakerCard
+    },
+    SpeakersSection: {
+      label: "👥 Speakers Section",
+      fields: {
+        speakers: {
+          type: 'array' as const,
+          label: 'Speakers',
+          arrayFields: {
+            name: {
+              type: 'text' as const,
+              label: 'Name'
+            },
+            title: {
+              type: 'text' as const,
+              label: 'Title/Position'
+            },
+            image: {
+              type: 'text' as const,
+              label: 'Image URL',
+              placeholder: 'https://example.com/photo.jpg'
+            }
+          }
+        },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color',
+          placeholder: '#ffffff'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '4rem 2rem'
+        },
+        gap: {
+          type: 'text' as const,
+          label: 'Gap Between Cards',
+          placeholder: '2rem'
+        }
+      },
+      defaultProps: {
+        speakers: [
+          {
+            name: 'Dr. Jane Doe',
+            title: 'Professor at X University',
+            image: 'https://picsum.photos/300/200?random=1'
+          },
+          {
+            name: 'Dr. John Smith',
+            title: 'Research Director',
+            image: 'https://picsum.photos/300/200?random=2'
+          },
+          {
+            name: 'Dr. Sarah Wilson',
+            title: 'Industry Expert',
+            image: 'https://picsum.photos/300/200?random=3'
+          }
+        ],
+        backgroundColor: '#ffffff',
+        padding: '4rem 2rem',
+        gap: '2rem'
+      },
+      render: SpeakersSection
     },
     Navigation: {
       label: "🧭 Navigation",
