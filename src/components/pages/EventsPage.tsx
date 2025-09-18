@@ -120,7 +120,6 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
   const contentAreaStyle: React.CSSProperties = {
     flex: 1,
     height: '100vh',
-    overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column'
   }
@@ -335,7 +334,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
         )}
 
         {/* Tab Content */}
-        <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div style={{ flex: 1 }}>
           {selectedPageData ? (
             <div style={{ height: '100%', padding: '20px', backgroundColor: '#f8f9fa' }}>
               {activeTab === 'edit' ? (

@@ -79,7 +79,7 @@ const defaultJsonData: any = {
         zones: {},
       },
     },
-  },
+  }
 }
 
 // Function to convert HeadingBlock to Heading for compatibility

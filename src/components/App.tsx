@@ -250,7 +250,7 @@ const App: React.FC = () => {
 
   // Render Editor Page
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Global Navbar */}
       <GlobalNavbar 
         onCreateEvent={handleCreateEvent}
@@ -330,7 +330,7 @@ const App: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div style={{ flex: 1, overflow: 'hidden', height: 'calc(100vh - 124px)' }}>
+      <div style={{ flex: 1, height: 'calc(100vh - 124px)' }}>
         {showPreview ? (
           <Preview data={currentData} />
         ) : (

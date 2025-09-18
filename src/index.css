@@ -53,29 +53,29 @@ body {
 /* Fix any container that might be preventing scrolling */
 .puck-container {
   height: 100vh !important;
-  overflow: hidden !important;
+  
 }
 
 .puck-layout {
   height: 100vh !important;
-  overflow: hidden !important;
+ 
 }
 
 /* Ensure the main content area doesn't interfere */
 .puck-main-content {
   height: 100vh !important;
-  overflow: hidden !important;
+  
 }
 
 /* Additional Puck scrolling fixes */
 .puck {
   height: 100% !important;
-  overflow: hidden !important;
+  
 }
 
 .puck__layout {
   height: 100% !important;
-  overflow: hidden !important;
+  
 }
 
 /* Fix component list scrolling */
@@ -99,6 +99,68 @@ body {
 .puck [role="tabpanel"] {
   overflow-y: auto !important;
   max-height: calc(100vh - 200px) !important;
+}
+
+/* Make the canvas area scrollable */
+.puck__canvas {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
+}
+
+.puck__canvas-content {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
+}
+
+/* Target the main canvas area specifically */
+[data-puck-canvas] {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
+}
+
+/* Target any canvas wrapper */
+.puck-canvas {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
+}
+
+/* Target the main content area where components are rendered */
+.puck__main {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
+}
+
+/* Target the preview area specifically */
+.puck__preview {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
+}
+
+/* Target any iframe or content area */
+.puck__iframe {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
+}
+
+/* Ensure the canvas area has proper scrolling */
+.puck-layout__main {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
+}
+
+/* Target the main content wrapper */
+.puck-content {
+  overflow-y: auto !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
 }
 
 
@@ -137,4 +199,6 @@ html body #root .puck button[title*="Publish"] {
   color: white !important;
   background-color: transparent !important;
 }
-
+._Sidebar--left_1xksb_8{
+padding-bottom: 250px!important;
+}
