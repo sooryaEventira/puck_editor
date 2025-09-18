@@ -202,6 +202,16 @@ export interface CountdownTimerProps {
   targetDate: string | React.ReactElement
 }
 
+export interface ProgressItem {
+  value: number
+  color: string
+  caption: string | React.ReactElement
+}
+
+export interface ProgressCircleStatsProps {
+  items: ProgressItem[]
+}
+
 export interface Page {
   id: string
   name: string

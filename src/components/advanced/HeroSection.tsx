@@ -157,11 +157,21 @@ const HeroSection = ({
     <div style={heroStyle}>
       {backgroundImage && <div style={overlayStyle} />}
       <div style={contentStyle}>
-        <h1 style={titleStyle}>
+        <h1 
+          style={titleStyle} 
+          data-puck-field="title"
+          contentEditable
+          suppressContentEditableWarning={true}
+        >
           {title}
         </h1>
         {subtitle && (
-          <p style={subtitleStyle}>
+          <p 
+            style={subtitleStyle} 
+            data-puck-field="subtitle"
+            contentEditable
+            suppressContentEditableWarning={true}
+          >
             {subtitle}
           </p>
         )}
@@ -182,6 +192,9 @@ const HeroSection = ({
                 href={button.link || '#'}
                 style={getButtonStyle(button)}
                 data-original-color={button.textColor}
+                data-puck-field={`buttons[${index}].text`}
+                contentEditable
+                suppressContentEditableWarning={true}
                 onMouseEnter={handleButtonHover}
                 onMouseLeave={handleButtonLeave}
                 onClick={(e) => handleButtonClick(e, button)}

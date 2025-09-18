@@ -159,6 +159,9 @@ const Navigation = ({
                 transition: 'color 0.3s ease',
                 cursor: 'pointer'
               }}
+              data-puck-field={`menuItems`}
+              contentEditable
+              suppressContentEditableWarning={true}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = hoverColor || '#007bff';
               }}
@@ -265,6 +268,9 @@ const Navigation = ({
               transition: 'background-color 0.3s ease',
               cursor: 'pointer'
             }}
+            data-puck-field={`menuItems`}
+            contentEditable
+            suppressContentEditableWarning={true}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)';
             }}

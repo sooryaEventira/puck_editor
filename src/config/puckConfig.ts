@@ -5,7 +5,7 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import { 
-  HeroSection, HeroVideo, Slider, SpeakerCard, Navigation, CountdownTimer
+  HeroSection, HeroVideo, Slider, SpeakerCard, Navigation, CountdownTimer, ProgressCircleStats
 } from '../components/advanced'
 import ImageSimple from '../components/advanced/ImageSimple'
 
@@ -89,7 +89,7 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "Navigation", "CountdownTimer"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "Navigation", "CountdownTimer", "ProgressCircleStats"],
       subcategories: {
         sections: {
           title: "Sections",
@@ -104,7 +104,7 @@ export const config = {
         interactive: {
           title: "Interactive",
           icon: "fa-solid fa-hand-pointer",
-          components: ["SpeakerCard", "Navigation", "CountdownTimer"]
+          components: ["SpeakerCard", "Navigation", "CountdownTimer", "ProgressCircleStats"]
         }
       }
     }
@@ -478,12 +478,12 @@ export const config = {
       },
       render: GridContainer,
       zones: {
-        'column-0': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer'],
-        'column-1': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer'],
-        'column-2': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer'],
-        'column-3': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer'],
-        'column-4': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer'],
-        'column-5': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer']
+        'column-0': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer', 'SpeakerCard'],
+        'column-1': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer', 'SpeakerCard'],
+        'column-2': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer', 'SpeakerCard'],
+        'column-3': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer', 'SpeakerCard'],
+        'column-4': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer', 'SpeakerCard'],
+        'column-5': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer', 'SpeakerCard']
       },
     },
     SimpleContainer: {
@@ -978,6 +978,74 @@ export const config = {
         targetDate: '2025-12-31T23:59:59'
       },
       render: CountdownTimer
+    },
+    ProgressCircleStats: {
+      label: "📊 Progress Circle Stats",
+      fields: {
+        item1Value: {
+          type: 'number' as const,
+          label: 'Item 1 - Percentage (0-100)',
+          min: 0,
+          max: 100
+        },
+        item1Color: {
+          type: 'text' as const,
+          label: 'Item 1 - Color',
+          placeholder: '#3b82f6'
+        },
+        item1Caption: {
+          type: 'text' as const,
+          label: 'Item 1 - Caption',
+          placeholder: 'Found the event useful for their professional career development.',
+          contentEditable: true
+        },
+        item2Value: {
+          type: 'number' as const,
+          label: 'Item 2 - Percentage (0-100)',
+          min: 0,
+          max: 100
+        },
+        item2Color: {
+          type: 'text' as const,
+          label: 'Item 2 - Color',
+          placeholder: '#10b981'
+        },
+        item2Caption: {
+          type: 'text' as const,
+          label: 'Item 2 - Caption',
+          placeholder: 'Reported that the congress met their educational goals and learning expectations.',
+          contentEditable: true
+        },
+        item3Value: {
+          type: 'number' as const,
+          label: 'Item 3 - Percentage (0-100)',
+          min: 0,
+          max: 100
+        },
+        item3Color: {
+          type: 'text' as const,
+          label: 'Item 3 - Color',
+          placeholder: '#f59e0b'
+        },
+        item3Caption: {
+          type: 'text' as const,
+          label: 'Item 3 - Caption',
+          placeholder: 'Agreed that the information presented was well-balanced and supported by scientific evidence.',
+          contentEditable: true
+        }
+      },
+      defaultProps: {
+        item1Value: 96.5,
+        item1Color: '#3b82f6',
+        item1Caption: 'Found the event useful for their professional career development.',
+        item2Value: 97.4,
+        item2Color: '#10b981',
+        item2Caption: 'Reported that the congress met their educational goals and learning expectations.',
+        item3Value: 99.3,
+        item3Color: '#f59e0b',
+        item3Caption: 'Agreed that the information presented was well-balanced and supported by scientific evidence.'
+      },
+      render: ProgressCircleStats
     },
     HeroVideo: {
       label: "🎬 Hero Video",

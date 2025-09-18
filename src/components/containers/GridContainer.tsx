@@ -1,7 +1,7 @@
 import { DropZone } from "@measured/puck"
 import { GridContainerProps } from '../../types'
 
-const GridContainer = ({ columns = 2, gap = '16px', rowGap = '16px' }: GridContainerProps) => {
+const GridContainer = ({ columns = 2, gap = '16px', rowGap = '16px', puck }: GridContainerProps & { puck?: any }) => {
   // Create array of column indices
   const columnIndices = Array.from({ length: columns }, (_, i) => i)
   
