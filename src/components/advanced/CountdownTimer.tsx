@@ -95,10 +95,11 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ heading, targetDate }) 
       alignItems: 'center',
       justifyContent: 'center',
       padding: '48px 24px',
-      background: 'linear-gradient(to bottom, #f9fafb, #ffffff)',
-      borderRadius: '16px',
-      boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-      minHeight: '300px'
+      backgroundColor: '#ffffff',
+      borderRadius: '20px',
+      boxShadow: '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.06)',
+      minHeight: '300px',
+      border: '1px solid #f1f5f9'
     }}>
       {/* Heading */}
       <h2 
@@ -106,13 +107,17 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ heading, targetDate }) 
         suppressContentEditableWarning={true}
         data-puck-field="heading"
         style={{
-          fontSize: '28px',
-          fontWeight: '600',
-          color: '#1f2937',
-          marginBottom: '32px',
+          fontSize: '32px',
+          fontWeight: '700',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          marginBottom: '40px',
           textAlign: 'center',
           cursor: 'text',
-          outline: 'none'
+          outline: 'none',
+          letterSpacing: '-0.02em'
         }}
       >
         {heading}
@@ -131,35 +136,40 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ heading, targetDate }) 
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          padding: '24px 20px',
-          minWidth: '80px',
-          transition: 'transform 0.2s ease',
-          cursor: 'pointer'
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
+          padding: '28px 24px',
+          minWidth: '90px',
+          transition: 'all 0.3s ease',
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)';
+          e.currentTarget.style.boxShadow = '0 12px 35px rgba(102, 126, 234, 0.4)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.transform = 'scale(1) translateY(0)';
+          e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
         }}>
           <div style={{
-            fontSize: '36px',
-            fontWeight: '800',
-            color: isExpired ? '#9ca3af' : '#111827',
-            lineHeight: '1'
+            fontSize: '42px',
+            fontWeight: '900',
+            color: '#ffffff',
+            lineHeight: '1',
+            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             {formatNumber(timeLeft.months)}
           </div>
           <div style={{
-            marginTop: '8px',
-            fontSize: '12px',
+            marginTop: '12px',
+            fontSize: '13px',
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            color: '#6b7280',
-            fontWeight: '500'
+            letterSpacing: '0.1em',
+            color: 'rgba(255,255,255,0.9)',
+            fontWeight: '600'
           }}>
             {timeLeft.months === 1 ? 'Month' : 'Months'}
           </div>
@@ -170,35 +180,40 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ heading, targetDate }) 
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          padding: '24px 20px',
-          minWidth: '80px',
-          transition: 'transform 0.2s ease',
-          cursor: 'pointer'
+          background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 25px rgba(240, 147, 251, 0.3)',
+          padding: '28px 24px',
+          minWidth: '90px',
+          transition: 'all 0.3s ease',
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)';
+          e.currentTarget.style.boxShadow = '0 12px 35px rgba(240, 147, 251, 0.4)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.transform = 'scale(1) translateY(0)';
+          e.currentTarget.style.boxShadow = '0 8px 25px rgba(240, 147, 251, 0.3)';
         }}>
           <div style={{
-            fontSize: '36px',
-            fontWeight: '800',
-            color: isExpired ? '#9ca3af' : '#111827',
-            lineHeight: '1'
+            fontSize: '42px',
+            fontWeight: '900',
+            color: '#ffffff',
+            lineHeight: '1',
+            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             {formatNumber(timeLeft.days)}
           </div>
           <div style={{
-            marginTop: '8px',
-            fontSize: '12px',
+            marginTop: '12px',
+            fontSize: '13px',
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            color: '#6b7280',
-            fontWeight: '500'
+            letterSpacing: '0.1em',
+            color: 'rgba(255,255,255,0.9)',
+            fontWeight: '600'
           }}>
             {timeLeft.days === 1 ? 'Day' : 'Days'}
           </div>
@@ -209,35 +224,40 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ heading, targetDate }) 
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          padding: '24px 20px',
-          minWidth: '80px',
-          transition: 'transform 0.2s ease',
-          cursor: 'pointer'
+          background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 25px rgba(79, 172, 254, 0.3)',
+          padding: '28px 24px',
+          minWidth: '90px',
+          transition: 'all 0.3s ease',
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)';
+          e.currentTarget.style.boxShadow = '0 12px 35px rgba(79, 172, 254, 0.4)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.transform = 'scale(1) translateY(0)';
+          e.currentTarget.style.boxShadow = '0 8px 25px rgba(79, 172, 254, 0.3)';
         }}>
           <div style={{
-            fontSize: '36px',
-            fontWeight: '800',
-            color: isExpired ? '#9ca3af' : '#111827',
-            lineHeight: '1'
+            fontSize: '42px',
+            fontWeight: '900',
+            color: '#ffffff',
+            lineHeight: '1',
+            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             {formatNumber(timeLeft.hours)}
           </div>
           <div style={{
-            marginTop: '8px',
-            fontSize: '12px',
+            marginTop: '12px',
+            fontSize: '13px',
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            color: '#6b7280',
-            fontWeight: '500'
+            letterSpacing: '0.1em',
+            color: 'rgba(255,255,255,0.9)',
+            fontWeight: '600'
           }}>
             {timeLeft.hours === 1 ? 'Hour' : 'Hours'}
           </div>
@@ -248,35 +268,40 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ heading, targetDate }) 
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          padding: '24px 20px',
-          minWidth: '80px',
-          transition: 'transform 0.2s ease',
-          cursor: 'pointer'
+          background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 25px rgba(67, 233, 123, 0.3)',
+          padding: '28px 24px',
+          minWidth: '90px',
+          transition: 'all 0.3s ease',
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)';
+          e.currentTarget.style.boxShadow = '0 12px 35px rgba(67, 233, 123, 0.4)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.transform = 'scale(1) translateY(0)';
+          e.currentTarget.style.boxShadow = '0 8px 25px rgba(67, 233, 123, 0.3)';
         }}>
           <div style={{
-            fontSize: '36px',
-            fontWeight: '800',
-            color: isExpired ? '#9ca3af' : '#111827',
-            lineHeight: '1'
+            fontSize: '42px',
+            fontWeight: '900',
+            color: '#ffffff',
+            lineHeight: '1',
+            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             {formatNumber(timeLeft.minutes)}
           </div>
           <div style={{
-            marginTop: '8px',
-            fontSize: '12px',
+            marginTop: '12px',
+            fontSize: '13px',
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            color: '#6b7280',
-            fontWeight: '500'
+            letterSpacing: '0.1em',
+            color: 'rgba(255,255,255,0.9)',
+            fontWeight: '600'
           }}>
             {timeLeft.minutes === 1 ? 'Minute' : 'Minutes'}
           </div>
@@ -287,35 +312,40 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ heading, targetDate }) 
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          padding: '24px 20px',
-          minWidth: '80px',
-          transition: 'transform 0.2s ease',
-          cursor: 'pointer'
+          background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 25px rgba(250, 112, 154, 0.3)',
+          padding: '28px 24px',
+          minWidth: '90px',
+          transition: 'all 0.3s ease',
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)';
+          e.currentTarget.style.boxShadow = '0 12px 35px rgba(250, 112, 154, 0.4)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.transform = 'scale(1) translateY(0)';
+          e.currentTarget.style.boxShadow = '0 8px 25px rgba(250, 112, 154, 0.3)';
         }}>
           <div style={{
-            fontSize: '36px',
-            fontWeight: '800',
-            color: isExpired ? '#9ca3af' : '#111827',
-            lineHeight: '1'
+            fontSize: '42px',
+            fontWeight: '900',
+            color: '#ffffff',
+            lineHeight: '1',
+            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             {formatNumber(timeLeft.seconds)}
           </div>
           <div style={{
-            marginTop: '8px',
-            fontSize: '12px',
+            marginTop: '12px',
+            fontSize: '13px',
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            color: '#6b7280',
-            fontWeight: '500'
+            letterSpacing: '0.1em',
+            color: 'rgba(255,255,255,0.9)',
+            fontWeight: '600'
           }}>
             {timeLeft.seconds === 1 ? 'Second' : 'Seconds'}
           </div>

@@ -4,8 +4,8 @@ import {
 import { 
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
-import { 
-  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, Navigation, CountdownTimer, ProgressCircleStats
+import {
+  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, ScheduleSection, AboutSection, PricingPlans, FAQSection, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent
 } from '../components/advanced'
 import ImageSimple from '../components/advanced/ImageSimple'
 
@@ -89,12 +89,12 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "Navigation", "CountdownTimer", "ProgressCircleStats"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["HeroSection", "HeroVideo"]
+          components: ["HeroSection", "HeroVideo", "AboutSection", "PricingPlans", "FAQSection", "HTMLContent"]
         },
         media: {
           title: "Media",
@@ -104,7 +104,7 @@ export const config = {
         interactive: {
           title: "Interactive",
           icon: "fa-solid fa-hand-pointer",
-          components: ["SpeakerCard", "SpeakersSection", "Navigation", "CountdownTimer", "ProgressCircleStats"]
+          components: ["SpeakerCard", "SpeakersSection", "ScheduleSection", "Navigation", "CountdownTimer", "ProgressCircleStats"]
         }
       }
     }
@@ -564,7 +564,8 @@ export const config = {
             },
             color: { 
               type: 'text' as const,
-              label: 'Button Color (hex code)'
+              label: 'Button Color (hex code)',
+              placeholder: '#6938EF'
             },
             textColor: {
               type: 'select' as const,
@@ -703,7 +704,7 @@ export const config = {
         ],
         backgroundColor: '#1a1a1a',
         textColor: 'white' as const,
-        backgroundImage: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80',
+        backgroundImage: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80',
         height: '500px' as const,
         alignment: 'center' as const,
         overlayOpacity: 0.4,
@@ -925,25 +926,409 @@ export const config = {
           {
             name: 'Dr. Jane Doe',
             title: 'Professor at X University',
-            image: 'https://picsum.photos/300/200?random=1'
+            image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face'
           },
           {
             name: 'Dr. John Smith',
             title: 'Research Director',
-            image: 'https://picsum.photos/300/200?random=2'
+            image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face'
           },
           {
             name: 'Dr. Sarah Wilson',
             title: 'Industry Expert',
-            image: 'https://picsum.photos/300/200?random=3'
+            image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face'
           }
         ],
         backgroundColor: '#ffffff',
-        padding: '4rem 2rem',
+        padding: '0 2rem',
         gap: '2rem'
       },
       render: SpeakersSection
     },
+    ScheduleSection: {
+      label: "📅 Schedule Section",
+      fields: {
+        sessions: {
+          type: 'array' as const,
+          label: 'Sessions',
+          arrayFields: {
+            title: {
+              type: 'text' as const,
+              label: 'Session Title'
+            },
+            time: {
+              type: 'text' as const,
+              label: 'Time (e.g., 08:00 AM - 09:00 AM)'
+            },
+            room: {
+              type: 'text' as const,
+              label: 'Room/Location'
+            },
+            mode: {
+              type: 'text' as const,
+              label: 'Mode (e.g., In-Person, Online)'
+            },
+            description: {
+              type: 'text' as const,
+              label: 'Description'
+            },
+            icon: {
+              type: 'text' as const,
+              label: 'Icon (emoji or image URL)',
+              placeholder: '🎯'
+            }
+          }
+        },
+        buttonText: {
+          type: 'text' as const,
+          label: 'Button Text',
+          placeholder: 'View Full Schedule',
+          contentEditable: true
+        },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color',
+          placeholder: '#f8f9fa'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '2rem'
+        },
+        gap: {
+          type: 'text' as const,
+          label: 'Gap Between Sessions',
+          placeholder: '1rem'
+        }
+      },
+      defaultProps: {
+        sessions: [
+          {
+            title: 'Welcome presentation',
+            time: '08:00 AM - 09:00 AM',
+            room: 'Room A',
+            mode: 'In-Person',
+            description: 'Brief overview and a warm welcome to all participants. This session will cover the agenda, housekeeping rules, and introduce the keynote speakers.',
+            icon: '🎯'
+          },
+          {
+            title: 'Poster presentation',
+            time: '08:00 AM - 09:00 AM',
+            room: 'Room B',
+            mode: 'In-Person',
+            description: 'Brief overview of posters and topics. Participants will have the opportunity to view research posters and interact with presenters.',
+            icon: '🎯'
+          },
+          {
+            title: 'Keynote Address',
+            time: '09:00 AM - 10:00 AM',
+            room: 'Main Hall',
+            mode: 'In-Person',
+            description: 'Inspirational keynote presentation by industry leaders covering the latest trends and future directions in the field.',
+            icon: '🎤'
+          },
+          {
+            title: 'Coffee Break',
+            time: '10:00 AM - 10:30 AM',
+            room: 'Lobby',
+            mode: 'In-Person',
+            description: 'Networking opportunity with refreshments and informal discussions.',
+            icon: '☕'
+          },
+          {
+            title: 'Panel Discussion',
+            time: '10:30 AM - 11:30 AM',
+            room: 'Main Hall',
+            mode: 'In-Person',
+            description: 'Expert panel discussion on current challenges and opportunities in the industry. Q&A session included.',
+            icon: '👥'
+          },
+         
+        ],
+        buttonText: 'View Full Schedule',
+        backgroundColor: '#f8f9fa',
+        padding: '2rem',
+        gap: '1rem'
+      },
+      render: ScheduleSection
+    },
+         AboutSection: {
+           label: "ℹ️ About Section",
+           fields: {
+             leftTitle: {
+               type: 'text' as const,
+               label: 'Left Column Title',
+               placeholder: 'Our Mission',
+               contentEditable: true
+             },
+             leftText: {
+               type: 'text' as const,
+               label: 'Left Column Text',
+               placeholder: 'We are dedicated to providing innovative solutions...',
+               contentEditable: true
+             },
+             rightTitle: {
+               type: 'text' as const,
+               label: 'Right Column Title',
+               placeholder: 'Our Vision',
+               contentEditable: true
+             },
+             rightText: {
+               type: 'text' as const,
+               label: 'Right Column Text',
+               placeholder: 'To be the leading provider of cutting-edge technology...',
+               contentEditable: true
+             },
+             backgroundColor: {
+               type: 'text' as const,
+               label: 'Background Color',
+               placeholder: '#ffffff'
+             },
+             textColor: {
+               type: 'text' as const,
+               label: 'Text Color',
+               placeholder: '#333333'
+             },
+             padding: {
+               type: 'text' as const,
+               label: 'Padding',
+               placeholder: '3rem 2rem'
+             }
+           },
+           defaultProps: {
+             leftTitle: 'Our Mission',
+             leftText: 'We are dedicated to providing innovative solutions that help our clients achieve their goals and drive success in their respective industries.',
+             rightTitle: 'Our Vision',
+             rightText: 'To be the leading provider of cutting-edge technology solutions, empowering businesses to thrive in the digital age.',
+             backgroundColor: '#ffffff',
+             textColor: '#333333',
+             padding: '3rem 2rem'
+           },
+           render: AboutSection
+         },
+         PricingPlans: {
+           label: "💰 Pricing Plans",
+           fields: {
+             plans: {
+               type: 'array' as const,
+               label: 'Pricing Plans',
+               arrayFields: {
+                 icon: {
+                   type: 'text' as const,
+                   label: 'Icon (emoji)',
+                   placeholder: '⚡'
+                 },
+                 title: {
+                   type: 'text' as const,
+                   label: 'Plan Title',
+                   placeholder: 'Basic plan',
+                   contentEditable: true
+                 },
+                 price: {
+                   type: 'text' as const,
+                   label: 'Price',
+                   placeholder: '$10',
+                   contentEditable: true
+                 },
+                 billingNote: {
+                   type: 'text' as const,
+                   label: 'Billing Note',
+                   placeholder: 'Billed annually.',
+                   contentEditable: true
+                 },
+                 features: {
+                   type: 'array' as const,
+                   label: 'Features',
+                   arrayFields: {
+                     feature: {
+                       type: 'text' as const,
+                       label: 'Feature',
+                       placeholder: 'Access to all basic features',
+                       contentEditable: true
+                     }
+                   }
+                 },
+                 buttonText: {
+                   type: 'text' as const,
+                   label: 'Button Text',
+                   placeholder: 'Get started',
+                   contentEditable: true
+                 }
+               }
+             },
+             backgroundColor: {
+               type: 'text' as const,
+               label: 'Background Color',
+               placeholder: '#f3e8ff'
+             },
+             padding: {
+               type: 'text' as const,
+               label: 'Padding',
+               placeholder: '6rem 2rem'
+             }
+           },
+           defaultProps: {
+             plans: [
+               {
+                 id: 'basic',
+                 icon: '⚡',
+                 title: 'Basic plan',
+                 price: '$10',
+                 billingNote: 'Billed annually.',
+                 features: [
+                   'Access to all basic features',
+                   'Basic reporting and analytics',
+                   'Up to 10 individual users',
+                   '20 GB individual data',
+                   'Basic chat and email support'
+                 ],
+                 buttonText: 'Get started'
+               },
+               {
+                 id: 'business',
+                 icon: '📊',
+                 title: 'Business plan',
+                 price: '$20',
+                 billingNote: 'Billed annually.',
+                 features: [
+                   '200+ integrations',
+                   'Advanced reporting and analytics',
+                   'Up to 20 individual users',
+                   '40 GB individual data',
+                   'Priority chat and email support'
+                 ],
+                 buttonText: 'Get started'
+               },
+               {
+                 id: 'enterprise',
+                 icon: '🏢',
+                 title: 'Enterprise plan',
+                 price: '$40',
+                 billingNote: 'Billed annually.',
+                 features: [
+                   'Advanced custom fields',
+                   'Audit log and data history',
+                   'Unlimited individual users',
+                   'Unlimited individual data',
+                   'Personalized + priority service'
+                 ],
+                 buttonText: 'Get started'
+               }
+             ],
+             backgroundColor: '#f3e8ff',
+             padding: '6rem 2rem'
+           },
+           render: PricingPlans
+         },
+         FAQSection: {
+           label: "❓ FAQ Section",
+           fields: {
+             title: {
+               type: 'text' as const,
+               label: 'Title',
+               placeholder: 'Frequently asked questions',
+               contentEditable: true
+             },
+             subtitle: {
+               type: 'text' as const,
+               label: 'Subtitle',
+               placeholder: 'Everything you need to know about the product and billing.',
+               contentEditable: true
+             },
+             faqs: {
+               type: 'array' as const,
+               label: 'FAQ Items',
+               arrayFields: {
+                 icon: {
+                   type: 'text' as const,
+                   label: 'Icon (emoji)',
+                   placeholder: '❤️'
+                 },
+                 question: {
+                   type: 'text' as const,
+                   label: 'Question',
+                   placeholder: 'Is there a free trial available?',
+                   contentEditable: true
+                 },
+                 answer: {
+                   type: 'textarea' as const,
+                   label: 'Answer',
+                   placeholder: 'Yes, you can try us for free for 30 days...',
+                   contentEditable: true
+                 }
+               }
+             },
+             ctaText: {
+               type: 'text' as const,
+               label: 'Call to Action Text',
+               placeholder: 'Still have questions? Can\'t find the answer you\'re looking for? Please chat to our friendly team.',
+               contentEditable: true
+             },
+             buttonText: {
+               type: 'text' as const,
+               label: 'Button Text',
+               placeholder: 'Get in touch',
+               contentEditable: true
+             },
+             backgroundColor: {
+               type: 'text' as const,
+               label: 'Background Color',
+               placeholder: '#f8fafc'
+             },
+             padding: {
+               type: 'text' as const,
+               label: 'Padding',
+               placeholder: '6rem 2rem'
+             }
+           },
+           defaultProps: {
+             title: 'Frequently asked questions',
+             subtitle: 'Everything you need to know about the product and billing.',
+             faqs: [
+               {
+                 id: '1',
+                 icon: '❤️',
+                 question: 'Is there a free trial available?',
+                 answer: 'Yes, you can try us for free for 30 days. If you want, we\'ll provide you with a free, personalized 30-minute onboarding call to get you up and running as soon as possible.'
+               },
+               {
+                 id: '2',
+                 icon: '🔄',
+                 question: 'Can I change my plan later?',
+                 answer: 'Of course. Our pricing scales with your company. Chat to our friendly team to find a solution that works for you.'
+               },
+               {
+                 id: '3',
+                 icon: '🚫',
+                 question: 'What is your cancellation policy?',
+                 answer: 'We understand that things change. You can cancel your plan at any time and we\'ll refund you the difference already paid.'
+               },
+               {
+                 id: '4',
+                 icon: '📄',
+                 question: 'Can other info be added to an invoice?',
+                 answer: 'Absolutely. You can add any additional information you need to your invoices, including custom fields and notes.'
+               },
+               {
+                 id: '5',
+                 icon: '⚡',
+                 question: 'How does billing work?',
+                 answer: 'We offer flexible billing options. You can choose monthly or annual billing, and we accept all major credit cards and payment methods.'
+               },
+               {
+                 id: '6',
+                 icon: '✉️',
+                 question: 'How do I change my account email?',
+                 answer: 'You can update your account email anytime from your account settings. We\'ll send a confirmation email to verify the change.'
+               }
+             ],
+             ctaText: 'Still have questions? Can\'t find the answer you\'re looking for? Please chat to our friendly team.',
+             buttonText: 'Get in touch',
+             backgroundColor: '#f8fafc',
+             padding: '6rem 2rem'
+           },
+           render: FAQSection
+         },
     Navigation: {
       label: "🧭 Navigation",
       fields: {
@@ -1230,6 +1615,21 @@ export const config = {
         height: '500px'
       },
       render: HeroVideo
+    },
+    HTMLContent: {
+      label: "🌐 HTML Content",
+      fields: {
+        htmlContent: {
+          type: 'textarea' as const,
+          label: 'HTML Content',
+          placeholder: '<div>Enter your HTML content here...</div>',
+          rows: 10
+        }
+      },
+      defaultProps: {
+        htmlContent: '<div style="padding: 2rem; text-align: center; background: #f8f9fa; border-radius: 8px;"><h2>HTML Content</h2><p>Add your custom HTML content here.</p></div>'
+      },
+      render: HTMLContent
     }
 
   }

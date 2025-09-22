@@ -136,7 +136,8 @@ const ProgressCircleStats: React.FC<ProgressCircleStatsProps> = ({
         alignItems: 'center',
         gap: '16px',
         minWidth: '200px',
-        maxWidth: '200px'
+        maxWidth: '200px',
+        backgroundColor: 'transparent'
       }}>
         {/* SVG Circle */}
         <div style={{ position: 'relative', width: '128px', height: '128px' }}>

@@ -169,6 +169,12 @@ body {
   color: #000000 !important;
 }
 
+/* Override for HeroSection title and subtitle to be white */
+h1[data-puck-field="title"],
+p[data-puck-field="subtitle"] {
+  color: #FFFFFF !important;
+}
+
 
 /* Override any existing button styles for publish button only */
 .puck button[data-testid="publish"] *,

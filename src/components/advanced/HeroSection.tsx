@@ -15,7 +15,7 @@ const HeroSection = ({
     }
   ],
   backgroundColor = '#1a1a1a', 
-  textColor = 'white',
+  textColor = '#FFFFFF',
   backgroundImage = '',
   height = '500px',
   alignment = 'center',
@@ -73,7 +73,7 @@ const HeroSection = ({
     fontSize: titleSize,
     fontWeight: 'bold',
     lineHeight: '1.1',
-    color: textColor,
+    color: '#FFFFFF',
     textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
   }
 
@@ -81,7 +81,7 @@ const HeroSection = ({
     margin: '0 0 30px 0',
     fontSize: subtitleSize,
     opacity: 0.95,
-    color: textColor,
+    color: '#FFFFFF',
     textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
     lineHeight: '1.4'
   }
@@ -105,18 +105,18 @@ const HeroSection = ({
   }
 
   const getButtonStyle = (button: HeroButton): React.CSSProperties => ({
-    backgroundColor: button.color,
-    color: button.textColor,
-    padding: getButtonPadding(button.size),
-    border: button.color === 'transparent' ? `2px solid ${button.textColor}` : 'none',
+    backgroundColor: button.color || '#6938EF',
+    color: button.textColor || 'white',
+    padding: getButtonPadding(button.size || 'large'),
+    border: (button.color || '#6938EF') === 'transparent' ? `2px solid ${button.textColor || 'white'}` : 'none',
     borderRadius: '8px',
     cursor: 'pointer',
-    fontSize: getButtonFontSize(button.size),
+    fontSize: getButtonFontSize(button.size || 'large'),
     fontWeight: 'bold',
     textDecoration: 'none',
     display: 'inline-block',
     transition: 'all 0.3s ease',
-    boxShadow: button.color === 'transparent' ? 'none' : '0 4px 12px rgba(0,0,0,0.3)',
+    boxShadow: (button.color || '#6938EF') === 'transparent' ? 'none' : '0 4px 12px rgba(0,0,0,0.3)',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
     marginRight: buttonSpacing
