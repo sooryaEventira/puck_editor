@@ -10,6 +10,7 @@ const Preview: React.FC<PreviewProps> = ({ data }) => {
   console.log('Preview - data:', data)
   console.log('Preview - data.content:', data.content)
   console.log('Preview - data.content?.length:', data.content?.length)
+  console.log('Preview - data.zones:', data.zones)
   
   return (
     <div style={{ 
@@ -34,16 +35,28 @@ const Preview: React.FC<PreviewProps> = ({ data }) => {
             console.log('Preview - rendering item:', item)
             const Component = config.components[item.type as keyof typeof config.components]?.render
             console.log('Preview - Component found:', Component)
-            return Component ? (
-              <div key={index}>
-                <Component {...item.props} />
-              </div>
-            ) : (
-              <div key={index} style={{ padding: '10px', border: '1px solid red', margin: '10px 0' }}>
-                <p>Component not found: {item.type}</p>
-                <pre>{JSON.stringify(item, null, 2)}</pre>
-              </div>
-            )
+            
+            // Check if this component has zone content
+            const componentId = item.props?.id
+            const zoneContent = componentId && data.zones ? data.zones[componentId] : null
+            console.log('Preview - componentId:', componentId, 'zoneContent:', zoneContent)
+            
+            if (Component) {
+              // Pass zone content as props if it exists
+              const propsWithZones = zoneContent ? { ...item.props, ...zoneContent } : item.props
+              return (
+                <div key={index}>
+                  <Component {...propsWithZones} />
+                </div>
+              )
+            } else {
+              return (
+                <div key={index} style={{ padding: '10px', border: '1px solid red', margin: '10px 0' }}>
+                  <p>Component not found: {item.type}</p>
+                  <pre>{JSON.stringify(item, null, 2)}</pre>
+                </div>
+              )
+            }
           })
         )}
       </div>

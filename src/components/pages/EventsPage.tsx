@@ -34,6 +34,8 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
     try {
       const pageData = await loadPage(pageId)
       console.log('EventsPage - loaded page data:', pageData)
+      console.log('EventsPage - pageData type:', typeof pageData)
+      console.log('EventsPage - pageData content length:', pageData?.content?.length)
       setSelectedPageData(pageData)
     } catch (error) {
       console.error('Error loading page:', error)
@@ -378,6 +380,37 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
 
                 </div>
               )}
+            </div>
+          ) : selectedPageId ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: '#666',
+              fontSize: '18px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
+                <div>Failed to load page data</div>
+                <div style={{ fontSize: '14px', marginTop: '10px', color: '#999' }}>
+                  Check console for error details
+                </div>
+                <button 
+                  onClick={() => loadPageData(selectedPageId)}
+                  style={{
+                    marginTop: '20px',
+                    padding: '10px 20px',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Retry Loading
+                </button>
+              </div>
             </div>
           ) : (
             <div style={{

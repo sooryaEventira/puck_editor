@@ -16,7 +16,7 @@
         "hoverColor": "#007bff",
         "padding": "1rem 2rem",
         "alignment": "left",
-        "id": "Navigation-6502faa2-b5e1-48f9-afc2-b53269c165b1"
+        "id": "Navigation-9200180c-13fb-48e6-9f03-e27f0af76adf"
       }
     },
     {
@@ -42,7 +42,7 @@
         "titleSize": "3.5rem",
         "subtitleSize": "1.25rem",
         "buttonSpacing": "12px",
-        "id": "HeroSection-d2f77ced-0f87-4f9d-bf54-cf71520bdc62"
+        "id": "HeroSection-c229ef4d-ef7f-4355-a354-2fc4a0f2bb63"
       }
     },
     {
@@ -55,7 +55,59 @@
         "backgroundColor": "#ffffff",
         "textColor": "#333333",
         "padding": "3rem 2rem",
-        "id": "AboutSection-628cb463-427b-46bb-a9e7-937b43ce7974"
+        "id": "AboutSection-14102bd0-9f76-4ded-a8f0-b5fdb23955b8"
+      }
+    },
+    {
+      "type": "SpeakersSection",
+      "props": {
+        "speakers": [
+          {
+            "name": "Dr. Jane Doe",
+            "title": "Professor at X University",
+            "image": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face"
+          },
+          {
+            "name": "Dr. John Smith",
+            "title": "Research Director",
+            "image": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face"
+          },
+          {
+            "name": "Dr. Sarah Wilson",
+            "title": "Industry Expert",
+            "image": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face"
+          }
+        ],
+        "backgroundColor": "#ffffff",
+        "padding": "0 2rem",
+        "gap": "2rem",
+        "id": "SpeakersSection-4e6438e3-64ce-41fc-bfa5-00f5ff80ecd0"
+      }
+    },
+    {
+      "type": "SpeakersSection",
+      "props": {
+        "speakers": [
+          {
+            "name": "Dr. Jane Doe",
+            "title": "Professor at X University",
+            "image": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face"
+          },
+          {
+            "name": "Dr. John Smith",
+            "title": "Research Director",
+            "image": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face"
+          },
+          {
+            "name": "Dr. Sarah Wilson",
+            "title": "Industry Expert",
+            "image": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face"
+          }
+        ],
+        "backgroundColor": "#ffffff",
+        "padding": "0 2rem",
+        "gap": "2rem",
+        "id": "SpeakersSection-1eecf5d1-37a4-4815-9d27-f0aa8e42243a"
       }
     },
     {
@@ -63,7 +115,7 @@
       "props": {
         "heading": "Abstract submission deadline in",
         "targetDate": "2025-12-31T23:59:59",
-        "id": "CountdownTimer-891df848-8270-4fb4-8b98-eb2f5a5bf346"
+        "id": "CountdownTimer-001e4894-8b6f-4de2-88e8-9ce489558eba"
       }
     },
     {
@@ -115,7 +167,22 @@
         "backgroundColor": "#f8f9fa",
         "padding": "2rem",
         "gap": "1rem",
-        "id": "ScheduleSection-179f33a0-d13e-4744-a938-c396524fa36f"
+        "id": "ScheduleSection-39d5451d-6382-47e1-af3b-e7d970349e39"
+      }
+    },
+    {
+      "type": "ProgressCircleStats",
+      "props": {
+        "item1Value": 96.5,
+        "item1Color": "#3b82f6",
+        "item1Caption": "Found the event useful for their professional career development.",
+        "item2Value": 97.4,
+        "item2Color": "#10b981",
+        "item2Caption": "Reported that the congress met their educational goals and learning expectations.",
+        "item3Value": 99.3,
+        "item3Color": "#f59e0b",
+        "item3Caption": "Agreed that the information presented was well-balanced and supported by scientific evidence.",
+        "id": "ProgressCircleStats-69984b52-7508-437d-b2f9-b3b65094026c"
       }
     },
     {
@@ -170,22 +237,7 @@
         ],
         "backgroundColor": "#f3e8ff",
         "padding": "6rem 2rem",
-        "id": "PricingPlans-bbc83760-0d15-45d1-b53c-96ffd0e089db"
-      }
-    },
-    {
-      "type": "ProgressCircleStats",
-      "props": {
-        "item1Value": 96.5,
-        "item1Color": "#3b82f6",
-        "item1Caption": "Found the event useful for their professional career development.",
-        "item2Value": 97.4,
-        "item2Color": "#10b981",
-        "item2Caption": "Reported that the congress met their educational goals and learning expectations.",
-        "item3Value": 99.3,
-        "item3Color": "#f59e0b",
-        "item3Caption": "Agreed that the information presented was well-balanced and supported by scientific evidence.",
-        "id": "ProgressCircleStats-756b5fca-7d1d-4b67-acd7-62e5c042cfe8"
+        "id": "PricingPlans-64ed5d1f-31eb-4665-babe-1f5f2a0e546b"
       }
     },
     {
@@ -235,7 +287,18 @@
         "buttonText": "Get in touch",
         "backgroundColor": "#f8fafc",
         "padding": "6rem 2rem",
-        "id": "FAQSection-026ccd80-43eb-4f1d-a8b9-8f45ed098ba8"
+        "id": "FAQSection-2e820cf4-d9c4-4bb6-af6a-7bc9953ace02"
+      }
+    },
+    {
+      "type": "FeedbackForm",
+      "props": {
+        "title": "Customer Feedback",
+        "subtitle": "We value your opinion! Please take a moment to share your thoughts about our event.",
+        "backgroundColor": "#ffffff",
+        "textColor": "#333333",
+        "padding": "2rem",
+        "id": "FeedbackForm-3dd420ad-6413-4f60-b45b-92c2b44153bd"
       }
     }
   ],

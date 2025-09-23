@@ -7,6 +7,7 @@ import {
 import {
   HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, ScheduleSection, AboutSection, PricingPlans, FAQSection, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent
 } from '../components/advanced'
+import FeedbackForm from '../components/advanced/FeedbackForm'
 import ImageSimple from '../components/advanced/ImageSimple'
 
 // Enhanced config with multiple components, categories, and icons
@@ -89,12 +90,12 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["HeroSection", "HeroVideo", "AboutSection", "PricingPlans", "FAQSection", "HTMLContent"]
+          components: ["HeroSection", "HeroVideo", "AboutSection", "PricingPlans", "FAQSection", "HTMLContent", "FeedbackForm"]
         },
         media: {
           title: "Media",
@@ -1327,8 +1328,53 @@ export const config = {
              backgroundColor: '#f8fafc',
              padding: '6rem 2rem'
            },
-           render: FAQSection
-         },
+          render: FAQSection
+        },
+    FeedbackForm: {
+      label: "📝 Feedback Form",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Form Title',
+          placeholder: 'Customer Feedback',
+          contentEditable: true
+        },
+        subtitle: {
+          type: 'text' as const,
+          label: 'Form Subtitle',
+          placeholder: 'We value your opinion! Please take a moment to share your thoughts about our event.',
+          contentEditable: true
+        },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color',
+          placeholder: '#ffffff'
+        },
+        textColor: {
+          type: 'text' as const,
+          label: 'Text Color',
+          placeholder: '#333333'
+        },
+        padding: {
+          type: 'select' as const,
+          label: 'Padding',
+          options: [
+            { label: 'Small (1rem)', value: '1rem' },
+            { label: 'Medium (2rem)', value: '2rem' },
+            { label: 'Large (3rem)', value: '3rem' },
+            { label: 'Extra Large (4rem)', value: '4rem' }
+          ]
+        }
+      },
+      defaultProps: {
+        title: 'Customer Feedback',
+        subtitle: 'We value your opinion! Please take a moment to share your thoughts about our event.',
+        backgroundColor: '#ffffff',
+        textColor: '#333333',
+        padding: '2rem'
+      },
+      render: FeedbackForm
+    },
     Navigation: {
       label: "🧭 Navigation",
       fields: {

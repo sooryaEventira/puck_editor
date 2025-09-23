@@ -16,9 +16,9 @@ export const usePublish = (
       // Create a unique filename based on page name
       let filename: string
       if (currentPage.startsWith('new-page')) {
-        // For new pages, create filename from page name
+        // For new pages, create filename from page name (no date suffix)
         const sanitizedName = currentPageName.toLowerCase().replace(/[^a-z0-9]/g, '-')
-        filename = `${sanitizedName}-${timestamp}.json`
+        filename = `${sanitizedName}.json`
       } else {
         // For existing pages, keep the same filename
         filename = `${currentPage}.json`

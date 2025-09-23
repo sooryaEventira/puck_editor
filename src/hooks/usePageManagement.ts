@@ -43,13 +43,13 @@ const defaultJsonData: any = {
     },
   },
   'simple-page': {
-    title: "Simple HTML Page",
+    title: "HTML Page",
     slug: "/simple-page",
     type: "html",
     data: {
       "/": {
         root: {
-          props: { title: "Simple HTML Page" },
+          props: { title: "HTML Page" },
         },
         content: [
           {
@@ -393,11 +393,14 @@ export const usePageManagement = () => {
 
   // Function to load a specific page
   const loadPage = async (filename: string) => {
+    console.log('loadPage called with filename:', filename)
     try {
       // First check if it's a default page
       const pageId = filename.replace('.json', '')
+      console.log('Checking default pages for pageId:', pageId)
       
       if (defaultJsonData[pageId]) {
+        console.log('Found in default pages:', pageId)
         const pageData = convertJsonToPuckData(defaultJsonData, pageId)
         setCurrentData(pageData)
         setCurrentPage(pageId)
@@ -408,6 +411,7 @@ export const usePageManagement = () => {
       
       // Also check if the filename is just the page ID (without .json)
       if (defaultJsonData[filename]) {
+        console.log('Found in default pages with filename:', filename)
         const pageData = convertJsonToPuckData(defaultJsonData, filename)
         setCurrentData(pageData)
         setCurrentPage(filename)
@@ -417,23 +421,35 @@ export const usePageManagement = () => {
       }
 
       // If not a default page, try to load from server
-      const response = await fetch(`http://localhost:3001/api/pages/${filename}`)
-      const result = await response.json()
+      // Ensure we're using the correct filename format
+      const serverFilename = filename.endsWith('.json') ? filename : `${filename}.json`
+      console.log('Loading from server:', `http://localhost:3001/api/pages/${serverFilename}`)
+      const response = await fetch(`http://localhost:3001/api/pages/${serverFilename}`)
+      console.log('Server response status:', response.status)
       
-      if (result.success) {
-        setCurrentData(result.data)
-        setCurrentPage(pageId)
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Server response data:', result)
         
-        // Find the page name from the pages list
-        const page = pages.find(p => p.filename === filename)
-        if (page) {
-          setCurrentPageName(page.name)
+        if (result.success) {
+          setCurrentData(result.data)
+          setCurrentPage(pageId)
+          
+          // Find the page name from the pages list
+          const page = pages.find(p => p.filename === serverFilename || p.filename === filename)
+          if (page) {
+            setCurrentPageName(page.name)
+          } else {
+            setCurrentPageName(pageId.replace('page-data-', '').replace(/-/g, ' '))
+          }
+          
+          setShowPageManager(false)
+          return result.data // Return the data for Events page to use
         } else {
-          setCurrentPageName(pageId.replace('page-data-', '').replace(/-/g, ' '))
+          console.error('Server returned error:', result.error)
         }
-        
-        setShowPageManager(false)
-        return result.data // Return the data for Events page to use
+      } else {
+        console.error('Server response not ok:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error loading page:', error)

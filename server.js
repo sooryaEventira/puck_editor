@@ -62,8 +62,7 @@ app.post('/api/save-page', (req, res) => {
     }
 
     // Generate filename if not provided
-    const timestamp = new Date().toISOString().split('T')[0];
-    const finalFilename = filename || `page-data-${timestamp}.json`;
+    const finalFilename = filename || `page.json`;
     
     // Ensure filename has .json extension
     const jsonFilename = finalFilename.endsWith('.json') ? finalFilename : `${finalFilename}.json`;
