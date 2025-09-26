@@ -6,14 +6,8 @@ const GridContainer = ({ columns = 2, gap = '16px', rowGap = '16px', puck, ...pr
   // Create array of column indices
   const columnIndices = Array.from({ length: columns }, (_, i) => i)
   
-  // Debug logging
-  console.log('GridContainer - puck:', !!puck)
-  console.log('GridContainer - props:', props)
-  console.log('GridContainer - props keys:', Object.keys(props))
-  
-  // Check if we're in preview mode (when puck is not available or zone content is passed)
-  const isPreviewMode = !puck || Object.keys(props).some(key => key.startsWith('column-'))
-  console.log('GridContainer - isPreviewMode:', isPreviewMode)
+  // Check if we have zone content in props (preview mode)
+  const hasZoneContent = Object.keys(props).some(key => key.startsWith('column-') && Array.isArray(props[key]))
   
   return (
     <div style={{
@@ -31,7 +25,7 @@ const GridContainer = ({ columns = 2, gap = '16px', rowGap = '16px', puck, ...pr
       {columnIndices.map((index) => {
         const zoneName = `column-${index}`
         
-        if (isPreviewMode) {
+        if (hasZoneContent) {
           // In preview mode, render zone content if available
           const zoneContent = props[zoneName] || []
           return (

@@ -332,7 +332,7 @@ const App: React.FC = () => {
       {/* Main Content */}
       <div style={{ flex: 1, height: 'calc(100vh - 124px)' }}>
         {showPreview ? (
-          <Preview data={currentData} />
+          <Preview data={currentData} isInteractive={true} onDataChange={setCurrentData} />
         ) : (
           <>
             <style>

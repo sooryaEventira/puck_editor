@@ -13,4 +13,6 @@ export { default as Navigation } from './Navigation'
 export { default as CountdownTimer } from './CountdownTimer'
 export { default as ProgressCircleStats } from './ProgressCircleStats'
 export { default as HTMLContent } from './HTMLContent'
+export { default as RegistrationForm } from './RegistrationForm'
+export { default as GoogleForm } from './GoogleForm'
 

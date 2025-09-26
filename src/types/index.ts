@@ -219,6 +219,21 @@ export interface Page {
   lastModified: string
 }
 
+export interface RegistrationFormProps {
+  title?: string
+  puck?: {
+    dragRef: (element: HTMLElement | null) => void;
+  };
+}
+
+export interface GoogleFormProps {
+  formUrl: string
+  height?: number
+  puck?: {
+    dragRef: (element: HTMLElement | null) => void;
+  };
+}
+
 export interface PageData {
   content: any[]
   root: { 

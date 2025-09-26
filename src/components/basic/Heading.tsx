@@ -1,7 +1,7 @@
 import React from 'react'
 import { HeadingProps } from '../../types'
 
-const Heading = ({ text, level = 1, size, color = '#333', align = 'left' }: HeadingProps) => {
+const Heading = ({ text, level = 1, size, color = '#333', align = 'left', puck }: HeadingProps) => {
   // Size mapping
   const getSizeValue = (size?: string) => {
     switch (size) {
@@ -25,13 +25,13 @@ const Heading = ({ text, level = 1, size, color = '#333', align = 'left' }: Head
   }
   
   switch (level) {
-    case 1: return <h1 style={headingStyle}>{text}</h1>
-    case 2: return <h2 style={headingStyle}>{text}</h2>
-    case 3: return <h3 style={headingStyle}>{text}</h3>
-    case 4: return <h4 style={headingStyle}>{text}</h4>
-    case 5: return <h5 style={headingStyle}>{text}</h5>
-    case 6: return <h6 style={headingStyle}>{text}</h6>
-    default: return <h1 style={headingStyle}>{text}</h1>
+    case 1: return <h1 ref={puck?.dragRef} style={headingStyle}>{text}</h1>
+    case 2: return <h2 ref={puck?.dragRef} style={headingStyle}>{text}</h2>
+    case 3: return <h3 ref={puck?.dragRef} style={headingStyle}>{text}</h3>
+    case 4: return <h4 ref={puck?.dragRef} style={headingStyle}>{text}</h4>
+    case 5: return <h5 ref={puck?.dragRef} style={headingStyle}>{text}</h5>
+    case 6: return <h6 ref={puck?.dragRef} style={headingStyle}>{text}</h6>
+    default: return <h1 ref={puck?.dragRef} style={headingStyle}>{text}</h1>
   }
 }
 

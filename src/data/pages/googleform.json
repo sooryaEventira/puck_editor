@@ -1,0 +1,59 @@
+{
+  "content": [
+    {
+      "type": "HeadingBlock",
+      "props": {
+        "title": "Heading",
+        "id": "HeadingBlock-b3bed35a-2e32-4632-8978-5130dd229e16"
+      }
+    },
+    {
+      "type": "GridLayout",
+      "props": {
+        "column-3": [
+          {
+            "type": "Text",
+            "props": {
+              "id": "Text-41cadedf-3f27-4454-9909-daad8d462d71",
+              "text": "Testing"
+            }
+          }
+        ],
+        "column-2": [],
+        "column-1": [],
+        "column-0": [
+          {
+            "type": "Text",
+            "props": {
+              "id": "Text-31176dae-da94-4a8e-b346-3ea5de278df9",
+              "text": "Testing"
+            }
+          }
+        ],
+        "numberOfColumns": 4,
+        "id": "GridLayout-58683ed1-3edd-4614-920d-f1360e45720b"
+      }
+    },
+    {
+      "type": "GoogleForm",
+      "props": {
+        "formUrl": "https://docs.google.com/forms/d/e/1FAIpQLScBIZc6q4yfDIujHpVnArjbgkktJ60pgIU6RtgSp4LwDFe4_A/viewform",
+        "height": 3250,
+        "id": "GoogleForm-8eb820cf-ef6c-4f0f-9e4f-67450abe3a5b"
+      }
+    },
+    {
+      "type": "HeadingBlock",
+      "props": {
+        "title": "Page1",
+        "id": "HeadingBlock-933caf4e-987e-4b8d-9fb1-7237efc736dd"
+      }
+    }
+  ],
+  "root": {
+    "props": {
+      "title": "Puck + React Router 7 demo"
+    }
+  },
+  "zones": {}
+}

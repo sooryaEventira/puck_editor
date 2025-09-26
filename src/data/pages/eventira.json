@@ -293,7 +293,7 @@
     {
       "type": "FeedbackForm",
       "props": {
-        "title": "Customer Feedback",
+        "title": "Attendee Feedback",
         "subtitle": "We value your opinion! Please take a moment to share your thoughts about our event.",
         "backgroundColor": "#ffffff",
         "textColor": "#333333",

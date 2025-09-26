@@ -1,3 +1,5 @@
+import React from 'react'
+import { DropZone } from "@measured/puck"
 import { 
   Heading, Text, Button, Card, List, Divider, Spacer, Checkbox 
 } from '../components/basic'
@@ -5,7 +7,7 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import {
-  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, ScheduleSection, AboutSection, PricingPlans, FAQSection, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent
+  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, ScheduleSection, AboutSection, PricingPlans, FAQSection, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm
 } from '../components/advanced'
 import FeedbackForm from '../components/advanced/FeedbackForm'
 import ImageSimple from '../components/advanced/ImageSimple'
@@ -18,12 +20,12 @@ export const config = {
       title: "Basic Elements",
       icon: "fa-solid fa-font",
       defaultExpanded: true,
-      components: ["Heading", "Text", "Button", "Checkbox", "Divider", "Spacer"],
+      components: ["Heading", "Text", "Button", "Checkbox", "Divider", "Spacer", "TextBlock"],
       subcategories: {
         typography: {
           title: "Typography",
           icon: "fa-solid fa-text-width",
-          components: ["Heading", "Text"]
+          components: ["Heading", "Text", "TextBlock"]
         },
         interactive: {
           title: "Interactive",
@@ -42,12 +44,12 @@ export const config = {
       title: "Layout & Containers",
       icon: "fa-solid fa-th-large",
       defaultExpanded: true,
-      components: ["Container", "FlexContainer", "GridContainer", "SimpleContainer", "PositionedElement"],
+      components: ["Container", "FlexContainer", "GridContainer", "SimpleContainer", "PositionedElement", "GridLayout"],
       subcategories: {
         containers: {
           title: "Containers",
           icon: "fa-solid fa-square",
-          components: ["Container", "SimpleContainer"]
+          components: ["Container", "SimpleContainer", "GridLayout"]
         },
         flexbox: {
           title: "Flexbox",
@@ -90,12 +92,12 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["HeroSection", "HeroVideo", "AboutSection", "PricingPlans", "FAQSection", "HTMLContent", "FeedbackForm"]
+          components: ["HeroSection", "HeroVideo", "AboutSection", "PricingPlans", "FAQSection", "HTMLContent", "FeedbackForm", "RegistrationForm"]
         },
         media: {
           title: "Media",
@@ -336,6 +338,15 @@ export const config = {
       },
       render: Checkbox
     },
+    TextBlock: {
+      fields: {
+        title: { type: "text" },
+      },
+      defaultProps: {
+        title: "Heading",
+      },
+      render: ({ title }: { title: string }) => React.createElement('div', { style: { padding: 64 } }, React.createElement('h1', null, title)),
+    },
     Container: {
       label: "📦 Container",
       fields: {
@@ -375,7 +386,10 @@ export const config = {
         gap: '16px'
       },
       render: Container,
-      acceptsChildren: true
+      acceptsChildren: true,
+      zones: {
+        children: ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer', 'Container', 'FlexContainer', 'GridContainer', 'SimpleContainer']
+      }
     },
     FlexContainer: {
       label: "↔️ FlexContainer",
@@ -436,7 +450,10 @@ export const config = {
         wrap: 'nowrap' as const
       },
       render: FlexContainer,
-      acceptsChildren: true
+      acceptsChildren: true,
+      zones: {
+        children: ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer', 'Container', 'FlexContainer', 'GridContainer', 'SimpleContainer']
+      }
     },
     
     GridContainer: {
@@ -478,6 +495,7 @@ export const config = {
         rowGap: '16px'
       },
       render: GridContainer,
+      acceptsChildren: true,
       zones: {
         'column-0': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer', 'SpeakerCard'],
         'column-1': ['Text', 'Button', 'Heading', 'Card', 'List', 'Checkbox', 'Divider', 'Spacer', 'SpeakerCard'],
@@ -536,6 +554,88 @@ export const config = {
       },
       render: PositionedElement,
       acceptsChildren: true
+    },
+    GridLayout: {
+      label: "🔲 Grid Layout",
+      description: "A multi-column layout with draggable components",
+      fields: {
+        numberOfColumns: {
+          type: "number",
+          label: "Number of Columns",
+          defaultValue: 2,
+          min: 1,
+          max: 4,
+        },
+        gap: {
+          type: 'select' as const,
+          options: [
+            { label: 'Small (8px)', value: '8px' },
+            { label: 'Medium (16px)', value: '16px' },
+            { label: 'Large (24px)', value: '24px' },
+            { label: 'Extra Large (32px)', value: '32px' }
+          ]
+        },
+        backgroundColor: { type: 'text' as const },
+        padding: { 
+          type: 'select' as const, 
+          options: [
+            { label: 'Small (10px)', value: '10px' },
+            { label: 'Medium (20px)', value: '20px' },
+            { label: 'Large (30px)', value: '30px' }
+          ]
+        }
+      },
+      defaultProps: {
+        numberOfColumns: 2,
+        gap: '16px',
+        backgroundColor: '#f8f9fa',
+        padding: '20px'
+      },
+      render: ({ numberOfColumns, gap, backgroundColor, padding, puck, ...props }: { numberOfColumns: number, gap: string, backgroundColor: string, padding: string, puck?: any, [key: string]: any }) => {
+        // Create array of column indices
+        const columnIndices = Array.from({ length: numberOfColumns }, (_, i) => i)
+        
+        // Check if we have zone content in props (preview mode)
+        const hasZoneContent = Object.keys(props).some(key => key.startsWith('column-') && Array.isArray(props[key]))
+        
+        return React.createElement('div', {
+          style: {
+            display: "grid",
+            gridTemplateColumns: `repeat(${numberOfColumns}, 1fr)`,
+            gap: gap,
+            padding: padding,
+            backgroundColor: backgroundColor,
+            borderRadius: 8,
+            minHeight: "200px",
+            border: '1px solid #e9ecef'
+          }
+        }, columnIndices.map((index) => {
+          const zoneName = `column-${index}`
+          
+          if (hasZoneContent) {
+            // In preview mode, render zone content if available
+            const zoneContent = props[zoneName] || []
+            return React.createElement('div', { key: index, style: { minHeight: '50px' } }, 
+              Array.isArray(zoneContent) ? zoneContent.map((item: any, itemIndex: number) => {
+                const Component = config.components[item.type as keyof typeof config.components]?.render
+                return Component ? React.createElement(Component as any, { key: itemIndex, ...item.props }) : null
+              }) : null
+            )
+          } else {
+            // In editor mode, use DropZone
+            return React.createElement('div', { key: index, style: { minHeight: '50px' } }, 
+              React.createElement(DropZone, { zone: zoneName })
+            )
+          }
+        }));
+      },
+      acceptsChildren: true,
+      zones: {
+        'column-0': ['TextBlock', 'Text', 'Button', 'Heading', 'Card'],
+        'column-1': ['TextBlock', 'Text', 'Button', 'Heading', 'Card'],
+        'column-2': ['TextBlock', 'Text', 'Button', 'Heading', 'Card'],
+        'column-3': ['TextBlock', 'Text', 'Button', 'Heading', 'Card']
+      },
     },
     HeroSection: {
       label: "🪟 HeroSection",
@@ -877,7 +977,7 @@ export const config = {
         }
       },
       defaultProps: {
-        photo: 'https://picsum.photos/413/165?random=1',
+        photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face',
         uploadedImage: null,
         name: 'Alex Thompson',
         designation: 'Senior Developer'
@@ -1336,7 +1436,7 @@ export const config = {
         title: {
           type: 'text' as const,
           label: 'Form Title',
-          placeholder: 'Customer Feedback',
+          placeholder: 'attendee Feedback',
           contentEditable: true
         },
         subtitle: {
@@ -1367,7 +1467,7 @@ export const config = {
         }
       },
       defaultProps: {
-        title: 'Customer Feedback',
+        title: 'Attendee Feedback',
         subtitle: 'We value your opinion! Please take a moment to share your thoughts about our event.',
         backgroundColor: '#ffffff',
         textColor: '#333333',
@@ -1676,6 +1776,40 @@ export const config = {
         htmlContent: '<div style="padding: 2rem; text-align: center; background: #f8f9fa; border-radius: 8px;"><h2>HTML Content</h2><p>Add your custom HTML content here.</p></div>'
       },
       render: HTMLContent
+    },
+    RegistrationForm: {
+      label: "📋 Registration Form",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Form Title',
+          placeholder: 'Registration Form'
+        }
+      },
+      defaultProps: {
+        title: 'Registration Form'
+      },
+      render: RegistrationForm
+    },
+    GoogleForm: {
+      label: "📝 Google Form",
+      fields: {
+        formUrl: {
+          type: 'text' as const,
+          label: 'Google Form URL',
+          placeholder: 'https://docs.google.com/forms/d/e/...'
+        },
+        height: {
+          type: 'number' as const,
+          label: 'Height (px)',
+          placeholder: '500'
+        }
+      },
+      defaultProps: {
+        formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScBIZc6q4yfDIujHpVnArjbgkktJ60pgIU6RtgSp4LwDFe4_A/viewform',
+        height: 500
+      },
+      render: GoogleForm
     }
 
   }
