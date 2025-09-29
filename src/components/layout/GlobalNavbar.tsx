@@ -75,7 +75,7 @@ const GlobalNavbar = ({
     <nav style={navbarStyle}>
       {/* Left: Website Logo */}
       <div style={logoStyle}>
-        🎯 EventHub
+        <span style={{ fontSize: '30px', fontWeight: 'bold' }}>←</span> Eventira
       </div>
 
       {/* Right: Create Event Button + Profile Icon */}

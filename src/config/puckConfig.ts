@@ -7,7 +7,7 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import {
-  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, ScheduleSection, AboutSection, PricingPlans, FAQSection, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm
+  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm
 } from '../components/advanced'
 import FeedbackForm from '../components/advanced/FeedbackForm'
 import ImageSimple from '../components/advanced/ImageSimple'
@@ -92,12 +92,12 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["HeroSection", "HeroVideo", "AboutSection", "PricingPlans", "FAQSection", "HTMLContent", "FeedbackForm", "RegistrationForm"]
+          components: ["HeroSection", "HeroVideo", "SchedulePage", "AboutSection", "PricingPlans", "FAQSection", "HTMLContent", "FeedbackForm", "RegistrationForm"]
         },
         media: {
           title: "Media",
@@ -1810,6 +1810,20 @@ export const config = {
         height: 500
       },
       render: GoogleForm
+    },
+    SchedulePage: {
+      label: "📅 Schedule Page",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Page Title',
+          placeholder: 'Schedule'
+        }
+      },
+      defaultProps: {
+        title: 'Schedule'
+      },
+      render: SchedulePage
     }
 
   }
