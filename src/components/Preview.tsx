@@ -12,6 +12,8 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
   const [localData, setLocalData] = useState<PageData>(data);
   const [draggedItem, setDraggedItem] = useState<any>(null);
   const [dragOverZone, setDragOverZone] = useState<string | null>(null);
+  const [draggedColumn, setDraggedColumn] = useState<{componentId: string, columnIndex: number} | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<{componentId: string, columnIndex: number} | null>(null);
 
   // Update local data when props change
   React.useEffect(() => {
@@ -111,6 +113,88 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
   const handleDragEnd = useCallback(() => {
     setDraggedItem(null);
     setDragOverZone(null);
+  }, []);
+
+  // Handle column drag start
+  const handleColumnDragStart = useCallback((e: React.DragEvent, componentId: string, columnIndex: number) => {
+    console.log('Column drag start:', { componentId, columnIndex });
+    if (!isInteractive) return;
+    
+    setDraggedColumn({ componentId, columnIndex });
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', `column-${componentId}-${columnIndex}`);
+  }, [isInteractive]);
+
+  // Handle column drag over
+  const handleColumnDragOver = useCallback((e: React.DragEvent, componentId: string, columnIndex: number) => {
+    if (!isInteractive || !draggedColumn) return;
+    
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverColumn({ componentId, columnIndex });
+  }, [isInteractive, draggedColumn]);
+
+  // Handle column drop
+  const handleColumnDrop = useCallback((e: React.DragEvent, targetComponentId: string, targetColumnIndex: number) => {
+    if (!isInteractive || !draggedColumn || !onDataChange) return;
+    
+    e.preventDefault();
+    
+    const { componentId: sourceComponentId, columnIndex: sourceColumnIndex } = draggedColumn;
+    
+    // Only allow dropping within the same GridContainer
+    if (sourceComponentId !== targetComponentId) {
+      console.log('Cannot drop column across different GridContainers');
+      setDraggedColumn(null);
+      setDragOverColumn(null);
+      return;
+    }
+    
+    // Don't do anything if dropping on the same column
+    if (sourceColumnIndex === targetColumnIndex) {
+      console.log('Dropping on same column, no change needed');
+      setDraggedColumn(null);
+      setDragOverColumn(null);
+      return;
+    }
+    
+    console.log('Column drop:', { 
+      source: { componentId: sourceComponentId, columnIndex: sourceColumnIndex },
+      target: { componentId: targetComponentId, columnIndex: targetColumnIndex }
+    });
+    
+    const newData = { ...localData };
+    const sourceZoneKey = `${sourceComponentId}:column-${sourceColumnIndex}`;
+    const targetZoneKey = `${targetComponentId}:column-${targetColumnIndex}`;
+    
+    // Swap the column contents
+    if (newData.zones[sourceZoneKey] && newData.zones[targetZoneKey]) {
+      const sourceContent = newData.zones[sourceZoneKey];
+      const targetContent = newData.zones[targetZoneKey];
+      
+      // Swap the contents
+      newData.zones[sourceZoneKey] = targetContent;
+      newData.zones[targetZoneKey] = sourceContent;
+      
+      console.log('Swapped column contents:', {
+        sourceZone: newData.zones[sourceZoneKey],
+        targetZone: newData.zones[targetZoneKey]
+      });
+      
+      setLocalData(newData);
+      onDataChange(newData);
+    } else {
+      console.log('Zone data not found for column swap:', { sourceZoneKey, targetZoneKey });
+    }
+    
+    setDraggedColumn(null);
+    setDragOverColumn(null);
+  }, [isInteractive, draggedColumn, onDataChange, localData]);
+
+  // Handle column drag end
+  const handleColumnDragEnd = useCallback(() => {
+    setDraggedColumn(null);
+    setDragOverColumn(null);
   }, []);
 
   // Check if there are any GridLayout or GridContainer components
@@ -314,6 +398,8 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
                               const zoneName = `column-${colIndex}`;
                               const zoneItems = componentProps[zoneName] || [];
                               const isDragOver = dragOverZone === zoneName;
+                              const isColumnDragOver = dragOverColumn?.componentId === componentId && dragOverColumn?.columnIndex === colIndex;
+                              const isColumnDragged = draggedColumn?.componentId === componentId && draggedColumn?.columnIndex === colIndex;
                               
                               console.log(`Column ${colIndex} (${zoneName}):`, zoneItems);
                               
@@ -322,15 +408,51 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
                                   key={colIndex}
                                   style={{
                                     minHeight: '50px',
-                                    backgroundColor: isDragOver ? '#e3f2fd' : 'transparent',
-                                    border: isDragOver ? '2px dashed #2196f3' : '1px dashed #d1d5db',
+                                    backgroundColor: isDragOver ? '#e3f2fd' : isColumnDragOver ? '#fff3cd' : 'transparent',
+                                    border: isDragOver ? '2px dashed #2196f3' : isColumnDragOver ? '2px dashed #ffc107' : '1px dashed #d1d5db',
                                     borderRadius: '4px',
                                     transition: 'all 0.2s ease',
                                     padding: '8px',
+                                    position: 'relative',
+                                    cursor: isInteractive ? 'move' : 'default',
+                                    opacity: isColumnDragged ? 0.5 : 1,
                                   }}
-                                  onDragOver={(e) => handleDragOver(e, zoneName)}
-                                  onDrop={(e) => handleDrop(e, zoneName)}
+                                  draggable={isInteractive}
+                                  onDragStart={(e) => handleColumnDragStart(e, componentId, colIndex)}
+                                  onDragOver={(e) => {
+                                    handleDragOver(e, zoneName);
+                                    handleColumnDragOver(e, componentId, colIndex);
+                                  }}
+                                  onDrop={(e) => {
+                                    handleDrop(e, zoneName);
+                                    handleColumnDrop(e, componentId, colIndex);
+                                  }}
+                                  onDragEnd={handleColumnDragEnd}
                                 >
+                                  {/* Column header for drag indication - only show when dragging */}
+                                  {isInteractive && (isColumnDragged || isColumnDragOver) && (
+                                    <div
+                                      style={{
+                                        position: 'absolute',
+                                        top: '-8px',
+                                        left: '8px',
+                                        right: '8px',
+                                        height: '20px',
+                                        backgroundColor: isColumnDragged ? '#007bff' : '#ffc107',
+                                        color: 'white',
+                                        fontSize: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        borderRadius: '4px 4px 0 0',
+                                        fontWeight: 'bold',
+                                        zIndex: 10,
+                                      }}
+                                    >
+                                      {isColumnDragged ? 'DRAGGING' : 'DROP HERE'}
+                                    </div>
+                                  )}
+                                  
                                   {zoneItems.length > 0 ? (
                                     zoneItems.map((zoneItem: any, itemIndex: number) => {
                                       console.log('Rendering zone item:', zoneItem.type, zoneItem);

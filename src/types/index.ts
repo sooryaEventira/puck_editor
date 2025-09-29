@@ -7,6 +7,9 @@ export interface HeadingProps {
   size?: 'XXXL' | 'XXL' | 'XL' | 'L' | 'M' | 'S' | 'XS'
   color?: string
   align?: 'left' | 'center' | 'right' | 'justify'
+  puck?: {
+    dragRef: (element: HTMLElement | null) => void;
+  };
 }
 
 export interface TextProps {
@@ -14,6 +17,9 @@ export interface TextProps {
   size?: string
   color?: string
   align?: 'left' | 'center' | 'right' | 'justify'
+  puck?: {
+    dragRef: (element: HTMLElement | null) => void;
+  };
 }
 
 export interface ButtonProps {
