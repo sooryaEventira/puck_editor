@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import { registerOverlayPortal } from '@measured/puck'
 import { HeroSectionProps, HeroButton } from '../../types'
 
@@ -25,6 +25,8 @@ const HeroSection = ({
   buttonSpacing = '12px'
 }: HeroSectionProps) => {
   const buttonRefs = useRef<(HTMLAnchorElement | null)[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
 
   // Register all buttons as overlay portals to keep them interactive
   useEffect(() => {
@@ -34,8 +36,25 @@ const HeroSection = ({
       }
     })
   }, [buttons])
+
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        setUploadedImageUrl(result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+
+  // Get the current background image (uploaded or prop)
+  const currentBackgroundImage = uploadedImageUrl || backgroundImage
   const heroStyle: React.CSSProperties = {
-    background: backgroundImage ? `url(${backgroundImage})` : backgroundColor,
+    background: currentBackgroundImage ? `url(${currentBackgroundImage})` : backgroundColor,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
@@ -154,9 +173,39 @@ const HeroSection = ({
   }
 
   return (
-    <div style={heroStyle}>
-      {backgroundImage && <div style={overlayStyle} />}
-      <div style={contentStyle}>
+    <div 
+      style={heroStyle}
+      onClick={() => fileInputRef.current?.click()}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.cursor = 'pointer'
+        e.currentTarget.style.opacity = '0.95'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.cursor = 'default'
+        e.currentTarget.style.opacity = '1'
+      }}
+    >
+      {currentBackgroundImage && <div style={overlayStyle} />}
+      
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileUpload}
+        style={{ display: 'none' }}
+      />
+
+      <div 
+        style={contentStyle}
+        onClick={(e) => e.stopPropagation()}
+        onMouseEnter={(e) => {
+          e.currentTarget.parentElement!.style.cursor = 'default'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.parentElement!.style.cursor = 'pointer'
+        }}
+      >
         <h1 
           style={titleStyle} 
           data-puck-field="title"

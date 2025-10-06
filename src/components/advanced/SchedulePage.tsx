@@ -20,10 +20,30 @@ interface ScheduleEvent {
 
 interface SchedulePageProps {
   puck?: any;
+  initialDate?: Date;
+  onDateChange?: (date: Date) => void;
 }
 
-const SchedulePage: React.FC<SchedulePageProps> = () => {
-  const [currentDate, setCurrentDate] = useState(new Date('2024-01-03')); // Wed 3
+const SchedulePage: React.FC<SchedulePageProps> = ({ 
+  initialDate, 
+  onDateChange 
+}) => {
+  // Initialize with today's date, props, or localStorage
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (initialDate) return initialDate;
+    
+    // Try to get from localStorage
+    const saved = localStorage.getItem('schedule-current-date');
+    if (saved) {
+      const parsedDate = new Date(saved);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate;
+      }
+    }
+    
+    // Fallback to today
+    return new Date();
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBlockType, setSelectedBlockType] = useState('Presentation Session');
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -110,6 +130,12 @@ const SchedulePage: React.FC<SchedulePageProps> = () => {
     const newDate = new Date(currentDate);
     newDate.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7));
     setCurrentDate(newDate);
+    
+    // Persist to localStorage
+    localStorage.setItem('schedule-current-date', newDate.toISOString());
+    
+    // Notify parent component
+    onDateChange?.(newDate);
   };
 
   const isCurrentDay = (date: Date) => {
@@ -118,6 +144,30 @@ const SchedulePage: React.FC<SchedulePageProps> = () => {
 
   const selectDate = (date: Date) => {
     setCurrentDate(date);
+    
+    // Persist to localStorage
+    localStorage.setItem('schedule-current-date', date.toISOString());
+    
+    // Notify parent component
+    onDateChange?.(date);
+  };
+
+  // Utility functions for date management
+  const goToToday = () => {
+    const today = new Date();
+    selectDate(today);
+  };
+
+  const goToSpecificDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      selectDate(date);
+    }
+  };
+
+  const goToDate = (year: number, month: number, day: number) => {
+    const date = new Date(year, month - 1, day); // month is 0-indexed
+    selectDate(date);
   };
 
   const addSession = () => {
@@ -702,8 +752,8 @@ const SchedulePage: React.FC<SchedulePageProps> = () => {
           <button
             onClick={() => navigateWeek('prev')}
             style={{
-              width: '40px',
-              height: '40px',
+              width: '48px',
+              height: '48px',
               borderRadius: '50%',
               border: 'none',
               backgroundColor: '#f1f3f4',
@@ -711,29 +761,53 @@ const SchedulePage: React.FC<SchedulePageProps> = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '18px',
-              color: '#5f6368'
+              fontSize: '20px',
+              color: '#5f6368',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#e5e7eb';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f1f3f4';
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
             ‹
           </button>
 
           {/* Date Buttons */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
             {weekDates.map((date, index) => (
               <button
                 key={index}
                 onClick={() => selectDate(date)}
                 style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
+                  padding: '16px 24px',
+                  borderRadius: '12px',
                   border: 'none',
                   backgroundColor: isCurrentDay(date) ? '#8b5cf6' : '#f1f3f4',
                   color: isCurrentDay(date) ? '#ffffff' : '#000000',
                   cursor: 'pointer',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  minWidth: '60px'
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  minWidth: '80px',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isCurrentDay(date) ? '0 4px 8px rgba(139, 92, 246, 0.3)' : '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isCurrentDay(date)) {
+                    e.currentTarget.style.backgroundColor = '#e5e7eb';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isCurrentDay(date)) {
+                    e.currentTarget.style.backgroundColor = '#f1f3f4';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
                 }}
               >
                 {dayNames[index]} {date.getDate()}
@@ -745,8 +819,8 @@ const SchedulePage: React.FC<SchedulePageProps> = () => {
           <button
             onClick={() => navigateWeek('next')}
             style={{
-              width: '40px',
-              height: '40px',
+              width: '48px',
+              height: '48px',
               borderRadius: '50%',
               border: 'none',
               backgroundColor: '#f1f3f4',
@@ -754,8 +828,18 @@ const SchedulePage: React.FC<SchedulePageProps> = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '18px',
-              color: '#5f6368'
+              fontSize: '20px',
+              color: '#5f6368',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#e5e7eb';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#f1f3f4';
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
             ›
@@ -840,7 +924,7 @@ const SchedulePage: React.FC<SchedulePageProps> = () => {
                   zIndex: 50,
                   minWidth: '160px'
                 }}>
-                <button
+                {/* <button
                   onClick={() => {
                     console.log('Export schedule');
                     setIsHeaderDropdownOpen(false);
@@ -894,7 +978,7 @@ const SchedulePage: React.FC<SchedulePageProps> = () => {
                   }}
                 >
                   🖨️ Print Schedule
-                </button>
+                </button> */}
                 {!hasSelectedAll ? (
                   <button
                     onClick={(e) => {
