@@ -177,11 +177,17 @@ export interface NavigationProps {
   logoText: string | React.ReactElement
   menuItems: string | React.ReactElement
   backgroundColor?: string
+  customBackgroundColor?: string
   textColor?: string
+  customTextColor?: string
   logoColor?: string
+  customLogoColor?: string
   linkColor?: string
+  customLinkColor?: string
   hoverColor?: string
+  customHoverColor?: string
   padding?: string
+  customPadding?: string
   alignment?: 'left' | 'center' | 'right'
 }
 

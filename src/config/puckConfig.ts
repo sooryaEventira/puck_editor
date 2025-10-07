@@ -1497,33 +1497,93 @@ export const config = {
           contentEditable: true
         },
         backgroundColor: {
-          type: 'text' as const,
+          type: 'select' as const,
           label: 'Background Color',
-          placeholder: '#ffffff'
+          options: [
+            { label: 'Dark Purple', value: '#27115F' },
+            { label: 'Purple', value: '#4A154B' },
+            { label: 'Blue', value: '#1e40af' },
+            { label: 'Dark Blue', value: '#1e3a8a' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Dark Gray', value: '#374151' },
+            { label: 'Custom', value: 'custom' }
+          ]
+        },
+        customBackgroundColor: {
+          type: 'text' as const,
+          label: 'Custom Background Color (hex)',
+          placeholder: '#27115F'
         },
         textColor: {
-          type: 'text' as const,
+          type: 'select' as const,
           label: 'Text Color',
-          placeholder: '#333333'
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Custom', value: 'custom' }
+          ]
+        },
+        customTextColor: {
+          type: 'text' as const,
+          label: 'Custom Text Color (hex)',
+          placeholder: '#ffffff'
         },
         logoColor: {
-          type: 'text' as const,
+          type: 'select' as const,
           label: 'Logo Color',
-          placeholder: '#333333'
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Custom', value: 'custom' }
+          ]
+        },
+        customLogoColor: {
+          type: 'text' as const,
+          label: 'Custom Logo Color (hex)',
+          placeholder: '#ffffff'
         },
         linkColor: {
-          type: 'text' as const,
+          type: 'select' as const,
           label: 'Link Color',
-          placeholder: '#333333'
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Custom', value: 'custom' }
+          ]
+        },
+        customLinkColor: {
+          type: 'text' as const,
+          label: 'Custom Link Color (hex)',
+          placeholder: '#ffffff'
         },
         hoverColor: {
-          type: 'text' as const,
+          type: 'select' as const,
           label: 'Hover Color',
-          placeholder: '#007bff'
+          options: [
+            { label: 'Light Gray', value: '#E0E0E0' },
+            { label: 'Light Purple', value: '#8b5cf6' },
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Custom', value: 'custom' }
+          ]
+        },
+        customHoverColor: {
+          type: 'text' as const,
+          label: 'Custom Hover Color (hex)',
+          placeholder: '#E0E0E0'
         },
         padding: {
-          type: 'text' as const,
+          type: 'select' as const,
           label: 'Padding',
+          options: [
+            { label: 'Small (0.5rem 1rem)', value: '0.5rem 1rem' },
+            { label: 'Medium (1rem 2rem)', value: '1rem 2rem' },
+            { label: 'Large (1.5rem 3rem)', value: '1.5rem 3rem' },
+            { label: 'Custom', value: 'custom' }
+          ]
+        },
+        customPadding: {
+          type: 'text' as const,
+          label: 'Custom Padding',
           placeholder: '1rem 2rem'
         },
         alignment: {
@@ -1540,12 +1600,18 @@ export const config = {
         logo: 'https://via.placeholder.com/40x40/007bff/ffffff?text=L',
         logoText: 'EventPro',
         menuItems: 'About|/about,Speakers|/speakers,Schedule|/schedule,Information|/information,Contact|/contact,Register|/register',
-        backgroundColor: '#ffffff',
-        textColor: '#333333',
-        logoColor: '#333333',
-        linkColor: '#333333',
-        hoverColor: '#007bff',
+        backgroundColor: '#27115F',
+        customBackgroundColor: '#27115F',
+        textColor: '#ffffff',
+        customTextColor: '#ffffff',
+        logoColor: '#ffffff',
+        customLogoColor: '#ffffff',
+        linkColor: '#ffffff',
+        customLinkColor: '#ffffff',
+        hoverColor: '#E0E0E0',
+        customHoverColor: '#E0E0E0',
         padding: '1rem 2rem',
+        customPadding: '1rem 2rem',
         alignment: 'left'
       },
       render: Navigation
