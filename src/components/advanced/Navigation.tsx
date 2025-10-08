@@ -112,9 +112,9 @@ const Navigation = ({
         margin: '0 auto',
         flexWrap: 'wrap',
         gap: '1rem'
-      }}>
+      }} className="nav-container">
         {/* Logo Section */}
-        <div style={{
+        <div className="logo-section" style={{
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
@@ -149,6 +149,65 @@ const Navigation = ({
             }}
           >
             {logoText}
+          </div>
+        </div>
+
+        {/* Mobile Icons Section */}
+        <div className="mobile-icons" style={{
+          display: 'none',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          {/* Headphones Icon */}
+          <div style={{
+            color: '#ffffff',
+            fontSize: '20px',
+            cursor: 'pointer',
+            padding: '8px',
+            borderRadius: '4px',
+            transition: 'background-color 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}>
+            🎧
+          </div>
+
+          {/* Bell Icon */}
+          <div style={{
+            color: '#ffffff',
+            fontSize: '20px',
+            cursor: 'pointer',
+            padding: '8px',
+            borderRadius: '4px',
+            transition: 'background-color 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}>
+            🔔
+          </div>
+
+          {/* Profile Picture */}
+          <div style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            border: '2px solid #ffffff',
+            overflow: 'hidden',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#f0f0f0'
+          }}>
+            <span style={{ fontSize: '18px' }}>👤</span>
           </div>
         </div>
 
@@ -193,8 +252,8 @@ const Navigation = ({
           ))}
         </div>
 
-        {/* Right Side User Elements */}
-        <div style={{
+        {/* Desktop Right Side User Elements */}
+        <div className="desktop-user-elements" style={{
           display: 'flex',
           alignItems: 'center',
           gap: '1rem'
@@ -227,8 +286,8 @@ const Navigation = ({
             Edit
           </button>
 
-          {/* Icons */}
-          <div style={{
+          {/* Desktop Icons */}
+          <div className="desktop-icons" style={{
             display: 'flex',
             alignItems: 'center',
             gap: '1rem'
@@ -512,12 +571,24 @@ const Navigation = ({
           .desktop-menu {
             display: none !important;
           }
+          .desktop-user-elements {
+            display: none !important;
+          }
+          .mobile-icons {
+            display: flex !important;
+          }
           .mobile-menu-toggle {
             display: flex !important;
+          }
+          .nav-container {
+            justify-content: space-between !important;
           }
         }
         @media (min-width: 769px) {
           .mobile-menu {
+            display: none !important;
+          }
+          .mobile-icons {
             display: none !important;
           }
         }

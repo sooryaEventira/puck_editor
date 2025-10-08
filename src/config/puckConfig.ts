@@ -7,7 +7,7 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import {
-  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm
+  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm
 } from '../components/advanced'
 import FeedbackForm from '../components/advanced/FeedbackForm'
 import ImageSimple from '../components/advanced/ImageSimple'
@@ -92,12 +92,12 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "FAQAccordion", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["HeroSection", "HeroVideo", "SchedulePage", "AboutSection", "PricingPlans", "FAQSection", "HTMLContent", "FeedbackForm", "RegistrationForm"]
+          components: ["HeroSection", "HeroVideo", "SchedulePage", "AboutSection", "PricingPlans", "FAQSection", "FAQAccordion", "HTMLContent", "FeedbackForm", "RegistrationForm"]
         },
         media: {
           title: "Media",
@@ -1429,6 +1429,136 @@ export const config = {
              padding: '6rem 2rem'
            },
           render: FAQSection
+        },
+        FAQAccordion: {
+          label: "🔽 FAQ Accordion",
+          fields: {
+            title: {
+              type: 'text' as const,
+              label: 'Title',
+              placeholder: 'Frequently Asked Questions',
+              contentEditable: true
+            },
+            subtitle: {
+              type: 'text' as const,
+              label: 'Subtitle',
+              placeholder: 'Find answers to common questions below',
+              contentEditable: true
+            },
+            faqs: {
+              type: 'array' as const,
+              label: 'FAQ Items',
+              arrayFields: {
+                question: {
+                  type: 'text' as const,
+                  label: 'Question',
+                  placeholder: 'What is this service about?',
+                  contentEditable: true
+                },
+                answer: {
+                  type: 'textarea' as const,
+                  label: 'Answer',
+                  placeholder: 'This service provides comprehensive solutions...',
+                  contentEditable: true
+                }
+              }
+            },
+            allowMultiple: {
+              type: 'radio' as const,
+              label: 'Allow Multiple Open',
+              options: [
+                { label: 'Single (close others)', value: false },
+                { label: 'Multiple (keep others open)', value: true }
+              ]
+            },
+            backgroundColor: {
+              type: 'text' as const,
+              label: 'Background Color',
+              placeholder: '#ffffff'
+            },
+            textColor: {
+              type: 'text' as const,
+              label: 'Text Color',
+              placeholder: '#333333'
+            },
+            questionColor: {
+              type: 'text' as const,
+              label: 'Question Color',
+              placeholder: '#1f2937'
+            },
+            answerColor: {
+              type: 'text' as const,
+              label: 'Answer Color',
+              placeholder: '#6b7280'
+            },
+            borderColor: {
+              type: 'text' as const,
+              label: 'Border Color',
+              placeholder: '#e5e7eb'
+            },
+            padding: {
+              type: 'text' as const,
+              label: 'Padding',
+              placeholder: '3rem 2rem'
+            },
+            spacing: {
+              type: 'text' as const,
+              label: 'Spacing Between Items',
+              placeholder: '1rem'
+            },
+            iconColor: {
+              type: 'text' as const,
+              label: 'Icon Color',
+              placeholder: '#8b5cf6'
+            },
+            hoverColor: {
+              type: 'text' as const,
+              label: 'Hover Background Color',
+              placeholder: '#f8fafc'
+            }
+          },
+          defaultProps: {
+            title: 'Frequently Asked Questions',
+            subtitle: 'Find answers to common questions below',
+            faqs: [
+              {
+                id: '1',
+                question: 'What is this service about?',
+                answer: 'This service provides comprehensive solutions for your business needs. We offer a wide range of features and support to help you achieve your goals.'
+              },
+              {
+                id: '2',
+                question: 'How do I get started?',
+                answer: 'Getting started is easy! Simply sign up for an account, complete the onboarding process, and you\'ll be ready to use all our features within minutes.'
+              },
+              {
+                id: '3',
+                question: 'Is there a free trial available?',
+                answer: 'Yes, we offer a 30-day free trial for all new users. No credit card required to start your trial period.'
+              },
+              {
+                id: '4',
+                question: 'What kind of support do you provide?',
+                answer: 'We provide 24/7 customer support through email, chat, and phone. Our support team is always ready to help you with any questions or issues.'
+              },
+              {
+                id: '5',
+                question: 'Can I cancel my subscription anytime?',
+                answer: 'Absolutely! You can cancel your subscription at any time from your account settings. There are no cancellation fees or long-term contracts.'
+              }
+            ],
+            allowMultiple: false,
+            backgroundColor: '#ffffff',
+            textColor: '#333333',
+            questionColor: '#1f2937',
+            answerColor: '#6b7280',
+            borderColor: '#e5e7eb',
+            padding: '3rem 2rem',
+            spacing: '1rem',
+            iconColor: '#8b5cf6',
+            hoverColor: '#f8fafc'
+          },
+          render: FAQAccordion
         },
     FeedbackForm: {
       label: "📝 Feedback Form",

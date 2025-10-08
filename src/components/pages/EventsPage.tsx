@@ -11,31 +11,27 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null)
   const [selectedPageData, setSelectedPageData] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<'edit' | 'settings'>('edit')
+  const [localPages, setLocalPages] = useState<any[]>([])
   
   const { pages, loadPage } = usePageManagement()
 
-  // Debug logging
-  console.log('EventsPage - pages:', pages)
-  console.log('EventsPage - pages.length:', pages.length)
+  // Update local pages when pages from hook change
+  React.useEffect(() => {
+    setLocalPages(pages)
+  }, [pages])
 
   // Auto-select first page when menu opens
   useEffect(() => {
-    console.log('EventsPage useEffect - isWebpageMenuOpen:', isWebpageMenuOpen, 'pages.length:', pages.length, 'selectedPageId:', selectedPageId)
-    if (isWebpageMenuOpen && pages.length > 0 && selectedPageId === null) {
-      const firstPage = pages[0]
-      console.log('EventsPage - selecting first page:', firstPage)
+    if (isWebpageMenuOpen && localPages.length > 0 && selectedPageId === null) {
+      const firstPage = localPages[0]
       setSelectedPageId(firstPage.id)
       loadPageData(firstPage.id)
     }
-  }, [isWebpageMenuOpen, pages, selectedPageId])
+  }, [isWebpageMenuOpen, localPages, selectedPageId])
 
   const loadPageData = async (pageId: string) => {
-    console.log('EventsPage - loadPageData called with pageId:', pageId)
     try {
       const pageData = await loadPage(pageId)
-      console.log('EventsPage - loaded page data:', pageData)
-      console.log('EventsPage - pageData type:', typeof pageData)
-      console.log('EventsPage - pageData content length:', pageData?.content?.length)
       setSelectedPageData(pageData)
     } catch (error) {
       console.error('Error loading page:', error)
@@ -48,12 +44,38 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
     loadPageData(pageId)
   }
 
+  const handleCreateNewPage = async () => {
+    try {
+      const timestamp = new Date().toLocaleTimeString()
+      const pageName = `Page ${timestamp}`
+      const pageId = `page-${Date.now()}`
+      
+      const newPage = {
+        id: pageId,
+        name: pageName,
+        filename: `${pageId}.json`,
+        lastModified: new Date().toISOString()
+      }
+      
+      setLocalPages(prevPages => [...prevPages, newPage])
+      setSelectedPageId(pageId)
+      
+      setSelectedPageData({
+        content: [],
+        root: { props: { title: pageName } },
+        zones: {}
+      })
+    } catch (error) {
+      console.error('Error creating page:', error)
+    }
+  }
+
   const handleViewWebpage = () => {
     if (selectedPageData) {
       // Open preview in new tab
       const previewWindow = window.open('', '_blank')
       if (previewWindow) {
-        const selectedPage = pages.find(p => p.id === selectedPageId)
+        const selectedPage = localPages.find(p => p.id === selectedPageId)
         previewWindow.document.write(`
           <!DOCTYPE html>
           <html>
@@ -166,9 +188,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
     <div style={{ display: 'flex', height: '100vh' }}>
       {/* Left Sidebar */}
       <div style={sidebarStyle}>
-        <div style={{ padding: '0 20px 20px' }}>
-        
-        </div>
+        <div style={{ padding: '0 20px 20px' }}></div>
 
         {/* Webpage Menu */}
         <div>
@@ -186,11 +206,12 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
             </span>
           </div>
 
+
+
           {/* Submenu Items */}
           {isWebpageMenuOpen && (
             <div>
-              
-              {pages.map((page) => (
+              {localPages.map((page) => (
                 <div
                   key={page.id}
                   style={
@@ -216,6 +237,22 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
             </div>
           )}
         </div>
+        
+        {/* New Page Menu Item */}
+        <div
+          style={{
+            ...menuItemStyle,
+            backgroundColor: '#e8f5e8',
+            borderLeft: '3px solid #28a745'
+          }}
+          onClick={handleCreateNewPage}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#d4edda'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#e8f5e8'}
+        >
+          <span style={{ fontWeight: '600', color: '#28a745' }}>
+            ➕ New Page
+          </span>
+        </div>
       </div>
 
       {/* Right Content Area */}
@@ -224,28 +261,13 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
         <div style={headerStyle}>
           <div>
             <h1 style={{ margin: 0, fontSize: '24px', color: '#333' }}>
-              {selectedPageId ? pages.find(p => p.id === selectedPageId)?.name || 'Untitled Page' : 'Select a Page'}
+              {selectedPageId ? localPages.find(p => p.id === selectedPageId)?.name || 'Untitled Page' : 'Select a Page'}
             </h1>
             <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '14px' }}>
               {selectedPageId ? '' : 'Choose a webpage from the sidebar'}
             </p>
           </div>
           <div>
-            {/* <button
-              onClick={onBackToEditor}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                marginRight: '10px',
-                fontSize: '14px'
-              }}
-            >
-              ← Back to Editor
-            </button> */}
             <button
               onClick={handleViewWebpage}
               disabled={!selectedPageData}
@@ -311,7 +333,6 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
             </div>
             <button
               onClick={() => {
-                // Navigate to Puck editor with current page
                 if (onBackToEditor) {
                   onBackToEditor();
                 }
@@ -345,9 +366,54 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
                   borderRadius: '8px', 
                   boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                   height: '100%',
-                  overflow: 'auto'
+                  overflow: 'auto',
+                  position: 'relative'
                 }}>
-                  <Preview data={selectedPageData} />
+                  {selectedPageData.content && selectedPageData.content.length > 0 ? (
+                    <Preview data={selectedPageData} />
+                  ) : (
+                    // Show Add button when page is empty
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '100%',
+                      minHeight: '400px'
+                    }}>
+                      <button
+                        onClick={() => {
+                          // TODO: Add content picker or editor functionality
+                        }}
+                        style={{
+                          padding: '16px 32px',
+                          backgroundColor: '#28a745',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                          transition: 'all 0.3s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#218838'
+                          e.currentTarget.style.transform = 'translateY(-2px)'
+                          e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.15)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#28a745'
+                          e.currentTarget.style.transform = 'translateY(0)'
+                          e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)'
+                        }}
+                      >
+                        ➕ Add Content
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div style={{ 
@@ -365,7 +431,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
                     </label>
                     <input
                       type="text"
-                      value={pages.find(p => p.id === selectedPageId)?.name || ''}
+                      value={localPages.find(p => p.id === selectedPageId)?.name || ''}
                       readOnly
                       style={{
                         width: '100%',
@@ -429,6 +495,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
           )}
         </div>
       </div>
+
     </div>
   )
 }
