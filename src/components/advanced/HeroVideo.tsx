@@ -20,6 +20,8 @@ const HeroVideo = ({
 }: HeroVideoProps) => {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
+  const [uploadedMediaType, setUploadedMediaType] = useState<'image' | 'video' | null>(null);
 
   // Simple prop handling - use props directly for contentEditable, extract for display
   const getStringValue = (prop: any): string => {
@@ -47,6 +49,28 @@ const HeroVideo = ({
       // In a real app, you would use React Router or similar
       // navigate(buttonLinkValue);
     }
+  };
+
+  const handleFileUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const url = URL.createObjectURL(file);
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+        
+        if (isVideo || isImage) {
+          setUploadedVideoUrl(url);
+          setUploadedMediaType(isVideo ? 'video' : 'image');
+          setVideoError(false);
+          setIsVideoLoaded(false);
+        }
+      }
+    };
+    input.click();
   };
 
   const getTitleSize = (size?: string) => {
@@ -92,63 +116,107 @@ const HeroVideo = ({
   };
 
   return (
-    <div style={{
-      position: 'relative',
-      height: height || '500px',
-      minHeight: '400px',
-      backgroundColor: backgroundColor || '#000000',
-      overflow: 'hidden',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: getAlignment(alignment)
-    }}>
-      {/* Video Background */}
-      {(videoUrlValue || videoUrl) && !videoError ? (
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
+    <>
+      <style>
+        {`
+          .hero-video-container:hover .upload-hint {
+            opacity: 1 !important;
+          }
+        `}
+      </style>
+      <div 
+        className="hero-video-container"
+        style={{
+          position: 'relative',
+          height: height || '500px',
+          minHeight: '400px',
+          backgroundColor: backgroundColor || '#000000',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: getAlignment(alignment)
+        }}
+      >
+      {/* Media Background (Image or Video) */}
+      {(uploadedVideoUrl || videoUrlValue) && !videoError ? (
+        uploadedMediaType === 'image' ? (
+          <img
+            src={uploadedVideoUrl || videoUrlValue}
+            alt="Hero background"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              zIndex: 1
+            }}
+            onLoad={() => {
+              setIsVideoLoaded(true);
+              setVideoError(false);
+            }}
+            onError={() => {
+              setVideoError(true);
+            }}
+          />
+        ) : (
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              zIndex: 1
+            }}
+            onLoadedData={() => {
+              setIsVideoLoaded(true);
+              setVideoError(false);
+            }}
+            onError={() => {
+              setVideoError(true);
+            }}
+          >
+            <source src={uploadedVideoUrl || videoUrlValue} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        )
+      ) : (
+        <div 
           style={{
             position: 'absolute',
             top: 0,
             left: 0,
             width: '100%',
             height: '100%',
-            objectFit: 'cover',
-            zIndex: 1
+            background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+            zIndex: 1,
+            cursor: 'pointer'
           }}
-          onLoadedData={() => setIsVideoLoaded(true)}
-          onError={() => {
-            console.log('Video failed to load:', videoUrlValue);
-            setVideoError(true);
-          }}
-        >
-          <source src={videoUrlValue} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-      ) : (
-        <div style={{
+          onClick={handleFileUpload}
+        />
+      )}
+
+      {/* Overlay - Clickable for upload */}
+      <div 
+        style={{
           position: 'absolute',
           top: 0,
           left: 0,
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-          zIndex: 1
-        }} />
-      )}
-
-      {/* Overlay */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: `rgba(0, 0, 0, ${overlayOpacity || 0.4})`,
-        zIndex: 2
-      }} />
+          backgroundColor: `rgba(0, 0, 0, ${overlayOpacity || 0.4})`,
+          zIndex: 2,
+          cursor: 'pointer'
+        }}
+        onClick={handleFileUpload}
+      />
 
       {/* Content */}
       <div style={{
@@ -231,36 +299,6 @@ const HeroVideo = ({
           {buttonText}
         </a>
 
-        {/* Video URL Editor Overlay */}
-        <div
-          contentEditable
-          suppressContentEditableWarning={true}
-          data-puck-field="videoUrl"
-          style={{
-            position: 'absolute',
-            top: '10px',
-            left: '10px',
-            background: 'rgba(0,0,0,0.8)',
-            color: 'white',
-            fontSize: '11px',
-            padding: '6px 10px',
-            borderRadius: '6px',
-            opacity: 0,
-            transition: 'opacity 0.3s',
-            cursor: 'pointer',
-            zIndex: 10,
-            maxWidth: '300px',
-            wordBreak: 'break-all'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = '1';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '0';
-          }}
-        >
-          🎥 Edit Video URL: {videoUrl}
-        </div>
 
         {/* Loading Indicator */}
         {videoUrlValue && !isVideoLoaded && !videoError && (
@@ -277,24 +315,47 @@ const HeroVideo = ({
           </div>
         )}
 
-        {/* Video Error Message */}
+
+        {/* Upload Hint - Show on hover */}
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          background: 'rgba(0, 0, 0, 0.7)',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          zIndex: 10,
+          opacity: 0,
+          transition: 'opacity 0.3s ease',
+          pointerEvents: 'none'
+        }}
+        className="upload-hint"
+        >
+          🎬 Click background to upload image or video
+        </div>
+
+        {/* Media Error Message */}
         {videoError && (
           <div style={{
             position: 'absolute',
             top: '10px',
-            right: '10px',
+            left: '10px',
             background: 'rgba(220, 53, 69, 0.9)',
             color: 'white',
             padding: '8px 12px',
             borderRadius: '4px',
             fontSize: '12px',
-            zIndex: 10
+            zIndex: 10,
+            maxWidth: '200px'
           }}>
-            ❌ Video failed to load
+            ❌ Media failed to load
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 

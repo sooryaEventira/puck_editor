@@ -1940,7 +1940,7 @@ export const config = {
         }
       },
       defaultProps: {
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        videoUrl: '',
         title: 'Welcome to Our Event',
         subtitle: 'Join us for an amazing experience with industry leaders and innovative solutions',
         buttonText: 'Register Now',
