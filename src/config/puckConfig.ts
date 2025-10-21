@@ -1,13 +1,13 @@
 import React from 'react'
 import { DropZone } from "@measured/puck"
 import { 
-  Heading, Text, Button, Card, List, Divider, Spacer, Checkbox 
+  Heading, Text, Button, Card, List, Divider, Spacer, Checkbox, InputField, TimeInput, SelectField, AMPMToggle 
 } from '../components/basic'
 import { 
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import {
-  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm
+  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm
 } from '../components/advanced'
 import FeedbackForm from '../components/advanced/FeedbackForm'
 import ImageSimple from '../components/advanced/ImageSimple'
@@ -20,7 +20,7 @@ export const config = {
       title: "Basic Elements",
       icon: "fa-solid fa-font",
       defaultExpanded: true,
-      components: ["Heading", "Text", "Button", "Checkbox", "Divider", "Spacer", "TextBlock"],
+      components: ["Heading", "Text", "Button", "Checkbox", "Divider", "Spacer", "TextBlock", "InputField", "TimeInput", "SelectField", "AMPMToggle"],
       subcategories: {
         typography: {
           title: "Typography",
@@ -30,7 +30,7 @@ export const config = {
         interactive: {
           title: "Interactive",
           icon: "fa-solid fa-hand-pointer",
-          components: ["Button", "Checkbox"]
+          components: ["Button", "Checkbox", "InputField", "TimeInput", "SelectField", "AMPMToggle"]
         },
         spacing: {
           title: "Spacing",
@@ -92,12 +92,12 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "FAQAccordion", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "FAQAccordion", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["HeroSection", "HeroVideo", "SchedulePage", "AboutSection", "PricingPlans", "FAQSection", "FAQAccordion", "HTMLContent", "FeedbackForm", "RegistrationForm"]
+          components: ["HeroSection", "HeroVideo", "SchedulePage", "AboutSection", "PricingPlans", "FAQSection", "FAQAccordion", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm"]
         },
         media: {
           title: "Media",
@@ -346,6 +346,198 @@ export const config = {
         title: "Heading",
       },
       render: ({ title }: { title: string }) => React.createElement('div', { style: { padding: 64 } }, React.createElement('h1', null, title)),
+    },
+    InputField: {
+      label: "📝 Input Field",
+      fields: {
+        label: { type: 'text' as const },
+        placeholder: { type: 'text' as const },
+        value: { type: 'text' as const },
+        type: { 
+          type: 'select' as const,
+          options: [
+            { label: 'Text', value: 'text' },
+            { label: 'Email', value: 'email' },
+            { label: 'Password', value: 'password' },
+            { label: 'Number', value: 'number' },
+            { label: 'Tel', value: 'tel' },
+            { label: 'URL', value: 'url' }
+          ]
+        },
+        required: { type: 'radio' as const, options: [
+          { label: 'No', value: false },
+          { label: 'Yes', value: true }
+        ]},
+        disabled: { type: 'radio' as const, options: [
+          { label: 'No', value: false },
+          { label: 'Yes', value: true }
+        ]},
+        icon: { type: 'text' as const },
+        iconPosition: { 
+          type: 'select' as const,
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Right', value: 'right' }
+          ]
+        },
+        width: { type: 'text' as const },
+        height: { type: 'text' as const },
+        fontSize: { type: 'text' as const },
+        color: { type: 'text' as const },
+        backgroundColor: { type: 'text' as const },
+        borderColor: { type: 'text' as const },
+        borderRadius: { type: 'text' as const },
+        padding: { type: 'text' as const },
+        margin: { type: 'text' as const }
+      },
+      defaultProps: {
+        label: 'Input Label',
+        placeholder: 'Enter text...',
+        value: '',
+        type: 'text' as const,
+        required: false,
+        disabled: false,
+        icon: '',
+        iconPosition: 'left' as const,
+        width: '100%',
+        height: '40px',
+        fontSize: '14px',
+        color: '#333333',
+        backgroundColor: '#ffffff',
+        borderColor: '#d1d5db',
+        borderRadius: '6px',
+        padding: '10px 12px',
+        margin: '0'
+      },
+      render: InputField
+    },
+    TimeInput: {
+      label: "🕐 Time Input",
+      fields: {
+        label: { type: 'text' as const },
+        value: { type: 'text' as const },
+        required: { type: 'radio' as const, options: [
+          { label: 'No', value: false },
+          { label: 'Yes', value: true }
+        ]},
+        disabled: { type: 'radio' as const, options: [
+          { label: 'No', value: false },
+          { label: 'Yes', value: true }
+        ]},
+        width: { type: 'text' as const },
+        height: { type: 'text' as const },
+        fontSize: { type: 'text' as const },
+        color: { type: 'text' as const },
+        backgroundColor: { type: 'text' as const },
+        borderColor: { type: 'text' as const },
+        borderRadius: { type: 'text' as const },
+        padding: { type: 'text' as const },
+        margin: { type: 'text' as const }
+      },
+      defaultProps: {
+        label: 'Time',
+        value: '00:00',
+        required: false,
+        disabled: false,
+        width: '100%',
+        height: '40px',
+        fontSize: '14px',
+        color: '#333333',
+        backgroundColor: '#ffffff',
+        borderColor: '#d1d5db',
+        borderRadius: '6px',
+        padding: '10px 12px',
+        margin: '0'
+      },
+      render: TimeInput
+    },
+    SelectField: {
+      label: "📋 Select Field",
+      fields: {
+        label: { type: 'text' as const },
+        options: { 
+          type: 'array' as const,
+          arrayFields: {
+            label: { type: 'text' as const },
+            value: { type: 'text' as const }
+          }
+        },
+        value: { type: 'text' as const },
+        placeholder: { type: 'text' as const },
+        required: { type: 'radio' as const, options: [
+          { label: 'No', value: false },
+          { label: 'Yes', value: true }
+        ]},
+        disabled: { type: 'radio' as const, options: [
+          { label: 'No', value: false },
+          { label: 'Yes', value: true }
+        ]},
+        width: { type: 'text' as const },
+        height: { type: 'text' as const },
+        fontSize: { type: 'text' as const },
+        color: { type: 'text' as const },
+        backgroundColor: { type: 'text' as const },
+        borderColor: { type: 'text' as const },
+        borderRadius: { type: 'text' as const },
+        padding: { type: 'text' as const },
+        margin: { type: 'text' as const }
+      },
+      defaultProps: {
+        label: 'Select Label',
+        options: [
+          { label: 'Option 1', value: 'option1' },
+          { label: 'Option 2', value: 'option2' },
+          { label: 'Option 3', value: 'option3' }
+        ],
+        value: '',
+        placeholder: 'Select an option',
+        required: false,
+        disabled: false,
+        width: '100%',
+        height: '40px',
+        fontSize: '14px',
+        color: '#333333',
+        backgroundColor: '#ffffff',
+        borderColor: '#d1d5db',
+        borderRadius: '6px',
+        padding: '10px 12px',
+        margin: '0'
+      },
+      render: SelectField
+    },
+    AMPMToggle: {
+      label: "🕐 AM/PM Toggle",
+      fields: {
+        value: { 
+          type: 'select' as const,
+          options: [
+            { label: 'AM', value: 'AM' },
+            { label: 'PM', value: 'PM' }
+          ]
+        },
+        width: { type: 'text' as const },
+        height: { type: 'text' as const },
+        fontSize: { type: 'text' as const },
+        color: { type: 'text' as const },
+        backgroundColor: { type: 'text' as const },
+        borderColor: { type: 'text' as const },
+        borderRadius: { type: 'text' as const },
+        padding: { type: 'text' as const },
+        margin: { type: 'text' as const }
+      },
+      defaultProps: {
+        value: 'AM' as const,
+        width: '60px',
+        height: '40px',
+        fontSize: '14px',
+        color: '#333333',
+        backgroundColor: '#ffffff',
+        borderColor: '#d1d5db',
+        borderRadius: '6px',
+        padding: '10px 12px',
+        margin: '0'
+      },
+      render: AMPMToggle
     },
     Container: {
       label: "📦 Container",
@@ -2014,12 +2206,241 @@ export const config = {
           type: 'text' as const,
           label: 'Page Title',
           placeholder: 'Schedule'
+        },
+        events: {
+          type: 'array' as const,
+          label: 'Events',
+          arrayFields: {
+            id: { type: 'text' as const, label: 'ID' },
+            title: { type: 'text' as const, label: 'Title' },
+            startTime: { type: 'text' as const, label: 'Start Time' },
+            endTime: { type: 'text' as const, label: 'End Time' },
+            location: { type: 'text' as const, label: 'Location' },
+            type: { 
+              type: 'select' as const, 
+              label: 'Type',
+              options: [
+                { label: 'In-Person', value: 'In-Person' },
+                { label: 'Virtual', value: 'Virtual' }
+              ]
+            },
+            description: { type: 'textarea' as const, label: 'Description' },
+            participants: { type: 'text' as const, label: 'Participants' },
+            tags: { type: 'text' as const, label: 'Tags (comma separated)' },
+            attachments: { type: 'number' as const, label: 'Attachments Count' },
+            parentSessionId: { type: 'text' as const, label: 'Parent Session ID' },
+            isCompleted: { type: 'radio' as const, label: 'Completed', options: [
+              { label: 'No', value: false },
+              { label: 'Yes', value: true }
+            ]},
+            isExpanded: { type: 'radio' as const, label: 'Expanded', options: [
+              { label: 'No', value: false },
+              { label: 'Yes', value: true }
+            ]}
+          }
         }
       },
       defaultProps: {
-        title: 'Schedule'
+        title: 'Schedule',
+        events: []
       },
-      render: SchedulePage
+      render: ({ onNavigateToEditor, ...props }: { onNavigateToEditor?: () => void, [key: string]: any }) => 
+        React.createElement(SchedulePage as any, { ...props, onNavigateToEditor })
+    },
+    LiveChat: {
+      label: "💬 Live Chat",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Chat Title',
+          placeholder: 'Live Chat',
+          contentEditable: true
+        },
+        height: {
+          type: 'select' as const,
+          label: 'Chat Height',
+          options: [
+            { label: 'Small (400px)', value: '400px' },
+            { label: 'Medium (500px)', value: '500px' },
+            { label: 'Large (600px)', value: '600px' },
+            { label: 'Extra Large (700px)', value: '700px' }
+          ]
+        },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color',
+          placeholder: '#ffffff'
+        },
+        headerColor: {
+          type: 'text' as const,
+          label: 'Header Background Color',
+          placeholder: '#8b5cf6'
+        },
+        headerTextColor: {
+          type: 'text' as const,
+          label: 'Header Text Color',
+          placeholder: '#ffffff'
+        },
+        messageUserBg: {
+          type: 'text' as const,
+          label: 'User Message Background',
+          placeholder: '#3b82f6'
+        },
+        messageAgentBg: {
+          type: 'text' as const,
+          label: 'Agent Message Background',
+          placeholder: '#e5e7eb'
+        },
+        inputBorderColor: {
+          type: 'text' as const,
+          label: 'Input Border Color',
+          placeholder: '#d1d5db'
+        },
+        buttonColor: {
+          type: 'text' as const,
+          label: 'Send Button Color',
+          placeholder: '#8b5cf6'
+        },
+        buttonTextColor: {
+          type: 'text' as const,
+          label: 'Send Button Text Color',
+          placeholder: '#ffffff'
+        },
+        placeholderText: {
+          type: 'text' as const,
+          label: 'Input Placeholder Text',
+          placeholder: 'Type your message...'
+        }
+      },
+      defaultProps: {
+        title: 'Live Chat',
+        height: '500px',
+        backgroundColor: '#ffffff',
+        headerColor: '#8b5cf6',
+        headerTextColor: '#ffffff',
+        messageUserBg: '#3b82f6',
+        messageAgentBg: '#e5e7eb',
+        inputBorderColor: '#d1d5db',
+        buttonColor: '#3b82f6',
+        buttonTextColor: '#ffffff',
+        placeholderText: 'Type your message...'
+      },
+      render: LiveChat
+    },
+    ApiTestComponent: {
+      label: "🔗 API Test Component",
+      fields: {
+        // No configurable fields for this demo component
+      },
+      defaultProps: {
+        // No default props needed
+      },
+      render: ApiTestComponent
+    },
+    SessionForm: {
+      label: "📝 Session Form",
+      fields: {
+        sessionTitle: {
+          type: 'text' as const,
+          label: 'Session Title'
+        },
+        startTime: {
+          type: 'text' as const,
+          label: 'Start Time (HH:MM)'
+        },
+        startAMPM: {
+          type: 'radio' as const,
+          label: 'Start AM/PM',
+          options: [
+            { label: 'AM', value: 'AM' },
+            { label: 'PM', value: 'PM' }
+          ]
+        },
+        endTime: {
+          type: 'text' as const,
+          label: 'End Time (HH:MM)'
+        },
+        endAMPM: {
+          type: 'radio' as const,
+          label: 'End AM/PM',
+          options: [
+            { label: 'AM', value: 'AM' },
+            { label: 'PM', value: 'PM' }
+          ]
+        },
+        location: {
+          type: 'text' as const,
+          label: 'Location'
+        },
+        locationPlaceholder: {
+          type: 'text' as const,
+          label: 'Location Placeholder'
+        },
+        eventType: {
+          type: 'text' as const,
+          label: 'Event Type'
+        },
+        eventTypePlaceholder: {
+          type: 'text' as const,
+          label: 'Event Type Placeholder'
+        },
+        ctaText: {
+          type: 'text' as const,
+          label: 'Call to Action Text'
+        },
+        addButtonText: {
+          type: 'text' as const,
+          label: 'Add Button Text'
+        },
+        cancelButtonText: {
+          type: 'text' as const,
+          label: 'Cancel Button Text'
+        },
+        saveButtonText: {
+          type: 'text' as const,
+          label: 'Save Button Text'
+        },
+        showActionButtons: {
+          type: 'radio' as const,
+          label: 'Show Action Buttons (Save/Cancel)',
+          options: [
+            { label: 'Yes', value: true },
+            { label: 'No', value: false }
+          ]
+        },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color'
+        },
+        borderRadius: {
+          type: 'text' as const,
+          label: 'Border Radius'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding'
+        }
+      },
+      defaultProps: {
+        sessionTitle: 'Session title',
+        startTime: '00:00',
+        startAMPM: 'AM',
+        endTime: '00:00',
+        endAMPM: 'AM',
+        location: '',
+        locationPlaceholder: 'Enter location',
+        eventType: '',
+        eventTypePlaceholder: 'Select event type',
+        ctaText: 'Click to add a section!',
+        addButtonText: '+ Add section',
+        cancelButtonText: 'Cancel',
+        saveButtonText: 'Save',
+        showActionButtons: true,
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        padding: '40px'
+      },
+      render: SessionForm
     }
 
   }

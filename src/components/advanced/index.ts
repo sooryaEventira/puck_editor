@@ -17,4 +17,8 @@ export { default as ProgressCircleStats } from './ProgressCircleStats'
 export { default as HTMLContent } from './HTMLContent'
 export { default as RegistrationForm } from './RegistrationForm'
 export { default as GoogleForm } from './GoogleForm'
+export { default as LiveChat } from './LiveChat'
+export { default as ApiTestComponent } from './ApiTestComponent'
+export { default as SessionForm } from './SessionForm'
+
 

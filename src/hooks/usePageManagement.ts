@@ -346,11 +346,13 @@ const convertJsonToPagesList = (jsonData: any): Page[] => {
 }
 
 export const usePageManagement = () => {
-  const [currentData, setCurrentData] = useState<any>(() => 
-    convertJsonToPuckData(defaultJsonData, 'simple-page')
-  )
-  const [currentPage, setCurrentPage] = useState('simple-page')
-  const [currentPageName, setCurrentPageName] = useState('Simple HTML Page')
+  const [currentData, setCurrentData] = useState<any>(() => ({
+    content: [],
+    root: { props: {} },
+    zones: {}
+  }))
+  const [currentPage, setCurrentPage] = useState('new-page')
+  const [currentPageName, setCurrentPageName] = useState('New Page')
   const [pages, setPages] = useState<Page[]>(() => 
     convertJsonToPagesList(defaultJsonData)
   )

@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from 'react'
 import { usePageManagement } from '../../hooks/usePageManagement'
 import Preview from '../Preview'
+import SchedulePage from '../advanced/SchedulePage'
 
 interface EventsPageProps {
   onBackToEditor?: () => void
+  onNavigateToEditor?: () => void
 }
 
-const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
+const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor, onNavigateToEditor }) => {
   const [isWebpageMenuOpen, setIsWebpageMenuOpen] = useState(true)
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null)
   const [selectedPageData, setSelectedPageData] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<'edit' | 'settings'>('edit')
   const [localPages, setLocalPages] = useState<any[]>([])
+  const [showSchedulePage, setShowSchedulePage] = useState(false)
   
   const { pages, loadPage } = usePageManagement()
+
+  // Debug: Check if onNavigateToEditor is received
+  React.useEffect(() => {
+    console.log('EventsPage: onNavigateToEditor prop:', onNavigateToEditor);
+    console.log('EventsPage: onNavigateToEditor type:', typeof onNavigateToEditor);
+  }, [onNavigateToEditor]);
 
   // Update local pages when pages from hook change
   React.useEffect(() => {
@@ -333,9 +342,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
             </div>
             <button
               onClick={() => {
-                if (onBackToEditor) {
-                  onBackToEditor();
-                }
+                setShowSchedulePage(true);
               }}
               style={{
                 padding: '8px 16px',
@@ -351,7 +358,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#218838'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#28a745'}
             >
-              ➕ ADD
+              ➕ ADD SESSION
             </button>
           </div>
         )}
@@ -495,6 +502,61 @@ const EventsPage: React.FC<EventsPageProps> = ({ onBackToEditor }) => {
           )}
         </div>
       </div>
+
+      {/* SchedulePage Modal */}
+      {showSchedulePage && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            width: '90vw',
+            height: '90vh',
+            position: 'relative'
+          }}>
+            <button
+              onClick={() => setShowSchedulePage(false)}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                zIndex: 1001
+              }}
+            >
+              ✕ Close
+            </button>
+            <SchedulePage 
+              onNavigateToEditor={() => {
+                console.log('EventsPage: onNavigateToEditor wrapper called');
+                setShowSchedulePage(false);
+                if (onNavigateToEditor) {
+                  console.log('EventsPage: Calling parent onNavigateToEditor');
+                  onNavigateToEditor();
+                } else {
+                  console.error('EventsPage ERROR: onNavigateToEditor is undefined!');
+                  alert('Error: Navigation function is not available. Please check the console.');
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
 
     </div>
   )

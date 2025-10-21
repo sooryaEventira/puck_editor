@@ -9,10 +9,14 @@ import { PageManager, PageNameDialog } from './page'
 import Preview from './Preview'
 import { GlobalNavbar } from './layout'
 import { EventsPage } from './pages'
+import { NavigationProvider } from '../contexts/NavigationContext'
 
 const App: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false)
   const [currentView, setCurrentView] = useState<'editor' | 'events'>('editor')
+  const [puckUi, setPuckUi] = useState<any>(undefined)
+  
+  console.log('🔄 App component rendering, currentView:', currentView);
   
   const {
     currentData,
@@ -60,6 +64,57 @@ const App: React.FC = () => {
 
   const handleBackToEditor = () => {
     setCurrentView('editor')
+  }
+
+  const handleNavigateToEditor = () => {
+    console.log('🚀 handleNavigateToEditor called - loading custom session data from localStorage');
+    
+    // Load the custom session data from localStorage
+    const storedData = localStorage.getItem('custom-session-data');
+    console.log('📦 Checking localStorage for custom-session-data:', storedData ? 'FOUND' : 'NOT FOUND');
+    
+    if (storedData) {
+      try {
+        const data = JSON.parse(storedData);
+        console.log('✅ Loading custom session with', data.content?.length || 0, 'components');
+        console.log('📋 Component types:', data.content?.map((c: any) => c.type).join(', '));
+        
+        // Get the SessionForm ID
+        const sessionFormId = data.content?.[0]?.id || 'session-form-editor';
+        
+        console.log('🎯 Auto-selecting SessionForm in canvas with ID:', sessionFormId);
+        
+        // Update current data with the custom session data
+        setCurrentData(data);
+        
+        // Set UI state to auto-select the SessionForm component
+        setPuckUi({
+          itemSelector: {
+            id: sessionFormId
+          }
+        });
+        
+        // Switch to editor view in EDIT MODE (not preview)
+        setCurrentView('editor');
+        setShowPreview(false); // Ensure we're in edit mode, not preview
+        
+        console.log('✨ Custom session data loaded and switched to EDIT mode with auto-selection!');
+        
+        // Clear localStorage after loading
+        localStorage.removeItem('custom-session-data');
+      } catch (error) {
+        console.error('❌ Error loading custom session data:', error);
+        // Still switch to editor even if data load fails
+        setCurrentView('editor');
+        setShowPreview(false);
+        setPuckUi(undefined);
+      }
+    } else {
+      console.warn('⚠️ No custom session data found in localStorage - switching to editor anyway');
+      setCurrentView('editor');
+      setShowPreview(false);
+      setPuckUi(undefined);
+    }
   }
 
   // Function to force black text color on all Puck elements
@@ -232,6 +287,9 @@ const App: React.FC = () => {
 
   // Render Events Page
   if (currentView === 'events') {
+    console.log('📍 Rendering Events Page');
+    console.log('📍 handleNavigateToEditor function:', typeof handleNavigateToEditor, handleNavigateToEditor);
+    
     return (
       <div style={{ height: '100vh' }}>
         {/* Global Navbar */}
@@ -242,7 +300,10 @@ const App: React.FC = () => {
         
         {/* Events Page Content */}
         <div style={{ marginTop: '64px', height: 'calc(100vh - 64px)' }}>
-          <EventsPage onBackToEditor={handleBackToEditor} />
+          <EventsPage 
+            onBackToEditor={handleBackToEditor} 
+            onNavigateToEditor={handleNavigateToEditor}
+          />
         </div>
       </div>
     )
@@ -332,9 +393,11 @@ const App: React.FC = () => {
       {/* Main Content */}
       <div style={{ flex: 1, height: 'calc(100vh - 124px)' }}>
         {showPreview ? (
+          <NavigationProvider onNavigateToEditor={handleNavigateToEditor}>
           <Preview data={currentData} isInteractive={true} onDataChange={setCurrentData} />
+          </NavigationProvider>
         ) : (
-          <>
+          <NavigationProvider onNavigateToEditor={handleNavigateToEditor}>
             <style>
               {`
                 /* Fix Puck sidebar scrolling */
@@ -365,14 +428,15 @@ const App: React.FC = () => {
                 }
               `}
             </style>
-            <Puck 
+              <Puck 
               key={currentPage} // Force re-render when page changes
-              config={config as any} 
+                config={config as any} 
               data={currentData}
-              onPublish={handlePublish as any}
-              onChange={handleDataChange as any}
+                ui={puckUi}
+                onPublish={handlePublish as any}
+                onChange={handleDataChange as any}
             />
-          </>
+          </NavigationProvider>
         )}
       </div>
     </div>
