@@ -1,7 +1,7 @@
 import React from 'react'
 import { DropZone } from "@measured/puck"
 import { 
-  Heading, Text, Button, Card, List, Divider, Spacer, Checkbox, InputField, TimeInput, SelectField, AMPMToggle 
+  Heading, Text, Button, Card, List, Divider, Spacer, Checkbox, InputField, SelectField 
 } from '../components/basic'
 import { 
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
@@ -20,7 +20,7 @@ export const config = {
       title: "Basic Elements",
       icon: "fa-solid fa-font",
       defaultExpanded: true,
-      components: ["Heading", "Text", "Button", "Checkbox", "Divider", "Spacer", "TextBlock", "InputField", "TimeInput", "SelectField", "AMPMToggle"],
+      components: ["Heading", "Text", "Button", "Checkbox", "Divider", "Spacer", "TextBlock", "InputField", "SelectField"],
       subcategories: {
         typography: {
           title: "Typography",
@@ -30,7 +30,7 @@ export const config = {
         interactive: {
           title: "Interactive",
           icon: "fa-solid fa-hand-pointer",
-          components: ["Button", "Checkbox", "InputField", "TimeInput", "SelectField", "AMPMToggle"]
+          components: ["Button", "Checkbox", "InputField", "SelectField"]
         },
         spacing: {
           title: "Spacing",
@@ -411,46 +411,6 @@ export const config = {
       },
       render: InputField
     },
-    TimeInput: {
-      label: "🕐 Time Input",
-      fields: {
-        label: { type: 'text' as const },
-        value: { type: 'text' as const },
-        required: { type: 'radio' as const, options: [
-          { label: 'No', value: false },
-          { label: 'Yes', value: true }
-        ]},
-        disabled: { type: 'radio' as const, options: [
-          { label: 'No', value: false },
-          { label: 'Yes', value: true }
-        ]},
-        width: { type: 'text' as const },
-        height: { type: 'text' as const },
-        fontSize: { type: 'text' as const },
-        color: { type: 'text' as const },
-        backgroundColor: { type: 'text' as const },
-        borderColor: { type: 'text' as const },
-        borderRadius: { type: 'text' as const },
-        padding: { type: 'text' as const },
-        margin: { type: 'text' as const }
-      },
-      defaultProps: {
-        label: 'Time',
-        value: '00:00',
-        required: false,
-        disabled: false,
-        width: '100%',
-        height: '40px',
-        fontSize: '14px',
-        color: '#333333',
-        backgroundColor: '#ffffff',
-        borderColor: '#d1d5db',
-        borderRadius: '6px',
-        padding: '10px 12px',
-        margin: '0'
-      },
-      render: TimeInput
-    },
     SelectField: {
       label: "📋 Select Field",
       fields: {
@@ -504,40 +464,6 @@ export const config = {
         margin: '0'
       },
       render: SelectField
-    },
-    AMPMToggle: {
-      label: "🕐 AM/PM Toggle",
-      fields: {
-        value: { 
-          type: 'select' as const,
-          options: [
-            { label: 'AM', value: 'AM' },
-            { label: 'PM', value: 'PM' }
-          ]
-        },
-        width: { type: 'text' as const },
-        height: { type: 'text' as const },
-        fontSize: { type: 'text' as const },
-        color: { type: 'text' as const },
-        backgroundColor: { type: 'text' as const },
-        borderColor: { type: 'text' as const },
-        borderRadius: { type: 'text' as const },
-        padding: { type: 'text' as const },
-        margin: { type: 'text' as const }
-      },
-      defaultProps: {
-        value: 'AM' as const,
-        width: '60px',
-        height: '40px',
-        fontSize: '14px',
-        color: '#333333',
-        backgroundColor: '#ffffff',
-        borderColor: '#d1d5db',
-        borderRadius: '6px',
-        padding: '10px 12px',
-        margin: '0'
-      },
-      render: AMPMToggle
     },
     Container: {
       label: "📦 Container",

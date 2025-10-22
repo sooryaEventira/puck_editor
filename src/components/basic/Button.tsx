@@ -1,7 +1,7 @@
 import React from 'react'
 import { ButtonProps } from '../../types'
 
-const Button = ({ text, variant = 'primary', size = 'medium', textColor }: ButtonProps) => {
+const Button: React.FC<ButtonProps> = ({ text, variant = 'primary', size = 'medium', textColor, onClick }) => {
   const sizeStyles: Record<string, React.CSSProperties> = {
     small: { padding: '8px 16px', fontSize: '14px' },
     medium: { padding: '12px 24px', fontSize: '16px' },
@@ -17,6 +17,7 @@ const Button = ({ text, variant = 'primary', size = 'medium', textColor }: Butto
   
   return (
     <button 
+      onClick={onClick}
       style={{
         ...sizeStyles[size],
         ...variantStyles[variant],

@@ -27,6 +27,7 @@ export interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'success' | 'danger'
   size?: 'small' | 'medium' | 'large'
   textColor?: string
+  onClick?: () => void
 }
 
 export interface CardProps {

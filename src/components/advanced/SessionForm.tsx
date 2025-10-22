@@ -3,10 +3,10 @@ import Heading from '../basic/Heading';
 import Text from '../basic/Text';
 import Button from '../basic/Button';
 import Spacer from '../basic/Spacer';
-import TimeInput from '../basic/TimeInput';
-import AMPMToggle from '../basic/AMPMToggle';
+import TimeInputWithAMPM from '../basic/TimeInputWithAMPM';
 import InputField from '../basic/InputField';
 import SelectField from '../basic/SelectField';
+
 
 export interface SessionFormProps {
   // Puck prop for drag and drop
@@ -117,19 +117,12 @@ export const SessionForm: React.FC<SessionFormProps> = ({
           <div style={{ marginBottom: '8px' }}>
             <Text text="Start time" size="14px" color="#374151" align="left" />
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <TimeInput
-              label=""
-              value={startTime}
-              width="120px"
-              height="40px"
-            />
-            <AMPMToggle
-              value={startAMPM}
-              width="70px"
-              height="40px"
-            />
-          </div>
+          <TimeInputWithAMPM
+            timeValue={startTime}
+            ampmValue={startAMPM}
+            width="150px"
+            height="40px"
+          />
         </div>
         
         {/* End Time Group */}
@@ -137,19 +130,12 @@ export const SessionForm: React.FC<SessionFormProps> = ({
           <div style={{ marginBottom: '8px' }}>
             <Text text="End Time" size="14px" color="#374151" align="left" />
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <TimeInput
-              label=""
-              value={endTime}
-              width="120px"
-              height="40px"
-            />
-            <AMPMToggle
-              value={endAMPM}
-              width="70px"
-              height="40px"
-            />
-          </div>
+          <TimeInputWithAMPM
+            timeValue={endTime}
+            ampmValue={endAMPM}
+            width="150px"
+            height="40px"
+          />
         </div>
         
         {/* Location Group */}
@@ -161,7 +147,21 @@ export const SessionForm: React.FC<SessionFormProps> = ({
             label=""
             value={location}
             placeholder={locationPlaceholder}
-            icon="📍"
+            icon={
+              <svg 
+                width="16" 
+                height="16" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            }
             iconPosition="left"
             width="100%"
             height="40px"

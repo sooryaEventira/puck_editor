@@ -7,7 +7,7 @@ interface InputFieldProps {
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url';
   required?: boolean;
   disabled?: boolean;
-  icon?: string;
+  icon?: string | React.ReactNode;
   iconPosition?: 'left' | 'right';
   width?: string;
   height?: string;
@@ -71,7 +71,10 @@ const InputField: React.FC<InputFieldProps> = ({
               transform: 'translateY(-50%)',
               fontSize: '16px',
               color: '#6b7280',
-              zIndex: 1
+              zIndex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
             {icon}
@@ -113,7 +116,10 @@ const InputField: React.FC<InputFieldProps> = ({
               transform: 'translateY(-50%)',
               fontSize: '16px',
               color: '#6b7280',
-              zIndex: 1
+              zIndex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
             {icon}
