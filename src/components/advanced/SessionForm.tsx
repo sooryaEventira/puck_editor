@@ -25,11 +25,9 @@ export interface SessionFormProps {
   
   // Location
   location?: string;
-  locationPlaceholder?: string;
   
   // Event type
   eventType?: string;
-  eventTypePlaceholder?: string;
   eventTypeOptions?: { label: string; value: string }[];
   
   // Call to action
@@ -59,14 +57,13 @@ export const SessionForm: React.FC<SessionFormProps> = ({
   startAMPM = 'AM',
   endTime = '00:00',
   endAMPM = 'AM',
-  location = '',
-  locationPlaceholder = 'Enter location',
-  eventType = '',
-  eventTypePlaceholder = 'Select event type',
+  location = 'Enter location',
+  eventType = 'Select event type',
   eventTypeOptions = [
-    { label: 'In-Person', value: 'in-person' },
-    { label: 'Virtual', value: 'virtual' },
-    { label: 'Hybrid', value: 'hybrid' }
+    { label: 'Select event type', value: 'Select event type' },
+    { label: 'In-Person', value: 'In-Person' },
+    { label: 'Virtual', value: 'Virtual' },
+    { label: 'Hybrid', value: 'Hybrid' }
   ],
   ctaText = 'Click to add a section!',
   addButtonText = '+ Add section',
@@ -146,7 +143,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({
           <InputField
             label=""
             value={location}
-            placeholder={locationPlaceholder}
+            placeholder={location}
             icon={
               <svg 
                 width="16" 
@@ -176,7 +173,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({
           <SelectField
             label=""
             value={eventType}
-            placeholder={eventTypePlaceholder}
+            placeholder=""
             options={eventTypeOptions}
             width="100%"
             height="40px"
@@ -212,6 +209,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({
           text={addButtonText}
           variant="primary"
           size="medium"
+          backgroundColor="#8b5cf6"
           onClick={onAddSection}
         />
       </div>
@@ -238,6 +236,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({
               text={saveButtonText}
               variant="primary"
               size="medium"
+              backgroundColor="#8b5cf6"
               onClick={onSave}
             />
           </div>

@@ -39,12 +39,21 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   ...props
 }) => {
   // Get navigation function from context or props
-  const { onNavigateToEditor: onNavigateToEditorContext } = useNavigation();
+  const { onNavigateToEditor: onNavigateToEditorContext, onAddComponent } = useNavigation();
+  
+  // Debug: Log context availability on component mount
+  useEffect(() => {
+    console.log('🔍 SchedulePage mounted - NavigationContext check:');
+    console.log('  - onAddComponent available?', !!onAddComponent);
+    console.log('  - onNavigateToEditor available?', !!onNavigateToEditorContext);
+    console.log('  - Full context:', { onAddComponent, onNavigateToEditorContext });
+  }, [onAddComponent, onNavigateToEditorContext]);
   const onNavigateToEditor = onNavigateToEditorProp || onNavigateToEditorContext;
   
   console.log('SchedulePage: onNavigateToEditor from prop:', typeof onNavigateToEditorProp);
   console.log('SchedulePage: onNavigateToEditor from context:', typeof onNavigateToEditorContext);
   console.log('SchedulePage: Final onNavigateToEditor:', typeof onNavigateToEditor);
+  console.log('SchedulePage: onAddComponent:', typeof onAddComponent);
   
   // Get events from Puck props if available
   const puckEvents = (props as any).events || [];
@@ -174,7 +183,35 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   };
 
   const addSession = () => {
-    setIsModalOpen(true);
+    console.log('🎯 addSession called!');
+    console.log('🎯 onAddComponent available?', !!onAddComponent);
+    
+    // If we're in the Puck editor, add a SessionForm component to the canvas
+    if (onAddComponent) {
+      console.log('✅ Using onAddComponent to add SessionForm to Puck canvas');
+      onAddComponent('SessionForm', {
+        sessionTitle: 'New Session',
+        startTime: '00:00',
+        startAMPM: 'AM',
+        endTime: '00:00',
+        endAMPM: 'AM',
+        location: 'Enter location',
+        eventType: 'Select event type',
+        ctaText: 'Click to add a section!',
+        addButtonText: '+ Add section',
+        cancelButtonText: 'Cancel',
+        saveButtonText: 'Save',
+        showActionButtons: true,
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        padding: '40px'
+      });
+      console.log('✅ SessionForm component added to canvas');
+    } else {
+      console.log('⚠️ onAddComponent not available, using fallback modal');
+      // Fallback: show modal if not in Puck editor
+      setIsModalOpen(true);
+    }
   };
 
   const closeModal = () => {
@@ -256,10 +293,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             startAMPM: "AM",
             endTime: "00:00",
             endAMPM: "AM",
-            location: "",
-            locationPlaceholder: "Enter location",
-            eventType: "",
-            eventTypePlaceholder: "Select event type",
+            location: "Enter location",
+            eventType: "Select event type",
             ctaText: "Click to add a section!",
             addButtonText: "+ Add section",
             cancelButtonText: "Cancel",
@@ -1188,10 +1223,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
           startAMPM="AM"
           endTime="00:00"
           endAMPM="AM"
-          location=""
-          locationPlaceholder="Enter location"
-          eventType=""
-          eventTypePlaceholder="Select event type"
+          location="Enter location"
+          eventType="Select event type"
           ctaText="Click to add a section!"
           addButtonText="+ Add section"
           cancelButtonText="Cancel"
@@ -1267,7 +1300,12 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         >
           {/* Left Arrow */}
           <button
-            onClick={() => navigateWeek("prev")}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              navigateWeek("prev");
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
             style={{
               width: "48px",
               height: "48px",
@@ -1282,6 +1320,9 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
               color: "#5f6368",
               transition: "all 0.2s ease",
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              pointerEvents: "auto",
+              position: "relative",
+              zIndex: 10
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = "#e5e7eb";
@@ -1300,7 +1341,12 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             {weekDates.map((date, index) => (
               <button
                 key={index}
-                onClick={() => selectDate(date)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  selectDate(date);
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
                 style={{
                   padding: "16px 24px",
                   borderRadius: "12px",
@@ -1315,6 +1361,9 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                   boxShadow: isCurrentDay(date)
                     ? "0 4px 8px rgba(139, 92, 246, 0.3)"
                     : "0 2px 4px rgba(0,0,0,0.1)",
+                  pointerEvents: "auto",
+                  position: "relative",
+                  zIndex: 10
                 }}
                 onMouseEnter={(e) => {
                   if (!isCurrentDay(date)) {
@@ -1336,7 +1385,12 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
 
           {/* Right Arrow */}
           <button
-            onClick={() => navigateWeek("next")}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              navigateWeek("next");
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
             style={{
               width: "48px",
               height: "48px",
@@ -1351,6 +1405,9 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
               color: "#5f6368",
               transition: "all 0.2s ease",
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              pointerEvents: "auto",
+              position: "relative",
+              zIndex: 10
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = "#e5e7eb";
@@ -1365,25 +1422,59 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
           </button>
         </div>
 
-        {/* Add Session Button */}
-        <button
-          onClick={addSession}
+        {/* Add Session Button - Special Interactive Zone for Puck */}
+        <div
+          data-puck-interactive="true"
           style={{
-            backgroundColor: "#8b5cf6",
-            color: "#ffffff",
-            border: "none",
-            borderRadius: "8px",
-            padding: "12px 24px",
-            fontSize: "16px",
-            fontWeight: "500",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
+            pointerEvents: "auto",
+            position: "relative",
+            zIndex: 100
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
           }}
         >
-          + Add session
-        </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              console.log('🔵 =============================================');
+              console.log('🔵 Add Session button CLICKED in Preview Mode!');
+              console.log('🔵 onAddComponent is:', onAddComponent);
+              console.log('🔵 Type of onAddComponent:', typeof onAddComponent);
+              console.log('🔵 =============================================');
+              addSession();
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+            }}
+            onMouseUp={(e) => {
+              e.stopPropagation();
+            }}
+            style={{
+              backgroundColor: "#8b5cf6",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "8px",
+              padding: "12px 24px",
+              fontSize: "16px",
+              fontWeight: "500",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              pointerEvents: "auto",
+              position: "relative",
+              zIndex: 101,
+              userSelect: "none"
+            }}
+          >
+            + Add session
+          </button>
+        </div>
       </div>
 
       {/* Schedule Listing */}

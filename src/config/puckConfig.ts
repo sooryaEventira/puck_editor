@@ -12,8 +12,14 @@ import {
 import FeedbackForm from '../components/advanced/FeedbackForm'
 import ImageSimple from '../components/advanced/ImageSimple'
 
+// Import split config modules
+import { viewports } from './puck/viewports'
+import { categories } from './puck/categories'
+
 // Enhanced config with multiple components, categories, and icons
 export const config = {
+  // Configure viewport sizes for different device previews
+  viewports,
   categories: {
     // Basic Elements Category
     basic: {
@@ -2170,8 +2176,11 @@ export const config = {
         title: 'Schedule',
         events: []
       },
-      render: ({ onNavigateToEditor, ...props }: { onNavigateToEditor?: () => void, [key: string]: any }) => 
-        React.createElement(SchedulePage as any, { ...props, onNavigateToEditor })
+      render: (props: any) => {
+        // Note: onNavigateToEditor and onAddComponent come from NavigationContext
+        // They are not passed as props here, the component gets them from useNavigation()
+        return React.createElement(SchedulePage as any, props);
+      }
     },
     LiveChat: {
       label: "💬 Live Chat",
@@ -2298,17 +2307,15 @@ export const config = {
           type: 'text' as const,
           label: 'Location'
         },
-        locationPlaceholder: {
-          type: 'text' as const,
-          label: 'Location Placeholder'
-        },
         eventType: {
-          type: 'text' as const,
-          label: 'Event Type'
-        },
-        eventTypePlaceholder: {
-          type: 'text' as const,
-          label: 'Event Type Placeholder'
+          type: 'select' as const,
+          label: 'Event Type',
+          options: [
+            { label: 'Select event type', value: 'Select event type' },
+            { label: 'In-Person', value: 'In-Person' },
+            { label: 'Virtual', value: 'Virtual' },
+            { label: 'Hybrid', value: 'Hybrid' }
+          ]
         },
         ctaText: {
           type: 'text' as const,
@@ -2353,10 +2360,8 @@ export const config = {
         startAMPM: 'AM',
         endTime: '00:00',
         endAMPM: 'AM',
-        location: '',
-        locationPlaceholder: 'Enter location',
-        eventType: '',
-        eventTypePlaceholder: 'Select event type',
+        location: 'Enter location',
+        eventType: 'Select event type',
         ctaText: 'Click to add a section!',
         addButtonText: '+ Add section',
         cancelButtonText: 'Cancel',

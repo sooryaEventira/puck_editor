@@ -1,4 +1,7 @@
 import { PageData } from '../types'
+import { logger } from '../utils/logger'
+import { showToast } from '../utils/toast'
+import { API_ENDPOINTS } from '../config/env'
 
 export const usePublish = (
   currentData: any,
@@ -30,7 +33,7 @@ export const usePublish = (
       
       // Try to save directly to project directory via API
       try {
-        const response = await fetch('http://localhost:3001/api/save-page', {
+        const response = await fetch(API_ENDPOINTS.SAVE_PAGE, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -53,13 +56,7 @@ export const usePublish = (
             setCurrentPage(newPageId)
           }
           
-          alert(`✅ Page "${currentPageName}" saved successfully!
-          
-📁 File saved to: ${result.path}
-📊 Components: ${result.components}
-📝 Filename: ${result.filename}
-
-The data has been saved directly to your project directory!`)
+          showToast.success(`Page "${currentPageName}" saved successfully!\n\n📁 File: ${result.filename}\n📊 Components: ${result.components}`)
           
 
         } else {
@@ -67,7 +64,7 @@ The data has been saved directly to your project directory!`)
         }
         
       } catch (apiError) {
-        console.warn('API save failed, falling back to download method:', apiError)
+        logger.warn('API save failed, falling back to download method:', apiError)
         
         // Fallback: Create downloadable file
         const jsonData = JSON.stringify(data, null, 2)
@@ -79,16 +76,12 @@ The data has been saved directly to your project directory!`)
         link.click()
         document.body.removeChild(link)
         
-        alert(`⚠️ API server not running - File downloaded instead
-        
-📁 Please start the server: npm run server
-📄 File downloaded: ${filename}
-📂 Move to: src/data/pages/${filename}`)
+        showToast.warning(`API server not running - File downloaded instead\n\n📁 Start server: npm run server\n📄 Move ${filename} to: src/data/pages/`)
       }
       
     } catch (error) {
-      console.error('Error saving page data:', error)
-      alert('Error saving page data. Please try again.')
+      logger.error('Error saving page data:', error)
+      showToast.error('Error saving page data. Please try again.')
     }
   }
 

@@ -32,14 +32,11 @@ const TimeInputWithAMPM: React.FC<TimeInputWithAMPMProps> = ({
   backgroundColor = '#ffffff',
   borderColor = '#d1d5db',
   borderRadius = '6px',
-  padding = '10px 12px',
+  padding: _padding = '10px 12px',
   margin = '0',
-  onTimeChange,
-  onAMPMChange
+  onTimeChange: _onTimeChange,
+  onAMPMChange: _onAMPMChange
 }) => {
-  // Convert time and AM/PM to display format with space
-  const displayValue = `${timeValue} ${ampmValue}`;
-
   return (
     <div style={{ margin, width }}>
       {label && (
@@ -60,7 +57,6 @@ const TimeInputWithAMPM: React.FC<TimeInputWithAMPMProps> = ({
         style={{
           width: '100%',
           height,
-          padding,
           border: `1px solid ${borderColor}`,
           borderRadius,
           fontSize,
@@ -70,11 +66,55 @@ const TimeInputWithAMPM: React.FC<TimeInputWithAMPMProps> = ({
           alignItems: 'center',
           boxSizing: 'border-box',
           cursor: disabled ? 'not-allowed' : 'text',
-          gap: '4px'
+          overflow: 'hidden'
         }}
       >
-        <span>{timeValue}</span>
-        <span>{ampmValue}</span>
+             {/* Time Section */}
+             <div
+          style={{
+            flex: 1,
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color,
+            fontSize,
+            fontWeight: '500'
+          }}
+        >
+          {timeValue}
+        </div>
+
+               {/* Vertical Separator Line */}
+               <div
+          style={{
+            width: '1px',
+            height: '70%',
+            backgroundColor: borderColor,
+            flexShrink: 0
+          }}
+        />
+        {/* AM/PM Section */}
+        <div
+          style={{
+            flex: '0 0 auto',
+            width: '50px',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            
+            color,
+            fontSize,
+            fontWeight: '500'
+          }}
+        >
+          {ampmValue}
+        </div>
+        
+ 
+        
+   
       </div>
     </div>
   );

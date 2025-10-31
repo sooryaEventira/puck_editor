@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Page } from '../types'
+import { logger } from '../utils/logger'
+import { API_ENDPOINTS } from '../config/env'
 
 // Default JSON data structure
 const defaultJsonData: any = {
@@ -348,11 +350,11 @@ const convertJsonToPagesList = (jsonData: any): Page[] => {
 export const usePageManagement = () => {
   const [currentData, setCurrentData] = useState<any>(() => ({
     content: [],
-    root: { props: {} },
+    root: { props: { title: 'Page 1' } },
     zones: {}
   }))
-  const [currentPage, setCurrentPage] = useState('new-page')
-  const [currentPageName, setCurrentPageName] = useState('New Page')
+  const [currentPage, setCurrentPage] = useState('page-1')
+  const [currentPageName, setCurrentPageName] = useState('Page 1')
   const [pages, setPages] = useState<Page[]>(() => 
     convertJsonToPagesList(defaultJsonData)
   )
@@ -362,7 +364,7 @@ export const usePageManagement = () => {
   // Function to load all pages from server
   const loadPages = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/pages')
+      const response = await fetch(API_ENDPOINTS.GET_PAGES)
       const result = await response.json()
       
       if (result.success) {
@@ -387,7 +389,7 @@ export const usePageManagement = () => {
         setPages(convertJsonToPagesList(defaultJsonData))
       }
     } catch (error) {
-      console.error('Error loading pages:', error)
+      logger.error('Error loading pages:', error)
       // If server fails, use default pages
       setPages(convertJsonToPagesList(defaultJsonData))
     }
@@ -395,14 +397,14 @@ export const usePageManagement = () => {
 
   // Function to load a specific page
   const loadPage = async (filename: string) => {
-    console.log('loadPage called with filename:', filename)
+    logger.debug('loadPage called with filename:', filename)
     try {
       // First check if it's a default page
       const pageId = filename.replace('.json', '')
-      console.log('Checking default pages for pageId:', pageId)
+      logger.debug('Checking default pages for pageId:', pageId)
       
       if (defaultJsonData[pageId]) {
-        console.log('Found in default pages:', pageId)
+        logger.debug('Found in default pages:', pageId)
         const pageData = convertJsonToPuckData(defaultJsonData, pageId)
         setCurrentData(pageData)
         setCurrentPage(pageId)
@@ -413,7 +415,7 @@ export const usePageManagement = () => {
       
       // Also check if the filename is just the page ID (without .json)
       if (defaultJsonData[filename]) {
-        console.log('Found in default pages with filename:', filename)
+        logger.debug('Found in default pages with filename:', filename)
         const pageData = convertJsonToPuckData(defaultJsonData, filename)
         setCurrentData(pageData)
         setCurrentPage(filename)
@@ -425,13 +427,13 @@ export const usePageManagement = () => {
       // If not a default page, try to load from server
       // Ensure we're using the correct filename format
       const serverFilename = filename.endsWith('.json') ? filename : `${filename}.json`
-      console.log('Loading from server:', `http://localhost:3001/api/pages/${serverFilename}`)
-      const response = await fetch(`http://localhost:3001/api/pages/${serverFilename}`)
-      console.log('Server response status:', response.status)
+      logger.debug('Loading from server:', API_ENDPOINTS.GET_PAGE(serverFilename))
+      const response = await fetch(API_ENDPOINTS.GET_PAGE(serverFilename))
+      logger.debug('Server response status:', response.status)
       
       if (response.ok) {
         const result = await response.json()
-        console.log('Server response data:', result)
+        logger.debug('Server response data:', result)
         
         if (result.success) {
           setCurrentData(result.data)
@@ -448,13 +450,13 @@ export const usePageManagement = () => {
           setShowPageManager(false)
           return result.data // Return the data for Events page to use
         } else {
-          console.error('Server returned error:', result.error)
+          logger.error('Server returned error:', result.error)
         }
       } else {
-        console.error('Server response not ok:', response.status, response.statusText)
+        logger.error('Server response not ok:', response.status, response.statusText)
       }
     } catch (error) {
-      console.error('Error loading page:', error)
+      logger.error('Error loading page:', error)
     }
     return null // Return null if loading fails
   }
@@ -465,7 +467,9 @@ export const usePageManagement = () => {
     const newPageData = {
       content: [],
       root: {
-        props: {}
+        props: {
+          title: 'New Page'
+        }
       },
       zones: {}
     }
@@ -483,6 +487,17 @@ export const usePageManagement = () => {
     // Update the current page ID to use the sanitized page name
     const sanitizedName = pageName.toLowerCase().replace(/[^a-z0-9]/g, '-')
     setCurrentPage(`new-page-${sanitizedName}`)
+    // Update the canvas title to match the page name
+    setCurrentData((prevData: any) => ({
+      ...prevData,
+      root: {
+        ...prevData.root,
+        props: {
+          ...prevData.root?.props,
+          title: pageName
+        }
+      }
+    }))
     setShowPageNameDialog(false)
   }
 

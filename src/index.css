@@ -234,3 +234,31 @@ div[style*="background: #6c757d"] button,
 div[style*="background-color: #6c757d"] button {
   color: white !important;
 }
+
+/* Force untitledui icons to be white in navbar */
+nav svg,
+nav svg path,
+nav svg circle,
+nav svg line,
+nav svg polyline,
+nav svg rect {
+  stroke: white !important;
+  fill: none !important;
+}
+
+/* Hide Puck left sidebar (components/drawer panel) - TARGETED */
+aside[class*="Sidebar--left"],
+aside[class*="Sidebar_Sidebar--left_"],
+[class*="_Sidebar--left"] {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+}
+
+/* Adjust Puck layout when left sidebar is hidden */
+div[class*="Puck-frame"],
+div[class*="_frame"] {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
