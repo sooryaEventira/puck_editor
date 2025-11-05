@@ -46,8 +46,13 @@ export const useAppHandlers = ({
   /**
    * Handle page creation mode selection
    */
-  const handlePageCreationSelect = (mode: 'scratch' | 'template' | 'html') => {
+  const handlePageCreationSelect = (mode: 'scratch' | 'template' | 'html', blockType?: string) => {
     logger.debug('Page creation mode selected:', mode)
+    if (mode === 'scratch' && blockType) {
+      logger.debug('Block type selected:', blockType)
+      // Handle block type selection for scratch mode
+      // You can implement specific logic based on blockType here
+    }
     // For now, all modes will create a new page from scratch
     // You can implement different logic for each mode later
     createNewPage()

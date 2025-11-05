@@ -8,13 +8,15 @@ interface EventHubPageProps {
   isDraft?: boolean
   onBackClick?: () => void
   userAvatarUrl?: string
+  onCardClick?: (cardId: string) => void
 }
 
 const EventHubPage: React.FC<EventHubPageProps> = ({
   eventName,
   isDraft,
   onBackClick,
-  userAvatarUrl
+  userAvatarUrl,
+  onCardClick
 }) => {
   const [activeSection, setActiveSection] = useState('event-hub')
 
@@ -63,7 +65,7 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
       />
 
       {/* Content */}
-      <EventHubContent />
+      <EventHubContent onCardClick={onCardClick} />
     </div>
   )
 }

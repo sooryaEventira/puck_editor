@@ -3,296 +3,6 @@ import { Page } from '../types'
 import { logger } from '../utils/logger'
 import { API_ENDPOINTS } from '../config/env'
 
-// Default JSON data structure
-const defaultJsonData: any = {
-  home: {
-    title: "Home",
-    slug: "/",
-    data: {
-      "/": {
-        root: {
-          props: { title: "Puck + React Router 7 demo" },
-        },
-        content: [
-          {
-            type: "Heading",
-            props: {
-              text: "Edit this page by adding /edit to the end of the URL",
-              level: 1,
-              id: "HeadingBlock-1694032984497",
-            },
-          },
-          {
-            type: "Heading",
-            props: {
-              text: "Heading",
-              level: 2,
-              id: "HeadingBlock-f201eaff-4358-4d47-ae34-8147d6f52384",
-            },
-          },
-          {
-            type: "Checkbox",
-            props: {
-              label: "I agree to terms",
-              checked: false,
-              id: "CheckboxBlock-001"
-            }
-          }
-          
-        ],
-        zones: {},
-      },
-    },
-  },
-  'simple-page': {
-    title: "HTML Page",
-    slug: "/simple-page",
-    type: "html",
-    data: {
-      "/": {
-        root: {
-          props: { title: "HTML Page" },
-        },
-        content: [
-          {
-            type: "HTMLContent",
-            props: {
-              htmlContent: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Event Page</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem 0;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            font-weight: 700;
-        }
-        
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-        
-        .section {
-            padding: 4rem 0;
-        }
-        
-        .section:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        
-        .section h2 {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 2rem;
-            color: #2d3748;
-        }
-        
-        .section p {
-            text-align: center;
-            font-size: 1.1rem;
-            max-width: 600px;
-            margin: 0 auto 2rem;
-            color: #4a5568;
-        }
-        
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-        
-        .feature {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-        
-        .feature:hover {
-            transform: translateY(-5px);
-        }
-        
-        .feature h3 {
-            color: #667eea;
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-        }
-        
-        .cta {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            text-align: center;
-            padding: 3rem 0;
-        }
-        
-        .cta h2 {
-            color: white;
-            margin-bottom: 1rem;
-        }
-        
-        .btn {
-            display: inline-block;
-            background: white;
-            color: #667eea;
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            margin-top: 1rem;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .footer {
-            background: #2d3748;
-            color: white;
-            text-align: center;
-            padding: 2rem 0;
-        }
-        
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .section h2 {
-                font-size: 2rem;
-            }
-            
-            .features {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <h1>Welcome to Our Event</h1>
-            <p>Join us for an amazing experience</p>
-        </header>
-        
-        <section class="section">
-            <h2>About the Event</h2>
-            <p>This is a simple HTML page that demonstrates how we can render static HTML content within our Puck editor. The page includes modern styling and responsive design.</p>
-            
-            <div class="features">
-                <div class="feature">
-                    <h3>🎯 Interactive</h3>
-                    <p>Engage with dynamic content and interactive elements throughout the event.</p>
-                </div>
-                <div class="feature">
-                    <h3>📱 Responsive</h3>
-                    <p>Perfect viewing experience on all devices, from mobile to desktop.</p>
-                </div>
-                <div class="feature">
-                    <h3>⚡ Fast</h3>
-                    <p>Optimized for speed and performance to ensure smooth user experience.</p>
-                </div>
-            </div>
-        </section>
-        
-        <section class="section">
-            <h2>Event Details</h2>
-            <p>Discover all the exciting features and activities we have planned for this special event. From keynote speakers to interactive workshops, there's something for everyone.</p>
-        </section>
-        
-        <section class="cta">
-            <h2>Ready to Join?</h2>
-            <p>Don't miss out on this incredible opportunity. Register now and be part of something amazing!</p>
-            <a href="#register" class="btn">Register Now</a>
-        </section>
-    </div>
-    
-    <footer class="footer">
-        <p>&copy; 2024 Event Company. All rights reserved.</p>
-    </footer>
-</body>
-</html>`,
-              id: "HTMLContent-001"
-            }
-          }
-        ],
-        zones: {},
-      },
-    },
-  },
-  page1: {
-    title: "Second Page",
-    slug: "/page1",
-    data: {
-      "/": {
-        root: {
-          props: { title: "Puck + React Router 7 demo" },
-        },
-        content: [
-          {
-            type: "Heading",
-            props: {
-              text: "secondpage",
-              level: 1,
-              id: "HeadingBlock-1694032984497",
-            },
-          },
-          {
-            type: "Heading",
-            props: {
-              text: "Second page",
-              level: 2,
-              id: "HeadingBlock-f201eaff-4358-4d47-ae34-8147d6f52384",
-            },
-          },
-          {
-            type: "Heading",
-            props: {
-              text: "Second Page",
-              level: 3,
-              id: "HeadingBlock-255c9b3d-88be-4c5b-ace9-deeb71cb0c40",
-            },
-          },
-        ],
-        zones: {},
-      },
-    },
-  }
-}
-
 // Function to convert HeadingBlock to Heading for compatibility
 const convertHeadingBlock = (item: any) => {
   if (item.type === "HeadingBlock") {
@@ -347,17 +57,17 @@ const convertJsonToPagesList = (jsonData: any): Page[] => {
   })
 }
 
+const defaultPage1Data = {
+  content: [],
+  root: { props: { title: 'Page 1', pageTitle: 'Page 1' } },
+  zones: {}
+}
+
 export const usePageManagement = () => {
-  const [currentData, setCurrentData] = useState<any>(() => ({
-    content: [],
-    root: { props: { title: 'Page 1' } },
-    zones: {}
-  }))
-  const [currentPage, setCurrentPage] = useState('page-1')
+  const [currentData, setCurrentData] = useState<any>(defaultPage1Data)
+  const [currentPage, setCurrentPage] = useState('page1')
   const [currentPageName, setCurrentPageName] = useState('Page 1')
-  const [pages, setPages] = useState<Page[]>(() => 
-    convertJsonToPagesList(defaultJsonData)
-  )
+  const [pages, setPages] = useState<Page[]>([])
   const [showPageManager, setShowPageManager] = useState(false)
   const [showPageNameDialog, setShowPageNameDialog] = useState(false)
 
@@ -368,12 +78,41 @@ export const usePageManagement = () => {
       const result = await response.json()
       
       if (result.success) {
-        const pageList = result.pages.map((page: any) => {
-          // Try to extract page name from filename or use a default
+        // Load page data for each page to get the actual pageTitle
+        const pageListPromises = result.pages.map(async (page: any) => {
           let pageName = page.filename.replace('.json', '')
-          if (pageName.startsWith('page-data-')) {
-            pageName = pageName.replace('page-data-', '').replace(/-/g, ' ')
+          
+          // Try to load the actual page data to get the pageTitle
+          try {
+            const pageResponse = await fetch(API_ENDPOINTS.GET_PAGE(page.filename))
+            if (pageResponse.ok) {
+              const pageResult = await pageResponse.json()
+              if (pageResult.success && pageResult.data?.root?.props) {
+                const pageTitle = pageResult.data.root.props.pageTitle || pageResult.data.root.props.title
+                if (pageTitle) {
+                  pageName = pageTitle
+                }
+              }
+            }
+          } catch (error) {
+            // If loading fails, fall back to filename-based extraction
+            logger.debug('Could not load page data for', page.filename, error)
           }
+          
+          // Fallback to filename-based extraction if no pageTitle found
+          if (!pageName || pageName === page.filename.replace('.json', '')) {
+            if (pageName.startsWith('page-data-')) {
+              pageName = pageName.replace('page-data-', '').replace(/-/g, ' ')
+            }
+            if (pageName.startsWith('page-')) {
+              pageName = pageName.replace('page-', '').replace(/-/g, ' ')
+              // Remove timestamp pattern (digits at the end)
+              pageName = pageName.replace(/-\d+$/, '').replace(/-/g, ' ')
+            }
+            // Capitalize first letter
+            pageName = pageName.charAt(0).toUpperCase() + pageName.slice(1)
+          }
+          
           return {
             id: page.filename.replace('.json', ''),
             name: pageName,
@@ -381,17 +120,19 @@ export const usePageManagement = () => {
             lastModified: page.modified
           }
         })
-        // Merge with default pages
-        const defaultPages = convertJsonToPagesList(defaultJsonData)
-        setPages([...defaultPages, ...pageList])
+        
+        const pageList = await Promise.all(pageListPromises)
+        // Sort pages in ascending order by name (alphabetically)
+        const sortedPageList = pageList.sort((a, b) => {
+          return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+        })
+        setPages(sortedPageList)
       } else {
-        // If server fails, use default pages
-        setPages(convertJsonToPagesList(defaultJsonData))
+        setPages([])
       }
     } catch (error) {
       logger.error('Error loading pages:', error)
-      // If server fails, use default pages
-      setPages(convertJsonToPagesList(defaultJsonData))
+      setPages([])
     }
   }
 
@@ -399,33 +140,9 @@ export const usePageManagement = () => {
   const loadPage = async (filename: string) => {
     logger.debug('loadPage called with filename:', filename)
     try {
-      // First check if it's a default page
       const pageId = filename.replace('.json', '')
-      logger.debug('Checking default pages for pageId:', pageId)
       
-      if (defaultJsonData[pageId]) {
-        logger.debug('Found in default pages:', pageId)
-        const pageData = convertJsonToPuckData(defaultJsonData, pageId)
-        setCurrentData(pageData)
-        setCurrentPage(pageId)
-        setCurrentPageName(defaultJsonData[pageId].title)
-        setShowPageManager(false)
-        return pageData // Return the data for Events page to use
-      }
-      
-      // Also check if the filename is just the page ID (without .json)
-      if (defaultJsonData[filename]) {
-        logger.debug('Found in default pages with filename:', filename)
-        const pageData = convertJsonToPuckData(defaultJsonData, filename)
-        setCurrentData(pageData)
-        setCurrentPage(filename)
-        setCurrentPageName(defaultJsonData[filename].title)
-        setShowPageManager(false)
-        return pageData // Return the data for Events page to use
-      }
-
-      // If not a default page, try to load from server
-      // Ensure we're using the correct filename format
+      // Load from server
       const serverFilename = filename.endsWith('.json') ? filename : `${filename}.json`
       logger.debug('Loading from server:', API_ENDPOINTS.GET_PAGE(serverFilename))
       const response = await fetch(API_ENDPOINTS.GET_PAGE(serverFilename))
@@ -444,11 +161,16 @@ export const usePageManagement = () => {
           if (page) {
             setCurrentPageName(page.name)
           } else {
-            setCurrentPageName(pageId.replace('page-data-', '').replace(/-/g, ' '))
+            const pageTitle = result.data?.root?.props?.pageTitle || result.data?.root?.props?.title
+            if (pageTitle) {
+              setCurrentPageName(pageTitle)
+            } else {
+              setCurrentPageName(pageId.replace('page-data-', '').replace(/-/g, ' '))
+            }
           }
           
           setShowPageManager(false)
-          return result.data // Return the data for Events page to use
+          return result.data
         } else {
           logger.error('Server returned error:', result.error)
         }
@@ -501,9 +223,110 @@ export const usePageManagement = () => {
     setShowPageNameDialog(false)
   }
 
-  // Load pages on component mount
+  const createPageFromTemplate = async (templateType: string) => {
+    const templateNames: Record<string, string> = {
+      'schedule': 'Schedule',
+      'sponsor': 'Sponsor',
+      'floor-plan': 'Floor plan',
+      'lists': 'Lists'
+    }
+    
+    const pageName = templateNames[templateType] || templateType
+    const sanitizedName = pageName.toLowerCase().replace(/[^a-z0-9]/g, '-')
+    const pageId = `page-${sanitizedName}-${Date.now()}`
+    
+    const newPageData = {
+      content: [],
+      root: {
+        props: {
+          title: pageName,
+          pageTitle: pageName,
+          ...(templateType === 'schedule' ? { pageType: 'schedule' } : {})
+        }
+      },
+      zones: {}
+    }
+    
+    setCurrentData(newPageData)
+    setCurrentPage(pageId)
+    setCurrentPageName(pageName)
+    
+    const newPage: Page = {
+      id: pageId,
+      name: pageName,
+      filename: `${pageId}.json`,
+      lastModified: new Date().toISOString()
+    }
+    
+    setPages(prev => [...prev, newPage])
+    
+    try {
+      const response = await fetch(API_ENDPOINTS.SAVE_PAGE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: newPageData,
+          filename: `${pageId}.json`
+        })
+      })
+      
+      if (response.ok) {
+        await loadPages()
+      }
+    } catch (error) {
+      logger.error('Error saving template page:', error)
+    }
+    
+    return { pageId, pageName, newPageData }
+  }
+
   useEffect(() => {
-    loadPages()
+    const initializePage = async () => {
+      await loadPages()
+      
+      // Try to load page1 if it exists, otherwise create it
+      try {
+        const response = await fetch(API_ENDPOINTS.GET_PAGE('page1.json'))
+        if (response.ok) {
+          const result = await response.json()
+          if (result.success) {
+            setCurrentData(result.data)
+            setCurrentPage('page1')
+            const pageTitle = result.data?.root?.props?.pageTitle || result.data?.root?.props?.title || 'Page 1'
+            setCurrentPageName(pageTitle)
+          }
+        } else {
+          // Page1 doesn't exist, create it
+          const page1Data = defaultPage1Data
+          setCurrentData(page1Data)
+          setCurrentPage('page1')
+          setCurrentPageName('Page 1')
+          
+          // Save page1 to server
+          try {
+            await fetch(API_ENDPOINTS.SAVE_PAGE, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                data: page1Data,
+                filename: 'page1.json'
+              })
+            })
+            await loadPages()
+          } catch (error) {
+            logger.error('Error creating page1:', error)
+          }
+        }
+      } catch (error) {
+        logger.error('Error initializing page1:', error)
+      }
+    }
+    
+    initializePage()
   }, [])
 
   return {
@@ -521,6 +344,7 @@ export const usePageManagement = () => {
     loadPages,
     loadPage,
     createNewPage,
-    confirmNewPage
+    confirmNewPage,
+    createPageFromTemplate
   }
 }

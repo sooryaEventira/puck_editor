@@ -4,8 +4,7 @@ import { usePageManagement } from '../hooks/usePageManagement'
 import { usePublish } from '../hooks/usePublish'
 import { useAppHandlers } from '../hooks/useAppHandlers'
 import { PageManager, PageNameDialog, PageCreationModal } from './page'
-import { GlobalNavbar } from './layout'
-import { EventHubPage } from './eventhub'
+import { EventHubPage, EventHubNavbar } from './eventhub'
 import EditorView from './EditorView'
 import { logger } from '../utils/logger'
 import { setupPuckStyling } from '../utils/puckStyling'
@@ -35,7 +34,8 @@ const App: React.FC = () => {
     loadPages,
     loadPage,
     createNewPage,
-    confirmNewPage
+    confirmNewPage,
+    createPageFromTemplate
   } = usePageManagement()
 
   const { handlePublish, handleDataChange } = usePublish(
@@ -51,7 +51,6 @@ const App: React.FC = () => {
   const {
     handleCreateEvent,
     handleProfileClick,
-    handleBackToEditor,
     handlePageCreationSelect,
     handleNavigateToEditor,
     handleAddComponent,
@@ -62,6 +61,21 @@ const App: React.FC = () => {
     setShowPreview,
     createNewPage,
   })
+
+  // Handle card click from EventHubContent
+  const handleEventHubCardClick = (cardId: string) => {
+    if (cardId === 'schedule-session') {
+      // Navigate to editor
+      setCurrentView('editor')
+      logger.debug('📍 Navigating to editor from Schedule/Session')
+    }
+  }
+
+  // Custom back to editor handler
+  const handleBackToEditor = () => {
+    setCurrentView('editor')
+    logger.debug('📍 Navigating back to editor')
+  }
 
   // Apply Puck styling when not in preview mode
   useEffect(() => {
@@ -80,6 +94,7 @@ const App: React.FC = () => {
         isDraft={true}
         onBackClick={handleBackToEditor}
         userAvatarUrl="" // Add user avatar URL here if available
+        onCardClick={handleEventHubCardClick}
       />
     )
   }
@@ -87,66 +102,16 @@ const App: React.FC = () => {
   // Render Editor Page
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Global Navbar */}
-      <GlobalNavbar 
-        onCreateEvent={handleCreateEvent}
+      {/* Global Navbar - EventHubNavbar */}
+      <EventHubNavbar
+        eventName="Highly important conference of 2025"
+        isDraft={true}
+        onBackClick={handleBackToEditor}
+        onSearchClick={() => {}}
+        onNotificationClick={() => {}}
         onProfileClick={handleProfileClick}
+        userAvatarUrl=""
       />
-      
-      {/* Controls */}
-      {/* <div style={{ 
-        padding: '10px 20px', 
-        backgroundColor: '#f8f9fa', 
-        borderBottom: '1px solid #dee2e6',
-        display: 'flex',
-        gap: '10px',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        marginTop: '64px' // Account for fixed navbar height
-      }}>
-        <button
-          onClick={() => setShowPageManager(!showPageManager)}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-        >
-          📄 Pages ({pages.length})
-        </button>
-        <button
-          onClick={createNewPage}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-        >
-          ➕ New Page
-        </button>
-        <button
-          onClick={togglePreview}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: showPreview ? '#dc3545' : '#6c757d',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-        >
-          {showPreview ? '✏️ Edit Mode' : '👁️ Preview'}
-        </button>
-      </div> */}
 
       {/* Page Manager */}
       <PageManager
@@ -191,6 +156,9 @@ const App: React.FC = () => {
         onManagePages={() => setShowPageManager(!showPageManager)}
         onNavigateToEditor={handleNavigateToEditor}
         onAddComponent={handleAddComponent}
+        onPreviewToggle={() => setShowPreview(!showPreview)}
+        onBack={handleBackToEditor}
+        onCreatePageFromTemplate={createPageFromTemplate}
       />
     </div>
   )

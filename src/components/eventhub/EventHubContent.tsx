@@ -15,6 +15,7 @@ interface ContentCard {
 interface EventHubContentProps {
   title?: string
   cards?: ContentCard[]
+  onCardClick?: (cardId: string) => void
 }
 
 const defaultCards: ContentCard[] = [
@@ -74,7 +75,8 @@ const defaultCards: ContentCard[] = [
 
 const EventHubContent: React.FC<EventHubContentProps> = ({
   title = 'Event Hub',
-  cards = defaultCards
+  cards = defaultCards,
+  onCardClick
 }) => {
   return (
     <main style={{
@@ -105,6 +107,7 @@ const EventHubContent: React.FC<EventHubContentProps> = ({
         {cards.map((card) => (
           <div
             key={card.id}
+            onClick={() => onCardClick?.(card.id)}
             style={{
               backgroundColor: '#f9fafb',
               borderRadius: '12px',

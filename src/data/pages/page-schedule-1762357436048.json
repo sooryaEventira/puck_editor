@@ -1,0 +1,11 @@
+{
+  "content": [],
+  "root": {
+    "props": {
+      "title": "Schedule",
+      "pageTitle": "Schedule",
+      "pageType": "schedule"
+    }
+  },
+  "zones": {}
+}

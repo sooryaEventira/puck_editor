@@ -30,7 +30,7 @@ const PageSidebar: React.FC<PageSidebarProps> = ({
       flexShrink: 0
     }}>
       {/* Layout Icons */}
-      <div style={{
+      {/* <div style={{
         padding: '12px 16px',
         display: 'flex',
         gap: '8px'
@@ -51,7 +51,7 @@ const PageSidebar: React.FC<PageSidebarProps> = ({
           backgroundColor: 'white',
           cursor: 'pointer'
         }}></div>
-      </div>
+      </div> */}
 
       {/* Header with Title and Add Button */}
       <div style={{
@@ -99,40 +99,63 @@ const PageSidebar: React.FC<PageSidebarProps> = ({
         </button>
       </div>
 
-      {/* Current Page Display */}
+      {/* Pages List */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
         padding: '0 12px'
       }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '8px 12px',
-            borderRadius: '6px',
-            backgroundColor: '#f3f4f6',
-            cursor: 'pointer',
-            transition: 'background-color 0.15s ease'
-          }}
-        >
-          <span style={{
-            fontSize: '14px',
-            color: '#374151',
-            fontWeight: '500'
-          }}>
-            {currentPageName}
-          </span>
-          <Settings01
-            style={{ 
-              width: '16px', 
-              height: '16px', 
-              color: '#9ca3af',
-              cursor: 'pointer' 
-            }}
-          />
-        </div>
+        {[...pages].sort((a, b) => {
+          // Sort by name in ascending order (alphabetically)
+          return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+        }).map((page) => {
+          const isActive = page.id === currentPage || page.name === currentPageName
+          return (
+            <div
+              key={page.id}
+              onClick={() => onPageSelect(page.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                backgroundColor: isActive ? '#f3f4f6' : 'transparent',
+                cursor: 'pointer',
+                transition: 'background-color 0.15s ease',
+                marginBottom: '4px'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = '#f9fafb'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }
+              }}
+            >
+              <span style={{
+                fontSize: '14px',
+                color: '#374151',
+                fontWeight: isActive ? '500' : '400'
+              }}>
+                {page.name}
+              </span>
+              {isActive && (
+                <Settings01
+                  style={{ 
+                    width: '16px', 
+                    height: '16px', 
+                    color: '#9ca3af',
+                    cursor: 'pointer' 
+                  }}
+                />
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {/* Manage Pages Button */}

@@ -11,6 +11,8 @@ import {
 } from '../components/advanced'
 import FeedbackForm from '../components/advanced/FeedbackForm'
 import ImageSimple from '../components/advanced/ImageSimple'
+import CustomButtonField from '../components/CustomButtonField'
+import SchedulesSectionField from '../components/SchedulesSectionField'
 
 // Import split config modules
 import { viewports } from './puck/viewports'
@@ -2374,5 +2376,31 @@ export const config = {
       render: SessionForm
     }
 
+  },
+  root: {
+    fields: {
+      pageTitle: {
+        type: 'text' as const,
+        label: 'Page Title'
+      },
+      schedulesSection: {
+        type: 'custom' as const,
+        label: 'Schedules',
+        render: (props: any) => {
+          const onChange = props.onChange
+          
+          // Data will be accessed through React Context in the component
+          // Pass onChange to the component
+          return React.createElement(SchedulesSectionField, {
+            ...props,
+            onChange
+          })
+        }
+      }
+    },
+    defaultProps: {
+      pageTitle: '',
+      schedulesSection: null
+    }
   }
 }

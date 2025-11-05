@@ -246,19 +246,58 @@ nav svg rect {
   fill: none !important;
 }
 
-/* Hide Puck left sidebar (components/drawer panel) - TARGETED */
-aside[class*="Sidebar--left"],
-aside[class*="Sidebar_Sidebar--left_"],
-[class*="_Sidebar--left"] {
+/* Force hide any button with specific testid or attributes - MAXIMUM PRIORITY */
+/* BUT: Exclude modal buttons and custom buttons */
+button[data-testid*="publish"]:not([data-custom-publish-button]):not([data-modal-select-button]):not([data-modal-button]),
+button[aria-label*="Publish"]:not([data-custom-publish-button]):not([data-modal-select-button]):not([data-modal-button]),
+button[aria-label*="publish"]:not([data-custom-publish-button]):not([data-modal-select-button]):not([data-modal-button]),
+button[title*="Publish"]:not([data-custom-publish-button]):not([data-modal-select-button]):not([data-modal-button]),
+button[title*="publish"]:not([data-custom-publish-button]):not([data-modal-select-button]):not([data-modal-button]),
+button[data-hidden-publish-btn="true"]:not([data-modal-select-button]):not([data-modal-button]),
+/* Hide purple buttons (Puck publish button is usually purple) - check inline styles */
+/* BUT: Exclude modal buttons */
+button[style*="7c3aed"]:not([data-custom-publish-button]):not([data-modal-select-button]):not([data-modal-button]),
+button[style*="6f42c1"]:not([data-custom-publish-button]):not([data-modal-select-button]):not([data-modal-button]),
+button[style*="rgb(124, 58, 237)"]:not([data-custom-publish-button]):not([data-modal-select-button]):not([data-modal-button]),
+button[style*="rgb(111, 66, 193)"]:not([data-custom-publish-button]):not([data-modal-select-button]):not([data-modal-button]) {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
   width: 0 !important;
-  min-width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  clip: rect(0, 0, 0, 0) !important;
+  overflow: hidden !important;
   max-width: 0 !important;
+  max-height: 0 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  border: none !important;
+  outline: none !important;
 }
 
-/* Adjust Puck layout when left sidebar is hidden */
-div[class*="Puck-frame"],
-div[class*="_frame"] {
-  margin-left: 0 !important;
-  padding-left: 0 !important;
+/* Ensure modal buttons are always visible */
+button[data-modal-select-button],
+button[data-modal-button] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: auto !important;
+  height: auto !important;
+  padding: inherit !important;
+  margin: inherit !important;
+  pointer-events: auto !important;
+  position: static !important;
+  left: auto !important;
+  clip: auto !important;
+  overflow: visible !important;
+  max-width: none !important;
+  max-height: none !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
 }
+
