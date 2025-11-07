@@ -23,18 +23,21 @@ const EventHubNavbar: React.FC<EventHubNavbarProps> = ({
   return (
     <nav style={{
       height: '64px',
+      width: '100%',
       backgroundColor: '#1e1b4b', // Brand/950 - Darkest purple/indigo shade
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: '0 24px',
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      borderBottom: '1px solid rgba(31, 41, 55, 0.2)',
       position: 'fixed',
       top: 0,
-      left: 0,
-      right: 0,
+      left: '50%',
+      transform: 'translateX(-50%)',
       zIndex: 1000,
-      color: 'white' // Set default text color to white for all children
+      color: 'white',
+      opacity: 1
     }}>
       {/* Left Section */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: 'white' }}>

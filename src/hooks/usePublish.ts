@@ -47,6 +47,12 @@ export const usePublish = (
         const result = await response.json()
         
         if (result.success) {
+          // Cache the saved data in localStorage
+          const finalPageId = currentPage.startsWith('new-page') ? filename.replace('.json', '') : currentPage
+          const cacheKey = `puck-page-${finalPageId}`
+          localStorage.setItem(cacheKey, JSON.stringify(data))
+          logger.debug('Saved page data cached in localStorage:', finalPageId)
+          
           // Reload pages list after saving
           await loadPages()
           
@@ -85,9 +91,21 @@ export const usePublish = (
     }
   }
 
-  // Function to handle data changes
+  // Function to handle data changes - auto-save to localStorage
   const handleDataChange = (data: any) => {
     setCurrentData(data)
+    
+    // Auto-save to localStorage for persistence
+    // This ensures data is saved even if server is down
+    if (currentPage) {
+      const cacheKey = `puck-page-${currentPage}`
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(data))
+        logger.debug('Auto-saved page data to localStorage:', currentPage)
+      } catch (error) {
+        logger.warn('Failed to save to localStorage:', error)
+      }
+    }
   }
 
   return {

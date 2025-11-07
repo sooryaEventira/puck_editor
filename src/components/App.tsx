@@ -4,14 +4,14 @@ import { usePageManagement } from '../hooks/usePageManagement'
 import { usePublish } from '../hooks/usePublish'
 import { useAppHandlers } from '../hooks/useAppHandlers'
 import { PageManager, PageNameDialog, PageCreationModal } from './page'
-import { EventHubPage, EventHubNavbar } from './eventhub'
+import { EventHubPage, EventHubNavbar, SchedulePage } from './eventhub'
 import EditorView from './EditorView'
 import { logger } from '../utils/logger'
 import { setupPuckStyling } from '../utils/puckStyling'
 
 const App: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false)
-  const [currentView, setCurrentView] = useState<'editor' | 'events'>('editor')
+  const [currentView, setCurrentView] = useState<'editor' | 'events' | 'schedule'>('editor')
   const [puckUi, setPuckUi] = useState<any>(undefined)
   const [showLeftSidebar, setShowLeftSidebar] = useState(true)
   const [showRightSidebar, setShowRightSidebar] = useState(true)
@@ -77,12 +77,32 @@ const App: React.FC = () => {
     logger.debug('📍 Navigating back to editor')
   }
 
+  // Handle navigation to schedule page
+  const handleNavigateToSchedule = () => {
+    setCurrentView('schedule')
+    logger.debug('📍 Navigating to schedule page')
+  }
+
   // Apply Puck styling when not in preview mode
   useEffect(() => {
     if (!showPreview) {
       return setupPuckStyling()
     }
   }, [showPreview])
+
+  // Listen for navigation to schedule page
+  useEffect(() => {
+    const handleNavigateToScheduleEvent = () => {
+      setCurrentView('schedule')
+      logger.debug('📍 Navigating to schedule page via event')
+    }
+
+    window.addEventListener('navigate-to-schedule', handleNavigateToScheduleEvent)
+    
+    return () => {
+      window.removeEventListener('navigate-to-schedule', handleNavigateToScheduleEvent)
+    }
+  }, [])
 
   // Render Events Page (Event Hub)
   if (currentView === 'events') {
@@ -95,6 +115,21 @@ const App: React.FC = () => {
         onBackClick={handleBackToEditor}
         userAvatarUrl="" // Add user avatar URL here if available
         onCardClick={handleEventHubCardClick}
+      />
+    )
+  }
+
+  // Render Schedule Page
+  if (currentView === 'schedule') {
+    logger.debug('📍 Rendering Schedule Page');
+    
+    return (
+      <SchedulePage
+        eventName="Highly important conference of 2025"
+        isDraft={true}
+        onBackClick={handleBackToEditor}
+        userAvatarUrl=""
+        scheduleName="Schedule 1"
       />
     )
   }
@@ -159,6 +194,7 @@ const App: React.FC = () => {
         onPreviewToggle={() => setShowPreview(!showPreview)}
         onBack={handleBackToEditor}
         onCreatePageFromTemplate={createPageFromTemplate}
+        onCreateNewPage={createNewPage}
       />
     </div>
   )

@@ -1,17 +1,19 @@
 import React, { useEffect, useRef } from 'react'
 
 interface CustomButtonFieldProps {
-  name: string
+  name?: string
   value?: string
   onChange?: (value: string) => void
   field?: any
   link?: string
   buttonText?: string
+  onClick?: () => void
 }
 
 const CustomButtonField: React.FC<CustomButtonFieldProps> = ({
   link,
   buttonText = 'Navigate',
+  onClick,
 }) => {
   const buttonRef = useRef<HTMLButtonElement>(null)
   const spanRef = useRef<HTMLSpanElement>(null)
@@ -37,7 +39,9 @@ const CustomButtonField: React.FC<CustomButtonFieldProps> = ({
   }, [])
 
   const handleClick = () => {
-    if (link) {
+    if (onClick) {
+      onClick()
+    } else if (link) {
       // Navigate to the link
       if (link.startsWith('http://') || link.startsWith('https://')) {
         // External link - open in new tab

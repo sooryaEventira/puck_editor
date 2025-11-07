@@ -36,6 +36,7 @@ interface EditorViewProps {
   onPreviewToggle: () => void
   onBack?: () => void
   onCreatePageFromTemplate?: (templateType: string) => Promise<any>
+  onCreateNewPage?: () => void
 }
 
 export const EditorView: React.FC<EditorViewProps> = ({
@@ -58,7 +59,10 @@ export const EditorView: React.FC<EditorViewProps> = ({
   onPreviewToggle,
   onBack,
   onCreatePageFromTemplate,
+  onCreateNewPage,
 }) => {
+  // Initially show default COMPONENTS sidebar, canvas, and property sidebar with Page 1
+  // Custom sidebar only appears after "Create from scratch" is selected
   const [showCustomSidebar, setShowCustomSidebar] = useState(false)
   const [showPageCreationModal, setShowPageCreationModal] = useState(false)
   const [showBlockTypeModal, setShowBlockTypeModal] = useState(false)
@@ -75,7 +79,11 @@ export const EditorView: React.FC<EditorViewProps> = ({
     }
     
     if (mode === 'scratch') {
+      // Keep component sidebar visible (don't show custom sidebar) and create new page
       setShowCustomSidebar(false)
+      if (onCreateNewPage) {
+        onCreateNewPage()
+      }
       return
     }
   }
@@ -155,32 +163,82 @@ export const EditorView: React.FC<EditorViewProps> = ({
         </NavigationProvider>
       ) : (
         <NavigationProvider onNavigateToEditor={onNavigateToEditor} onAddComponent={onAddComponent}>
-          {showCustomSidebar && (
-            <div style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: '280px',
-              zIndex: 1000,
-              backgroundColor: 'white',
-              borderRight: '1px solid #e5e7eb'
-            }}>
-              <PageSidebar
-                pages={pages.map(page => ({ id: page.id, name: page.name }))}
-                currentPage={currentPage}
-                currentPageName={currentPageName}
-                onPageSelect={(pageId) => {
-                  const page = pages.find(p => p.id === pageId)
-                  if (page) {
-                    onPageSelect(page.filename)
-                  }
-                }}
-                onAddPage={() => setShowPageCreationModal(true)}
-                onManagePages={onManagePages}
-              />
-            </div>
-          )}
+          {showCustomSidebar && (() => {
+            // Log for debugging
+            console.log('Custom sidebar - All pages:', pages.map(p => `${p.name} (${p.id})`))
+            console.log('Custom sidebar - Current page:', currentPage, currentPageName)
+            
+            // Start with ALL pages from the pages array - don't filter anything
+            const pagesForSidebar = pages.map(page => ({ id: page.id, name: page.name }))
+            
+            // Always ensure Page 1 is in the sidebar if it exists (check by ID, not name, since names can be changed)
+            const page1Exists = pagesForSidebar.some(p => p.id === 'page1')
+            if (!page1Exists) {
+              // Try to get the actual name from pages array, or use default
+              const page1 = pages.find(p => p.id === 'page1')
+              const page1Name = page1?.name || 'Page 1'
+              pagesForSidebar.push({ id: 'page1', name: page1Name })
+            }
+            
+            // Ensure current page is included if not already in the list
+            const currentPageExists = pagesForSidebar.some(p => p.id === currentPage || p.name === currentPageName)
+            if (!currentPageExists && currentPage && currentPageName) {
+              pagesForSidebar.push({ id: currentPage, name: currentPageName })
+            }
+            
+            console.log('Custom sidebar - Pages to display:', pagesForSidebar.map(p => `${p.name} (${p.id})`))
+            
+            return (
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: '280px',
+                zIndex: 1000,
+                backgroundColor: 'white',
+                borderRight: '1px solid #e5e7eb'
+              }}>
+                <PageSidebar
+                  pages={pagesForSidebar}
+                  currentPage={currentPage}
+                  currentPageName={currentPageName}
+                  onPageSelect={async (pageId) => {
+                    console.log('PageSidebar: Page selected:', pageId)
+                    console.log('PageSidebar: Current page:', currentPage)
+                    console.log('PageSidebar: Available pages:', pages.map(p => `${p.name} (${p.id})`))
+                    
+                    // Don't reload if clicking the same page
+                    if (pageId === currentPage) {
+                      console.log('PageSidebar: Same page selected, skipping')
+                      return
+                    }
+                    
+                    try {
+                      // Try to find the page in the pages array
+                      const page = pages.find(p => p.id === pageId)
+                      if (page) {
+                        console.log('PageSidebar: Found page in array, loading:', page.filename)
+                        await onPageSelect(page.filename)
+                      } else {
+                        // Page not in array, but try to load it anyway using the pageId
+                        // This handles cases where Page 1 or Page 2 might not be in the array yet
+                        console.log('PageSidebar: Page not in array, trying to load by ID:', pageId)
+                        const filename = pageId.endsWith('.json') ? pageId : `${pageId}.json`
+                        console.log('PageSidebar: Calling onPageSelect with filename:', filename)
+                        await onPageSelect(filename)
+                      }
+                      console.log('PageSidebar: Page load completed')
+                    } catch (error) {
+                      console.error('PageSidebar: Error loading page:', error)
+                    }
+                  }}
+                  onAddPage={() => setShowPageCreationModal(true)}
+                  onManagePages={onManagePages}
+                />
+              </div>
+            )
+          })()}
           
           <div style={{ 
             flex: 1, 

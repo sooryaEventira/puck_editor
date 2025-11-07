@@ -241,6 +241,10 @@ const SchedulesSectionField: React.FC<SchedulesSectionFieldProps> = (props: Sche
           name="navigateSchedule"
           link={props.field?.link || '/schedules'}
           buttonText={props.field?.buttonText || 'Create schedule'}
+          onClick={() => {
+            // Dispatch custom event to navigate to schedule page
+            window.dispatchEvent(new CustomEvent('navigate-to-schedule'))
+          }}
         />
       </div>
     </div>

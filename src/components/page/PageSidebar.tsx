@@ -8,6 +8,7 @@ interface PageSidebarProps {
   onPageSelect: (pageId: string) => void
   onAddPage: () => void
   onManagePages: () => void
+  onShowComponentSidebar?: () => void
 }
 
 const PageSidebar: React.FC<PageSidebarProps> = ({
@@ -16,7 +17,8 @@ const PageSidebar: React.FC<PageSidebarProps> = ({
   currentPageName,
   onPageSelect,
   onAddPage,
-  onManagePages
+  onManagePages,
+  onShowComponentSidebar
 }) => {
   return (
     <div style={{
@@ -60,15 +62,48 @@ const PageSidebar: React.FC<PageSidebarProps> = ({
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        <h2 style={{
-          fontSize: '13px',
-          fontWeight: '700',
-          color: '#374151',
-          letterSpacing: '0.05em',
-          margin: 0
-        }}>
-          WEBSITE PAGES
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {onShowComponentSidebar && (
+            <button
+              onClick={onShowComponentSidebar}
+              style={{
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                backgroundColor: 'white',
+                cursor: 'pointer',
+                padding: 0
+              }}
+              aria-label="Show component sidebar"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#6b7280"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          )}
+          <h2 style={{
+            fontSize: '13px',
+            fontWeight: '700',
+            color: '#374151',
+            letterSpacing: '0.05em',
+            margin: 0
+          }}>
+            WEBSITE PAGES
+          </h2>
+        </div>
         <button
           onClick={onAddPage}
           style={{
