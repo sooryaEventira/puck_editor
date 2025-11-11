@@ -42,11 +42,7 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
   }
 
   return (
-    <div style={{ 
-      height: '100vh', 
-      overflow: 'hidden',
-      backgroundColor: '#ffffff'
-    }}>
+    <div className="h-screen overflow-hidden bg-white">
       {/* Navbar */}
       <EventHubNavbar
         eventName={eventName}

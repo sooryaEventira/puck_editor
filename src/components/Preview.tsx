@@ -2,6 +2,9 @@ import React, { useState, useCallback } from "react";
 import { PageData } from "../types";
 import { config } from "../config/puckConfig";
 
+const cn = (...classes: Array<string | false | null | undefined>) =>
+  classes.filter(Boolean).join(" ");
+
 interface PreviewProps {
   data: PageData;
   isInteractive?: boolean;
@@ -214,25 +217,13 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
   });
 
   return (
-    <div
-      style={{
-        height: "100%",
-        overflow: "auto",
-        padding: "20px",
-        backgroundColor: "white",
-      }}
-    >
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+    <div className="h-full overflow-auto bg-white p-5">
+      <div className="mx-auto max-w-[1200px]">
         {localData.content?.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "60px 20px",
-              color: "#6c757d",
-              fontSize: "18px",
-            }}
-          >
-            <h2>No content to preview</h2>
+          <div className="space-y-2 px-5 py-[60px] text-center text-lg text-slate-500">
+            <h2 className="text-2xl font-semibold text-slate-700">
+              No content to preview
+            </h2>
             <p>Switch back to edit mode to add components</p>
           </div>
         ) : (
@@ -379,44 +370,40 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
                       const rowGap = componentProps.rowGap || '16px';
                       
                       return (
-                        <div key={index} style={{ margin: '16px 0' }}>
+                        <div key={index} className="my-4">
                           <div
+                            className="my-4 grid min-h-[100px] rounded-lg border border-slate-200 bg-slate-100 p-4"
                             style={{
-                              display: 'grid',
                               gridTemplateColumns: `repeat(${columns}, 1fr)`,
-                              gap: gap,
-                              rowGap: rowGap,
-                              padding: '16px',
-                              margin: '16px 0',
-                              backgroundColor: '#f8f9fa',
-                              borderRadius: '8px',
-                              border: '1px solid #e9ecef',
-                              minHeight: '100px'
+                              gap,
+                              rowGap,
                             }}
                           >
                             {Array.from({ length: columns }, (_, colIndex) => {
                               const zoneName = `column-${colIndex}`;
                               const zoneItems = componentProps[zoneName] || [];
                               const isDragOver = dragOverZone === zoneName;
-                              const isColumnDragOver = dragOverColumn?.componentId === componentId && dragOverColumn?.columnIndex === colIndex;
-                              const isColumnDragged = draggedColumn?.componentId === componentId && draggedColumn?.columnIndex === colIndex;
-                              
+                              const isColumnDragOver =
+                                dragOverColumn?.componentId === componentId &&
+                                dragOverColumn?.columnIndex === colIndex;
+                              const isColumnDragged =
+                                draggedColumn?.componentId === componentId &&
+                                draggedColumn?.columnIndex === colIndex;
+
                               console.log(`Column ${colIndex} (${zoneName}):`, zoneItems);
-                              
+
+                              const columnClassName = cn(
+                                "relative min-h-[50px] rounded border border-dashed border-slate-300 p-2 transition-all duration-200",
+                                isInteractive ? "cursor-move" : "cursor-default",
+                                isDragOver && "border-2 border-sky-500 bg-sky-100",
+                                !isDragOver && isColumnDragOver && "border-2 border-amber-500 bg-amber-100",
+                                isColumnDragged && "opacity-50"
+                              );
+
                               return (
                                 <div
                                   key={colIndex}
-                                  style={{
-                                    minHeight: '50px',
-                                    backgroundColor: isDragOver ? '#e3f2fd' : isColumnDragOver ? '#fff3cd' : 'transparent',
-                                    border: isDragOver ? '2px dashed #2196f3' : isColumnDragOver ? '2px dashed #ffc107' : '1px dashed #d1d5db',
-                                    borderRadius: '4px',
-                                    transition: 'all 0.2s ease',
-                                    padding: '8px',
-                                    position: 'relative',
-                                    cursor: isInteractive ? 'move' : 'default',
-                                    opacity: isColumnDragged ? 0.5 : 1,
-                                  }}
+                                  className={columnClassName}
                                   draggable={isInteractive}
                                   onDragStart={(e) => handleColumnDragStart(e, componentId, colIndex)}
                                   onDragOver={(e) => {
@@ -432,69 +419,51 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
                                   {/* Column header for drag indication - only show when dragging */}
                                   {isInteractive && (isColumnDragged || isColumnDragOver) && (
                                     <div
-                                      style={{
-                                        position: 'absolute',
-                                        top: '-8px',
-                                        left: '8px',
-                                        right: '8px',
-                                        height: '20px',
-                                        backgroundColor: isColumnDragged ? '#007bff' : '#ffc107',
-                                        color: 'white',
-                                        fontSize: '12px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        borderRadius: '4px 4px 0 0',
-                                        fontWeight: 'bold',
-                                        zIndex: 10,
-                                      }}
+                                      className={cn(
+                                        "absolute inset-x-2 -top-2 z-10 flex h-5 items-center justify-center rounded-t-md text-[11px] font-bold text-white shadow-sm",
+                                        isColumnDragged ? "bg-blue-500" : "bg-amber-500",
+                                      )}
                                     >
-                                      {isColumnDragged ? 'DRAGGING' : 'DROP HERE'}
+                                      {isColumnDragged ? "DRAGGING" : "DROP HERE"}
                                     </div>
                                   )}
-                                  
+
                                   {zoneItems.length > 0 ? (
                                     zoneItems.map((zoneItem: any, itemIndex: number) => {
-                                      console.log('Rendering zone item:', zoneItem.type, zoneItem);
+                                      console.log("Rendering zone item:", zoneItem.type, zoneItem);
                                       const ZoneComponent = config.components[zoneItem.type as keyof typeof config.components]?.render;
                                       const zoneProps = { ...zoneItem.props };
-                                      
+
                                       // Add puck object for nested components in interactive mode
                                       if (isInteractive) {
-                                        console.log('Adding puck to component:', zoneItem.type);
+                                        console.log("Adding puck to component:", zoneItem.type);
                                         zoneProps.puck = {
                                           dragRef: (element: HTMLElement | null) => {
-                                            console.log('dragRef called for element:', element);
+                                            console.log("dragRef called for element:", element);
                                             if (element) {
                                               element.draggable = true;
-                                              element.style.cursor = 'move';
+                                              element.style.cursor = "move";
                                               element.dataset.dragItem = JSON.stringify(zoneItem);
                                               element.dataset.sourceZone = zoneName;
-                                              element.addEventListener('dragstart', (e) => {
-                                                console.log('dragstart event triggered');
+                                              element.addEventListener("dragstart", (e) => {
+                                                console.log("dragstart event triggered");
                                                 handleDragStart(e as any, { ...zoneItem, componentId }, zoneName);
                                               });
-                                              element.addEventListener('dragend', handleDragEnd);
+                                              element.addEventListener("dragend", handleDragEnd);
                                             }
-                                          }
+                                          },
                                         };
                                       }
-                                      
+
                                       return ZoneComponent ? (
                                         <ZoneComponent key={itemIndex} {...zoneProps} />
                                       ) : (
-                                        <div 
+                                        <div
                                           key={itemIndex}
-                                          style={{
-                                            padding: '8px',
-                                            border: '1px solid #ccc',
-                                            borderRadius: '4px',
-                                            backgroundColor: '#f9f9f9',
-                                            cursor: 'move'
-                                          }}
+                                          className="cursor-move rounded border border-slate-300 bg-slate-100 p-2"
                                           draggable={true}
                                           onDragStart={(e) => {
-                                            console.log('Test drag start');
+                                            console.log("Test drag start");
                                             handleDragStart(e, { ...zoneItem, componentId }, zoneName);
                                           }}
                                         >
@@ -503,18 +472,7 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
                                       );
                                     })
                                   ) : (
-                                    <div
-                                      style={{
-                                        minHeight: '50px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#6b7280',
-                                        fontSize: '14px',
-                                        border: '1px dashed #d1d5db',
-                                        borderRadius: '4px',
-                                      }}
-                                    >
+                                    <div className="flex min-h-[50px] items-center justify-center rounded border border-dashed border-slate-300 text-sm text-slate-500">
                                       Drop components here
                                     </div>
                                   )}

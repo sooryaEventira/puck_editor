@@ -1,4 +1,5 @@
 import React from 'react'
+import clsx from 'clsx'
 import { Page } from '../../types'
 
 interface PageManagerProps {
@@ -8,56 +9,44 @@ interface PageManagerProps {
   isVisible: boolean
 }
 
-const PageManager: React.FC<PageManagerProps> = ({ 
-  pages, 
-  currentPage, 
-  onPageSelect, 
-  isVisible 
+const PageManager: React.FC<PageManagerProps> = ({
+  pages,
+  currentPage,
+  onPageSelect,
+  isVisible
 }) => {
   if (!isVisible) return null
 
   return (
-    <div style={{
-      padding: '20px',
-      backgroundColor: '#fff',
-      borderBottom: '1px solid #dee2e6',
-      maxHeight: '300px',
-      overflow: 'auto'
-    }}>
-      <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>📄 Page Manager</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '15px' }}>
-        {pages.map((page) => (
-          <div
-            key={page.id}
-            style={{
-              padding: '15px',
-              border: '1px solid #dee2e6',
-              borderRadius: '8px',
-              backgroundColor: currentPage === page.id ? '#e3f2fd' : '#f8f9fa',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onClick={() => onPageSelect(page.filename)}
-          >
-            <h4 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '16px' }}>
-              {page.name}
-            </h4>
-            <p style={{ margin: '0 0 8px 0', color: '#666', fontSize: '12px' }}>
-              Modified: {new Date(page.lastModified).toLocaleDateString()}
-            </p>
-            <p style={{ margin: '0', color: '#888', fontSize: '11px' }}>
-              {page.filename}
-            </p>
-          </div>
-        ))}
+    <div className="max-h-[300px] overflow-y-auto border-b border-slate-200 bg-white p-5">
+      <h3 className="mb-4 text-base font-semibold text-slate-800">📄 Page Manager</h3>
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+        {pages.map((page) => {
+          const isActive = currentPage === page.id
+          return (
+            <button
+              key={page.id}
+              type="button"
+              onClick={() => onPageSelect(page.filename)}
+              className={clsx(
+                'flex w-full flex-col rounded-lg border p-4 text-left transition-colors duration-200',
+                isActive
+                  ? 'border-primary/60 bg-primary/5 shadow-sm'
+                  : 'border-slate-200 bg-slate-50 hover:border-primary/40 hover:bg-primary/5'
+              )}
+            >
+              <h4 className="mb-2 text-base font-semibold text-slate-800">{page.name}</h4>
+              <p className="mb-1 text-xs text-slate-500">
+                Modified: {new Date(page.lastModified).toLocaleDateString()}
+              </p>
+              <p className="text-[11px] text-slate-400">{page.filename}</p>
+            </button>
+          )
+        })}
+
         {pages.length === 0 && (
-          <div style={{
-            gridColumn: '1 / -1',
-            textAlign: 'center',
-            padding: '40px',
-            color: '#666'
-          }}>
-            <p>No pages created yet. Click "New Page" to get started!</p>
+          <div className="col-span-full rounded-lg border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
+            No pages created yet. Click "New Page" to get started!
           </div>
         )}
       </div>

@@ -79,92 +79,30 @@ const EventHubContent: React.FC<EventHubContentProps> = ({
   onCardClick
 }) => {
   return (
-    <main style={{
-      marginLeft: '250px', // Account for fixed sidebar
-      marginTop: '64px', // Account for fixed navbar
-      padding: '32px',
-      backgroundColor: '#ffffff',
-      minHeight: 'calc(100vh - 64px)',
-      overflow: 'auto'
-    }}>
-      {/* Title */}
-      <h1 style={{
-        fontSize: '32px',
-        fontWeight: '700',
-        color: '#1f2937',
-        marginBottom: '32px'
-      }}>
-        {title}
-      </h1>
-
-      {/* Cards Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '24px',
-        maxWidth: '1400px'
-      }}>
+    <main className="mt-16 min-h-[calc(100vh-4rem)] w-full overflow-auto bg-white px-4 pb-10 pt-8 md:ml-[250px] md:px-8">
+      <h1 className="mb-8 text-3xl font-bold text-slate-800 md:text-[32px]">{title}</h1>
+      <div className="mx-auto grid w-full max-w-[1400px] gap-6 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => (
-          <div
+          <button
             key={card.id}
+            type="button"
             onClick={() => onCardClick?.(card.id)}
-            style={{
-              backgroundColor: '#f9fafb',
-              borderRadius: '12px',
-              padding: '24px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              transition: 'all 0.2s ease',
-              cursor: 'pointer',
-              border: '1px solid #e5e7eb'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)'
-              e.currentTarget.style.transform = 'translateY(-2px)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)'
-              e.currentTarget.style.transform = 'translateY(0)'
-            }}
+            className="group flex h-full w-full flex-col rounded-xl border border-slate-200 bg-slate-50 p-6 text-left shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            {/* Card Header */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '16px'
-            }}>
+            <div className="mb-4 flex items-center gap-3">
               {card.icon && (
-                <span style={{ fontSize: '24px' }}>{card.icon}</span>
+                <span className="text-2xl" aria-hidden="true">{card.icon}</span>
               )}
-              <h3 style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#374151',
-                margin: 0
-              }}>
-                {card.title}
-              </h3>
+              <h3 className="text-lg font-semibold text-slate-700">{card.title}</h3>
             </div>
-
-            {/* Card Items */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px'
-            }}>
+            <div className="flex flex-col gap-2">
               {card.items.map((item, index) => (
-                <div
-                  key={index}
-                  style={{
-                    fontSize: '14px',
-                    color: '#6b7280'
-                  }}
-                >
+                <span key={index} className="text-sm text-slate-500">
                   {item.label}
-                </div>
+                </span>
               ))}
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </main>

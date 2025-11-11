@@ -36,12 +36,21 @@ const SchedulesSectionField: React.FC<SchedulesSectionFieldProps> = (props: Sche
     }
   }, [props.data])
   
-  // Wait a bit for context to be available
   const data = currentData || props.data || contextData
+  
+  // Provide a safe fallback dataset so the UI can render even before data arrives
+  const hasResolvedData = Boolean(data && data.root)
+  const resolvedData = hasResolvedData
+    ? data
+    : {
+        content: [],
+        root: { props: {} },
+        zones: {}
+      }
   
   // Debug logging
   console.log('SchedulesSectionField rendered', { 
-    data, 
+    data: resolvedData, 
     hasOnChange: !!onChange,
     contextData,
     propsData: props.data,
@@ -50,35 +59,18 @@ const SchedulesSectionField: React.FC<SchedulesSectionFieldProps> = (props: Sche
     context
   })
   
-  // If we don't have data yet, show loading state
-  if (!data) {
-    if (!onChange) {
-      return (
-        <div style={{ padding: '12px', color: 'red', fontSize: '12px' }}>
-          Error: Missing onChange
-        </div>
-      )
-    }
-    // Show loading state while waiting for context
-    return (
-      <div style={{ padding: '12px', fontSize: '12px', color: '#666' }}>
-        Loading schedules...
-      </div>
-    )
-  }
-  
   if (!onChange) {
-    console.warn('SchedulesSectionField: Missing onChange', { data, onChange })
+    console.warn('SchedulesSectionField: Missing onChange', { data: resolvedData, onChange })
     return (
-      <div style={{ padding: '12px', color: 'red', fontSize: '12px' }}>
+      <div className="rounded border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
         Error: Missing onChange
       </div>
     )
   }
   
   // Check if this is a Schedule page
-  const pageType = data?.root?.props?.pageType
-  const pageTitle = data?.root?.props?.pageTitle || data?.root?.props?.title
+  const pageType = resolvedData?.root?.props?.pageType
+  const pageTitle = resolvedData?.root?.props?.pageTitle || resolvedData?.root?.props?.title
   const isSchedulePage = pageType === 'schedule' || pageTitle === 'Schedule'
   
   // Only render if this is a Schedule page
@@ -86,7 +78,7 @@ const SchedulesSectionField: React.FC<SchedulesSectionFieldProps> = (props: Sche
     return null
   }
   
-  const schedules = data?.root?.props?.schedules || []
+  const schedules = resolvedData?.root?.props?.schedules || []
   const [selectedSchedule, setSelectedSchedule] = useState<string>('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   
@@ -100,7 +92,7 @@ const SchedulesSectionField: React.FC<SchedulesSectionFieldProps> = (props: Sche
 
   const handleCreateSchedule = () => {
     // Get the latest data
-    const latestData = currentData || data
+    const latestData = currentData || resolvedData
     if (!latestData) {
       console.error('Cannot create schedule: no data available')
       return
@@ -139,33 +131,28 @@ const SchedulesSectionField: React.FC<SchedulesSectionFieldProps> = (props: Sche
   }
 
   const selectedScheduleData = schedules.find((s: any) => s.id === selectedSchedule)
-
+  const showLoadingNotice = !hasResolvedData
+  
   return (
-    <div style={{ padding: '12px', width: '100%' }}>
-      <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '8px', color: '#374151' }}>
+    <div className="w-full rounded-lg bg-white p-3 text-sm">
+      {showLoadingNotice && (
+        <div className="mb-3 rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          Loading schedules...
+        </div>
+      )}
+      <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
         Schedules
       </div>
       
       {/* Dropdown - only show if schedules exist */}
       {schedules.length > 0 && (
-        <div style={{ marginBottom: '12px', position: 'relative' }}>
-          <div
+        <div className="relative mb-3">
+          <button
+            type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              backgroundColor: 'white',
-              cursor: 'pointer',
-              fontSize: '14px',
-              color: '#374151',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}
+            className="flex w-full items-center justify-between rounded-md border border-slate-300 bg-white px-3 py-2 text-left text-sm text-slate-600 shadow-sm transition hover:border-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            <span style={{ color: selectedScheduleData ? '#374151' : '#9ca3af' }}>
+            <span className={selectedScheduleData ? 'text-slate-700' : 'text-slate-400'}>
               {selectedScheduleData ? selectedScheduleData.name : 'Select schedule'}
             </span>
             <svg
@@ -173,75 +160,49 @@ const SchedulesSectionField: React.FC<SchedulesSectionFieldProps> = (props: Sche
               height="16"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#6b7280"
+              stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{
-                transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s'
-              }}
+              className={`transition-transform ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
             >
               <polyline points="6 9 12 15 18 9" />
             </svg>
-          </div>
+          </button>
           
           {/* Dropdown menu */}
           {isDropdownOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                right: 0,
-                marginTop: '4px',
-                backgroundColor: 'white',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                maxHeight: '200px',
-                overflowY: 'auto',
-                zIndex: 1000
-              }}
-            >
-              {schedules.map((schedule: any) => (
-                <div
-                  key={schedule.id}
-                  onClick={() => handleSelectSchedule(schedule.id)}
-                  style={{
-                    padding: '8px 12px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    color: '#374151',
-                    backgroundColor: selectedSchedule === schedule.id ? '#f3f4f6' : 'white',
-                    borderBottom: '1px solid #f3f4f6'
-                  }}
-                  onMouseEnter={(e: any) => {
-                    if (selectedSchedule !== schedule.id) {
-                      e.currentTarget.style.backgroundColor = '#f9fafb'
-                    }
-                  }}
-                  onMouseLeave={(e: any) => {
-                    if (selectedSchedule !== schedule.id) {
-                      e.currentTarget.style.backgroundColor = 'white'
-                    }
-                  }}
-                >
-                  {schedule.name}
-                </div>
-              ))}
+            <div className="absolute left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border border-slate-200 bg-white shadow-lg">
+              {schedules.map((schedule: any) => {
+                const isActive = selectedSchedule === schedule.id
+                return (
+                  <button
+                    key={schedule.id}
+                    type="button"
+                    onClick={() => handleSelectSchedule(schedule.id)}
+                    className={`w-full px-3 py-2 text-left text-sm transition ${
+                      isActive
+                        ? 'bg-slate-100 font-medium text-slate-700'
+                        : 'text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {schedule.name}
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>
       )}
       
       {/* Navigate button using CustomButtonField */}
-      <div style={{ marginTop: '12px' }}>
+      <div className="mt-3">
         <CustomButtonField
           name="navigateSchedule"
           link={props.field?.link || '/schedules'}
           buttonText={props.field?.buttonText || 'Create schedule'}
           onClick={() => {
+            handleCreateSchedule()
             // Dispatch custom event to navigate to schedule page
             window.dispatchEvent(new CustomEvent('navigate-to-schedule'))
           }}

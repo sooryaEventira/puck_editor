@@ -1,4 +1,5 @@
 import React from 'react'
+import clsx from 'clsx'
 import { Settings01 } from '@untitled-ui/icons-react'
 
 interface PageSidebarProps {
@@ -19,214 +20,94 @@ const PageSidebar: React.FC<PageSidebarProps> = ({
   onAddPage,
   onManagePages,
   onShowComponentSidebar
-}) => {
-  return (
-    <div style={{
-      width: '280px',
-      minWidth: '280px',
-      backgroundColor: 'white',
-      borderRight: '1px solid #e5e7eb',
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      flexShrink: 0
-    }}>
-      {/* Layout Icons */}
-      {/* <div style={{
-        padding: '12px 16px',
-        display: 'flex',
-        gap: '8px'
-      }}>
-        <div style={{
-          width: '24px',
-          height: '24px',
-          border: '1px solid #d1d5db',
-          borderRadius: '4px',
-          backgroundColor: '#f9fafb',
-          cursor: 'pointer'
-        }}></div>
-        <div style={{
-          width: '24px',
-          height: '24px',
-          border: '1px solid #d1d5db',
-          borderRadius: '4px',
-          backgroundColor: 'white',
-          cursor: 'pointer'
-        }}></div>
-      </div> */}
-
-      {/* Header with Title and Add Button */}
-      <div style={{
-        padding: '8px 16px 12px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {onShowComponentSidebar && (
-            <button
-              onClick={onShowComponentSidebar}
-              style={{
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
-                backgroundColor: 'white',
-                cursor: 'pointer',
-                padding: 0
-              }}
-              aria-label="Show component sidebar"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#6b7280"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-          )}
-          <h2 style={{
-            fontSize: '13px',
-            fontWeight: '700',
-            color: '#374151',
-            letterSpacing: '0.05em',
-            margin: 0
-          }}>
-            WEBSITE PAGES
-          </h2>
-        </div>
-        <button
-          onClick={onAddPage}
-          style={{
-            width: '20px',
-            height: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: 'none',
-            background: 'none',
-            cursor: 'pointer',
-            padding: 0
-          }}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#6b7280"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+}) => (
+  <aside className="flex h-full w-[280px] min-w-[280px] flex-shrink-0 flex-col border-r border-slate-200 bg-white">
+    <header className="flex items-center justify-between px-4 pb-3 pt-2">
+      <div className="flex items-center gap-2">
+        {onShowComponentSidebar && (
+          <button
+            type="button"
+            onClick={onShowComponentSidebar}
+            className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100"
+            aria-label="Show component sidebar"
           >
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </button>
+            <svg
+              aria-hidden="true"
+              className="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        )}
+        <h2 className="text-[13px] font-bold uppercase tracking-[0.05em] text-slate-700">
+          Website Pages
+        </h2>
       </div>
+      <button
+        type="button"
+        onClick={onAddPage}
+        className="flex h-5 w-5 items-center justify-center text-slate-500 transition hover:text-slate-700"
+        aria-label="Add page"
+      >
+        <svg
+          aria-hidden="true"
+          className="h-5 w-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
+    </header>
 
-      {/* Pages List */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '0 12px'
-      }}>
-        {[...pages].sort((a, b) => {
-          // Sort by name in ascending order (alphabetically)
-          return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
-        }).map((page) => {
+    <div className="flex-1 overflow-y-auto px-3">
+      {[...pages]
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }))
+        .map((page) => {
           const isActive = page.id === currentPage || page.name === currentPageName
           return (
-            <div
+            <button
               key={page.id}
+              type="button"
               onClick={() => onPageSelect(page.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                backgroundColor: isActive ? '#f3f4f6' : 'transparent',
-                cursor: 'pointer',
-                transition: 'background-color 0.15s ease',
-                marginBottom: '4px'
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = '#f9fafb'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }
-              }}
-            >
-              <span style={{
-                fontSize: '14px',
-                color: '#374151',
-                fontWeight: isActive ? '500' : '400'
-              }}>
-                {page.name}
-              </span>
-              {isActive && (
-                <Settings01
-                  style={{ 
-                    width: '16px', 
-                    height: '16px', 
-                    color: '#9ca3af',
-                    cursor: 'pointer' 
-                  }}
-                />
+              className={clsx(
+                'mb-1 flex w-full items-center justify-between rounded-md px-3 py-2 text-sm text-slate-700 transition',
+                isActive
+                  ? 'bg-slate-100 font-medium'
+                  : 'hover:bg-slate-50'
               )}
-            </div>
+            >
+              <span className="truncate">{page.name}</span>
+              {isActive && (
+                <Settings01 className="h-4 w-4 text-slate-400" aria-hidden="true" />
+              )}
+            </button>
           )
         })}
-      </div>
-
-      {/* Manage Pages Button */}
-      <div style={{
-        padding: '16px',
-        borderTop: '1px solid #f3f4f6'
-      }}>
-        <button
-          onClick={onManagePages}
-          style={{
-            width: '100%',
-            padding: '8px 16px',
-            backgroundColor: 'white',
-            color: '#6b7280',
-            border: '1px solid #e5e7eb',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: '500',
-            transition: 'all 0.15s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#f9fafb'
-            e.currentTarget.style.borderColor = '#d1d5db'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'white'
-            e.currentTarget.style.borderColor = '#e5e7eb'
-          }}
-        >
-          Manage pages
-        </button>
-      </div>
     </div>
-  )
-}
+
+    <div className="border-t border-slate-100 p-4">
+      <button
+        type="button"
+        onClick={onManagePages}
+        className="w-full rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 transition hover:border-slate-300 hover:bg-slate-50"
+      >
+        Manage pages
+      </button>
+    </div>
+  </aside>
+)
 
 export default PageSidebar
 

@@ -156,7 +156,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
   }, [showCustomSidebar])
 
   return (
-    <div style={{ flex: 1, height: 'calc(100vh - 64px)', display: 'flex', marginTop: '64px', position: 'relative' }}>
+    <div className="relative mt-16 flex h-[calc(100vh-64px)] flex-1">
       {showPreview ? (
         <NavigationProvider onNavigateToEditor={onNavigateToEditor} onAddComponent={onAddComponent}>
           <Preview data={currentData} isInteractive={true} onDataChange={onDataChange} />
@@ -189,16 +189,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
             console.log('Custom sidebar - Pages to display:', pagesForSidebar.map(p => `${p.name} (${p.id})`))
             
             return (
-              <div style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: '280px',
-                zIndex: 1000,
-                backgroundColor: 'white',
-                borderRight: '1px solid #e5e7eb'
-              }}>
+              <div className="absolute inset-y-0 left-0 w-[280px] border-r border-slate-200 bg-white z-[1000]">
                 <PageSidebar
                   pages={pagesForSidebar}
                   currentPage={currentPage}
@@ -240,13 +231,11 @@ export const EditorView: React.FC<EditorViewProps> = ({
             )
           })()}
           
-          <div style={{ 
-            flex: 1, 
-            height: '100%', 
-            overflow: 'hidden',
-            marginLeft: showCustomSidebar ? '280px' : '0',
-            transition: 'margin-left 0.2s'
-          }}>
+          <div
+            className={`flex-1 h-full overflow-hidden transition-[margin-left] duration-200 ${
+              showCustomSidebar ? 'ml-[280px]' : 'ml-0'
+            }`}
+          >
             <style>
               {`
                 ${showCustomSidebar ? `

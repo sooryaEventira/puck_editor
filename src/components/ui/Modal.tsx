@@ -1,6 +1,9 @@
 import React, { ReactNode } from 'react'
 import { XClose } from '@untitled-ui/icons-react'
 
+const cn = (...classes: Array<string | false | null | undefined>) =>
+  classes.filter(Boolean).join(' ')
+
 export interface ModalProps {
   /** Whether the modal is visible */
   isVisible: boolean
@@ -60,7 +63,7 @@ const Modal: React.FC<ModalProps> = ({
   showCloseButton = true,
   customHeader,
   containerStyle,
-  contentStyle,
+  contentStyle
 }) => {
   if (!isVisible) return null
 
@@ -69,25 +72,46 @@ const Modal: React.FC<ModalProps> = ({
   const paddingRight = padding?.right ?? 16
   const paddingBottom = padding?.bottom ?? 24
   const paddingLeft = padding?.left ?? 16
+  const headerBottomPadding = subtitle || customHeader ? 16 : 0
+
+  const overlayStyle: React.CSSProperties = {
+    zIndex,
+    ...containerStyle
+  }
+
+  const contentDimensions: React.CSSProperties = {
+    ...(typeof width !== 'undefined'
+      ? { width: typeof width === 'number' ? `${width}px` : width }
+      : {}),
+    ...(typeof height !== 'undefined'
+      ? { height: typeof height === 'number' ? `${height}px` : height }
+      : {}),
+    ...(typeof maxWidth !== 'undefined'
+      ? { maxWidth: typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth }
+      : {}),
+    ...(typeof maxHeight !== 'undefined'
+      ? {
+          maxHeight: typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight
+        }
+      : {})
+  }
+
+  const contentStyleWithVars: React.CSSProperties = {
+    ...contentDimensions,
+    borderRadius:
+      typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius,
+    '--modal-padding-top': `${paddingTop}px`,
+    '--modal-padding-right': `${paddingRight}px`,
+    '--modal-padding-bottom': `${paddingBottom}px`,
+    '--modal-padding-left': `${paddingLeft}px`,
+    '--modal-header-bottom': `${headerBottomPadding}px`,
+    ...contentStyle
+  } as React.CSSProperties
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex,
-        overflow: 'auto',
-        padding: 0,
-        margin: 0,
-        ...containerStyle,
-      }}
+      className="fixed inset-0 flex items-center justify-center overflow-auto bg-black/50 p-0"
+      style={overlayStyle}
       onClick={(e) => {
         // Close modal when clicking on backdrop
         if (e.target === e.currentTarget) {
@@ -96,133 +120,62 @@ const Modal: React.FC<ModalProps> = ({
       }}
     >
       <div
-        style={{
-          backgroundColor: 'white',
-          borderRadius: typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius,
-          width: typeof width === 'number' ? `${width}px` : (width ?? 'auto'),
-          height: typeof height === 'number' ? `${height}px` : (height ?? 'auto'),
-          maxWidth: typeof maxWidth === 'number' ? `${maxWidth}px` : (maxWidth ?? '90vw'),
-          maxHeight: typeof maxHeight === 'number' ? `${maxHeight}px` : (maxHeight ?? '90vh'),
-          opacity: 1,
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          paddingTop,
-          paddingRight: footer ? 0 : paddingRight,
-          paddingBottom: footer ? 0 : paddingBottom,
-          paddingLeft: footer ? 0 : paddingLeft,
-          overflow: 'hidden',
-          ...contentStyle,
-        }}
+        className="relative flex w-full max-w-[90vw] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl max-h-[90vh]"
+        style={contentStyleWithVars}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         {(customHeader || title) && (
           <div
-            style={{
-              position: 'relative',
-              paddingTop: paddingTop || 24,
-              paddingBottom: subtitle || customHeader ? 16 : 0,
-              paddingLeft: paddingLeft || 24,
-              paddingRight: paddingRight || 24,
-              borderBottom: subtitle || customHeader ? '1px solid #e5e7eb' : 'none',
-              flexShrink: 0,
-            }}
+            className={cn(
+              'flex flex-col border-slate-200',
+              'pl-[var(--modal-padding-left)]',
+              'pr-[var(--modal-padding-right)]',
+              'pt-[var(--modal-padding-top)]',
+              'pb-[var(--modal-header-bottom)]',
+              subtitle || customHeader ? 'border-b' : ''
+            )}
           >
-            {customHeader ? (
-              customHeader
-            ) : (
-              <>
-                <h2
-                  style={{
-                    margin: 0,
-                    fontSize: '20px',
-                    fontWeight: '600',
-                    color: '#111827',
-                    marginBottom: subtitle ? '8px' : 0,
-                    paddingRight: showCloseButton ? '32px' : 0,
-                  }}
-                >
-                  {title}
-                </h2>
-                {subtitle && (
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: '14px',
-                      color: '#6b7280',
-                      paddingRight: showCloseButton ? '32px' : 0,
-                    }}
-                  >
-                    {subtitle}
-                  </p>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                {customHeader ? (
+                  customHeader
+                ) : (
+                  <>
+                    <h2 className="text-xl font-semibold text-slate-900">
+                      {title}
+                    </h2>
+                    {subtitle && (
+                      <p className="text-sm text-slate-500">{subtitle}</p>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-
-            {/* Close button */}
-            {showCloseButton && (
-              <button
-                onClick={onClose}
-                style={{
-                  position: 'absolute',
-                  top: (paddingTop || 24) + (subtitle ? 12 : 4),
-                  right: paddingRight || 24,
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '4px',
-                  color: '#6b7280',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f3f4f6'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }}
-              >
-                <XClose style={{ width: '20px', height: '20px' }} />
-              </button>
-            )}
+              </div>
+              {showCloseButton && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  <XClose className="h-5 w-5" />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Content - scrollable area */}
         <div
-          style={{
-            flex: '1 1 auto',
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 0,
-            paddingLeft: footer ? paddingLeft : 0,
-            paddingRight: footer ? paddingRight : 0,
-            paddingBottom: footer ? 0 : paddingBottom,
-          }}
+          className={cn(
+            'flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden',
+            'pl-[var(--modal-padding-left)] pr-[var(--modal-padding-right)]',
+            footer ? 'pb-0' : 'pb-[var(--modal-padding-bottom)]',
+            customHeader || title ? 'pt-0' : 'pt-[var(--modal-padding-top)]'
+          )}
         >
           {children}
         </div>
 
-        {/* Footer - always visible at bottom */}
         {footer && (
-          <div
-            style={{
-              flexShrink: 0,
-              paddingTop: 16,
-              paddingBottom: 0,
-              marginTop: 0,
-              borderTop: '1px solid #e5e7eb',
-              backgroundColor: 'white',
-              position: 'relative',
-              zIndex: 10,
-              width: '100%',
-            }}
-          >
+          <div className="flex w-full flex-shrink-0 flex-col border-t border-slate-200 bg-white px-[var(--modal-padding-left)] pb-0 pt-4">
             {footer}
           </div>
         )}

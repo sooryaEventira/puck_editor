@@ -77,17 +77,41 @@ export const stylePublishButton = () => {
   })
 }
 
+const shouldPreserveColor = (element: HTMLElement) => {
+  if (element.dataset.preserveColor === 'true') {
+    return true
+  }
+
+  if (element.closest('[data-preserve-color="true"]')) {
+    return true
+  }
+
+  const hasTailwindTextClass = Array.from(element.classList).some(cls =>
+    cls.startsWith('text-') || cls.startsWith('!text-')
+  )
+
+  if (hasTailwindTextClass) {
+    return true
+  }
+
+  return false
+}
+
 /**
  * Force black text color on all Puck elements
  */
 export const forcePurpleText = () => {
   const stylePurpleText = (element: HTMLElement) => {
+    if (shouldPreserveColor(element)) {
+      return
+    }
+
     element.style.color = '#000000'
     element.style.setProperty('color', '#000000', 'important')
     // Also try setting the computed style
     element.style.cssText += 'color: #000000 !important;'
   }
-  
+
   // Try different selectors to find Puck elements
   const possibleSelectors = [
     '.puck',
@@ -98,34 +122,30 @@ export const forcePurpleText = () => {
     'div[class*="puck"]',
     'div[class*="Puck"]'
   ]
-  
-  let foundElements = 0
+
+  const containerSet = new Set<HTMLElement>()
+
   possibleSelectors.forEach(selector => {
-    const elements = document.querySelectorAll(selector)
-    if (elements.length > 0) {
-      elements.forEach(element => {
-        if (element instanceof HTMLElement) {
-          stylePurpleText(element)
-          foundElements++
-        }
-      })
-    }
+    document.querySelectorAll(selector).forEach(element => {
+      if (element instanceof HTMLElement) {
+        containerSet.add(element)
+      }
+    })
   })
 
-  // Find all text elements in any container that might be Puck
-  const allElements = document.querySelectorAll('*')
-  let textElementsStyled = 0
-  
-  allElements.forEach(element => {
-    if (element instanceof HTMLElement && 
-        element.textContent && 
-        element.textContent.trim().length > 0 &&
-        element.textContent.length < 100) { // Only short text elements (likely UI text)
-      stylePurpleText(element)
-      textElementsStyled++
+  containerSet.forEach(container => {
+    if (!shouldPreserveColor(container)) {
+      stylePurpleText(container)
     }
-  })
 
+    const descendants = container.querySelectorAll('*')
+    descendants.forEach(descendant => {
+      if (descendant instanceof HTMLElement) {
+        stylePurpleText(descendant)
+      }
+    })
+  })
+ 
   // Style Publish Button specifically
   stylePublishButton()
 }

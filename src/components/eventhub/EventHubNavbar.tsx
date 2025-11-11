@@ -21,168 +21,69 @@ const EventHubNavbar: React.FC<EventHubNavbarProps> = ({
   userAvatarUrl
 }) => {
   return (
-    <nav style={{
-      height: '64px',
-      width: '100%',
-      backgroundColor: '#1e1b4b', // Brand/950 - Darkest purple/indigo shade
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 24px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      borderBottom: '1px solid rgba(31, 41, 55, 0.2)',
-      position: 'fixed',
-      top: 0,
-      left: '50%',
-      transform: 'translateX(-50%)',
-      zIndex: 1000,
-      color: 'white',
-      opacity: 1
-    }}>
-      {/* Left Section */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: 'white' }}>
-         {/* Back Arrow */}
-         <button
-           onClick={onBackClick}
-           style={{
-             background: 'none',
-             border: 'none',
-             color: 'white',
-             cursor: 'pointer',
-             padding: '8px',
-             display: 'flex',
-             alignItems: 'center',
-             transition: 'opacity 0.2s'
-           }}
-           onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-           onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-         >
-           <span style={{ display: 'flex', alignItems: 'center', color: 'white' }}>
-             <ArrowNarrowLeft width={20} height={20} />
-           </span>
-         </button>
+    <nav
+      data-preserve-color="true"
+      className="fixed top-0 left-0 z-[1000] flex h-16 w-full items-center justify-between border-b border-slate-800/20 bg-[#1e1b4b] px-4 text-white shadow-md sm:px-6"
+    >
+      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+        <button
+          type="button"
+          onClick={onBackClick}
+          className="flex shrink-0 items-center rounded-full p-2 text-white transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          aria-label="Go back"
+        >
+          <ArrowNarrowLeft className="h-5 w-5" aria-hidden="true" />
+        </button>
 
-        {/* Vertical Divider */}
-        <div style={{
-          width: '1px',
-          height: '28px',
-          backgroundColor: 'rgba(255, 255, 255, 0.3)',
-          marginLeft: '4px',
-          marginRight: '4px'
-        }} />
+        <div className="hidden h-7 w-px bg-white/30 sm:block" aria-hidden="true" />
 
-        {/* Event Name */}
-        <span style={{
-          color: 'white',
-          fontSize: '16px',
-          fontWeight: '500',
-          WebkitTextFillColor: 'white'
-        }}>
+        <span className="truncate text-sm font-medium text-white sm:text-base">
           {eventName}
         </span>
 
-        {/* Draft Badge */}
         {isDraft && (
-          <span style={{
-            backgroundColor: 'white', // White background
-            color: '#1f2937', // Black/dark gray text
-            padding: '4px 12px',
-            borderRadius: '12px',
-            fontSize: '12px',
-            fontWeight: '600'
-          }}>
+          <span className="hidden shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-800 sm:inline-flex sm:text-xs">
             Draft
           </span>
         )}
       </div>
 
-      {/* Right Section */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-         {/* Search Icon */}
-         <button
-           onClick={onSearchClick}
-           style={{
-             background: 'none',
-             border: 'none',
-             color: 'white',
-             cursor: 'pointer',
-             padding: '8px',
-             display: 'flex',
-             alignItems: 'center',
-             transition: 'opacity 0.2s'
-           }}
-           onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-           onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-         >
-           <span style={{ display: 'flex', alignItems: 'center', color: 'white' }}>
-             <SearchLg width={20} height={20} />
-           </span>
-         </button>
-
-         {/* Notification Bell */}
-         <button
-           onClick={onNotificationClick}
-           style={{
-             background: 'none',
-             border: 'none',
-             color: 'white',
-             cursor: 'pointer',
-             padding: '8px',
-             display: 'flex',
-             alignItems: 'center',
-             transition: 'opacity 0.2s',
-             position: 'relative'
-           }}
-           onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-           onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-         >
-           <span style={{ display: 'flex', alignItems: 'center', color: 'white' }}>
-             <Bell01 width={20} height={20} />
-           </span>
-         </button>
-
-        {/* User Avatar */}
+      <div className="flex items-center gap-3 sm:gap-4">
         <button
+          type="button"
+          onClick={onSearchClick}
+          className="flex items-center rounded-full p-2 text-white transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          aria-label="Search"
+        >
+          <SearchLg className="h-5 w-5" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          onClick={onNotificationClick}
+          className="flex items-center rounded-full p-2 text-white transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          aria-label="Notifications"
+        >
+          <Bell01 className="h-5 w-5" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
           onClick={onProfileClick}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '0',
-            display: 'flex',
-            alignItems: 'center'
-          }}
+          className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          aria-label="Profile"
         >
           {userAvatarUrl ? (
             <img
               src={userAvatarUrl}
-              alt="User Profile"
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '2px solid white'
-              }}
+              alt="User profile"
+              className="h-9 w-9 rounded-full border-2 border-white object-cover"
             />
-           ) : (
-             <div style={{
-               width: '36px',
-               height: '36px',
-               borderRadius: '50%',
-               backgroundColor: '#a78bfa',
-               display: 'flex',
-               alignItems: 'center',
-               justifyContent: 'center',
-               color: 'white',
-               fontWeight: '600',
-               border: '2px solid white'
-             }}>
-               <span style={{ display: 'flex', alignItems: 'center', color: 'white' }}>
-                 <User01 width={18} height={18} />
-               </span>
-             </div>
-           )}
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-primary/70 text-white">
+              <User01 className="h-4 w-4" aria-hidden="true" />
+            </div>
+          )}
         </button>
       </div>
     </nav>

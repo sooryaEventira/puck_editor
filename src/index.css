@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 * {
   margin: 0;
   padding: 0;
@@ -164,9 +168,9 @@ body {
 }
 
 
-/* Target all possible text elements globally */
-* {
-  color: #000000 !important;
+/* Base text color */
+body {
+  color: #000000;
 }
 
 /* Override for HeroSection title and subtitle to be white */

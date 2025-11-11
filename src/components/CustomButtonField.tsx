@@ -1,5 +1,8 @@
 import React, { useEffect, useRef } from 'react'
 
+const BUTTON_CLASSES =
+  'inline-flex items-center justify-center gap-1 overflow-hidden rounded-lg border-2 border-transparent bg-primary px-3 py-2 text-sm font-semibold text-white leading-5 shadow-[0px_1px_2px_rgba(10,13,18,0.05),inset_0px_-2px_0px_rgba(10,13,18,0.05),inset_0px_0px_0px_1px_rgba(10,13,18,0.18)] outline outline-2 outline-offset-[-2px] outline-white/10 transition-colors duration-200 hover:bg-[#5a2dd4] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
+
 interface CustomButtonFieldProps {
   name?: string
   value?: string
@@ -24,6 +27,7 @@ const CustomButtonField: React.FC<CustomButtonFieldProps> = ({
         buttonRef.current.style.setProperty('color', '#FFFFFF', 'important')
         ;(buttonRef.current.style as any).setProperty('-webkit-text-fill-color', '#FFFFFF', 'important')
       }
+
       if (spanRef.current) {
         spanRef.current.style.setProperty('color', '#FFFFFF', 'important')
         ;(spanRef.current.style as any).setProperty('-webkit-text-fill-color', '#FFFFFF', 'important')
@@ -63,60 +67,17 @@ const CustomButtonField: React.FC<CustomButtonFieldProps> = ({
           -webkit-text-fill-color: #FFFFFF !important;
         }
       `}</style>
-      <div className="w-full" style={{ display: 'inline-block' }}>
+      <div className="inline-block w-full">
         <button
           ref={buttonRef}
           data-custom-schedule-button="true"
           type="button"
           onClick={handleClick}
-          style={{
-            width: '139px',
-            height: '36px',
-            paddingTop: '12px',
-            paddingRight: '16px',
-            paddingBottom: '12px',
-            paddingLeft: '16px',
-            backgroundColor: '#6938EF',
-            color: '#FFFFFF',
-            border: '2px solid #6938EF',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '500',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '4px',
-            opacity: 1,
-            transition: 'background-color 0.2s, border-color 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.setProperty('background-color', '#5a2dd4', 'important')
-            e.currentTarget.style.setProperty('border-color', '#5a2dd4', 'important')
-            e.currentTarget.style.setProperty('color', '#FFFFFF', 'important')
-            ;(e.currentTarget.style as any).setProperty('-webkit-text-fill-color', '#FFFFFF', 'important')
-            if (spanRef.current) {
-              spanRef.current.style.setProperty('color', '#FFFFFF', 'important')
-              ;(spanRef.current.style as any).setProperty('-webkit-text-fill-color', '#FFFFFF', 'important')
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.setProperty('background-color', '#6938EF', 'important')
-            e.currentTarget.style.setProperty('border-color', '#6938EF', 'important')
-            e.currentTarget.style.setProperty('color', '#FFFFFF', 'important')
-            ;(e.currentTarget.style as any).setProperty('-webkit-text-fill-color', '#FFFFFF', 'important')
-            if (spanRef.current) {
-              spanRef.current.style.setProperty('color', '#FFFFFF', 'important')
-              ;(spanRef.current.style as any).setProperty('-webkit-text-fill-color', '#FFFFFF', 'important')
-            }
-          }}
+          className={BUTTON_CLASSES}
         >
-          <span 
+          <span
             ref={spanRef}
-            style={{ 
-              color: '#FFFFFF',
-              WebkitTextFillColor: '#FFFFFF' as any
-            }}
+            className="font-['Inter'] text-sm font-semibold leading-5 text-white"
           >
             {buttonText}
           </span>

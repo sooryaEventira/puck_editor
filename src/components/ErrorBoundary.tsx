@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { Component, ErrorInfo, ReactNode } from 'react'
 import { logger } from '../utils/logger'
 
 interface ErrorBoundaryProps {
@@ -26,7 +26,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     }
   }
 
-  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+  static getDerivedStateFromError(_error: Error): Partial<ErrorBoundaryState> {
     // Update state so the next render will show the fallback UI
     return { hasError: true }
   }
@@ -63,133 +63,41 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
       // Default fallback UI
       return (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100vh',
-            padding: '40px',
-            backgroundColor: '#f9fafb',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-          }}
-        >
-          <div
-            style={{
-              maxWidth: '600px',
-              backgroundColor: 'white',
-              padding: '40px',
-              borderRadius: '12px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <div
-                style={{
-                  fontSize: '64px',
-                  marginBottom: '16px',
-                }}
-              >
-                ⚠️
-              </div>
-              <h1
-                style={{
-                  margin: '0 0 12px 0',
-                  fontSize: '24px',
-                  fontWeight: '600',
-                  color: '#111827',
-                }}
-              >
+        <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-10 font-sans">
+          <div className="max-w-[600px] rounded-xl bg-white p-10 shadow-lg">
+            <div className="mb-6 text-center">
+              <div className="mb-4 text-6xl">⚠️</div>
+              <h1 className="mb-3 text-2xl font-semibold text-slate-900">
                 Oops! Something went wrong
               </h1>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: '16px',
-                  color: '#6b7280',
-                }}
-              >
+              <p className="text-base text-slate-500">
                 We're sorry for the inconvenience. The application encountered an unexpected error.
               </p>
             </div>
 
             {this.state.error && (
-              <div
-                style={{
-                  marginBottom: '24px',
-                  padding: '16px',
-                  backgroundColor: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  borderRadius: '8px',
-                }}
-              >
-                <h3
-                  style={{
-                    margin: '0 0 8px 0',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#991b1b',
-                  }}
-                >
+              <div className="mb-6 rounded-lg border border-rose-200 bg-rose-50 p-4">
+                <h3 className="mb-2 text-sm font-semibold text-rose-900">
                   Error Details:
                 </h3>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: '13px',
-                    color: '#7f1d1d',
-                    fontFamily: 'monospace',
-                    wordBreak: 'break-word',
-                  }}
-                >
+                <p className="break-words font-mono text-xs text-rose-800">
                   {this.state.error.toString()}
                 </p>
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <div className="flex justify-center gap-3">
               <button
+                type="button"
                 onClick={this.handleReset}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#7c3aed',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#6d28d9'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#7c3aed'
-                }}
+                className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 Try Again
               </button>
               <button
+                type="button"
                 onClick={() => window.location.reload()}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: 'white',
-                  color: '#374151',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f9fafb'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'white'
-                }}
+                className="rounded-lg border border-slate-300 px-6 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/60"
               >
                 Reload Page
               </button>
