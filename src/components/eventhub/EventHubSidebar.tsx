@@ -5,6 +5,7 @@ interface SidebarItem {
   id: string
   label: string
   icon?: React.ReactNode
+  subItems?: SidebarItem[]
 }
 
 interface EventHubSidebarProps {
@@ -24,18 +25,68 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
   activeItemId = 'event-hub',
   onItemClick
 }) => {
-  const handleItemClick = (itemId: string) => {
+  const [isMobileOpen, setIsMobileOpen] = React.useState(false)
+  const [expandedItems, setExpandedItems] = React.useState<string[]>(['event-hub'])
+
+  // Keep parent items expanded if any of their sub-items are active
+  React.useEffect(() => {
+    items.forEach((item) => {
+      if (item.subItems && item.subItems.length > 0) {
+        const hasActiveSubItem = item.subItems.some((subItem) => subItem.id === activeItemId)
+        if (hasActiveSubItem) {
+          setExpandedItems((prev) => {
+            if (!prev.includes(item.id)) {
+              return [...prev, item.id]
+            }
+            return prev
+          })
+        }
+      }
+    })
+  }, [activeItemId, items])
+
+  const handleItemClick = (itemId: string, hasSubItems: boolean) => {
+    if (hasSubItems) {
+      // For Event Hub, always keep it expanded - don't allow collapsing
+      // But still trigger navigation if clicked
+      if (itemId === 'event-hub') {
+        // Navigate to event hub page when clicking the parent
+        if (onItemClick) {
+          onItemClick(itemId)
+        }
+        return
+      }
+      // Toggle expansion for other items
+      setExpandedItems((prev) =>
+        prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
+      )
+    } else {
+      if (onItemClick) {
+        onItemClick(itemId)
+      }
+      setIsMobileOpen(false)
+    }
+  }
+
+  const handleSubItemClick = (itemId: string) => {
     if (onItemClick) {
       onItemClick(itemId)
     }
     setIsMobileOpen(false)
   }
 
-  const [isMobileOpen, setIsMobileOpen] = React.useState(false)
-
   const toggleMobileSidebar = () => {
     setIsMobileOpen((prev) => !prev)
   }
+
+  const isExpanded = (itemId: string) => {
+    // Event Hub should always be expanded
+    if (itemId === 'event-hub') {
+      return true
+    }
+    return expandedItems.includes(itemId)
+  }
+  const hasSubItems = (item: SidebarItem): boolean => !!(item.subItems && item.subItems.length > 0)
 
   return (
     <>
@@ -53,34 +104,81 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
       </button>
 
       <aside
-        className={`fixed left-0 top-0 z-[999] h-screen w-[250px] border-r border-slate-200 bg-slate-100 pt-20 transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed left-0 top-0 z-[999] h-screen w-[250px] border-r border-slate-200 shadow-md pt-20 transition-transform duration-300 md:translate-x-0 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
         <div className="py-5">
           {items.map((item) => {
             const isActive = item.id === activeItemId
+            const hasSubs = hasSubItems(item)
+            const isItemExpanded = isExpanded(item.id)
+            const isActiveSubItem = item.subItems?.some((subItem) => subItem.id === activeItemId)
 
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleItemClick(item.id)}
-                className={`group flex w-full transform items-center gap-3 border-l-4 px-6 py-3.5 text-left transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-                  isActive
-                    ? 'border-l-primary bg-white shadow-md translate-x-[2px] font-semibold text-slate-700'
-                    : 'border-l-transparent text-slate-600 hover:border-l-slate-300 hover:bg-slate-100 hover:text-slate-700 hover:translate-x-[2px] hover:shadow-md'
-                }`}
-              >
-                {item.icon && (
-                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/60 text-slate-500 group-hover:text-primary" aria-hidden="true">
-                    {item.icon}
+              <div key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => handleItemClick(item.id, hasSubs)}
+                  className={`group flex w-full transform items-center gap-3 border-l-4 px-6 py-3.5 text-left transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                    isActive || isActiveSubItem
+                      ? 'border-l-primary bg-slate-100 shadow-md translate-x-[2px] font-semibold text-slate-700'
+                      : 'border-l-transparent text-slate-600 hover:border-l-slate-300 hover:bg-slate-100 hover:text-slate-700 hover:translate-x-[2px] hover:shadow-md'
+                  }`}
+                >
+                  {item.icon && (
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/60 text-slate-500 group-hover:text-primary" aria-hidden="true">
+                      {item.icon}
+                    </span>
+                  )}
+                  <span className="flex-1 justify-start text-base font-semibold font-['Inter'] leading-6 transition-colors duration-200 ease-out group-hover:text-slate-700">
+                    {item.label}
                   </span>
+                  {hasSubs && (
+                    <svg
+                      className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${
+                        isItemExpanded ? 'rotate-90' : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
+                </button>
+                {hasSubs && isItemExpanded && (
+                  <div className="bg-slate-50/50">
+                    {item.subItems!.map((subItem) => {
+                      const isSubActive = subItem.id === activeItemId
+                      return (
+                        <button
+                          key={subItem.id}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSubItemClick(subItem.id)
+                          }}
+                          className={`group flex w-full transform items-center gap-3 border-l-4 pl-12 pr-6 py-2.5 text-left transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                            isSubActive
+                              ? 'border-l-primary bg-slate-100 shadow-sm translate-x-[2px] font-semibold text-slate-700'
+                              : 'border-l-transparent text-slate-500 hover:border-l-slate-300 hover:bg-slate-100 hover:text-slate-700 hover:translate-x-[2px]'
+                          }`}
+                        >
+                          {subItem.icon && (
+                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-white/60 text-slate-400 group-hover:text-primary" aria-hidden="true">
+                              {subItem.icon}
+                            </span>
+                          )}
+                          <span className="justify-start text-sm font-medium font-['Inter'] leading-5 transition-colors duration-200 ease-out group-hover:text-slate-700">
+                            {subItem.label}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 )}
-                <span className="justify-start text-base font-semibold font-['Inter'] leading-6 transition-colors duration-200 ease-out group-hover:text-slate-700">
-                  {item.label}
-                </span>
-              </button>
+              </div>
             )
           })}
         </div>

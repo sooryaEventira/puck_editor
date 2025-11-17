@@ -40,6 +40,8 @@ export interface ModalProps {
   showCloseButton?: boolean
   /** Custom header content (overrides title/subtitle) */
   customHeader?: ReactNode
+  /** Whether to show border at the bottom of the header */
+  showHeaderBorder?: boolean
   /** Custom styles for the modal container */
   containerStyle?: React.CSSProperties
   /** Custom styles for the modal content */
@@ -62,6 +64,7 @@ const Modal: React.FC<ModalProps> = ({
   borderRadius = 16,
   showCloseButton = true,
   customHeader,
+  showHeaderBorder,
   containerStyle,
   contentStyle
 }) => {
@@ -132,7 +135,13 @@ const Modal: React.FC<ModalProps> = ({
               'pr-[var(--modal-padding-right)]',
               'pt-[var(--modal-padding-top)]',
               'pb-[var(--modal-header-bottom)]',
-              subtitle || customHeader ? 'border-b' : ''
+              showHeaderBorder !== undefined
+                ? showHeaderBorder
+                  ? 'border-b'
+                  : ''
+                : subtitle || customHeader
+                ? 'border-b'
+                : ''
             )}
           >
             <div className="flex items-start justify-between gap-4">

@@ -7,7 +7,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#6838EE'
+        primary: {
+          DEFAULT: '#6838EE',
+          dark: '#3E1C96'
+        }
       },
       fontFamily: {
         manrope: ['Manrope', 'Helvetica Neue', 'Arial', 'sans-serif']

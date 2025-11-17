@@ -4,14 +4,14 @@ import { usePageManagement } from '../hooks/usePageManagement'
 import { usePublish } from '../hooks/usePublish'
 import { useAppHandlers } from '../hooks/useAppHandlers'
 import { PageManager, PageNameDialog, PageCreationModal } from './page'
-import { EventHubPage, EventHubNavbar, SchedulePage } from './eventhub'
+import { EventHubPage, EventHubNavbar, SchedulePage, CommunicationPage } from './eventhub'
 import EditorView from './EditorView'
 import { logger } from '../utils/logger'
 import { setupPuckStyling } from '../utils/puckStyling'
 
 const App: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false)
-  const [currentView, setCurrentView] = useState<'editor' | 'events' | 'schedule'>('editor')
+  const [currentView, setCurrentView] = useState<'editor' | 'events' | 'schedule' | 'communication'>('editor')
   const [puckUi, setPuckUi] = useState<any>(undefined)
   const [showLeftSidebar, setShowLeftSidebar] = useState(true)
   const [showRightSidebar, setShowRightSidebar] = useState(true)
@@ -62,12 +62,20 @@ const App: React.FC = () => {
     createNewPage,
   })
 
-  // Handle card click from EventHubContent
+  // Handle card click from EventHubContent or sidebar
   const handleEventHubCardClick = (cardId: string) => {
     if (cardId === 'schedule-session') {
-      // Navigate to editor
-      setCurrentView('editor')
-      logger.debug('📍 Navigating to editor from Schedule/Session')
+      // Navigate to schedule management view
+      setCurrentView('schedule')
+      logger.debug('📍 Navigating to schedule page from Event Hub card')
+    } else if (cardId === 'communications') {
+      // Navigate to communication page
+      setCurrentView('communication')
+      logger.debug('📍 Navigating to communication page from Event Hub card')
+    } else {
+      // Handle other card IDs (resource-management, attendee-management, analytics, website-settings)
+      logger.debug(`📍 Card clicked: ${cardId}`)
+      // TODO: Implement navigation for other card types when their pages are created
     }
   }
 
@@ -75,6 +83,12 @@ const App: React.FC = () => {
   const handleBackToEditor = () => {
     setCurrentView('editor')
     logger.debug('📍 Navigating back to editor')
+  }
+
+  // Custom back to event hub handler
+  const handleBackToEventHub = () => {
+    setCurrentView('events')
+    logger.debug('📍 Navigating back to event hub')
   }
 
   // Handle navigation to schedule page
@@ -127,9 +141,25 @@ const App: React.FC = () => {
       <SchedulePage
         eventName="Highly important conference of 2025"
         isDraft={true}
-        onBackClick={handleBackToEditor}
+        onBackClick={handleBackToEventHub}
         userAvatarUrl=""
         scheduleName="Schedule 1"
+        onCardClick={handleEventHubCardClick}
+      />
+    )
+  }
+
+  // Render Communication Page
+  if (currentView === 'communication') {
+    logger.debug('📍 Rendering Communication Page');
+    
+    return (
+      <CommunicationPage
+        eventName="Highly important conference of 2025"
+        isDraft={true}
+        onBackClick={handleBackToEventHub}
+        userAvatarUrl=""
+        onCardClick={handleEventHubCardClick}
       />
     )
   }

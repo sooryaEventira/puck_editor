@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import ScheduleContent from './ScheduleContent'
@@ -6,6 +6,8 @@ import SessionSlideout from './SessionSlideout'
 import SavedSchedulesTable from './SavedSchedulesTable'
 import { SavedSchedule, SessionDraft } from './sessionTypes'
 import { defaultSessionDraft } from './sessionConfig'
+import { defaultCards, ContentCard } from '../EventHubContent'
+import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 
 interface SchedulePageProps {
   eventName?: string
@@ -13,6 +15,7 @@ interface SchedulePageProps {
   onBackClick?: () => void
   userAvatarUrl?: string
   scheduleName?: string
+  onCardClick?: (cardId: string) => void
 }
 
 const SchedulePage: React.FC<SchedulePageProps> = ({
@@ -20,7 +23,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   isDraft,
   onBackClick,
   userAvatarUrl,
-  scheduleName
+  scheduleName,
+  onCardClick
 }) => {
   const handleSearchClick = () => {
     console.log('Search clicked')
@@ -34,9 +38,42 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
     console.log('Profile clicked')
   }
 
+  // Convert cards to sidebar sub-items
+  const sidebarItems = useMemo(() => {
+    const eventHubSubItems = defaultCards.map((card: ContentCard) => ({
+      id: card.id,
+      label: card.title,
+      icon: card.icon
+    }))
+
+    return [
+      { id: 'overview', label: 'Overview', icon: <InfoCircle className="h-5 w-5" /> },
+      { id: 'event-website', label: 'Event website', icon: <CodeBrowser className="h-5 w-5" /> },
+      {
+        id: 'event-hub',
+        label: 'Event Hub',
+        icon: <Globe01 className="h-5 w-5" />,
+        subItems: eventHubSubItems
+      }
+    ]
+  }, [])
+
   const handleSidebarItemClick = (itemId: string) => {
     console.log('Sidebar item clicked:', itemId)
-    // TODO: Implement navigation between sections
+    
+    // If clicking on event-hub, navigate back to event hub page
+    if (itemId === 'event-hub' && onBackClick) {
+      onBackClick()
+      return
+    }
+    
+    // If clicking on a different card, navigate to it
+    if (itemId !== 'schedule-session') {
+      const isCardId = defaultCards.some((card) => card.id === itemId)
+      if (isCardId && onCardClick) {
+        onCardClick(itemId)
+      }
+    }
   }
 
   const handleUpload = () => {
@@ -141,7 +178,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
 
       {/* Sidebar */}
       <EventHubSidebar
-        activeItemId="event-hub"
+        items={sidebarItems}
+        activeItemId="schedule-session"
         onItemClick={handleSidebarItemClick}
       />
 

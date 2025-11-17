@@ -66,9 +66,9 @@ const SectionPickerModal: React.FC<SectionPickerModalProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-16 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  {/* <span className="inline-flex h-10 w-16 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white text-xs font-semibold uppercase tracking-wide text-slate-400">
                     {option.label.slice(0, 2)}
-                  </span>
+                  </span> */}
                   <span className="text-sm font-medium text-slate-600">{option.label}</span>
                 </div>
                 <span

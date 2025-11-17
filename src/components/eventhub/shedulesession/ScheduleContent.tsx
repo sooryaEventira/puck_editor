@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Upload01 } from '@untitled-ui/icons-react'
-import DatePicker from '../../ui/untitled/DatePicker'
+import { Upload01, Plus } from '@untitled-ui/icons-react'
+import WeekDateSelector from './WeekDateSelector'
+import UploadModal from './UploadModal'
 
 interface ScheduleContentProps {
   scheduleName?: string
@@ -13,64 +14,65 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
   onUpload,
   onAddSession
 }) => {
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+
+  const handleDateChange = (date: Date) => {
+    console.log('Selected date:', date)
+    // You can add additional logic here if needed
+  }
+
+  const handleUploadClick = () => {
+    setIsUploadModalOpen(true)
+    onUpload?.()
+  }
+
+  const handleCloseModal = () => {
+    setIsUploadModalOpen(false)
+  }
+
+  const handleAttachFiles = (files: File[]) => {
+    console.log('Files attached:', files)
+    // Handle file upload logic here
+    setIsUploadModalOpen(false)
+  }
 
   return (
     <main className="relative mt-16 w-full bg-white px-4 pb-10 pt-8 md:px-8">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <h1 className="font-manrope text-3xl font-bold leading-10 text-[#3E1C96] md:text-[32px] md:leading-10">
+        <h1 className="font-manrope text-[26px] font-semibold leading-10 text-primary-dark md:text-[32px] md:leading-10">
           {scheduleName}
         </h1>
         <button
           type="button"
           data-schedule-upload="true"
-          onClick={onUpload}
-          className="flex h-10 w-full max-w-[160px] items-center justify-center gap-3 rounded-md bg-primary px-4 text-sm font-medium text-white transition-colors hover:bg-[#5a2dd4] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:w-[150px]"
+          onClick={handleUploadClick}
+          className="inline-flex items-center justify-center gap-1 overflow-hidden rounded-lg bg-[#6938EF] px-[14px] py-[6px] text-white transition-colors hover:bg-[#5a2dd4]"
+          style={{ fontFamily: 'Inter' }}
         >
-          <Upload01 className="h-4 w-4 text-white" strokeWidth={2} />
-          <span className="justify-start text-Colors-Text-text-white text-sm font-semibold font-['Inter'] leading-5">Upload</span>
+          <div className="relative h-5 w-5 overflow-hidden">
+            <Upload01 className="absolute left-[2.5px] top-[2.5px] h-[15px] w-[15px] text-white" strokeWidth={1.67} />
+          </div>
+          <div className="flex items-center justify-center px-0.5">
+            <span className="text-sm font-semibold leading-5 text-white">Upload</span>
+          </div>
         </button>
       </div>
 
       <div className="mt-6 flex min-h-[22rem] flex-col gap-6 overflow-hidden rounded border border-slate-200 bg-white px-4 py-6 shadow-sm md:min-h-[819px] md:px-8">
-        <div className="flex flex-col gap-4 md:flex-row">
-          <DatePicker
-            id="schedule-date-from"
-            value={dateFrom}
-            onChange={setDateFrom}
-            placeholder="Select date from"
-            label="Start date"
-          />
-          <DatePicker
-            id="schedule-date-to"
-            value={dateTo}
-            onChange={setDateTo}
-            placeholder="Select date to"
-            label="End date"
-          />
-        </div>
+        {/* Date Selector */}
+        <WeekDateSelector onDateChange={handleDateChange} />
 
         <div>
           <button
             type="button"
             onClick={onAddSession}
-            className="inline-flex w-full max-w-[200px] items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#5a2dd4] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:w-auto"
+            className="inline-flex items-center justify-center gap-1 overflow-hidden rounded-lg bg-[#6938EF] px-3 py-1.5 text-white shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] "
+            style={{ fontFamily: 'Inter' }}
           >
-            <svg
-              className="h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-           <span className="justify-start text-Colors-Text-text-white text-sm font-semibold font-['Inter'] leading-5">Add session</span>
+            <div className="flex items-center justify-center px-0.5">
+              <Plus className="h-4 w-4 text-white" strokeWidth={1} />
+              <span className="text-sm font-semibold leading-5 text-white"> Add session</span>
+            </div>
           </button>
         </div>
 
@@ -78,6 +80,13 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
           Upload your schedule or create custom sessions!
         </div>
       </div>
+
+      {/* Upload Modal */}
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onClose={handleCloseModal}
+        onAttachFiles={handleAttachFiles}
+      />
     </main>
   )
 }

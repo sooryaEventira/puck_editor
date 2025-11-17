@@ -1,15 +1,23 @@
 import React from 'react'
+import {
+  MessageChatSquare,
+  Folder,
+  Users01,
+  Calendar,
+  BarChart07,
+  Globe01
+} from '@untitled-ui/icons-react'
 
-interface CardItem {
+export interface CardItem {
   label: string
-  value: string
+  value?: string
 }
 
-interface ContentCard {
+export interface ContentCard {
   id: string
   title: string
   items: CardItem[]
-  icon?: string
+  icon?: React.ReactNode
 }
 
 interface EventHubContentProps {
@@ -18,57 +26,53 @@ interface EventHubContentProps {
   onCardClick?: (cardId: string) => void
 }
 
-const defaultCards: ContentCard[] = [
+export const defaultCards: ContentCard[] = [
   {
     id: 'communications',
     title: 'Communications',
+    icon: <MessageChatSquare className="h-5 w-5" aria-hidden="true" />,
     items: [
-      { label: '3 broadcasts sent this week', value: '3' },
-      { label: '2 schedules announcements', value: '2' }
+      { label: 'Send broadcasts, announcements, and updates to keep attendees informed throughout the event.' }
     ]
   },
   {
     id: 'resource-management',
     title: 'Resource Management',
+    icon: <Folder className="h-5 w-5" aria-hidden="true" />,
     items: [
-      { label: '3 folders', value: '3' },
-      { label: '12 files', value: '12' }
+      { label: 'Organize and share event materials, documents, and files with your team and attendees.' }
     ]
   },
   {
     id: 'attendee-management',
     title: 'Attendee Management',
+    icon: <Users01 className="h-5 w-5" aria-hidden="true" />,
     items: [
-      { label: '152 registered', value: '152' },
-      { label: '120 logged in', value: '120' }
-    ]
-  },
-  {
-    id: 'attendee-moderators',
-    title: 'Attendee Moderators',
-    items: [
-      { label: '3 blocks', value: '3' }
+      { label: 'Track registrations, manage check-ins, and monitor attendee engagement in real-time.' }
     ]
   },
   {
     id: 'schedule-session',
     title: 'Schedule/Session',
+    icon: <Calendar className="h-5 w-5" aria-hidden="true" />,
     items: [
-      { label: '24 sessions', value: '24' }
+      { label: 'Create event schedules, manage sessions, and help attendees plan their experience.' }
     ]
   },
   {
     id: 'analytics',
     title: 'Analytics',
+    icon: <BarChart07 className="h-5 w-5" aria-hidden="true" />,
     items: [
-      { label: '12% more registered', value: '+12%' }
+      { label: 'View attendance metrics, engagement data, and insights to measure event success.', value: '+12%' }
     ]
   },
   {
     id: 'website-settings',
     title: 'Website Settings',
+    icon: <Globe01 className="h-5 w-5" aria-hidden="true" />,
     items: [
-      { label: 'color and font', value: '' }
+      { label: 'Customize your event website, branding, and public-facing pages.' }
     ]
   }
 ]
@@ -79,30 +83,37 @@ const EventHubContent: React.FC<EventHubContentProps> = ({
   onCardClick
 }) => {
   return (
-    <main className="mt-16 min-h-[calc(100vh-4rem)] w-full overflow-auto bg-white px-4 pb-10 pt-8 md:ml-[250px] md:px-8">
-      <h1 className="mb-8 text-3xl font-bold text-slate-800 md:text-[32px]">{title}</h1>
-      <div className="mx-auto grid w-full max-w-[1400px] gap-6 sm:grid-cols-2 xl:grid-cols-3">
+    <main className="mt-16 min-h-[calc(100vh-4rem)]  bg-white px-4 pb-10 pt-8 md:ml-[250px] md:px-8">
+      <h1 className="mb-8 text-3xl font-bold text-primary-dark md:text-[32px] ">{title}</h1>
+      <div className="mx-auto grid w-full max-w-[1400px] gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => (
           <button
             key={card.id}
             type="button"
             onClick={() => onCardClick?.(card.id)}
-            className="group flex h-full w-full flex-col rounded-xl border border-slate-200 bg-slate-50 p-6 text-left shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="group flex h-[152px] w-full flex-col justify-self-center rounded-[20px] border border-slate-200 bg-white p-6 text-left shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            <div className="mb-4 flex items-center gap-3">
+            <div className="mb-4 flex items-center justify-between gap-3 -mt-2">
+              <h3 className="max-w-[277.33px] min-h-[28px] text-lg font-semibold leading-7 text-slate-700">
+                {card.title}
+              </h3>
               {card.icon && (
-                <span className="text-2xl" aria-hidden="true">{card.icon}</span>
+                <span className="inline-flex h-10 w-10 items-center justify-center  text-slate-500">
+                  {card.icon}
+                </span>
               )}
-              <h3 className="text-lg font-semibold text-slate-700">{card.title}</h3>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="-mt-2 flex flex-col gap-1">
               {card.items.map((item, index) => (
-                <span key={index} className="text-sm text-slate-500">
+                <span
+                  key={index}
+                  className="max-w-[317.33px] min-h-[72px] text-base font-normal leading-6 text-slate-500 -mt-1"
+                >
                   {item.label}
                 </span>
               ))}
             </div>
-          </button>
+          </button> 
         ))}
       </div>
     </main>

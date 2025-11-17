@@ -1,7 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import EventHubNavbar from './EventHubNavbar'
 import EventHubSidebar from './EventHubSidebar'
 import EventHubContent from './EventHubContent'
+import { defaultCards, ContentCard } from './EventHubContent'
+import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 
 interface EventHubPageProps {
   eventName?: string
@@ -35,11 +37,45 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
     // TODO: Implement profile functionality
   }
 
+  // Convert cards to sidebar sub-items
+  const sidebarItems = useMemo(() => {
+    const eventHubSubItems = defaultCards.map((card: ContentCard) => ({
+      id: card.id,
+      label: card.title,
+      icon: card.icon
+    }))
+
+    return [
+      { id: 'overview', label: 'Overview', icon: <InfoCircle className="h-5 w-5" /> },
+      { id: 'event-website', label: 'Event website', icon: <CodeBrowser className="h-5 w-5" /> },
+      {
+        id: 'event-hub',
+        label: 'Event Hub',
+        icon: <Globe01 className="h-5 w-5" />,
+        subItems: eventHubSubItems
+      }
+    ]
+  }, [])
+
   const handleSidebarItemClick = (itemId: string) => {
     console.log('Sidebar item clicked:', itemId)
     setActiveSection(itemId)
-    // TODO: Implement navigation between sections
+    
+    // If clicking on event-hub parent, just stay on the cards grid
+    if (itemId === 'event-hub') {
+      return
+    }
+    
+    // Check if this is a card ID and trigger onCardClick
+    const isCardId = defaultCards.some((card) => card.id === itemId)
+    if (isCardId && onCardClick) {
+      onCardClick(itemId)
+    }
   }
+
+  // Only show EventHubContent (cards grid) when on the main event-hub page
+  // Hide it when navigating to any card sub-item
+  const showCardsGrid = activeSection === 'event-hub'
 
   return (
     <div className="h-screen overflow-hidden bg-white">
@@ -56,12 +92,13 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
 
       {/* Sidebar */}
       <EventHubSidebar
+        items={sidebarItems}
         activeItemId={activeSection}
         onItemClick={handleSidebarItemClick}
       />
 
-      {/* Content */}
-      <EventHubContent onCardClick={onCardClick} />
+      {/* Content - Only show cards grid when on event-hub main page */}
+      {showCardsGrid && <EventHubContent onCardClick={onCardClick} />}
     </div>
   )
 }
