@@ -1,0 +1,793 @@
+import React, { useState, useRef, useEffect } from 'react'
+import {
+  Bold01,
+  Italic01,
+  Underline01,
+  AlignLeft,
+  AlignCenter,
+  Attachment01,
+  Image01,
+  List,
+  Send01,
+  Calendar,
+  Plus,
+  XClose
+} from '@untitled-ui/icons-react'
+import type { Macro } from './communicationTypes'
+import BroadcastPreviewModal from './BroadcastPreviewModal'
+
+interface BroadcastComposerProps {
+  onCancel: () => void
+  onSave: (data: { subject: string; message: string; templateType?: string }) => void
+  onSend?: (data: { subject: string; message: string }) => void
+  macros?: Macro[]
+  initialSubject?: string
+  initialMessage?: string
+  templateType?: string
+}
+
+const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
+  onCancel,
+  onSave,
+  onSend,
+  macros = [],
+  initialSubject = '',
+  initialMessage = ''
+}) => {
+  const [activeTab, setActiveTab] = useState<'late-message' | 'settings'>('late-message')
+  const [subject, setSubject] = useState(initialSubject || 'Your session is running late!')
+  const [message, setMessage] = useState(initialMessage)
+  const [isEditing, setIsEditing] = useState(true)
+  const [selectedMacro, setSelectedMacro] = useState<string>('')
+  const [showColorPicker, setShowColorPicker] = useState(false)
+  const [selectedColor, setSelectedColor] = useState('#000000')
+  const [showContextualToolbar, setShowContextualToolbar] = useState(false)
+  const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 })
+  const [isBold, setIsBold] = useState(false)
+  const [isItalic, setIsItalic] = useState(false)
+  const [isUnderline, setIsUnderline] = useState(false)
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
+  
+  // Settings Tab State
+  const [matchLogic, setMatchLogic] = useState<'ANY' | 'ALL'>('ANY')
+  const [filters, setFilters] = useState([
+    { id: '1', field: 'Group', operator: 'is', value: 'Speakers' }
+  ])
+
+  const colorPickerButtonRef = useRef<HTMLButtonElement>(null)
+  const contextualToolbarRef = useRef<HTMLDivElement>(null)
+
+  const editorRef = useRef<HTMLDivElement>(null)
+
+  // Initialize editor content
+  useEffect(() => {
+    if (editorRef.current && initialMessage && editorRef.current.innerHTML !== initialMessage) {
+      editorRef.current.innerHTML = initialMessage
+    }
+  }, []) // Only run once on mount
+
+  const colors = [
+    ['#000000', '#1E3A8A', '#166534', '#374151', '#6B7280', '#9CA3AF', '#FFFFFF'],
+    ['#10B981', '#3B82F6', '#7F56D9', '#EC4899', '#EF4444', '#F59E0B']
+  ]
+
+  const handleInsertMacro = () => {
+    if (selectedMacro && editorRef.current) {
+      const macroText = `{{${selectedMacro}}}`
+      
+      editorRef.current.focus()
+      
+      const selection = window.getSelection()
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0)
+        
+        // Ensure selection is inside the editor
+        if (editorRef.current.contains(range.commonAncestorContainer)) {
+          range.deleteContents()
+          const textNode = document.createTextNode(macroText)
+          range.insertNode(textNode)
+          
+          // Move cursor after inserted text
+          range.setStartAfter(textNode)
+          range.setEndAfter(textNode)
+          selection.removeAllRanges()
+          selection.addRange(range)
+        } else {
+          // If selection is outside, append to end
+          editorRef.current.innerHTML += macroText
+        }
+      } else {
+        // No selection, append to end
+        editorRef.current.innerHTML += macroText
+      }
+
+      setMessage(editorRef.current.innerHTML)
+      setSelectedMacro('')
+    }
+  }
+
+  const handleFormat = (command: string, value?: string) => {
+    if (!editorRef.current) return
+
+    // Focus the editor first if it's not active
+    if (document.activeElement !== editorRef.current) {
+        editorRef.current.focus()
+    }
+
+    // Get current selection
+    const selection = window.getSelection()
+    
+    // For alignment commands, if no selection, select the current paragraph/line
+    if ((command === 'justifyLeft' || command === 'justifyCenter' || command === 'justifyRight' || command === 'justifyFull') && 
+        (!selection || selection.rangeCount === 0 || selection.toString().length === 0)) {
+      // Select the current line/paragraph
+      const range = document.createRange()
+      const sel = window.getSelection()
+      if (sel && editorRef.current) {
+        // Try to find the current block element
+        let node: HTMLElement | null = editorRef.current
+        if (sel.anchorNode) {
+          node = sel.anchorNode.nodeType === Node.TEXT_NODE 
+            ? (sel.anchorNode.parentElement as HTMLElement) || editorRef.current
+            : (sel.anchorNode as HTMLElement)
+        }
+        
+        // Find the block element (p, div, etc.) or use the editor itself
+        while (node && node !== editorRef.current && !['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI'].includes(node.tagName)) {
+          node = (node.parentElement as HTMLElement) || editorRef.current
+        }
+        
+        if (node) {
+          range.selectNodeContents(node)
+          sel.removeAllRanges()
+          sel.addRange(range)
+        }
+      }
+    }
+
+    // Execute the command
+    try {
+      const success = document.execCommand(command, false, value)
+      if (success) {
+        // Update message content
+        if (editorRef.current) {
+          setMessage(editorRef.current.innerHTML)
+        }
+        // Update format state
+        setTimeout(() => {
+          updateFormatState()
+        }, 10)
+      }
+    } catch (error) {
+      console.error('Format command failed:', error)
+    }
+  }
+
+  const updateFormatState = () => {
+    if (editorRef.current) {
+      // Don't force focus here as it might interfere with selection
+      setIsBold(document.queryCommandState('bold'))
+      setIsItalic(document.queryCommandState('italic'))
+      setIsUnderline(document.queryCommandState('underline'))
+    }
+  }
+
+  const handleTextSelection = () => {
+    // Small delay to ensure selection is complete
+    setTimeout(() => {
+      const selection = window.getSelection()
+      if (selection && selection.toString().length > 0) {
+        const anchorNode = selection.anchorNode
+        const focusNode = selection.focusNode
+        
+        // Check if selection is within the editor
+        if (editorRef.current && (
+          editorRef.current.contains(anchorNode) || 
+          editorRef.current.contains(focusNode) ||
+          anchorNode === editorRef.current ||
+          focusNode === editorRef.current
+        )) {
+          const range = selection.getRangeAt(0)
+          const rect = range.getBoundingClientRect()
+          const editorRect = editorRef.current.getBoundingClientRect()
+          
+          setToolbarPosition({
+            top: rect.top - editorRect.top - 40,
+            left: rect.left - editorRect.left + rect.width / 2
+          })
+          setShowContextualToolbar(true)
+          updateFormatState()
+        } else {
+          // Only hide if we're not interacting with the toolbar
+          // This check is handled by the click outside listener mostly, 
+          // but we need to be careful not to hide it aggressively here if selection is still valid but maybe lost focus momentarily
+          // For now, we'll rely on the selection check. If selection is gone, toolbar should go.
+          // But clicking the toolbar might cause temporary selection loss? No, mousedown preventDefault handles that.
+        }
+      } else {
+        setShowContextualToolbar(false)
+      }
+    }, 10)
+  }
+
+  useEffect(() => {
+    const editor = editorRef.current
+    if (!editor) return
+
+    editor.addEventListener('mouseup', handleTextSelection)
+    editor.addEventListener('keyup', handleTextSelection)
+    editor.addEventListener('selectionchange', handleTextSelection)
+
+    return () => {
+      editor.removeEventListener('mouseup', handleTextSelection)
+      editor.removeEventListener('keyup', handleTextSelection)
+      editor.removeEventListener('selectionchange', handleTextSelection)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showColorPicker && colorPickerButtonRef.current && !colorPickerButtonRef.current.contains(event.target as Node)) {
+        const colorPicker = document.querySelector('.color-picker-popup')
+        if (colorPicker && !colorPicker.contains(event.target as Node)) {
+          setShowColorPicker(false)
+        }
+      }
+      
+      // Fix: Don't close if clicking inside the contextual toolbar
+      if (showContextualToolbar && 
+          !editorRef.current?.contains(event.target as Node) && 
+          !contextualToolbarRef.current?.contains(event.target as Node)) {
+        setShowContextualToolbar(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showColorPicker, showContextualToolbar])
+
+  const handleColorSelect = (color: string) => {
+    setSelectedColor(color)
+    handleFormat('foreColor', color)
+    setShowColorPicker(false)
+  }
+
+  const handleSave = () => {
+    onSave({
+      subject,
+      message,
+      templateType: activeTab === 'late-message' ? 'late-message' : undefined
+    })
+    setIsEditing(false)
+  }
+
+  const handleToolbarAction = (e: React.MouseEvent, command: string, value?: string) => {
+    e.preventDefault() // Prevent focus loss
+    handleFormat(command, value)
+  }
+
+  return (
+    <div className="space-y-6 px-4 pb-12 pt-28 md:px-10 lg:px-16 -mt-8">
+      <style>{`
+        .broadcast-editor-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .broadcast-editor-content ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
+        .broadcast-editor-content b, .broadcast-editor-content strong { font-weight: bold; }
+        .broadcast-editor-content i, .broadcast-editor-content em { font-style: italic; }
+        .broadcast-editor-content u { text-decoration: underline; }
+        .broadcast-editor-content p { margin-bottom: 0.5em; }
+      `}</style>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ">
+        <h1 className="text-[26px] font-semibold  text-primary-dark mb-4 ">Communication</h1>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setShowPreviewModal(true)}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <span>Send</span>
+            <Send01 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <span>Schedule</span>
+            <Calendar className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs and Content Container */}
+      <div className="rounded-xl  bg-white overflow-hidden ">
+        {/* Tabs */}
+        <div className="inline-flex items-center border-slate-200 bg-white ">
+          <button
+            type="button"
+            onClick={() => setActiveTab('late-message')}
+            className={`px-4 py-2 text-sm font-semibold transition h-10 border border-slate-200 ${
+              activeTab === 'late-message'
+                ? 'bg-primary text-white'
+                : 'bg-white text-slate-500 hover:text-primary'
+            }`}
+          >
+            Late Message
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('settings')}
+            className={`px-4 py-2 text-sm font-semibold transition h-10 border border-slate-200 rounded-tr-xl ${
+              activeTab === 'settings'
+                ? 'bg-primary text-white'
+                : 'bg-white text-slate-500 hover:text-primary'
+            }`}
+          >
+            Settings
+          </button>
+        </div>
+
+        {/* Content Area */}
+        <div className="p-6 border border-slate-200">
+        {activeTab === 'late-message' ? (
+          <div className="space-y-4">
+            {isEditing ? (
+              <>
+                {/* Subject Line */}
+                <div className="relative">
+                  <input
+                    id="subject"
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    className="w-full rounded-md  border border-slate-300 bg-slate-50 pl-16 pr-3 py-2 text-sm  text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                  <label htmlFor="subject" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium font-semibold text-slate-00  pointer-events-none">
+                    Subject:
+                  </label>
+                </div>
+
+                {/* Formatting Toolbar */}
+                <div className="flex flex-wrap items-center gap-1.5  border-slate-200 pb-3">
+                  {/* Insert Macro Dropdown */}
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                        e.preventDefault()
+                        // Toggle dropdown - in real implementation, this would show a dropdown menu
+                        const macro = macros[0]
+                        if (macro) {
+                            setSelectedMacro(macro.macro.replace(/[{}]/g, ''))
+                            handleInsertMacro()
+                        }
+                    }}
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm hover:bg-slate-50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <span>{'{ }'}</span>
+                    <span>Insert</span>
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Font Selection */}
+                  <select
+                    className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    defaultValue="Inter"
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    <option value="Inter">T Inter</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Times">Times New Roman</option>
+                  </select>
+
+                  <div className="h-5 w-px bg-slate-300" />
+
+                  {/* Text Formatting */}
+                  <button
+                    type="button"
+                    onMouseDown={(e) => handleToolbarAction(e, 'bold')}
+                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    title="Bold"
+                  >
+                    <Bold01 className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => handleToolbarAction(e, 'italic')}
+                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    title="Italic"
+                  >
+                    <Italic01 className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => handleToolbarAction(e, 'underline')}
+                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    title="Underline"
+                  >
+                    <Underline01 className="h-4 w-4" />
+                  </button>
+
+                  <div className="h-5 w-px bg-slate-300" />
+
+                  {/* Text Color - Black Circle */}
+                  <div className="relative">
+                    <button
+                      ref={colorPickerButtonRef}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => setShowColorPicker(!showColorPicker)}
+                      className="flex h-8 w-8 items-center justify-center rounded hover:bg-slate-100"
+                      title="Text Color"
+                    >
+                      <div className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: selectedColor }} />
+                    </button>
+                    {showColorPicker && (
+                      <div className="color-picker-popup absolute left-0 top-full z-50 mt-1 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+                        <div className="grid grid-cols-7 gap-2">
+                          {colors[0].map((color, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault()
+                                handleColorSelect(color)
+                              }}
+                              className={`h-8 w-8 rounded border-2 transition ${
+                                selectedColor === color ? 'border-primary ring-2 ring-primary/20' : 'border-slate-300'
+                              }`}
+                              style={{ backgroundColor: color }}
+                              title={color}
+                            />
+                          ))}
+                        </div>
+                        <div className="mt-2 grid grid-cols-6 gap-2">
+                          {colors[1].map((color, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault()
+                                handleColorSelect(color)
+                              }}
+                              className={`h-8 w-8 rounded border-2 transition ${
+                                selectedColor === color ? 'border-primary ring-2 ring-primary/20' : 'border-slate-300'
+                              }`}
+                              style={{ backgroundColor: color }}
+                              title={color}
+                            />
+                          ))}
+                        </div>
+                        <div className="mt-3 flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                          >
+                            Custom
+                          </button>
+                          <input
+                            type="text"
+                            value={selectedColor}
+                            onChange={(e) => setSelectedColor(e.target.value)}
+                            onBlur={() => handleColorSelect(selectedColor)}
+                            className="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-xs text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            placeholder="#7F56D9"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="h-5 w-px bg-slate-300" />
+
+                  {/* Alignment */}
+                  <button
+                    type="button"
+                    onMouseDown={(e) => handleToolbarAction(e, 'justifyLeft')}
+                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    title="Align Left"
+                  >
+                    <AlignLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => handleToolbarAction(e, 'justifyCenter')}
+                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    title="Align Center"
+                  >
+                    <AlignCenter className="h-4 w-4" />
+                  </button>
+                  <div className="h-5 w-px bg-slate-300" />
+
+                  {/* Lists */}
+                  <button
+                    type="button"
+                    onMouseDown={(e) => handleToolbarAction(e, 'insertUnorderedList')}
+                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    title="Bullet List"
+                  >
+
+                    <List className="h-4 w-4"/>
+                  </button>
+
+
+                  <div className="h-5 w-px bg-slate-300" />
+
+                  {/* Link (Attachment) and Image */}
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                        e.preventDefault()
+                        const url = prompt('Enter URL:')
+                        if (url) handleFormat('createLink', url)
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    title="Insert Link"
+                  >
+                    <Attachment01 className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                        e.preventDefault()
+                        const url = prompt('Enter image URL:')
+                        if (url) handleFormat('insertImage', url)
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    title="Insert Image"
+                  >
+                    <Image01 className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Message Body */}
+                <div className="relative mt-2">
+                  <div
+                    ref={editorRef}
+                    contentEditable
+                    onInput={(e) => {
+                      const html = e.currentTarget.innerHTML
+                      setMessage(html)
+                      updateFormatState()
+                    }}
+                    onBlur={() => {
+                      // Update format state when editor loses focus
+                      updateFormatState()
+                    }}
+                    onFocus={() => {
+                      // Update format state when editor gains focus
+                      updateFormatState()
+                    }}
+                    className="broadcast-editor-content min-h-[500px] w-full -mt-2 rounded-md border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5' }}
+                    data-placeholder=""
+                    suppressContentEditableWarning
+                  />
+                  
+                  {/* Contextual Toolbar */}
+                  {showContextualToolbar && (
+                    <div
+                      ref={contextualToolbarRef}
+                      className="absolute z-50 flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-900 p-1.5 shadow-lg"
+                      style={{
+                        top: `${toolbarPosition.top}px`,
+                        left: `${toolbarPosition.left}px`,
+                        transform: 'translateX(-50%)'
+                      }}
+                      onMouseDown={(e) => e.preventDefault()} // Prevent focus loss when clicking toolbar background
+                    >
+                      <button
+                        type="button"
+                        onMouseDown={(e) => handleToolbarAction(e, 'bold')}
+                        className={`flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700 ${
+                          isBold ? 'bg-slate-700' : ''
+                        }`}
+                        title="Bold"
+                      >
+                        <Bold01 className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => handleToolbarAction(e, 'italic')}
+                        className={`flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700 ${
+                          isItalic ? 'bg-slate-700' : ''
+                        }`}
+                        title="Italic"
+                      >
+                        <Italic01 className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => handleToolbarAction(e, 'underline')}
+                        className={`flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700 ${
+                          isUnderline ? 'bg-slate-700' : ''
+                        }`}
+                        title="Underline"
+                      >
+                        <Underline01 className="h-3.5 w-3.5" />
+                      </button>
+                      <div className="h-5 w-px bg-slate-600" />
+                      <button
+                        type="button"
+                        onMouseDown={(e) => handleToolbarAction(e, 'justifyLeft')}
+                        className="flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700"
+                        title="Align Left"
+                      >
+                        <AlignLeft className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => handleToolbarAction(e, 'justifyCenter')}
+                        className="flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700"
+                        title="Align Center"
+                      >
+                        <AlignCenter className="h-3.5 w-3.5" />
+                      </button>
+                      <div className="h-5 w-px bg-slate-600" />
+                      <button
+                        type="button"
+                        onMouseDown={(e) => handleToolbarAction(e, 'insertUnorderedList')}
+                        className="flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700"
+                        title="Bullet List"
+                      >
+                        <List className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-6 flex justify-end gap-3 border-t border-slate-200 pt-6">
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    Save changes
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-6">
+                <div className='border-b border-slate-200 pb-2'>
+                  <span className="font-bold text-slate-900">Subject: </span>
+                  <span className="font-medium text-slate-900">{subject}</span>
+                </div>
+                <div 
+                  className="broadcast-editor-content text-slate-600"
+                  dangerouslySetInnerHTML={{ __html: message }}
+                />
+                <div className="flex justify-end pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <h2 className="text-base font-semibold text-slate-900">Recipients</h2>
+              <button
+                type="button"
+                onClick={() => setFilters([...filters, { id: Date.now().toString(), field: 'Group', operator: 'is', value: '' }])}
+                className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <Plus className="h-4 w-4" />
+                <span>New filter</span>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-slate-700">
+                  <span>Matching</span>
+                  <select
+                    value={matchLogic}
+                    onChange={(e) => setMatchLogic(e.target.value as 'ANY' | 'ALL')}
+                    className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="ANY">ANY</option>
+                    <option value="ALL">ALL</option>
+                  </select>
+                  <span>of the following filters</span>
+                </div>
+                <div className="text-sm font-medium text-primary">
+                  400/500
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {filters.map((filter, index) => (
+                  <div key={filter.id} className="flex items-center gap-3">
+                    <select
+                      value={filter.field}
+                      onChange={(e) => {
+                        const newFilters = [...filters]
+                        newFilters[index].field = e.target.value
+                        setFilters(newFilters)
+                      }}
+                      className="min-w-[140px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="Group">Group</option>
+                      <option value="Status">Status</option>
+                      <option value="Role">Role</option>
+                    </select>
+
+                    <select
+                      value={filter.operator}
+                      onChange={(e) => {
+                        const newFilters = [...filters]
+                        newFilters[index].operator = e.target.value
+                        setFilters(newFilters)
+                      }}
+                      className="w-[80px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="is">is</option>
+                      <option value="is_not">is not</option>
+                      <option value="contains">contains</option>
+                    </select>
+
+                    <select
+                      value={filter.value}
+                      onChange={(e) => {
+                        const newFilters = [...filters]
+                        newFilters[index].value = e.target.value
+                        setFilters(newFilters)
+                      }}
+                      className="flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="Speakers">Speakers</option>
+                      <option value="Attendees">Attendees</option>
+                      <option value="Sponsors">Sponsors</option>
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newFilters = filters.filter(f => f.id !== filter.id)
+                        setFilters(newFilters)
+                      }}
+                      className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                    >
+                      <XClose className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      </div>
+      
+      <BroadcastPreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        onSend={() => {
+            if (onSend) {
+                onSend({ subject, message })
+            }
+            setShowPreviewModal(false)
+        }}
+        subject={subject}
+        message={message}
+      />
+    </div>
+  )
+}
+export default BroadcastComposer

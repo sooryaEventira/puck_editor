@@ -1,4 +1,4 @@
-import React, { useEffect, useState, createContext, useContext } from 'react'
+import React, { useEffect, useState, createContext, useContext, useRef } from 'react'
 import { Puck } from '@measured/puck'
 import '@measured/puck/puck.css'
 
@@ -67,6 +67,15 @@ export const EditorView: React.FC<EditorViewProps> = ({
   const [showPageCreationModal, setShowPageCreationModal] = useState(false)
   const [showBlockTypeModal, setShowBlockTypeModal] = useState(false)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
+  
+  // Use a ref to store the latest data from Puck (including zones)
+  // This ensures we always publish the most up-to-date data
+  const latestDataRef = useRef(currentData)
+  
+  // Update the ref whenever currentData changes
+  useEffect(() => {
+    latestDataRef.current = currentData
+  }, [currentData])
 
   const handleBackButtonClick = () => {
     setShowCustomSidebar(prev => !prev)
@@ -404,12 +413,25 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   leftSideBarVisible: true,
                   rightSideBarVisible: showRightSidebar,
                 }}
-                onChange={onChange as any}
+                onChange={(data: any) => {
+                  // Update the ref with the latest data (including zones)
+                  latestDataRef.current = data
+                  // Call the original onChange handler
+                  onChange(data)
+                }}
               />
             </PuckDataContext.Provider>
             <PuckHeaderButtons
               onPreviewToggle={onPreviewToggle}
-              onPublish={() => onPublish(currentData)}
+              onPublish={() => {
+                // Use the latest data from ref to ensure zones are included
+                const dataToPublish = {
+                  ...latestDataRef.current,
+                  // Ensure zones are always included (even if empty)
+                  zones: latestDataRef.current?.zones || {}
+                }
+                onPublish(dataToPublish)
+              }}
               showPreview={showPreview}
               onBack={handleBackButtonClick}
             />

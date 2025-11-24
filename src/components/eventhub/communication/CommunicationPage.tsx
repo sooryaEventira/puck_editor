@@ -3,7 +3,9 @@ import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import CommunicationsTable from './CommunicationsTable'
 import BroadcastTypeModal from './BroadcastTypeModal'
-import { Communication } from './communicationTypes'
+import BroadcastComposer from './BroadcastComposer'
+import CreateMacroModal from './CreateMacroModal'
+import { Communication, Macro } from './communicationTypes'
 import type { BroadcastType } from './BroadcastTypeModal'
 import { defaultCards, ContentCard } from '../EventHubContent'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
@@ -163,15 +165,50 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
   ])
 
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = React.useState(false)
+  const [isCreateMacroModalOpen, setIsCreateMacroModalOpen] = React.useState(false)
+  const [showComposer, setShowComposer] = React.useState(false)
+  const [selectedBroadcastType, setSelectedBroadcastType] = React.useState<BroadcastType | null>(null)
+
+  // Sample macro data - in a real app, this would come from props or API
+  const [macros] = React.useState<Macro[]>([
+    { id: '1', macro: '{{firstname}}', column: 'Firstname' },
+    { id: '2', macro: '{{lastname}}', column: 'Lastname' },
+    { id: '3', macro: '{{firstname_sponsors}}', column: 'Firstname' },
+    { id: '4', macro: '{{eventname}}', column: 'Eventname' },
+    { id: '5', macro: '{{lastname_sponsor}}', column: 'Lastname' }
+  ])
 
   const handleCreateBroadcast = () => {
     setIsBroadcastModalOpen(true)
   }
 
+  const handleCreateMacro = () => {
+    setIsCreateMacroModalOpen(true)
+  }
+
+  const handleCreateMacroConfirm = (data: { name: string; source: string }) => {
+    console.log('Creating macro:', data)
+    // TODO: Implement create macro functionality
+    setIsCreateMacroModalOpen(false)
+  }
+
   const handleBroadcastTypeSelect = (type: BroadcastType) => {
-    console.log('Selected broadcast type:', type)
-    // TODO: Navigate to broadcast creation form based on type
+    setSelectedBroadcastType(type)
     setIsBroadcastModalOpen(false)
+    setShowComposer(true)
+  }
+
+  const handleComposerCancel = () => {
+    setShowComposer(false)
+    setSelectedBroadcastType(null)
+  }
+
+  const handleComposerSave = (data: { subject: string; message: string; templateType?: string }) => {
+    console.log('Saving broadcast:', { ...data, type: selectedBroadcastType })
+    // TODO: Implement save functionality
+    // Don't close the composer here, let it switch to view mode
+    // setShowComposer(false)
+    // setSelectedBroadcastType(null)
   }
 
   const handleEditCommunication = (communicationId: string) => {
@@ -201,11 +238,27 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
 
       {/* Communication Content */}
       <div className="md:pl-[250px]">
-        <CommunicationsTable
-          communications={communications}
-          onCreateBroadcast={handleCreateBroadcast}
-          onEditCommunication={handleEditCommunication}
-        />
+        {showComposer ? (
+          <BroadcastComposer
+            onCancel={handleComposerCancel}
+            onSave={handleComposerSave}
+            onSend={(data) => {
+                console.log('Sending broadcast:', data)
+                // TODO: Implement send functionality
+                setShowComposer(false)
+                setSelectedBroadcastType(null)
+            }}
+            macros={macros}
+            templateType="late-message"
+          />
+        ) : (
+          <CommunicationsTable
+            communications={communications}
+            onCreateBroadcast={handleCreateBroadcast}
+            onCreateMacro={handleCreateMacro}
+            onEditCommunication={handleEditCommunication}
+          />
+        )}
       </div>
 
       {/* Broadcast Type Modal */}
@@ -213,6 +266,12 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
         isOpen={isBroadcastModalOpen}
         onClose={() => setIsBroadcastModalOpen(false)}
         onSelect={handleBroadcastTypeSelect}
+      />
+
+      <CreateMacroModal
+        isOpen={isCreateMacroModalOpen}
+        onClose={() => setIsCreateMacroModalOpen(false)}
+        onConfirm={handleCreateMacroConfirm}
       />
     </div>
   )

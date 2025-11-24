@@ -207,11 +207,11 @@ export function DividerLineTable<TData>({
   return (
     <TableCardRoot size={size} className="border-0">
       {(headerLeading || headerActions) && (
-        <TableCardHeader>
-          {headerLeading && <TableCardHeading className="gap-2">{headerLeading}</TableCardHeading>}
+        <TableCardHeader className="md:flex-row-reverse">
           {headerActions && (
             <TableCardActions className="w-full justify-end md:w-auto">{headerActions}</TableCardActions>
           )}
+          {headerLeading && <TableCardHeading className="gap-2">{headerLeading}</TableCardHeading>}
         </TableCardHeader>
       )}
 

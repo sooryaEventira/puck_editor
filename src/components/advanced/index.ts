@@ -20,5 +20,6 @@ export { default as GoogleForm } from './GoogleForm'
 export { default as LiveChat } from './LiveChat'
 export { default as ApiTestComponent } from './ApiTestComponent'
 export { default as SessionForm } from './SessionForm'
+export { default as PdfViewer } from './PdfViewer'
 
 

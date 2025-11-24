@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import EventHubNavbar from './EventHubNavbar'
 import EventHubSidebar from './EventHubSidebar'
-import EventHubContent from './EventHubContent'
 import { defaultCards, ContentCard } from './EventHubContent'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 
@@ -61,8 +60,9 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
     console.log('Sidebar item clicked:', itemId)
     setActiveSection(itemId)
     
-    // If clicking on event-hub parent, just stay on the cards grid
+    // If clicking on event-hub parent, navigate to first card or do nothing
     if (itemId === 'event-hub') {
+      // Optionally navigate to first card or keep current view
       return
     }
     
@@ -72,10 +72,6 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
       onCardClick(itemId)
     }
   }
-
-  // Only show EventHubContent (cards grid) when on the main event-hub page
-  // Hide it when navigating to any card sub-item
-  const showCardsGrid = activeSection === 'event-hub'
 
   return (
     <div className="h-screen overflow-hidden bg-white">
@@ -96,9 +92,6 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
         activeItemId={activeSection}
         onItemClick={handleSidebarItemClick}
       />
-
-      {/* Content - Only show cards grid when on event-hub main page */}
-      {showCardsGrid && <EventHubContent onCardClick={onCardClick} />}
     </div>
   )
 }

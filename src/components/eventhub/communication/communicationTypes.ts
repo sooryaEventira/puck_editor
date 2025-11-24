@@ -20,3 +20,9 @@ export interface Communication {
   scheduledDate?: string // ISO date string for scheduled communications
 }
 
+export interface Macro {
+  id: string
+  macro: string // e.g., "{{firstname}}"
+  column: string // e.g., "Firstname"
+}
+

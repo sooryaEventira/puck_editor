@@ -93,7 +93,7 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
       <button
         type="button"
         onClick={toggleMobileSidebar}
-        className="fixed left-4 top-4 z-[1000] flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:hidden"
+        className="fixed left-4 top-[65px] z-[1000] flex h-8 w-8 items-center justify-center rounded-md border border-slate-50 bg-white text-slate-600 shadow-md transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:hidden"
         aria-label="Toggle navigation"
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -103,8 +103,16 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
         </svg>
       </button>
 
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 z-[998] bg-black/20 backdrop-blur-sm md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <aside
-        className={`fixed left-0 top-0 z-[999] h-screen w-[250px] border-r border-slate-200 shadow-md pt-20 transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed left-0 top-0 z-[999] h-screen w-[250px] border-r border-slate-200 bg-white shadow-md pt-20 transition-transform duration-300 md:translate-x-0 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >

@@ -1,0 +1,200 @@
+import { useMemo } from 'react'
+import { Pencil01, Trash03, Mail01, Bell01, HelpCircle } from '@untitled-ui/icons-react'
+import {
+  Badge,
+  type DividerLineTableColumn
+} from '../../ui/untitled'
+import type { TableRowData } from './types'
+import { SelectAllCheckbox } from '../../ui'
+
+interface ListTableColumnsProps {
+  allVisibleSelected: boolean
+  partiallySelected: boolean
+  selectedCommunicationIds: Set<string>
+  onToggleAllVisible: (checked: boolean) => void
+  onToggleRow: (id: string, checked: boolean) => void
+  onEditCommunication?: (communicationId: string) => void
+}
+
+const getStatusBadgeVariant = (status: string) => {
+  switch (status) {
+    case 'sent':
+      return 'success' as const
+    case 'scheduled':
+      return 'primary' as const
+    case 'draft':
+      return 'warning' as const
+    default:
+      return 'neutral' as const
+  }
+}
+
+const getUserGroupVariant = (variant?: string): 'primary' | 'info' | 'muted' => {
+  if (variant === 'primary') return 'primary'
+  if (variant === 'secondary') return 'info'
+  return 'muted'
+}
+
+export const useListTableColumns = ({
+  allVisibleSelected,
+  partiallySelected,
+  selectedCommunicationIds,
+  onToggleAllVisible,
+  onToggleRow,
+  onEditCommunication
+}: ListTableColumnsProps): DividerLineTableColumn<TableRowData>[] => {
+  return useMemo<DividerLineTableColumn<TableRowData>[]>(
+    () => [
+      {
+        id: 'title',
+        header: (
+          <div className="flex items-center gap-2">
+            <SelectAllCheckbox
+              checked={allVisibleSelected}
+              indeterminate={partiallySelected}
+              onChange={onToggleAllVisible}
+              ariaLabel="Select all communications"
+            />
+            <span>Title</span>
+          </div>
+        ),
+        sortable: true,
+        sortAccessor: ({ communication }) => communication?.title || '',
+        render: ({ communication }) => {
+          if (!communication) return null
+          return (
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/40"
+                aria-label={`Select ${communication.title}`}
+                checked={selectedCommunicationIds.has(communication.id)}
+                onChange={(event) => onToggleRow(communication.id, event.target.checked)}
+              />
+              <span className="text-sm font-medium text-slate-900">{communication.title}</span>
+            </div>
+          )
+        }
+      },
+      {
+        id: 'userGroups',
+        header: 'User Groups',
+        sortable: true,
+        sortAccessor: ({ communication }) => communication?.userGroups.map((g) => g.name).join(' ') || '',
+        render: ({ communication }) => {
+          if (!communication) return null
+          return (
+            <div className="flex flex-wrap items-center gap-2">
+              {communication.userGroups.slice(0, 3).map((group, idx) => (
+                <Badge key={idx} variant={getUserGroupVariant(group.variant)}>
+                  {group.name}
+                </Badge>
+              ))}
+              {communication.userGroups.length > 3 && (
+                <Badge variant="muted">+{communication.userGroups.length - 3}</Badge>
+              )}
+            </div>
+          )
+        }
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        sortable: true,
+        sortAccessor: ({ communication }) => communication?.status || '',
+        render: ({ communication }) => {
+          if (!communication) return null
+          return (
+            <div className="flex items-center gap-2">
+              <Badge variant={getStatusBadgeVariant(communication.status)}>
+                {communication.status.charAt(0).toUpperCase() + communication.status.slice(1)}
+              </Badge>
+              {communication.status === 'scheduled' && communication.scheduledDate && (
+                <div className="group relative">
+                  <HelpCircle className="h-4 w-4 text-slate-500 cursor-help" />
+                  <div className="absolute left-0 top-6 z-10 hidden w-48 rounded-md bg-slate-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block">
+                    {new Date(communication.scheduledDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        }
+      },
+      {
+        id: 'type',
+        header: 'Type',
+        sortable: true,
+        sortAccessor: ({ communication }) => communication?.type || '',
+        render: ({ communication }) => {
+          if (!communication) return null
+          return (
+            <div className="flex items-center">
+              {communication.type === 'email' ? (
+                <Mail01 className="h-5 w-5 text-slate-500" />
+              ) : (
+                <Bell01 className="h-5 w-5 text-slate-500" />
+              )}
+            </div>
+          )
+        }
+      },
+      {
+        id: 'recipients',
+        header: 'Recipients',
+        sortable: true,
+        sortAccessor: ({ communication }) => communication?.recipients.sent || 0,
+        render: ({ communication }) => {
+          if (!communication) return null
+          return (
+            <span className="text-sm text-slate-600">
+              {communication.recipients.sent}/{communication.recipients.total}
+            </span>
+          )
+        }
+      },
+      {
+        id: 'actions',
+        header: '',
+        align: 'right',
+        render: ({ communication }) => {
+          if (!communication) return null
+          return (
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => onEditCommunication?.(communication.id)}
+                className="flex h-9 w-9 items-center justify-center text-slate-500 transition hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                aria-label={`Edit ${communication.title}`}
+              >
+                <Pencil01 className="h-4 w-4" strokeWidth={1.8} />
+              </button>
+              <button
+                type="button"
+                className="flex h-9 w-9 items-center justify-center text-slate-500 transition hover:border-rose-400 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/60"
+                aria-label={`Delete ${communication.title}`}
+              >
+                <Trash03 className="h-4 w-4" strokeWidth={1.8} />
+              </button>
+            </div>
+          )
+        }
+      }
+    ],
+    [
+      allVisibleSelected,
+      partiallySelected,
+      selectedCommunicationIds,
+      onToggleAllVisible,
+      onToggleRow,
+      onEditCommunication
+    ]
+  )
+}
+

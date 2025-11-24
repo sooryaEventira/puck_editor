@@ -16,6 +16,13 @@ export const usePublish = (
     try {
       const timestamp = new Date().toISOString().split('T')[0]
       
+      // Ensure data structure includes all required fields (content, root, zones)
+      const dataToSave = {
+        content: data?.content || [],
+        root: data?.root || { props: {} },
+        zones: data?.zones || {}
+      }
+      
       // Create a unique filename based on page name
       let filename: string
       if (currentPage.startsWith('new-page')) {
@@ -28,7 +35,7 @@ export const usePublish = (
       }
       
       // Save to localStorage for backup
-      localStorage.setItem('puck-page-data', JSON.stringify(data, null, 2))
+      localStorage.setItem('puck-page-data', JSON.stringify(dataToSave, null, 2))
       localStorage.setItem('puck-page-timestamp', timestamp)
       
       // Try to save directly to project directory via API
@@ -39,7 +46,7 @@ export const usePublish = (
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            data: data,
+            data: dataToSave,
             filename: filename
           })
         })
@@ -50,7 +57,7 @@ export const usePublish = (
           // Cache the saved data in localStorage
           const finalPageId = currentPage.startsWith('new-page') ? filename.replace('.json', '') : currentPage
           const cacheKey = `puck-page-${finalPageId}`
-          localStorage.setItem(cacheKey, JSON.stringify(data))
+          localStorage.setItem(cacheKey, JSON.stringify(dataToSave))
           logger.debug('Saved page data cached in localStorage:', finalPageId)
           
           // Reload pages list after saving
@@ -73,7 +80,7 @@ export const usePublish = (
         logger.warn('API save failed, falling back to download method:', apiError)
         
         // Fallback: Create downloadable file
-        const jsonData = JSON.stringify(data, null, 2)
+        const jsonData = JSON.stringify(dataToSave, null, 2)
         const blob = new Blob([jsonData], { type: 'application/json' })
         const link = document.createElement('a')
         link.download = filename

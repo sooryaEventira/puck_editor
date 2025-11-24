@@ -7,12 +7,13 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import {
-  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm
+  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer
 } from '../components/advanced'
 import FeedbackForm from '../components/advanced/FeedbackForm'
 import ImageSimple from '../components/advanced/ImageSimple'
 import CustomButtonField from '../components/CustomButtonField'
 import SchedulesSectionField from '../components/SchedulesSectionField'
+import PdfSelectField from '../components/PdfSelectField'
 
 // Import split config modules
 import { viewports } from './puck/viewports'
@@ -100,7 +101,7 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "FAQAccordion", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "FAQAccordion", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
       subcategories: {
         sections: {
           title: "Sections",
@@ -110,7 +111,7 @@ export const config = {
         media: {
           title: "Media",
           icon: "fa-solid fa-image",
-          components: ["Image", "Slider"]
+          components: ["Image", "Slider", "PdfViewer"]
         },
         interactive: {
           title: "Interactive",
@@ -2176,7 +2177,128 @@ export const config = {
       },
       defaultProps: {
         title: 'Schedule',
-        events: []
+        events: [
+          {
+            id: "1",
+            title: "Welcome & Opening Keynote",
+            startTime: "09:00 AM",
+            endTime: "10:00 AM",
+            location: "Main Hall",
+            type: "In-Person",
+            description: "Opening keynote address by the conference chair",
+            participants: "Chairman: Dr. Smith, Speaker: Dr. Johnson",
+            tags: "Keynote, Opening",
+            attachments: 2,
+            isCompleted: false,
+            isExpanded: false,
+            parentSessionId: undefined
+          },
+          {
+            id: "2",
+            title: "Coffee Break",
+            startTime: "10:00 AM",
+            endTime: "10:30 AM",
+            location: "Lobby",
+            type: "In-Person",
+            description: "Networking and refreshments",
+            participants: "",
+            tags: "",
+            attachments: 0,
+            isCompleted: false,
+            isExpanded: false,
+            parentSessionId: undefined
+          },
+          {
+            id: "3",
+            title: "AI & Machine Learning Workshop",
+            startTime: "10:30 AM",
+            endTime: "12:00 PM",
+            location: "Room A",
+            type: "In-Person",
+            description: "Hands-on workshop on AI and ML fundamentals",
+            participants: "Instructor: Prof. Williams",
+            tags: "Workshop, AI, ML",
+            attachments: 5,
+            isCompleted: false,
+            isExpanded: false,
+            parentSessionId: undefined
+          },
+          {
+            id: "4",
+            title: "Panel Discussion: Future of Tech",
+            startTime: "10:30 AM",
+            endTime: "12:00 PM",
+            location: "Room B",
+            type: "Virtual",
+            description: "Expert panel discussing emerging technologies",
+            participants: "Moderator: Dr. Brown, Panelists: Dr. Davis, Dr. Wilson",
+            tags: "Panel, Discussion, Tech",
+            attachments: 1,
+            isCompleted: false,
+            isExpanded: false,
+            parentSessionId: undefined
+          },
+          {
+            id: "5",
+            title: "Lunch Break",
+            startTime: "12:00 PM",
+            endTime: "01:00 PM",
+            location: "Dining Hall",
+            type: "In-Person",
+            description: "Buffet lunch and networking",
+            participants: "",
+            tags: "",
+            attachments: 0,
+            isCompleted: false,
+            isExpanded: false,
+            parentSessionId: undefined
+          },
+          {
+            id: "6",
+            title: "Poster Session",
+            startTime: "01:00 PM",
+            endTime: "02:30 PM",
+            location: "Exhibition Hall",
+            type: "In-Person",
+            description: "Poster presentations and networking",
+            participants: "Multiple presenters",
+            tags: "Poster, Networking",
+            attachments: 0,
+            isCompleted: false,
+            isExpanded: false,
+            parentSessionId: undefined
+          },
+          {
+            id: "7",
+            title: "Advanced React Patterns",
+            startTime: "02:30 PM",
+            endTime: "04:00 PM",
+            location: "Room A",
+            type: "In-Person",
+            description: "Deep dive into advanced React patterns and best practices",
+            participants: "Speaker: Dr. Martinez",
+            tags: "Workshop, React, Frontend",
+            attachments: 3,
+            isCompleted: false,
+            isExpanded: false,
+            parentSessionId: undefined
+          },
+          {
+            id: "8",
+            title: "Closing Remarks",
+            startTime: "04:00 PM",
+            endTime: "04:30 PM",
+            location: "Main Hall",
+            type: "In-Person",
+            description: "Conference closing and thank you notes",
+            participants: "Chairman: Dr. Smith",
+            tags: "Closing",
+            attachments: 0,
+            isCompleted: false,
+            isExpanded: false,
+            parentSessionId: undefined
+          }
+        ]
       },
       render: (props: any) => {
         // Note: onNavigateToEditor and onAddComponent come from NavigationContext
@@ -2374,6 +2496,32 @@ export const config = {
         padding: '40px'
       },
       render: SessionForm
+    },
+    PdfViewer: {
+      label: "📄 PDF Viewer",
+      fields: {
+        pdfUrl: {
+          type: 'custom' as const,
+          label: 'Select PDF',
+          render: (props: any) => {
+            return React.createElement(PdfSelectField, {
+              ...props,
+              value: props.value || '',
+              onChange: props.onChange
+            })
+          }
+        },
+        height: {
+          type: 'number' as const,
+          label: 'Viewer Height',
+          placeholder: '600'
+        }
+      },
+      defaultProps: {
+        pdfUrl: '',
+        height: 600
+      },
+      render: PdfViewer
     }
 
   },

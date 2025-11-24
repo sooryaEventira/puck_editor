@@ -41,11 +41,12 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
         </select>
         <span className="h-5 w-px bg-slate-300" aria-hidden="true" />
         <input
-          type="time"
-          value={draft[timeKey]}
-          onChange={(event) => onFieldChange(timeKey, event.target.value as string)}
-          className="h-full w-[54px] border-none bg-transparent px-2 text-xs text-slate-400 focus:outline-none focus:ring-0"
-        />
+      type="time"
+      value={draft[timeKey] || ''}
+      placeholder="hh:mm"
+      onChange={(event) => onFieldChange(timeKey, event.target.value)}
+      className="h-full w-[54px] border-none bg-transparent px-2 text-xs text-slate-600 focus:outline-none focus:ring-0"
+    />
       </div>
     </div>
   )

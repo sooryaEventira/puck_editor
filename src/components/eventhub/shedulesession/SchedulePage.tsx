@@ -164,7 +164,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   }, [view, savedSchedules.length])
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white">
+    <div  className="min-h-screen overflow-x-hidden bg-white">
       {/* Navbar */}
       <EventHubNavbar
         eventName={eventName}

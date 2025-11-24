@@ -56,7 +56,19 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   console.log('SchedulePage: onAddComponent:', typeof onAddComponent);
   
   // Get events from Puck props if available
-  const puckEvents = (props as any).events || [];
+  const puckEventsRaw = (props as any).events || [];
+  
+  // Convert tags from string to array if needed (Puck stores tags as comma-separated string)
+  const puckEvents = puckEventsRaw.map((event: any) => {
+    if (event && typeof event.tags === 'string') {
+      return {
+        ...event,
+        tags: event.tags ? event.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0) : []
+      };
+    }
+    return event;
+  });
+  
   // Initialize with today's date, props, or localStorage
   const [currentDate, setCurrentDate] = useState(() => {
     if (initialDate) return initialDate;
@@ -102,22 +114,177 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   const eventsContainerRefs = useRef<{ [key: string]: HTMLDivElement | null }>(
     {}
   );
-  const [events, setEvents] = useState<ScheduleEvent[]>(externalEvents || puckEvents || []);
+
+  // Static default events data
+  const staticEvents: ScheduleEvent[] = [
+    {
+      id: "1",
+      title: "Welcome & Opening Keynote",
+      startTime: "09:00 AM",
+      endTime: "10:00 AM",
+      location: "Main Hall",
+      type: "In-Person",
+      description: "Opening keynote address by the conference chair",
+      participants: "Chairman: Dr. Smith, Speaker: Dr. Johnson",
+      tags: ["Keynote", "Opening"],
+      attachments: 2,
+      isCompleted: false,
+      isExpanded: false,
+      children: []
+    },
+    {
+      id: "2",
+      title: "Coffee Break",
+      startTime: "10:00 AM",
+      endTime: "10:30 AM",
+      location: "Lobby",
+      type: "In-Person",
+      description: "Networking and refreshments",
+      isCompleted: false,
+      isExpanded: false,
+      children: []
+    },
+    {
+      id: "3",
+      title: "AI & Machine Learning Workshop",
+      startTime: "10:30 AM",
+      endTime: "12:00 PM",
+      location: "Room A",
+      type: "In-Person",
+      description: "Hands-on workshop on AI and ML fundamentals",
+      participants: "Instructor: Prof. Williams",
+      tags: ["Workshop", "AI", "ML"],
+      attachments: 5,
+      isCompleted: false,
+      isExpanded: false,
+      children: []
+    },
+    {
+      id: "4",
+      title: "Panel Discussion: Future of Tech",
+      startTime: "10:30 AM",
+      endTime: "12:00 PM",
+      location: "Room B",
+      type: "Virtual",
+      description: "Expert panel discussing emerging technologies",
+      participants: "Moderator: Dr. Brown, Panelists: Dr. Davis, Dr. Wilson",
+      tags: ["Panel", "Discussion", "Tech"],
+      attachments: 1,
+      isParallel: true,
+      isCompleted: false,
+      isExpanded: false,
+      children: []
+    },
+    {
+      id: "5",
+      title: "Lunch Break",
+      startTime: "12:00 PM",
+      endTime: "01:00 PM",
+      location: "Dining Hall",
+      type: "In-Person",
+      description: "Buffet lunch and networking",
+      isCompleted: false,
+      isExpanded: false,
+      children: []
+    },
+    {
+      id: "6",
+      title: "Poster Session",
+      startTime: "01:00 PM",
+      endTime: "02:30 PM",
+      location: "Exhibition Hall",
+      type: "In-Person",
+      description: "Poster presentations and networking",
+      participants: "Multiple presenters",
+      tags: ["Poster", "Networking"],
+      attachments: 0,
+      isCompleted: false,
+      isExpanded: false,
+      children: []
+    },
+    {
+      id: "7",
+      title: "Advanced React Patterns",
+      startTime: "02:30 PM",
+      endTime: "04:00 PM",
+      location: "Room A",
+      type: "In-Person",
+      description: "Deep dive into advanced React patterns and best practices",
+      participants: "Speaker: Dr. Martinez",
+      tags: ["Workshop", "React", "Frontend"],
+      attachments: 3,
+      isCompleted: false,
+      isExpanded: false,
+      children: []
+    },
+    {
+      id: "8",
+      title: "Closing Remarks",
+      startTime: "04:00 PM",
+      endTime: "04:30 PM",
+      location: "Main Hall",
+      type: "In-Person",
+      description: "Conference closing and thank you notes",
+      participants: "Chairman: Dr. Smith",
+      tags: ["Closing"],
+      attachments: 0,
+      isCompleted: false,
+      isExpanded: false,
+      children: []
+    }
+  ];
+
+  // Helper function to normalize event tags (convert string to array if needed)
+  const normalizeEventTags = (event: ScheduleEvent | any): ScheduleEvent => {
+    if (event && typeof event.tags === 'string') {
+      const tagsString = event.tags as string;
+      return {
+        ...event,
+        tags: tagsString ? tagsString.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0) : []
+      };
+    }
+    // Ensure tags is always an array
+    if (event && !Array.isArray(event.tags)) {
+      return {
+        ...event,
+        tags: []
+      };
+    }
+    return event;
+  };
+
+  // Helper function to normalize an array of events
+  const normalizeEvents = (eventsArray: ScheduleEvent[]): ScheduleEvent[] => {
+    return eventsArray.map(normalizeEventTags);
+  };
+
+  const [events, setEvents] = useState<ScheduleEvent[]>(() => {
+    // Initialize with static events if no external data provided
+    if (externalEvents && externalEvents.length > 0) {
+      return normalizeEvents(externalEvents);
+    }
+    if (puckEvents && puckEvents.length > 0) {
+      return normalizeEvents(puckEvents);
+    }
+    return normalizeEvents(staticEvents);
+  });
 
   // Sync with external events when they change
   useEffect(() => {
-    if (externalEvents) {
-      setEvents(externalEvents);
-    } else if (puckEvents.length > 0) {
-      setEvents(puckEvents);
+    if (externalEvents && externalEvents.length > 0) {
+      setEvents(normalizeEvents(externalEvents));
+    } else if (puckEvents && puckEvents.length > 0) {
+      setEvents(normalizeEvents(puckEvents));
     }
+    // Note: staticEvents are used as initial state, so they'll show by default
   }, [externalEvents, puckEvents]);
 
   // Notify parent when events change
   const updateEvents = (newEvents: ScheduleEvent[]) => {
-    setEvents(newEvents);
+    const normalizedEvents = normalizeEvents(newEvents);
+    setEvents(normalizedEvents);
     if (onEventsChange) {
-      onEventsChange(newEvents);
+      onEventsChange(normalizedEvents);
     }
   };
 
@@ -739,163 +906,64 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       <div key={event.id}>
         <div
           key={`${event.id}-${event.isCompleted}`}
+          className={`rounded-lg p-4 mb-2 relative cursor-move transition-opacity duration-200 ${
+            isChild
+              ? "bg-slate-50 border border-slate-300 shadow-sm ml-8"
+              : "bg-white border border-gray-200 shadow-sm ml-0"
+          }`}
           style={{
-            backgroundColor: isChild ? "#f8fafc" : "#ffffff",
-            border: isChild ? "1px solid #cbd5e1" : "1px solid #e5e7eb",
-            borderRadius: "8px",
-            padding: "16px",
-            marginBottom: "8px",
-            position: "relative",
-            boxShadow: isChild
-              ? "0 1px 2px rgba(0,0,0,0.05)"
-              : "0 1px 3px rgba(0,0,0,0.1)",
-            cursor: "move",
             opacity: event.isCompleted ? 0.6 : 1,
-            transition: "opacity 0.2s ease",
-            marginLeft: isChild ? "32px" : "0", // Indentation for child events
           }}
           draggable={true}
         >
           {/* Checkbox */}
           <div
             onClick={() => toggleEventCompletion(event.id)}
-            style={{
-              position: "absolute",
-              left: "16px",
-              top: "16px",
-              width: "16px",
-              height: "16px",
-              border: event.isCompleted
-                ? "2px solid #8b5cf6"
-                : "2px solid #d1d5db",
-              backgroundColor: event.isCompleted ? "#8b5cf6" : "transparent",
-              borderRadius: "3px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.2s ease",
-            }}
+            className={`absolute left-4 top-4 w-4 h-4 rounded-sm cursor-pointer flex items-center justify-center transition-all duration-200 ${
+              event.isCompleted
+                ? "border-2 border-purple-600 bg-purple-600"
+                : "border-2 border-gray-300 bg-transparent"
+            }`}
           >
             {event.isCompleted && (
-              <span
-                style={{
-                  color: "#ffffff",
-                  fontSize: "10px",
-                  fontWeight: "bold",
-                }}
-              >
+              <span className="text-white text-[10px] font-bold">
                 ✓
               </span>
             )}
           </div>
 
           {/* Event Content */}
-          <div style={{ marginLeft: "32px" }}>
+          <div className="ml-8">
             {/* Title and Action Buttons */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "8px",
-              }}
-            >
-              <h3
-                style={{
-                  margin: "0",
-                  fontSize: "16px",
-                  fontWeight: "700",
-                  color: "#111827",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="m-0 text-base font-bold text-gray-900 flex items-center gap-2">
                 {isChild && (
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      color: "#6b7280",
-                      fontWeight: "500",
-                    }}
-                  >
+                  <span className="text-xs text-gray-500 font-medium">
                     ↳
                   </span>
                 )}
                 {event.title}
               </h3>
-              <div
-                style={{
-                  display: "flex",
-                  gap: "8px",
-                  alignItems: "center",
-                  position: "relative",
-                }}
-              >
+              <div className="flex gap-2 items-center relative">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleDropdown(event.id);
                   }}
-                  style={{
-                    width: "24px",
-                    height: "24px",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "16px",
-                    color: "#6b7280",
-                    borderRadius: "4px",
-                  }}
+                  className="w-6 h-6 border-none bg-transparent cursor-pointer flex items-center justify-center text-base text-gray-500 rounded"
                 >
                   ⋮
                 </button>
 
                 {/* Dropdown Menu */}
                 {openDropdownId === event.id && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "28px",
-                      right: "0",
-                      backgroundColor: "#ffffff",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                      boxShadow:
-                        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                      zIndex: 50,
-                      minWidth: "120px",
-                    }}
-                  >
+                  <div className="absolute top-7 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[120px]">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteEvent(event.id);
                       }}
-                      style={{
-                        width: "100%",
-                        padding: "8px 12px",
-                        border: "none",
-                        backgroundColor: "transparent",
-                        color: "#dc2626",
-                        fontSize: "14px",
-                        textAlign: "left",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        borderRadius: "8px",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#fef2f2";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }}
+                      className="w-full px-3 py-2 border-none bg-transparent text-red-600 text-sm text-left cursor-pointer flex items-center gap-2 rounded-lg hover:bg-red-50"
                     >
                       🗑️ Delete
                     </button>
@@ -909,19 +977,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                       e.stopPropagation();
                       toggleEventExpansion(event.id);
                     }}
-                    style={{
-                      width: "24px",
-                      height: "24px",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "16px",
-                      color: "#6b7280",
-                      borderRadius: "4px",
-                    }}
+                    className="w-6 h-6 border-none bg-transparent cursor-pointer flex items-center justify-center text-base text-gray-500 rounded"
                   >
                     {event.isExpanded ? "▲" : "▼"}
                   </button>
@@ -939,31 +995,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                           e.stopPropagation();
                           toggleChildSessions(event.id);
                         }}
-                        style={{
-                          minWidth: "32px",
-                          height: "24px",
-                          border: "1px solid #d1d5db",
-                          backgroundColor: "#ffffff",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "11px",
-                          color: "#6b7280",
-                          transition: "all 0.2s ease",
-                          marginRight: "4px",
-                          padding: "0 4px",
-                          gap: "2px",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f9fafb";
-                          e.currentTarget.style.borderColor = "#9ca3af";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#ffffff";
-                          e.currentTarget.style.borderColor = "#d1d5db";
-                        }}
+                        className="min-w-[32px] h-6 border border-gray-300 bg-white rounded cursor-pointer flex items-center justify-center text-[11px] text-gray-500 transition-all duration-200 mr-1 px-1 gap-0.5 hover:bg-gray-50 hover:border-gray-400"
                         title={`${
                           expandedParents.has(event.id) ? "Hide" : "Show"
                         } ${childSessions.length} child session${
@@ -971,7 +1003,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                         }`}
                       >
                         <span>{expandedParents.has(event.id) ? "▲" : "▼"}</span>
-                        <span style={{ fontSize: "10px", fontWeight: "500" }}>
+                        <span className="text-[10px] font-medium">
                           {childSessions.length}
                         </span>
                       </button>
@@ -985,28 +1017,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                     e.stopPropagation();
                     handleAddChildSession(event.id);
                   }}
-                  style={{
-                    width: "24px",
-                    height: "24px",
-                    border: "1px solid #d1d5db",
-                    backgroundColor: "#ffffff",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "14px",
-                    color: "#6b7280",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#f9fafb";
-                    e.currentTarget.style.borderColor = "#9ca3af";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#ffffff";
-                    e.currentTarget.style.borderColor = "#d1d5db";
-                  }}
+                  className="w-6 h-6 border border-gray-300 bg-white rounded cursor-pointer flex items-center justify-center text-sm text-gray-500 transition-all duration-200 hover:bg-gray-50 hover:border-gray-400"
                   title="Add Child Session"
                 >
                   +
@@ -1015,77 +1026,26 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             </div>
 
             {/* Time, Location and Type in one line */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                marginBottom: "8px",
-                flexWrap: "wrap",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "14px",
-                  color: "#6b7280",
-                }}
-              >
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="text-sm text-gray-500">
                 {event.startTime} - {event.endTime}
               </span>
-              <span
-                style={{
-                  color: "#6b7280",
-                  fontSize: "14px",
-                }}
-              >
+              <span className="text-gray-500 text-sm">
                 •
               </span>
-              <span
-                style={{
-                  backgroundColor: "#f3f4f6",
-                  color: "#374151",
-                  padding: "4px 8px",
-                  borderRadius: "12px",
-                  fontSize: "12px",
-                  fontWeight: "500",
-                }}
-              >
+              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-xl text-xs font-medium">
                 {event.location}
               </span>
-              <span
-                style={{
-                  color: "#6b7280",
-                  fontSize: "14px",
-                }}
-              >
+              <span className="text-gray-500 text-sm">
                 •
               </span>
-              <span
-                style={{
-                  backgroundColor: "#f3f4f6",
-                  color: "#374151",
-                  padding: "4px 8px",
-                  borderRadius: "12px",
-                  fontSize: "12px",
-                  fontWeight: "500",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
+              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-xl text-xs font-medium flex items-center gap-1">
                 {getTypeIcon(event.type)} {event.type}
               </span>
-              {event.tags?.map((tag, tagIndex) => (
+              {Array.isArray(event.tags) && event.tags.map((tag, tagIndex) => (
                 <span
                   key={tagIndex}
-                  style={{
-                    backgroundColor: "#dbeafe",
-                    color: "#1e40af",
-                    padding: "4px 8px",
-                    borderRadius: "12px",
-                    fontSize: "12px",
-                    fontWeight: "500",
-                  }}
+                  className="bg-blue-100 text-blue-800 px-2 py-1 rounded-xl text-xs font-medium"
                 >
                   {tag}
                 </span>
@@ -1094,45 +1054,21 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
 
             {/* Description */}
             {event.description && (
-              <div
-                style={{
-                  fontSize: "14px",
-                  color: "#6b7280",
-                  marginBottom: "8px",
-                }}
-              >
+              <div className="text-sm text-gray-500 mb-2">
                 {event.description}
               </div>
             )}
 
             {/* Participants */}
             {event.participants && (
-              <div
-                style={{
-                  fontSize: "14px",
-                  color: "#6b7280",
-                  marginBottom: "8px",
-                }}
-              >
+              <div className="text-sm text-gray-500 mb-2">
                 {event.participants}
               </div>
             )}
 
             {/* Attachments */}
             {event.attachments && (
-              <span
-                style={{
-                  backgroundColor: "#f3f4f6",
-                  color: "#374151",
-                  padding: "4px 8px",
-                  borderRadius: "12px",
-                  fontSize: "12px",
-                  fontWeight: "500",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
+              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-xl text-xs font-medium inline-flex items-center gap-1">
                 📎 {event.attachments}
               </span>
             )}
@@ -1149,16 +1085,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
           return (
             childSessions.length > 0 &&
             isExpanded && (
-              <div
-                style={{
-                  marginTop: "8px",
-                  marginLeft: "16px",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "6px",
-                  padding: "8px",
-                  backgroundColor: "#f8fafc",
-                }}
-              >
+              <div className="mt-2 ml-4 border border-gray-200 rounded-md p-2 bg-slate-50">
                 {childSessions.map((child) => renderEvent(child))}
               </div>
             )
@@ -1180,38 +1107,11 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   // If showing SessionForm page, render it instead of the schedule
   if (showSessionFormPage) {
     return (
-      <div
-        style={{
-          fontFamily: "system-ui, -apple-system, sans-serif",
-          backgroundColor: "#f8f9fa",
-          minHeight: "100vh",
-          padding: "40px",
-        }}
-      >
+      <div className="font-sans bg-gray-50 min-h-screen p-10">
         {/* Back Button */}
         <button
           onClick={() => setShowSessionFormPage(false)}
-          style={{
-            marginBottom: "24px",
-            padding: "10px 20px",
-            backgroundColor: "#f3f4f6",
-            border: "1px solid #d1d5db",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: "500",
-            color: "#374151",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            transition: "all 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "#e5e7eb";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "#f3f4f6";
-          }}
+          className="mb-6 px-5 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2 transition-all duration-200 hover:bg-gray-200"
         >
           ← Back to Schedule
         </button>
@@ -1236,33 +1136,11 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         />
 
         {/* Edit Button */}
-        <div
-          style={{
-            marginTop: "32px",
-            display: "flex",
-            justifyContent: "flex-end",
-          }}
-        >
+        <div className="mt-8 flex justify-end">
           <button
             type="button"
             onClick={handleEditSessionForm}
-            style={{
-              backgroundColor: "#8b5cf6",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "8px",
-              padding: "12px 32px",
-              fontSize: "16px",
-              fontWeight: "500",
-              cursor: "pointer",
-              transition: "background-color 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#7c3aed";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#8b5cf6";
-            }}
+            className="bg-purple-600 text-white border-none rounded-lg px-8 py-3 text-base font-medium cursor-pointer transition-colors duration-200 hover:bg-purple-700"
           >
             Edit
           </button>
@@ -1272,32 +1150,10 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   }
 
   return (
-    <div
-      style={{
-        fontFamily: "system-ui, -apple-system, sans-serif",
-        backgroundColor: "#f8f9fa",
-        minHeight: "100vh",
-        padding: "20px",
-      }}
-    >
+    <div className="font-sans bg-gray-50 min-h-screen p-5">
       {/* Header with Date Navigation */}
-      <div
-        style={{
-          backgroundColor: "#ffffff",
-          borderRadius: "12px",
-          padding: "20px",
-          marginBottom: "20px",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "20px",
-          }}
-        >
+      <div className="bg-white rounded-xl p-5 mb-5 shadow-md">
+        <div className="flex items-center justify-between mb-5">
           {/* Left Arrow */}
           <button
             onClick={(e) => {
@@ -1306,38 +1162,13 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
               navigateWeek("prev");
             }}
             onMouseDown={(e) => e.stopPropagation()}
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              border: "none",
-              backgroundColor: "#f1f3f4",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "20px",
-              color: "#5f6368",
-              transition: "all 0.2s ease",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              pointerEvents: "auto",
-              position: "relative",
-              zIndex: 10
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#e5e7eb";
-              e.currentTarget.style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#f1f3f4";
-              e.currentTarget.style.transform = "translateY(0)";
-            }}
+            className="w-12 h-12 rounded-full border-none bg-gray-100 cursor-pointer flex items-center justify-center text-xl text-gray-600 transition-all duration-200 shadow-sm pointer-events-auto relative z-10 hover:bg-gray-200 hover:-translate-y-0.5"
           >
             ‹
           </button>
 
           {/* Date Buttons */}
-          <div style={{ display: "flex", gap: "12px" }}>
+          <div className="flex gap-3">
             {weekDates.map((date, index) => (
               <button
                 key={index}
@@ -1347,36 +1178,11 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                   selectDate(date);
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
-                style={{
-                  padding: "16px 24px",
-                  borderRadius: "12px",
-                  border: "none",
-                  backgroundColor: isCurrentDay(date) ? "#8b5cf6" : "#f1f3f4",
-                  color: isCurrentDay(date) ? "#ffffff" : "#000000",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  fontSize: "16px",
-                  minWidth: "80px",
-                  transition: "all 0.2s ease",
-                  boxShadow: isCurrentDay(date)
-                    ? "0 4px 8px rgba(139, 92, 246, 0.3)"
-                    : "0 2px 4px rgba(0,0,0,0.1)",
-                  pointerEvents: "auto",
-                  position: "relative",
-                  zIndex: 10
-                }}
-                onMouseEnter={(e) => {
-                  if (!isCurrentDay(date)) {
-                    e.currentTarget.style.backgroundColor = "#e5e7eb";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isCurrentDay(date)) {
-                    e.currentTarget.style.backgroundColor = "#f1f3f4";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }
-                }}
+                className={`px-6 py-4 rounded-xl border-none cursor-pointer font-semibold text-base min-w-[80px] transition-all duration-200 pointer-events-auto relative z-10 ${
+                  isCurrentDay(date)
+                    ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30"
+                    : "bg-gray-100 text-black shadow-sm hover:bg-gray-200 hover:-translate-y-0.5"
+                }`}
               >
                 {dayNames[index]} {date.getDate()}
               </button>
@@ -1391,32 +1197,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
               navigateWeek("next");
             }}
             onMouseDown={(e) => e.stopPropagation()}
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              border: "none",
-              backgroundColor: "#f1f3f4",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "20px",
-              color: "#5f6368",
-              transition: "all 0.2s ease",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              pointerEvents: "auto",
-              position: "relative",
-              zIndex: 10
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#e5e7eb";
-              e.currentTarget.style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#f1f3f4";
-              e.currentTarget.style.transform = "translateY(0)";
-            }}
+            className="w-12 h-12 rounded-full border-none bg-gray-100 cursor-pointer flex items-center justify-center text-xl text-gray-600 transition-all duration-200 shadow-sm pointer-events-auto relative z-10 hover:bg-gray-200 hover:-translate-y-0.5"
           >
             ›
           </button>
@@ -1425,11 +1206,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         {/* Add Session Button - Special Interactive Zone for Puck */}
         <div
           data-puck-interactive="true"
-          style={{
-            pointerEvents: "auto",
-            position: "relative",
-            zIndex: 100
-          }}
+          className="pointer-events-auto relative z-[100]"
           onMouseDown={(e) => {
             e.stopPropagation();
           }}
@@ -1454,23 +1231,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             onMouseUp={(e) => {
               e.stopPropagation();
             }}
-            style={{
-              backgroundColor: "#8b5cf6",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "8px",
-              padding: "12px 24px",
-              fontSize: "16px",
-              fontWeight: "500",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              pointerEvents: "auto",
-              position: "relative",
-              zIndex: 101,
-              userSelect: "none"
-            }}
+            className="bg-purple-600 text-white border-none rounded-lg px-6 py-3 text-base font-medium cursor-pointer flex items-center gap-2 pointer-events-auto relative z-[101] select-none"
           >
             + Add session
           </button>
@@ -1478,51 +1239,16 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       </div>
 
       {/* Schedule Listing */}
-      <div
-        style={{
-          backgroundColor: "#ffffff",
-          borderRadius: "12px",
-          padding: "20px",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-        }}
-      >
+      <div className="bg-white rounded-xl p-5 shadow-md">
         {/* Schedule Header */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "20px",
-            paddingBottom: "10px",
-            borderBottom: "1px solid #e5e7eb",
-          }}
-        >
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "20px",
-              fontWeight: "600",
-              color: "#111827",
-            }}
-          >
+        <div className="flex justify-between items-center mb-5 pb-2.5 border-b border-gray-200">
+          <h2 className="m-0 text-xl font-semibold text-gray-900">
             Schedule
           </h2>
-          <div style={{ display: "flex", gap: "8px", position: "relative" }}>
+          <div className="flex gap-2 relative">
             <button
               onClick={toggleHeaderDropdown}
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "6px",
-                border: "1px solid #d1d5db",
-                backgroundColor: "#ffffff",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "16px",
-                color: "#6b7280",
-              }}
+              className="w-8 h-8 rounded-md border border-gray-300 bg-white cursor-pointer flex items-center justify-center text-base text-gray-500"
             >
               ⋮
             </button>
@@ -1531,18 +1257,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             {isHeaderDropdownOpen && (
               <div
                 data-dropdown
-                style={{
-                  position: "absolute",
-                  top: "36px",
-                  right: "0",
-                  backgroundColor: "#ffffff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  boxShadow:
-                    "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                  zIndex: 50,
-                  minWidth: "160px",
-                }}
+                className="absolute top-9 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[160px]"
               >
                 {/* <button
                   onClick={() => {
@@ -1606,25 +1321,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                       e.stopPropagation();
                       selectAllEvents();
                     }}
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      color: "#374151",
-                      fontSize: "14px",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f9fafb";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
+                    className="w-full px-3 py-2 border-none bg-transparent text-gray-700 text-sm text-left cursor-pointer flex items-center gap-2 hover:bg-gray-50"
                   >
                     Select All
                   </button>
@@ -1635,36 +1332,12 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                       e.stopPropagation();
                       unselectAllEvents();
                     }}
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      color: "#374151",
-                      fontSize: "14px",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f9fafb";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
+                    className="w-full px-3 py-2 border-none bg-transparent text-gray-700 text-sm text-left cursor-pointer flex items-center gap-2 hover:bg-gray-50"
                   >
                     Unselect All
                   </button>
                 )}
-                <div
-                  style={{
-                    height: "1px",
-                    backgroundColor: "#e5e7eb",
-                    margin: "4px 0",
-                  }}
-                />
+                <div className="h-px bg-gray-200 my-1" />
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1674,26 +1347,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                     setRenderKey((prev) => prev + 1); // Force re-render
                     setIsHeaderDropdownOpen(false);
                   }}
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    color: "#dc2626",
-                    fontSize: "14px",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    borderRadius: "0 0 8px 8px",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#fef2f2";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
+                  className="w-full px-3 py-2 border-none bg-transparent text-red-600 text-sm text-left cursor-pointer flex items-center gap-2 rounded-b-lg hover:bg-red-50"
                 >
                   🗑️ Delete
                 </button>
@@ -1703,24 +1357,11 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         </div>
 
         {/* Schedule Content */}
-        <div style={{ display: "flex", gap: "20px", alignItems: "stretch" }}>
+        <div className="flex gap-5 items-stretch">
           {/* Time Column */}
-          <div
-            style={{
-              minWidth: "120px",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
+          <div className="min-w-[120px] flex flex-col">
             {uniqueTimeSlots.length === 0 ? (
-              <div
-                style={{
-                  padding: "20px",
-                  textAlign: "center",
-                  color: "#9ca3af",
-                  fontSize: "14px",
-                }}
-              >
+              <div className="p-5 text-center text-gray-400 text-sm">
                 No sessions scheduled
               </div>
             ) : (
@@ -1734,65 +1375,23 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                 return (
                   <div
                     key={timeSlot}
-                    style={{
-                      height: `${currentHeight}px`,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      padding: "10px",
-                      position: "relative",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                      backgroundColor: "#f9fafb",
-                      marginBottom:
-                        index < uniqueTimeSlots.length - 1 ? "12px" : "0",
-                      flex: "0 0 auto", // Prevent shrinking/growing
-                    }}
+                    style={{ height: `${currentHeight}px` }}
+                    className={`flex flex-col items-center p-2.5 relative border border-gray-200 rounded-lg bg-gray-50 flex-shrink-0 ${
+                      index < uniqueTimeSlots.length - 1 ? "mb-3" : "mb-0"
+                    }`}
                   >
-                    <span
-                      style={{
-                        fontSize: "16px",
-                        color: "#000000",
-                        fontWeight: "700",
-                        fontFamily: "system-ui, -apple-system, sans-serif",
-                        marginBottom: "10px",
-                      }}
-                    >
+                    <span className="text-base text-black font-bold font-sans mb-2.5">
                       {timeSlot}
                     </span>
 
                     {parallelCount > 1 && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: "50%",
-                          left: "10px",
-                          right: "10px",
-                          backgroundColor: "#dbeafe",
-                          color: "#1e40af",
-                          padding: "4px 8px",
-                          borderRadius: "12px",
-                          fontSize: "12px",
-                          fontWeight: "500",
-                          textAlign: "center",
-                          transform: "translateY(-50%)",
-                        }}
-                      >
+                      <div className="absolute top-1/2 left-2.5 right-2.5 bg-blue-100 text-blue-800 px-2 py-1 rounded-xl text-xs font-medium text-center -translate-y-1/2">
                         {parallelCount} parallel session
                         {parallelCount > 1 ? "s" : ""}
                       </div>
                     )}
 
-                    <span
-                      style={{
-                        position: "absolute",
-                        bottom: "10px",
-                        fontSize: "16px",
-                        color: "#000000",
-                        fontWeight: "700",
-                        fontFamily: "system-ui, -apple-system, sans-serif",
-                      }}
-                    >
+                    <span className="absolute bottom-2.5 text-base text-black font-bold font-sans">
                       {endTime}
                     </span>
                   </div>
@@ -1802,35 +1401,12 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
           </div>
 
           {/* Events Column */}
-          <div
-            style={{
-              flex: 1,
-              position: "relative",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
+          <div className="flex-1 relative flex flex-col">
             {/* Vertical Line */}
-            <div
-              style={{
-                position: "absolute",
-                left: "-10px",
-                top: "0",
-                bottom: "0",
-                width: "1px",
-                backgroundColor: "#e5e7eb",
-              }}
-            />
+            <div className="absolute -left-2.5 top-0 bottom-0 w-px bg-gray-200" />
 
             {uniqueTimeSlots.length === 0 ? (
-              <div
-                style={{
-                  padding: "40px 20px",
-                  textAlign: "center",
-                  color: "#9ca3af",
-                  fontSize: "14px",
-                }}
-              >
+              <div className="py-10 px-5 text-center text-gray-400 text-sm">
                 Click "Add session" to create your first session
               </div>
             ) : (
@@ -1841,25 +1417,15 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                   <div
                     key={timeSlot}
                     ref={createRefCallback(timeSlot)}
-                    style={{
-                      height: `${currentHeight}px`,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "flex-start",
-                      alignItems: "stretch",
-                      marginBottom:
-                        index < uniqueTimeSlots.length - 1 ? "12px" : "0",
-                      flex: "0 0 auto", // Prevent shrinking/growing
-                      overflow: "hidden", // Prevent content overflow
-                    }}
+                    style={{ height: `${currentHeight}px` }}
+                    className={`flex flex-col justify-start items-stretch flex-shrink-0 overflow-hidden ${
+                      index < uniqueTimeSlots.length - 1 ? "mb-3" : "mb-0"
+                    }`}
                   >
                     {getEventsForTime(timeSlot).map((event) => (
                       <div
                         key={event.id}
-                        style={{
-                          marginBottom: "8px",
-                          flex: "0 0 auto", // Prevent event shrinking
-                        }}
+                        className="mb-2 flex-shrink-0"
                       >
                         {renderEvent(event)}
                       </div>
@@ -1874,60 +1440,16 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
 
       {/* Modal */}
       {isModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
           <div
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: "12px",
-              padding: "24px",
-              width: showBlockTypeModal ? "500px" : "600px",
-              maxWidth: "90vw",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              boxShadow:
-                "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-              position: "relative",
-            }}
+            className={`bg-white rounded-xl p-6 max-w-[90vw] max-h-[90vh] overflow-y-auto shadow-2xl relative ${
+              showBlockTypeModal ? "w-[500px]" : "w-[600px]"
+            }`}
           >
             {/* Close Button */}
             <button
               onClick={closeModal}
-              style={{
-                position: "absolute",
-                top: "16px",
-                right: "16px",
-                background: "none",
-                border: "none",
-                fontSize: "24px",
-                color: "#6b7280",
-                cursor: "pointer",
-                width: "32px",
-                height: "32px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "6px",
-                transition: "background-color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#f3f4f6";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
+              className="absolute top-4 right-4 bg-transparent border-none text-2xl text-gray-500 cursor-pointer w-8 h-8 flex items-center justify-center rounded-md transition-colors duration-200 hover:bg-gray-100"
             >
               ×
             </button>
@@ -1935,193 +1457,58 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             {showBlockTypeModal ? (
               <>
                 {/* Block Type Selection */}
-                <div style={{ marginBottom: "24px" }}>
-                  <h2
-                    style={{
-                      margin: "0 0 8px 0",
-                      fontSize: "20px",
-                      fontWeight: "600",
-                      color: "#111827",
-                    }}
-                  >
+                <div className="mb-6">
+                  <h2 className="m-0 mb-2 text-xl font-semibold text-gray-900">
                     Select block type
                   </h2>
-                  <p
-                    style={{
-                      margin: "0",
-                      fontSize: "14px",
-                      color: "#6b7280",
-                    }}
-                  >
+                  <p className="m-0 text-sm text-gray-500">
                     Select a style for your block.
                   </p>
                 </div>
 
                 {/* Block Type Grid */}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "12px",
-                    marginBottom: "24px",
-                  }}
-                >
+                <div className="grid grid-cols-2 gap-3 mb-6">
                   {blockTypes.map((blockType) => (
                     <div
                       key={blockType}
                       onClick={() => handleBlockTypeSelect(blockType)}
-                      style={{
-                        border:
-                          selectedBlockType === blockType
-                            ? "2px solid #8b5cf6"
-                            : "1px solid #e5e7eb",
-                        borderRadius: "8px",
-                        padding: "16px",
-                        cursor: "pointer",
-                        backgroundColor: "#ffffff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        transition: "all 0.2s ease",
-                      }}
+                      className={`rounded-lg p-4 cursor-pointer bg-white flex items-center justify-between transition-all duration-200 ${
+                        selectedBlockType === blockType
+                          ? "border-2 border-purple-600"
+                          : "border border-gray-200"
+                      }`}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                        }}
-                      >
+                      <div className="flex items-center gap-3">
                         {/* Icon */}
-                        <div
-                          style={{
-                            width: "32px",
-                            height: "32px",
-                            backgroundColor: "#f3f4f6",
-                            borderRadius: "6px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            position: "relative",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "20px",
-                              height: "20px",
-                              position: "relative",
-                            }}
-                          >
+                        <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center relative">
+                          <div className="w-5 h-5 relative">
                             {/* Colored dots */}
-                            <div
-                              style={{
-                                position: "absolute",
-                                top: "2px",
-                                left: "2px",
-                                width: "4px",
-                                height: "4px",
-                                backgroundColor: "#fbbf24",
-                                borderRadius: "50%",
-                              }}
-                            />
-                            <div
-                              style={{
-                                position: "absolute",
-                                top: "2px",
-                                right: "2px",
-                                width: "4px",
-                                height: "4px",
-                                backgroundColor: "#f97316",
-                                borderRadius: "50%",
-                              }}
-                            />
-                            <div
-                              style={{
-                                position: "absolute",
-                                bottom: "2px",
-                                left: "2px",
-                                width: "4px",
-                                height: "4px",
-                                backgroundColor: "#10b981",
-                                borderRadius: "50%",
-                              }}
-                            />
-                            <div
-                              style={{
-                                position: "absolute",
-                                bottom: "2px",
-                                right: "2px",
-                                width: "4px",
-                                height: "4px",
-                                backgroundColor: "#8b5cf6",
-                                borderRadius: "50%",
-                              }}
-                            />
+                            <div className="absolute top-0.5 left-0.5 w-1 h-1 bg-yellow-400 rounded-full" />
+                            <div className="absolute top-0.5 right-0.5 w-1 h-1 bg-orange-500 rounded-full" />
+                            <div className="absolute bottom-0.5 left-0.5 w-1 h-1 bg-green-500 rounded-full" />
+                            <div className="absolute bottom-0.5 right-0.5 w-1 h-1 bg-purple-600 rounded-full" />
                             {/* Horizontal lines */}
-                            <div
-                              style={{
-                                position: "absolute",
-                                top: "8px",
-                                left: "2px",
-                                right: "2px",
-                                height: "1px",
-                                backgroundColor: "#d1d5db",
-                              }}
-                            />
-                            <div
-                              style={{
-                                position: "absolute",
-                                top: "12px",
-                                left: "2px",
-                                right: "2px",
-                                height: "1px",
-                                backgroundColor: "#d1d5db",
-                              }}
-                            />
+                            <div className="absolute top-2 left-0.5 right-0.5 h-px bg-gray-300" />
+                            <div className="absolute top-3 left-0.5 right-0.5 h-px bg-gray-300" />
                           </div>
                         </div>
 
                         {/* Text */}
-                        <span
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "500",
-                            color: "#111827",
-                            lineHeight: "1.4",
-                          }}
-                        >
+                        <span className="text-sm font-medium text-gray-900 leading-snug">
                           {blockType}
                         </span>
                       </div>
 
                       {/* Radio Button */}
                       <div
-                        style={{
-                          width: "16px",
-                          height: "16px",
-                          borderRadius: "50%",
-                          border:
-                            selectedBlockType === blockType
-                              ? "2px solid #8b5cf6"
-                              : "2px solid #d1d5db",
-                          backgroundColor:
-                            selectedBlockType === blockType
-                              ? "#8b5cf6"
-                              : "transparent",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
+                        className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                          selectedBlockType === blockType
+                            ? "border-2 border-purple-600 bg-purple-600"
+                            : "border-2 border-gray-300 bg-transparent"
+                        }`}
                       >
                         {selectedBlockType === blockType && (
-                          <div
-                            style={{
-                              width: "6px",
-                              height: "6px",
-                              borderRadius: "50%",
-                              backgroundColor: "#ffffff",
-                            }}
-                          />
+                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
                         )}
                       </div>
                     </div>
@@ -2129,70 +1516,27 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
+                <div className="flex justify-between items-center">
                   <a
                     href="#"
-                    style={{
-                      fontSize: "14px",
-                      color: "#6b7280",
-                      textDecoration: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
+                    className="text-sm text-gray-500 no-underline flex items-center gap-1.5"
                   >
-                    <div
-                      style={{
-                        width: "16px",
-                        height: "16px",
-                        borderRadius: "50%",
-                        backgroundColor: "#f3f4f6",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "10px",
-                        color: "#6b7280",
-                      }}
-                    >
+                    <div className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">
                       ?
                     </div>
                     Need help?
                   </a>
 
-                  <div style={{ display: "flex", gap: "12px" }}>
+                  <div className="flex gap-3">
                     <button
                       onClick={closeModal}
-                      style={{
-                        padding: "8px 16px",
-                        borderRadius: "6px",
-                        border: "1px solid #d1d5db",
-                        backgroundColor: "#ffffff",
-                        color: "#374151",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        cursor: "pointer",
-                      }}
+                      className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSelect}
-                      style={{
-                        padding: "8px 16px",
-                        borderRadius: "6px",
-                        border: "none",
-                        backgroundColor: "#8b5cf6",
-                        color: "#ffffff",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        cursor: "pointer",
-                      }}
+                      className="px-4 py-2 rounded-md border-none bg-purple-600 text-white text-sm font-medium cursor-pointer"
                     >
                       Select
                     </button>
@@ -2202,26 +1546,13 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             ) : (
               <>
                 {/* Session Form */}
-                <div style={{ marginBottom: "24px" }}>
-                  <h2
-                    style={{
-                      margin: "0 0 8px 0",
-                      fontSize: "20px",
-                      fontWeight: "600",
-                      color: "#111827",
-                    }}
-                  >
+                <div className="mb-6">
+                  <h2 className="m-0 mb-2 text-xl font-semibold text-gray-900">
                     {isAddingChildSession
                       ? "Add Child Session"
                       : "Add New Session"}
                   </h2>
-                  <p
-                    style={{
-                      margin: "0",
-                      fontSize: "14px",
-                      color: "#6b7280",
-                    }}
-                  >
+                  <p className="m-0 text-sm text-gray-500">
                     {isAddingChildSession
                       ? `Fill in the details for your child ${selectedBlockType.toLowerCase()}.`
                       : `Fill in the details for your ${selectedBlockType.toLowerCase()}.`}
@@ -2229,52 +1560,18 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                 </div>
 
                 <form onSubmit={handleFormSubmit}>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "16px",
-                    }}
-                  >
+                  <div className="flex flex-col gap-4">
                     {/* Parent Session Indicator */}
                     {isAddingChildSession && formData.parentSessionId && (
-                      <div
-                        style={{
-                          padding: "12px",
-                          backgroundColor: "#f0f9ff",
-                          border: "1px solid #bae6fd",
-                          borderRadius: "6px",
-                          marginBottom: "8px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "#0369a1",
-                            fontWeight: "500",
-                            marginBottom: "4px",
-                          }}
-                        >
+                      <div className="p-3 bg-sky-50 border border-sky-200 rounded-md mb-2">
+                        <div className="text-xs text-sky-700 font-medium mb-1">
                           Adding Child Session to:
                         </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#0c4a6e",
-                            fontWeight: "600",
-                            marginBottom: "4px",
-                          }}
-                        >
+                        <div className="text-sm text-sky-900 font-semibold mb-1">
                           {events.find((e) => e.id === formData.parentSessionId)
                             ?.title || "Parent Session"}
                         </div>
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "#0369a1",
-                            fontStyle: "italic",
-                          }}
-                        >
+                        <div className="text-xs text-sky-700 italic">
                           Parent Time:{" "}
                           {
                             events.find(
@@ -2293,17 +1590,9 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
 
                     {/* Title */}
                     <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
-                        }}
-                      >
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Session Title{" "}
-                        <span style={{ color: "#ef4444" }}>*</span>
+                        <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -2312,43 +1601,15 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                         onChange={handleInputChange}
                         required
                         placeholder="Enter session title"
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "6px",
-                          fontSize: "14px",
-                          outline: "none",
-                          transition: "border-color 0.2s",
-                        }}
-                        onFocus={(e) =>
-                          (e.currentTarget.style.borderColor = "#8b5cf6")
-                        }
-                        onBlur={(e) =>
-                          (e.currentTarget.style.borderColor = "#d1d5db")
-                        }
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm outline-none transition-colors duration-200 focus:border-purple-600"
                       />
                     </div>
 
                     {/* Time Fields */}
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "12px",
-                      }}
-                    >
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label
-                          style={{
-                            display: "block",
-                            fontSize: "14px",
-                            fontWeight: "500",
-                            color: "#374151",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Start Time <span style={{ color: "#ef4444" }}>*</span>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          Start Time <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="time"
@@ -2356,49 +1617,18 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                           value={formData.startTime}
                           onChange={handleInputChange}
                           required
-                          style={{
-                            width: "100%",
-                            padding: "10px 12px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                            outline: "none",
-                            backgroundColor: "#ffffff",
-                            color: "#111827",
-                            cursor: "text",
-                          }}
-                          onFocus={(e) =>
-                            (e.currentTarget.style.borderColor = "#8b5cf6")
-                          }
-                          onBlur={(e) =>
-                            (e.currentTarget.style.borderColor = "#d1d5db")
-                          }
+                          className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm outline-none bg-white text-gray-900 cursor-text transition-colors duration-200 focus:border-purple-600"
                         />
                         {isAddingChildSession && (
-                          <p
-                            style={{
-                              fontSize: "12px",
-                              color: "#6b7280",
-                              marginTop: "4px",
-                              fontStyle: "italic",
-                            }}
-                          >
+                          <p className="text-xs text-gray-500 mt-1 italic">
                             Child session time should be within parent session
                             period
                           </p>
                         )}
                       </div>
                       <div>
-                        <label
-                          style={{
-                            display: "block",
-                            fontSize: "14px",
-                            fontWeight: "500",
-                            color: "#374151",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          End Time <span style={{ color: "#ef4444" }}>*</span>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          End Time <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="time"
@@ -2406,46 +1636,16 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                           value={formData.endTime}
                           onChange={handleInputChange}
                           required
-                          style={{
-                            width: "100%",
-                            padding: "10px 12px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                            outline: "none",
-                            backgroundColor: "#ffffff",
-                            color: "#111827",
-                            cursor: "text",
-                          }}
-                          onFocus={(e) =>
-                            (e.currentTarget.style.borderColor = "#8b5cf6")
-                          }
-                          onBlur={(e) =>
-                            (e.currentTarget.style.borderColor = "#d1d5db")
-                          }
+                          className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm outline-none bg-white text-gray-900 cursor-text transition-colors duration-200 focus:border-purple-600"
                         />
                       </div>
                     </div>
 
                     {/* Location and Type */}
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "12px",
-                      }}
-                    >
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label
-                          style={{
-                            display: "block",
-                            fontSize: "14px",
-                            fontWeight: "500",
-                            color: "#374151",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Location <span style={{ color: "#ef4444" }}>*</span>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          Location <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -2454,54 +1654,19 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                           onChange={handleInputChange}
                           required
                           placeholder="e.g., Room A, Main Hall"
-                          style={{
-                            width: "100%",
-                            padding: "10px 12px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                            outline: "none",
-                          }}
-                          onFocus={(e) =>
-                            (e.currentTarget.style.borderColor = "#8b5cf6")
-                          }
-                          onBlur={(e) =>
-                            (e.currentTarget.style.borderColor = "#d1d5db")
-                          }
+                          className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm outline-none transition-colors duration-200 focus:border-purple-600"
                         />
                       </div>
                       <div>
-                        <label
-                          style={{
-                            display: "block",
-                            fontSize: "14px",
-                            fontWeight: "500",
-                            color: "#374151",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Type <span style={{ color: "#ef4444" }}>*</span>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          Type <span className="text-red-500">*</span>
                         </label>
                         <select
                           name="type"
                           value={formData.type}
                           onChange={handleInputChange}
                           required
-                          style={{
-                            width: "100%",
-                            padding: "10px 12px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                            outline: "none",
-                            backgroundColor: "#ffffff",
-                          }}
-                          onFocus={(e) =>
-                            (e.currentTarget.style.borderColor = "#8b5cf6")
-                          }
-                          onBlur={(e) =>
-                            (e.currentTarget.style.borderColor = "#d1d5db")
-                          }
+                          className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm outline-none bg-white transition-colors duration-200 focus:border-purple-600"
                         >
                           <option value="In-Person">In-Person</option>
                           <option value="Virtual">Virtual</option>
@@ -2511,15 +1676,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
 
                     {/* Description */}
                     <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
-                        }}
-                      >
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Description
                       </label>
                       <textarea
@@ -2528,36 +1685,13 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                         onChange={handleInputChange}
                         placeholder="Enter session description..."
                         rows={3}
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "6px",
-                          fontSize: "14px",
-                          outline: "none",
-                          resize: "vertical",
-                          fontFamily: "inherit",
-                        }}
-                        onFocus={(e) =>
-                          (e.currentTarget.style.borderColor = "#8b5cf6")
-                        }
-                        onBlur={(e) =>
-                          (e.currentTarget.style.borderColor = "#d1d5db")
-                        }
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm outline-none resize-y font-inherit transition-colors duration-200 focus:border-purple-600"
                       />
                     </div>
 
                     {/* Participants */}
                     <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
-                        }}
-                      >
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Participants
                       </label>
                       <input
@@ -2566,34 +1700,13 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                         value={formData.participants}
                         onChange={handleInputChange}
                         placeholder="e.g., Chairman: Dr. Smith, Speaker: Dr. Johnson"
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "6px",
-                          fontSize: "14px",
-                          outline: "none",
-                        }}
-                        onFocus={(e) =>
-                          (e.currentTarget.style.borderColor = "#8b5cf6")
-                        }
-                        onBlur={(e) =>
-                          (e.currentTarget.style.borderColor = "#d1d5db")
-                        }
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm outline-none transition-colors duration-200 focus:border-purple-600"
                       />
                     </div>
 
                     {/* Tags */}
                     <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
-                        }}
-                      >
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Tags
                       </label>
                       <input
@@ -2602,43 +1715,16 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                         value={formData.tags}
                         onChange={handleInputChange}
                         placeholder="Enter tags separated by commas"
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "6px",
-                          fontSize: "14px",
-                          outline: "none",
-                        }}
-                        onFocus={(e) =>
-                          (e.currentTarget.style.borderColor = "#8b5cf6")
-                        }
-                        onBlur={(e) =>
-                          (e.currentTarget.style.borderColor = "#d1d5db")
-                        }
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm outline-none transition-colors duration-200 focus:border-purple-600"
                       />
-                      <p
-                        style={{
-                          fontSize: "12px",
-                          color: "#6b7280",
-                          marginTop: "4px",
-                        }}
-                      >
+                      <p className="text-xs text-gray-500 mt-1">
                         Separate tags with commas (e.g., Workshop, Beginner, AI)
                       </p>
                     </div>
 
                     {/* Attachments */}
                     <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
-                        }}
-                      >
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Number of Attachments
                       </label>
                       <input
@@ -2647,100 +1733,30 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                         value={formData.attachments}
                         onChange={handleInputChange}
                         min="0"
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #d1d5db",
-                          borderRadius: "6px",
-                          fontSize: "14px",
-                          outline: "none",
-                        }}
-                        onFocus={(e) =>
-                          (e.currentTarget.style.borderColor = "#8b5cf6")
-                        }
-                        onBlur={(e) =>
-                          (e.currentTarget.style.borderColor = "#d1d5db")
-                        }
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm outline-none transition-colors duration-200 focus:border-purple-600"
                       />
                     </div>
 
                     {/* Form Actions */}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginTop: "8px",
-                        paddingTop: "16px",
-                        borderTop: "1px solid #e5e7eb",
-                      }}
-                    >
+                    <div className="flex justify-between items-center mt-2 pt-4 border-t border-gray-200">
                       <button
                         type="button"
                         onClick={() => setShowBlockTypeModal(true)}
-                        style={{
-                          padding: "8px 16px",
-                          borderRadius: "6px",
-                          border: "1px solid #d1d5db",
-                          backgroundColor: "#ffffff",
-                          color: "#374151",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          cursor: "pointer",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#f9fafb")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#ffffff")
-                        }
+                        className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium cursor-pointer transition-colors duration-200 hover:bg-gray-50"
                       >
                         ← Back
                       </button>
-                      <div style={{ display: "flex", gap: "12px" }}>
+                      <div className="flex gap-3">
                         <button
                           type="button"
                           onClick={closeModal}
-                          style={{
-                            padding: "8px 16px",
-                            borderRadius: "6px",
-                            border: "1px solid #d1d5db",
-                            backgroundColor: "#ffffff",
-                            color: "#374151",
-                            fontSize: "14px",
-                            fontWeight: "500",
-                            cursor: "pointer",
-                            transition: "background-color 0.2s",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#f9fafb")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#ffffff")
-                          }
+                          className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium cursor-pointer transition-colors duration-200 hover:bg-gray-50"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
-                          style={{
-                            padding: "8px 24px",
-                            borderRadius: "6px",
-                            border: "none",
-                            backgroundColor: "#8b5cf6",
-                            color: "#ffffff",
-                            fontSize: "14px",
-                            fontWeight: "500",
-                            cursor: "pointer",
-                            transition: "background-color 0.2s",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#7c3aed")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#8b5cf6")
-                          }
+                          className="px-6 py-2 rounded-md border-none bg-purple-600 text-white text-sm font-medium cursor-pointer transition-colors duration-200 hover:bg-purple-700"
                         >
                           Add Session
                         </button>
