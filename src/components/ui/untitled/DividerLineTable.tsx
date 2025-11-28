@@ -216,44 +216,51 @@ export function DividerLineTable<TData>({
       )}
 
       <TableCardBody className={twMerge('border border-slate-200', bodyClassName)}>
-        {sortedData.length === 0 ? (
-          emptyState ?? (
-            <div className="flex min-h-[200px] items-center justify-center px-6 py-10 text-sm text-slate-500">
-              No data available.
-            </div>
-          )
-        ) : (
-          <Table>
-            <TableHeader>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {columns.map((column) => (
+                <TableHead
+                  key={column.id}
+                  scope="col"
+                  className={twMerge(
+                    'px-6 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 border-b border-slate-200',
+                    column.align === 'right' ? 'text-right' : column.align === 'center' ? 'text-center' : '',
+                    column.headerClassName
+                  )}
+                  onClick={() => column.sortable && handleSortClick(column)}
+                >
+                  {renderHeaderCell(column)}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedData.length === 0 ? (
               <TableRow>
-                {columns.map((column) => (
-                  <TableHead
-                    key={column.id}
-                    scope="col"
-                    className={twMerge(
-                      'px-6 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500 border-b border-slate-200',
-                      column.align === 'right' ? 'text-right' : column.align === 'center' ? 'text-center' : '',
-                      column.headerClassName
-                    )}
-                    onClick={() => column.sortable && handleSortClick(column)}
-                  >
-                    {renderHeaderCell(column)}
-                  </TableHead>
-                ))}
+                <TableCell
+                  colSpan={columns.length}
+                  className="px-6 py-10"
+                >
+                  {emptyState ?? (
+                    <div className="flex min-h-[200px] items-center justify-center text-sm text-slate-500">
+                      No data available.
+                    </div>
+                  )}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedData.map((item, index) => (
+            ) : (
+              sortedData.map((item, index) => (
                 <TableRow key={getRowKey(item, index)}>
                   {columns.map((column) => (
                     <TableCell
                       key={column.id}
                       className={twMerge(
                         column.align === 'right'
-                          ? 'px-6 py-4 text-right'
+                          ? 'px-6 py-2 text-right'
                           : column.align === 'center'
-                          ? 'px-6 py-4 text-center'
-                          : 'px-6 py-4',
+                          ? 'px-6 py-2 text-center'
+                          : 'px-6 py-2',
                         column.cellClassName
                       )}
                     >
@@ -261,10 +268,10 @@ export function DividerLineTable<TData>({
                     </TableCell>
                   ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+              ))
+            )}
+          </TableBody>
+        </Table>
       </TableCardBody>
 
       {footer}

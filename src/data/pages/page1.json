@@ -1,55 +1,19 @@
 {
   "content": [
     {
-      "type": "HeroSection",
+      "type": "Spacer",
       "props": {
-        "title": "Event Title",
-        "subtitle": "Location | Date",
-        "buttons": [
-          {
-            "text": "Register Now",
-            "link": "#register",
-            "color": "#6938EF",
-            "textColor": "white",
-            "size": "large"
-          }
-        ],
-        "backgroundColor": "#1a1a1a",
-        "textColor": "white",
-        "backgroundImage": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80",
-        "height": "500px",
-        "alignment": "center",
-        "overlayOpacity": 0.4,
-        "titleSize": "3.5rem",
-        "subtitleSize": "1.25rem",
-        "buttonSpacing": "12px",
-        "id": "HeroSection-8566458b-a39c-426a-a1e1-eab94def36e1"
+        "height": "20px",
+        "id": "Spacer-4ba402c9-d930-47ae-ab14-f1bff46c8e77"
       }
     },
     {
-      "type": "SpeakersSection",
+      "type": "GridContainer",
       "props": {
-        "speakers": [
-          {
-            "name": "Dr. Jane Doe",
-            "title": "Professor at X University",
-            "image": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face"
-          },
-          {
-            "name": "Dr. John Smith",
-            "title": "Research Director",
-            "image": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face"
-          },
-          {
-            "name": "Dr. Sarah Wilson",
-            "title": "Industry Expert",
-            "image": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=200&fit=crop&crop=face"
-          }
-        ],
-        "backgroundColor": "#ffffff",
-        "padding": "0 2rem",
-        "gap": "2rem",
-        "id": "SpeakersSection-1a8d6c1a-7f08-4d3c-9dae-2f99ec847195"
+        "columns": 2,
+        "gap": "16px",
+        "rowGap": "16px",
+        "id": "GridContainer-06dc9cd0-dffa-49c3-8efe-dfb34cbb3608"
       }
     }
   ],
@@ -60,5 +24,32 @@
       "title": "Page 1"
     }
   },
-  "zones": {}
+  "zones": {
+    "GridContainer-06dc9cd0-dffa-49c3-8efe-dfb34cbb3608:column-0": [
+      {
+        "type": "TextBlock",
+        "props": {
+          "title": "Heading",
+          "id": "TextBlock-a5fa8f7e-caad-45df-b2da-f65beafe5ca8"
+        }
+      },
+      {
+        "type": "Spacer",
+        "props": {
+          "height": "20px",
+          "id": "Spacer-862153e1-d1f4-4cac-a51d-a96450474787"
+        }
+      }
+    ],
+    "GridContainer-06dc9cd0-dffa-49c3-8efe-dfb34cbb3608:column-1": [
+      {
+        "type": "Checkbox",
+        "props": {
+          "label": "Check this option",
+          "checked": "false",
+          "id": "Checkbox-09ee57fb-e923-478a-9c64-a7ecbd1c6a49"
+        }
+      }
+    ]
+  }
 }

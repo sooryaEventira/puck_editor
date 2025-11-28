@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Upload01, Plus } from '@untitled-ui/icons-react'
+import { Upload01, Plus, ArrowNarrowLeft } from '@untitled-ui/icons-react'
 import WeekDateSelector from './WeekDateSelector'
 import UploadModal from './UploadModal'
 
@@ -7,12 +7,14 @@ interface ScheduleContentProps {
   scheduleName?: string
   onUpload?: () => void
   onAddSession?: () => void
+  onBack?: () => void
 }
 
 const ScheduleContent: React.FC<ScheduleContentProps> = ({
   scheduleName = 'Schedule 1',
   onUpload,
-  onAddSession
+  onAddSession,
+  onBack
 }) => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
@@ -39,9 +41,21 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
   return (
     <main className="relative mt-16 w-full bg-white px-4 pb-10 pt-8 md:px-8">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <h1 className="font-manrope text-[26px] font-semibold leading-10 text-primary-dark md:text-[32px] md:leading-10">
-          {scheduleName}
-        </h1>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex items-center justify-center rounded-md p-2 text-slate-600 transition hover:bg-slate-100 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              aria-label="Back to schedule list"
+            >
+              <ArrowNarrowLeft className="h-5 w-5" />
+            </button>
+          )}
+          <h1 className="font-manrope text-[26px] font-semibold leading-10 text-primary-dark md:text-[32px] md:leading-10">
+            {scheduleName}
+          </h1>
+        </div>
         <button
           type="button"
           data-schedule-upload="true"

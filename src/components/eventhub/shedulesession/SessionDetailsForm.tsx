@@ -23,31 +23,16 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
 
   const renderTimeField = (
     label: string,
-    periodKey: 'startPeriod' | 'endPeriod',
     timeKey: 'startTime' | 'endTime'
   ) => (
     <div className="flex flex-col gap-1">
       <span className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</span>
-      <div className="inline-flex h-10 w-[90px] min-w-[90px] items-center overflow-hidden rounded-lg border border-slate-300 bg-white text-sm shadow-sm">
-        <select
-          value={draft[periodKey]}
-          onChange={(event) =>
-            onFieldChange(periodKey, event.target.value as SessionDraft['startPeriod'])
-          }
-          className="h-full w-[32px] appearance-none border-none bg-transparent px-1 text-xs font-semibold uppercase text-slate-400 focus:outline-none focus:ring-0"
-        >
-          <option value="AM">AM</option>
-          <option value="PM">PM</option>
-        </select>
-        <span className="h-5 w-px bg-slate-300" aria-hidden="true" />
-        <input
-      type="time"
-      value={draft[timeKey] || ''}
-      placeholder="hh:mm"
-      onChange={(event) => onFieldChange(timeKey, event.target.value)}
-      className="h-full w-[54px] border-none bg-transparent px-2 text-xs text-slate-600 focus:outline-none focus:ring-0"
-    />
-      </div>
+      <input
+        type="time"
+        value={draft[timeKey] || ''}
+        onChange={(event) => onFieldChange(timeKey, event.target.value)}
+        className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-600 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+      />
     </div>
   )
 
@@ -56,8 +41,8 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
       <p className="text-md font-semibold text-slate-600">SESSION TITLE</p>
 
       <div className="flex flex-col gap-3 md:flex-row md:gap-3">
-        {renderTimeField('Start time', 'startPeriod', 'startTime')}
-        {renderTimeField('End time', 'endPeriod', 'endTime')}
+        {renderTimeField('Start time', 'startTime')}
+        {renderTimeField('End time', 'endTime')}
 
         <Input
           label="Location"

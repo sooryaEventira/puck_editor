@@ -6,4 +6,5 @@ export { default as SchedulePage } from './shedulesession/SchedulePage'
 export { default as ScheduleContent } from './shedulesession/ScheduleContent'
 export { default as CommunicationPage } from './communication/CommunicationPage'
 export { default as CommunicationsTable } from './communication/CommunicationsTable'
+export { default as ResourceManagementPage } from './resourcemanagement/ResourceManagementPage'
 

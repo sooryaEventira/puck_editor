@@ -250,6 +250,7 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
             }}
             macros={macros}
             templateType="late-message"
+            type={selectedBroadcastType || 'email'}
           />
         ) : (
           <CommunicationsTable

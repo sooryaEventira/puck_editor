@@ -4,14 +4,14 @@ import { usePageManagement } from '../hooks/usePageManagement'
 import { usePublish } from '../hooks/usePublish'
 import { useAppHandlers } from '../hooks/useAppHandlers'
 import { PageManager, PageNameDialog, PageCreationModal } from './page'
-import { EventHubPage, EventHubNavbar, SchedulePage, CommunicationPage } from './eventhub'
+import { EventHubPage, EventHubNavbar, SchedulePage, CommunicationPage, ResourceManagementPage } from './eventhub'
 import EditorView from './EditorView'
 import { logger } from '../utils/logger'
 import { setupPuckStyling } from '../utils/puckStyling'
 
 const App: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false)
-  const [currentView, setCurrentView] = useState<'editor' | 'events' | 'schedule' | 'communication'>('editor')
+  const [currentView, setCurrentView] = useState<'editor' | 'events' | 'schedule' | 'communication' | 'resource-management'>('editor')
   const [puckUi, setPuckUi] = useState<any>(undefined)
   const [showLeftSidebar, setShowLeftSidebar] = useState(true)
   const [showRightSidebar, setShowRightSidebar] = useState(true)
@@ -72,8 +72,12 @@ const App: React.FC = () => {
       // Navigate to communication page
       setCurrentView('communication')
       logger.debug('📍 Navigating to communication page from Event Hub card')
+    } else if (cardId === 'resource-management') {
+      // Navigate to resource management page
+      setCurrentView('resource-management')
+      logger.debug('📍 Navigating to resource management page from Event Hub card')
     } else {
-      // Handle other card IDs (resource-management, attendee-management, analytics, website-settings)
+      // Handle other card IDs (attendee-management, analytics, website-settings)
       logger.debug(`📍 Card clicked: ${cardId}`)
       // TODO: Implement navigation for other card types when their pages are created
     }
@@ -155,6 +159,21 @@ const App: React.FC = () => {
     
     return (
       <CommunicationPage
+        eventName="Highly important conference of 2025"
+        isDraft={true}
+        onBackClick={handleBackToEventHub}
+        userAvatarUrl=""
+        onCardClick={handleEventHubCardClick}
+      />
+    )
+  }
+
+  // Render Resource Management Page
+  if (currentView === 'resource-management') {
+    logger.debug('📍 Rendering Resource Management Page');
+    
+    return (
+      <ResourceManagementPage
         eventName="Highly important conference of 2025"
         isDraft={true}
         onBackClick={handleBackToEventHub}

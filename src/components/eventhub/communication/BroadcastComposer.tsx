@@ -11,10 +11,12 @@ import {
   Send01,
   Calendar,
   Plus,
-  XClose
+  XClose,
+  AlertCircle
 } from '@untitled-ui/icons-react'
 import type { Macro } from './communicationTypes'
 import BroadcastPreviewModal from './BroadcastPreviewModal'
+import { ScheduleBroadcastModal } from './ScheduleBroadcastModal'
 
 interface BroadcastComposerProps {
   onCancel: () => void
@@ -24,6 +26,7 @@ interface BroadcastComposerProps {
   initialSubject?: string
   initialMessage?: string
   templateType?: string
+  type?: 'email' | 'push-notification'
 }
 
 const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
@@ -32,7 +35,8 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
   onSend,
   macros = [],
   initialSubject = '',
-  initialMessage = ''
+  initialMessage = '',
+  type = 'email'
 }) => {
   const [activeTab, setActiveTab] = useState<'late-message' | 'settings'>('late-message')
   const [subject, setSubject] = useState(initialSubject || 'Your session is running late!')
@@ -47,6 +51,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
   const [isItalic, setIsItalic] = useState(false)
   const [isUnderline, setIsUnderline] = useState(false)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
   
   // Settings Tab State
   const [matchLogic, setMatchLogic] = useState<'ANY' | 'ALL'>('ANY')
@@ -291,6 +296,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
           </button>
           <button
             type="button"
+            onClick={() => setShowScheduleModal(true)}
             className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <span>Schedule</span>
@@ -298,7 +304,6 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
           </button>
         </div>
       </div>
-
       {/* Tabs and Content Container */}
       <div className="rounded-xl  bg-white overflow-hidden ">
         {/* Tabs */}
@@ -334,17 +339,52 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
             {isEditing ? (
               <>
                 {/* Subject Line */}
-                <div className="relative">
-                  <input
-                    id="subject"
-                    type="text"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    className="w-full rounded-md  border border-slate-300 bg-slate-50 pl-16 pr-3 py-2 text-sm  text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                  <label htmlFor="subject" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium font-semibold text-slate-00  pointer-events-none">
-                    Subject:
-                  </label>
+                <div 
+                  className={`group relative flex flex-col w-full rounded-md border ${
+                    type === 'email' && subject.length > 60 ? 'border-orange-300' : 'border-slate-300'
+                  } bg-slate-50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all`}
+                  onClick={() => document.getElementById('subject')?.focus()}
+                >
+                  <div className="flex items-center px-3 pt-2.5">
+                    <label htmlFor="subject" className="text-sm font-semibold text-slate-900 mr-2 cursor-text shrink-0">
+                      {type === 'push-notification' ? 'Title:' : 'Subject:'}
+                    </label>
+                    <input
+                      id="subject"
+                      type="text"
+                      value={subject}
+                      onChange={(e) => {
+                        const limit = type === 'push-notification' ? 50 : 120
+                        if (e.target.value.length <= limit) {
+                          setSubject(e.target.value)
+                        }
+                      }}
+                      className="flex-1 bg-transparent border-none p-0 text-sm text-slate-900 focus:ring-0 placeholder-slate-400"
+                    />
+                  </div>
+                  
+                  {/* Warning and Counter */}
+                  <div className="px-3 pb-1.5 flex items-center gap-2 min-h-[20px]">
+                    {type === 'email' && subject.length > 60 && (
+                      <div className="group/warning relative flex items-center">
+                        <AlertCircle className="h-3 w-3 text-orange-500" />
+                        <div className="absolute bottom-full left-0 mb-2 hidden w-max rounded bg-slate-900 px-2 py-1 text-xs text-white shadow-lg group-hover/warning:block z-10">
+                          May be truncated on mobile
+                          <div className="absolute -bottom-1 left-1 h-2 w-2 rotate-45 bg-slate-900"></div>
+                        </div>
+                      </div>
+                    )}
+                    <span className={`text-[10px] ${
+                      (type === 'email' && subject.length > 60) || (type === 'push-notification' && subject.length >= 50)
+                        ? 'text-orange-500 font-medium' 
+                        : 'text-slate-400'
+                    }`}>
+                      {type === 'push-notification' 
+                        ? `${50 - subject.length} characters left`
+                        : `${120 - subject.length} characters left`
+                      }
+                    </span>
+                  </div>
                 </div>
 
                 {/* Formatting Toolbar */}
@@ -658,9 +698,19 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
               </>
             ) : (
               <div className="space-y-6">
-                <div className='border-b border-slate-200 pb-2'>
-                  <span className="font-bold text-slate-900">Subject: </span>
-                  <span className="font-medium text-slate-900">{subject}</span>
+                <div className='border-b border-slate-200 pb-2 flex items-center justify-between'>
+                  <div>
+                    <span className="font-bold text-slate-900">{type === 'push-notification' ? 'Title: ' : 'Subject: '}</span>
+                    <span className="font-medium text-slate-900">{subject}</span>
+                  </div>
+                  {type === 'email' && subject.length > 60 && (
+                    <div className="group relative flex items-center cursor-help">
+                      <div className="flex items-center gap-1 rounded bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 border border-orange-200">
+                        May be truncated on mobile
+                        <AlertCircle className="h-3 w-3" />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div 
                   className="broadcast-editor-content text-slate-600"
@@ -679,7 +729,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
             )}
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 h-[calc(100vh-200px)] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <h2 className="text-base font-semibold text-slate-900">Recipients</h2>
               <button
@@ -693,8 +743,8 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-slate-700">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
                   <span>Matching</span>
                   <select
                     value={matchLogic}
@@ -706,14 +756,14 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                   </select>
                   <span>of the following filters</span>
                 </div>
-                <div className="text-sm font-medium text-primary">
+                <div className="text-sm font-medium text-primary self-end sm:self-auto">
                   400/500
                 </div>
               </div>
 
               <div className="space-y-3">
                 {filters.map((filter, index) => (
-                  <div key={filter.id} className="flex items-center gap-3">
+                  <div key={filter.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-slate-50 rounded-lg sm:bg-transparent sm:p-0">
                     <select
                       value={filter.field}
                       onChange={(e) => {
@@ -721,11 +771,10 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                         newFilters[index].field = e.target.value
                         setFilters(newFilters)
                       }}
-                      className="min-w-[140px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      className="w-full sm:w-auto sm:min-w-[140px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
                       <option value="Group">Group</option>
-                      <option value="Status">Status</option>
-                      <option value="Role">Role</option>
+                      <option value="Status">Message Status</option>                
                     </select>
 
                     <select
@@ -735,11 +784,10 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                         newFilters[index].operator = e.target.value
                         setFilters(newFilters)
                       }}
-                      className="w-[80px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      className="w-full sm:w-[80px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
                       <option value="is">is</option>
                       <option value="is_not">is not</option>
-                      <option value="contains">contains</option>
                     </select>
 
                     <select
@@ -749,11 +797,12 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                         newFilters[index].value = e.target.value
                         setFilters(newFilters)
                       }}
-                      className="flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      className="w-full sm:flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
                       <option value="Speakers">Speakers</option>
                       <option value="Attendees">Attendees</option>
                       <option value="Sponsors">Sponsors</option>
+                      <option value="VIP">VIP</option>
                     </select>
 
                     <button
@@ -762,7 +811,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                         const newFilters = filters.filter(f => f.id !== filter.id)
                         setFilters(newFilters)
                       }}
-                      className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                      className="self-end sm:self-auto rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
                     >
                       <XClose className="h-4 w-4" />
                     </button>
@@ -786,6 +835,16 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
         }}
         subject={subject}
         message={message}
+      />
+
+      <ScheduleBroadcastModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        onSchedule={(date) => {
+          console.log('Scheduled for:', date)
+          setShowScheduleModal(false)
+          // In a real app, you would probably call an onSchedule prop here
+        }}
       />
     </div>
   )

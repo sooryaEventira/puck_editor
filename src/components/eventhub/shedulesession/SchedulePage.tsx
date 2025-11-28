@@ -3,6 +3,7 @@ import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import ScheduleContent from './ScheduleContent'
 import SessionSlideout from './SessionSlideout'
+import ScheduleDetailsSlideout from './ScheduleDetailsSlideout'
 import SavedSchedulesTable from './SavedSchedulesTable'
 import { SavedSchedule, SessionDraft } from './sessionTypes'
 import { defaultSessionDraft } from './sessionConfig'
@@ -82,12 +83,13 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   }
 
   const [savedSchedules, setSavedSchedules] = React.useState<SavedSchedule[]>([])
-  const [view, setView] = React.useState<'create' | 'list'>('create')
   const [currentScheduleName, setCurrentScheduleName] = React.useState('Schedule 1')
   const [isSessionSlideoutOpen, setIsSessionSlideoutOpen] = React.useState(false)
+  const [isScheduleDetailsSlideoutOpen, setIsScheduleDetailsSlideoutOpen] = React.useState(false)
   const [activeScheduleId, setActiveScheduleId] = React.useState<string | null>(null)
   const [activeDraft, setActiveDraft] = React.useState<SessionDraft | null>(null)
   const [startInEditMode, setStartInEditMode] = React.useState(true)
+  const [currentView, setCurrentView] = React.useState<'table' | 'content'>('table')
 
   const handleAddSessionClick = () => {
     setActiveScheduleId(null)
@@ -135,33 +137,50 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
     setActiveDraft(null)
     setStartInEditMode(false)
     setIsSessionSlideoutOpen(false)
-    setView('list')
   }
 
   const handleCreateScheduleFromList = () => {
-    const nextIndex = savedSchedules.length + 1
-    setCurrentScheduleName(`Schedule ${nextIndex}`)
-    setStartInEditMode(true)
-    setActiveScheduleId(null)
-    setActiveDraft(null)
-    setView('create')
+    setIsScheduleDetailsSlideoutOpen(true)
   }
 
-  React.useEffect(() => {
-    if (savedSchedules.length === 0) {
-      setView('create')
-      setCurrentScheduleName('Schedule 1')
-      setActiveScheduleId(null)
-      setActiveDraft(null)
-    }
-  }, [savedSchedules.length])
+  const handleCloseScheduleDetailsSlideout = () => {
+    setIsScheduleDetailsSlideoutOpen(false)
+  }
 
-  React.useEffect(() => {
-    if (view === 'create' && savedSchedules.length > 0) {
-      const nextIndex = savedSchedules.length + 1
-      setCurrentScheduleName(`Schedule ${nextIndex}`)
+  const handleSaveScheduleDetails = (details: { title: string; tags: string[]; location: string[]; description: string }) => {
+    const newSchedule: SavedSchedule = {
+      id: `schedule-${Date.now()}`,
+      name: details.title || `Schedule ${savedSchedules.length + 1}`,
+      session: {
+        ...defaultSessionDraft,
+        title: details.title,
+        location: details.location.join(', '),
+        tags: details.tags || [],
+        sections: details.description ? [{
+          id: `section-${Date.now()}`,
+          type: 'text',
+          title: 'Description',
+          description: details.description
+        }] : []
+      }
     }
-  }, [view, savedSchedules.length])
+
+    setSavedSchedules((previous) => [...previous, newSchedule])
+    setIsScheduleDetailsSlideoutOpen(false)
+  }
+
+  const handleManageSession = (scheduleId: string) => {
+    const target = savedSchedules.find((item) => item.id === scheduleId)
+    if (!target) return
+    setActiveScheduleId(scheduleId)
+    setCurrentScheduleName(target.name)
+    setCurrentView('content')
+  }
+
+  const handleBackToTable = () => {
+    setCurrentView('table')
+    setActiveScheduleId(null)
+  }
 
   return (
     <div  className="min-h-screen overflow-x-hidden bg-white">
@@ -185,17 +204,12 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
 
       {/* Schedule Content */}
       <div className="md:pl-[250px]">
-        {view === 'create' ? (
-          <ScheduleContent
-            key={currentScheduleName}
-            scheduleName={scheduleName ?? currentScheduleName}
-            onUpload={handleUpload}
-            onAddSession={handleAddSessionClick}
-          />
-        ) : (
+        {currentView === 'table' ? (
           <SavedSchedulesTable
             schedules={savedSchedules}
             onCreateSchedule={handleCreateScheduleFromList}
+            onUpload={handleUpload}
+            onManageSession={handleManageSession}
             onEditSchedule={(scheduleId) => {
               const target = savedSchedules.find((item) => item.id === scheduleId)
               if (!target) return
@@ -211,6 +225,13 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
               setIsSessionSlideoutOpen(true)
             }}
           />
+        ) : (
+          <ScheduleContent
+            scheduleName={currentScheduleName}
+            onUpload={handleUpload}
+            onAddSession={handleAddSessionClick}
+            onBack={handleBackToTable}
+          />
         )}
       </div>
 
@@ -222,6 +243,14 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         startInEditMode={startInEditMode}
         topOffset={64}
         panelWidthRatio={0.8}
+      />
+
+      <ScheduleDetailsSlideout
+        isOpen={isScheduleDetailsSlideoutOpen}
+        onClose={handleCloseScheduleDetailsSlideout}
+        onSave={handleSaveScheduleDetails}
+        topOffset={64}
+        panelWidthRatio={0.5}
       />
     </div>
   )

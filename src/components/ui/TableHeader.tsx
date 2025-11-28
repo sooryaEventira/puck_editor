@@ -32,7 +32,7 @@ export const useTableHeader = ({
   return useMemo(
     () => {
       const tableHeaderLeading = (
-        <div className="inline-flex items-center overflow-x-auto rounded-t-xl border border-slate-200 bg-white -mb-6 -ml-6 scrollbar-hide">
+        <div className="inline-flex items-center overflow-x-auto rounded-t-xl bg-white -mb-6 -ml-6 scrollbar-hide">
           {tabs.map((tab) => {
             const isActive = activeTabId === tab.id
 
@@ -55,7 +55,7 @@ export const useTableHeader = ({
       )
 
       const tableHeaderActions = (
-        <div className="flex w-full flex-row items-center gap-2 md:w-auto md:gap-4 md:-mb-4 md:-mr-6">
+        <div className="flex w-full flex-row items-center gap-2 md:w-auto md:gap-4 md:-mb-4 md:-mr-6 -mt-6">
           <div className="flex flex-1 md:flex-none w-full md:w-auto max-w-2xl border border-slate-200 rounded-md overflow-hidden">
             <input
               type="search"

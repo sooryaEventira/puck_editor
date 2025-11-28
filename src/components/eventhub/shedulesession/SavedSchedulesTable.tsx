@@ -1,16 +1,14 @@
 import React, { useMemo, useState, useCallback } from 'react'
 import { Plus, Pencil01, Trash03, Upload01 } from '@untitled-ui/icons-react'
 import {
-  Badge,
   DividerLineTable,
   type DividerLineTableColumn,
   type DividerLineTableSortDescriptor
 } from '../../ui/untitled'
 import { SavedSchedule } from './sessionTypes'
-import { SelectAllCheckbox, useTableHeader, TablePagination } from '../../ui'
+import { useTableHeader, TablePagination } from '../../ui'
 import NewTagModal from './NewTagModal'
-
-type TableTab = 'schedules' | 'tags'
+import UploadModal from './UploadModal'
 
 type TableRowData = {
   schedule: SavedSchedule
@@ -20,38 +18,37 @@ type TableRowData = {
 interface SavedSchedulesTableProps {
   schedules: SavedSchedule[]
   onCreateSchedule: () => void
+  onUpload?: () => void
   onEditSchedule?: (scheduleId: string) => void
+  onManageSession?: (scheduleId: string) => void
 }
 
 const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
   schedules,
   onCreateSchedule,
-  onEditSchedule
+  onUpload,
+  onEditSchedule,
+  onManageSession
 }) => {
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState<TableTab>('schedules')
   const [selectedScheduleIds, setSelectedScheduleIds] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
   const [isNewTagModalOpen, setIsNewTagModalOpen] = useState(false)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const itemsPerPage = 10
   const [sortDescriptors, setSortDescriptors] = useState<
-    Record<TableTab, DividerLineTableSortDescriptor | undefined>
-  >({
-    schedules: { column: 'name', direction: 'ascending' },
-    tags: { column: 'title', direction: 'ascending' }
-  })
-  const searchPlaceholder =
-    activeTab === 'tags' ? 'Search tags' : 'Search schedules'
+    DividerLineTableSortDescriptor | undefined
+  >({ column: 'name', direction: 'ascending' })
+  const searchPlaceholder = 'Search schedules'
 
   const tableHeader = useTableHeader({
     tabs: [
-      { id: 'schedules', label: 'Schedules' },
-      { id: 'tags', label: 'Tags & Location' }
+      { id: 'schedules', label: 'Schedule list' }
     ],
-    activeTabId: activeTab,
+    activeTabId: 'schedules',
     searchQuery,
     searchPlaceholder,
-    onTabChange: (tabId) => setActiveTab(tabId as TableTab),
+    onTabChange: () => {},
     onSearchChange: setSearchQuery,
     onFilterClick: () => setSearchQuery(''),
     showFilter: true,
@@ -79,11 +76,6 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
     })
   }, [searchQuery, schedules])
 
-  const visibleScheduleIds = useMemo(
-    () => filteredSchedules.map((schedule) => schedule.id),
-    [filteredSchedules]
-  )
-
   const paginatedSchedules = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
@@ -93,33 +85,6 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
   const totalPages = useMemo(() => {
     return Math.ceil(filteredSchedules.length / itemsPerPage)
   }, [filteredSchedules.length])
-
-  const allVisibleSelected =
-    visibleScheduleIds.length > 0 &&
-    visibleScheduleIds.every((id) => selectedScheduleIds.has(id))
-
-  const partiallySelected =
-    !allVisibleSelected &&
-    visibleScheduleIds.some((id) => selectedScheduleIds.has(id))
-
-  const handleToggleAllVisible = useCallback(
-    (checked: boolean) => {
-      setSelectedScheduleIds((previous) => {
-        const next = new Set(previous)
-
-        visibleScheduleIds.forEach((id) => {
-          if (checked) {
-            next.add(id)
-          } else {
-            next.delete(id)
-          }
-        })
-
-        return next
-      })
-    },
-    [visibleScheduleIds]
-  )
 
   const handleToggleRow = useCallback((scheduleId: string, checked: boolean) => {
     setSelectedScheduleIds((previous) => {
@@ -147,17 +112,7 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
     return [
       {
         id: 'name',
-        header: (
-          <div className="flex items-center gap-2">
-            <SelectAllCheckbox
-              checked={allVisibleSelected}
-              indeterminate={partiallySelected}
-              onChange={handleToggleAllVisible}
-              ariaLabel="Select all schedules"
-            />
-            <span>Schedule name</span>
-          </div>
-        ),
+        header: 'Schedule title',
         sortable: true,
         sortAccessor: ({ schedule, index }) => schedule.name ?? `Schedule ${index + 1}`,
         render: ({ schedule, index }) => (
@@ -174,6 +129,22 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
         )
       },
       {
+        id: 'manage',
+        header: '',
+        align: 'center',
+        render: ({ schedule }) => (
+          <div className="flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => onManageSession?.(schedule.id)}
+              className="px-1.5 py-1 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-300 rounded-md shadow-md hover:bg-slate-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              Manage session
+            </button>
+          </div>
+        )
+      },
+      {
         id: 'actions',
         header: 'Actions',
         align: 'right',
@@ -182,14 +153,14 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
             <button
               type="button"
               onClick={() => onEditSchedule?.(schedule.id)}
-              className="flex h-9 w-9 items-center justify-center text-slate-500 transition hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="flex h-8 w-8 items-center justify-center text-slate-500 transition hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               aria-label={`Edit ${schedule.name}`}
             >
               <Pencil01 className="h-4 w-4" strokeWidth={1.8} />
             </button>
             <button
               type="button"
-              className="flex h-9 w-9 items-center justify-center text-slate-500 transition hover:border-rose-400 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/60"
+              className="flex h-8 w-8 items-center justify-center text-slate-500 transition hover:border-rose-400 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/60"
               aria-label={`Delete ${schedule.name}`}
             >
               <Trash03 className="h-4 w-4" strokeWidth={1.8} />
@@ -199,115 +170,14 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
       }
     ]
   }, [
-    allVisibleSelected,
     formatScheduleName,
-    handleToggleAllVisible,
     handleToggleRow,
     onEditSchedule,
-    partiallySelected,
+    onManageSession,
     selectedScheduleIds
   ])
 
-  const tagsColumns = useMemo<DividerLineTableColumn<TableRowData>[]>(() => {
-    return [
-      {
-        id: 'tags',
-        header: (
-          <div className="flex items-center gap-2">
-            <SelectAllCheckbox
-              checked={allVisibleSelected}
-              indeterminate={partiallySelected}
-              onChange={handleToggleAllVisible}
-              ariaLabel="Select all tags"
-            />
-            <span>Tags &amp; Location</span>
-          </div>
-        ),
-        sortable: true,
-        sortAccessor: ({ schedule }) => {
-          const tags = schedule.session.tags ?? []
-          if (tags.length > 0) {
-            return tags[0]
-          }
-          return schedule.session.location ?? ''
-        },
-        render: ({ schedule }) => {
-          const tags = schedule.session.tags ?? []
-          const location = schedule.session.location?.trim()
-
-          return (
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/40"
-                aria-label={`Select tags for ${schedule.name}`}
-                checked={selectedScheduleIds.has(schedule.id)}
-                onChange={(event) => handleToggleRow(schedule.id, event.target.checked)}
-              />
-              <div className="flex flex-wrap items-center gap-2">
-                {tags.length > 0 ? (
-                  tags.map((tag, tagIndex) => (
-                    <Badge key={tagIndex} variant="primary">
-                      {tag}
-                    </Badge>
-                  ))
-                ) : location ? (
-                  <Badge variant="warning">{location}</Badge>
-                ) : (
-                  <Badge variant="muted">Untitled</Badge>
-                )}
-              </div>
-            </div>
-          )
-        }
-      },
-      {
-        id: 'title',
-        header: 'Schedule title',
-        sortable: true,
-        sortAccessor: ({ schedule, index }) => schedule.name ?? `Schedule ${index + 1}`,
-        render: ({ schedule, index }) => (
-          <span className="text-sm text-slate-600">
-            {formatScheduleName(schedule, index)}
-          </span>
-        )
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        align: 'right',
-        render: ({ schedule }) => (
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => onEditSchedule?.(schedule.id)}
-              className="flex h-9 w-9 items-center justify-center text-slate-500 transition hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              aria-label={`Edit tags for ${schedule.name}`}
-            >
-              <Pencil01 className="h-4 w-4" strokeWidth={1.8} />
-            </button>
-            <button
-              type="button"
-              className="flex h-9 w-9 items-center justify-center text-slate-500 transition hover:border-rose-400 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/60"
-              aria-label={`Delete tags for ${schedule.name}`}
-            >
-              <Trash03 className="h-4 w-4" strokeWidth={1.8} />
-            </button>
-          </div>
-        )
-      }
-    ]
-  }, [
-    allVisibleSelected,
-    formatScheduleName,
-    handleToggleAllVisible,
-    handleToggleRow,
-    onEditSchedule,
-    partiallySelected,
-    selectedScheduleIds
-  ])
-
-  const currentColumns = activeTab === 'schedules' ? scheduleColumns : tagsColumns
+  const currentColumns = scheduleColumns
 
   const emptyState = (
     <div className="flex min-h-[280px] items-center justify-center px-6 py-10 text-sm text-slate-500">
@@ -320,18 +190,10 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
 
   const handleSortChange = useCallback(
     (descriptor: DividerLineTableSortDescriptor) => {
-      setSortDescriptors((previous) => ({
-        ...previous,
-        [activeTab]: descriptor
-      }))
+      setSortDescriptors(descriptor)
     },
-    [activeTab]
+    []
   )
-
-  // Reset page when switching tabs
-  React.useEffect(() => {
-    setCurrentPage(1)
-  }, [activeTab])
 
   const handleSaveTag = (tagName: string, color: string) => {
     console.log('Saving tag:', { tagName, color })
@@ -339,35 +201,42 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
     setIsNewTagModalOpen(false)
   }
 
+  const handleUploadClick = () => {
+    setIsUploadModalOpen(true)
+    onUpload?.()
+  }
+
+  const handleCloseUploadModal = () => {
+    setIsUploadModalOpen(false)
+  }
+
+  const handleAttachFiles = (files: File[]) => {
+    console.log('Files attached:', files)
+    // TODO: Implement file upload logic
+    setIsUploadModalOpen(false)
+  }
+
   return (
     <div className="space-y-8 px-4 pb-12 pt-28 md:px-10 lg:px-16">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-[26px] font-semibold text-primary-dark">Schedules/Sessions</h1>
+        <h1 className="text-[26px] font-semibold text-primary-dark">Schedules</h1>
         <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
-          {activeTab === 'schedules' ? (
-            <>
-              <button
-                type="button"
-                onClick={onCreateSchedule}
-                className="inline-flex items-center justify-center gap-2 rounded-md  px-4 py-2 text-sm font-semibold text-black border border-slate-200 shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                <Plus className="h-4 w-4 text-slate-500 " /> <span className="whitespace-nowrap">Create schedule</span>
-              </button>
-              <button className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-[#5A1684]">
-                <Upload01 className="h-4 w-4" />
-                Upload
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsNewTagModalOpen(true)}
-              className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white border border-slate-200 shadow-md bg-primary
-               transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-            <Plus className="h-4 w-4 text-white " /> New tags
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onCreateSchedule}
+            className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-black border border-slate-200 shadow-sm bg-white transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <Plus className="h-4 w-4 text-slate-500" /> 
+            <span className="whitespace-nowrap">Create schedule</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleUploadClick}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-[#5A1684] transition"
+          >
+            <Upload01 className="h-4 w-4" />
+            Upload
+          </button>
         </div>
       </div>
 
@@ -378,7 +247,7 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
         columns={currentColumns}
         getRowKey={({ schedule }) => schedule.id}
         emptyState={emptyState}
-        sortDescriptor={sortDescriptors[activeTab]}
+        sortDescriptor={sortDescriptors}
         onSortChange={handleSortChange}
         footer={
           <TablePagination
@@ -393,6 +262,12 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
         isOpen={isNewTagModalOpen}
         onClose={() => setIsNewTagModalOpen(false)}
         onSave={handleSaveTag}
+      />
+
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onClose={handleCloseUploadModal}
+        onAttachFiles={handleAttachFiles}
       />
     </div>
   )

@@ -165,10 +165,12 @@ export const EditorView: React.FC<EditorViewProps> = ({
   }, [showCustomSidebar])
 
   return (
-    <div className="relative mt-16 flex h-[calc(100vh-64px)] flex-1">
+    <div className="relative mt-16 flex h-[calc(100vh-64px)] flex-1 w-full">
       {showPreview ? (
         <NavigationProvider onNavigateToEditor={onNavigateToEditor} onAddComponent={onAddComponent}>
-          <Preview data={currentData} isInteractive={true} onDataChange={onDataChange} />
+          <div className="w-full h-full">
+            <Preview data={currentData} isInteractive={true} onDataChange={onDataChange} />
+          </div>
         </NavigationProvider>
       ) : (
         <NavigationProvider onNavigateToEditor={onNavigateToEditor} onAddComponent={onAddComponent}>

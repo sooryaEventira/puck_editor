@@ -221,7 +221,7 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
   const otherContent = localData.content?.filter((item: any) => item.type !== 'PdfViewer') || [];
 
   return (
-    <div className="h-full overflow-auto bg-white">
+    <div className="h-full w-full overflow-auto bg-white">
       {/* Render PdfViewer components outside the constrained container for full-page display */}
       {pdfViewers.map((item: any, index: number) => {
         const Component = config.components[item.type as keyof typeof config.components]?.render;
@@ -233,11 +233,11 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
         return null;
       })}
       
-      {/* Render other components in the constrained container */}
-      <div className="p-5">
-        <div className="mx-auto max-w-[1200px]">
+      {/* Render other components in full width */}
+      <div className="w-full">
+        <div className="w-full">
           {otherContent.length === 0 && pdfViewers.length === 0 ? (
-            <div className="space-y-2 px-5 py-[60px] text-center text-lg text-slate-500">
+            <div className="space-y-2 px-5 py-[60px] text-center text-lg text-slate-500 w-full">
               <h2 className="text-2xl font-semibold text-slate-700">
                 No content to preview
               </h2>
