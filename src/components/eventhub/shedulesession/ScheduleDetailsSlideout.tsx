@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { XClose, ChevronDown } from '@untitled-ui/icons-react'
+import { XClose, ChevronDown, Plus } from '@untitled-ui/icons-react'
+import NewTagModal from './NewTagModal'
 
 interface ScheduleDetails {
   title: string
@@ -33,22 +34,24 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
   })
   const [isTagsDropdownOpen, setIsTagsDropdownOpen] = useState(false)
   const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalType, setModalType] = useState<'tag' | 'location'>('tag')
   const tagsDropdownRef = useRef<HTMLDivElement>(null)
   const locationDropdownRef = useRef<HTMLDivElement>(null)
 
-  const tagOptions = [
+  const [tagOptions, setTagOptions] = useState([
     { value: 'selectall', label: 'Select All' },
     { value: 'speaker', label: 'Speaker' },
     { value: 'volunteer', label: 'Volunteer' },
     { value: 'student', label: 'Student' },
-  ]
+  ])
 
-  const locationOptions = [
+  const [locationOptions, setLocationOptions] = useState([
     { value: 'selectall', label: 'Select All' },
     { value: 'cafeteria', label: 'Cafeteria' },
     { value: 'room1', label: 'Room 1' },
     { value: 'room2', label: 'Room 2' },
-  ]
+  ])
 
   useEffect(() => {
     if (isOpen) {
@@ -159,6 +162,59 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
     onClose()
   }
 
+  const handleOpenModal = (type: 'tag' | 'location') => {
+    setModalType(type)
+    setIsModalOpen(true)
+    // Close the dropdown when opening modal
+    if (type === 'tag') {
+      setIsTagsDropdownOpen(false)
+    } else {
+      setIsLocationDropdownOpen(false)
+    }
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+  }
+
+  const handleSaveNewTag = (tagName: string, _color: string) => {
+    // Create a new tag option
+    const newTagValue = tagName.toLowerCase().replace(/\s+/g, '')
+    const newTag = { value: newTagValue, label: tagName }
+    
+    // Add to tag options if it doesn't exist
+    if (!tagOptions.find(opt => opt.value === newTagValue)) {
+      setTagOptions(prev => [...prev, newTag])
+    }
+    
+    // Automatically select the new tag
+    setDetails(prev => ({
+      ...prev,
+      tags: [...prev.tags, newTagValue]
+    }))
+    
+    handleCloseModal()
+  }
+
+  const handleSaveNewLocation = (locationName: string, _color: string) => {
+    // Create a new location option
+    const newLocationValue = locationName.toLowerCase().replace(/\s+/g, '')
+    const newLocation = { value: newLocationValue, label: locationName }
+    
+    // Add to location options if it doesn't exist
+    if (!locationOptions.find(opt => opt.value === newLocationValue)) {
+      setLocationOptions(prev => [...prev, newLocation])
+    }
+    
+    // Automatically select the new location
+    setDetails(prev => ({
+      ...prev,
+      location: [...prev.location, newLocationValue]
+    }))
+    
+    handleCloseModal()
+  }
+
   const containerStyle: React.CSSProperties = {
     top: topOffset,
     right: 0,
@@ -232,12 +288,18 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
                   onClick={() => setIsTagsDropdownOpen(!isTagsDropdownOpen)}
                   className="w-full flex items-center justify-between rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
-                  <span className={details.tags.length > 0 ? 'text-slate-900' : 'text-slate-400'}>
+                  <span className={`truncate ${details.tags.length > 0 ? 'text-slate-900' : 'text-slate-400'}`}>
                     {details.tags.length > 0 
-                      ? `${details.tags.length} tag${details.tags.length > 1 ? 's' : ''} selected`
+                      ? details.tags
+                          .map(tagValue => {
+                            const tag = tagOptions.find(opt => opt.value === tagValue)
+                            return tag ? tag.label : tagValue
+                          })
+                          .filter(label => label !== 'Select All')
+                          .join(', ')
                       : 'Select tag'}
                   </span>
-                  <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isTagsDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform flex-shrink-0 ml-2 ${isTagsDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
                 {isTagsDropdownOpen && (
@@ -259,6 +321,18 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
                         </label>
                       )
                     })}
+                    <div className="border-t border-slate-200"></div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleOpenModal('tag')
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-sm text-primary transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>New tag</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -272,12 +346,18 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
                   onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
                   className="w-full flex items-center justify-between rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
-                  <span className={details.location.length > 0 ? 'text-slate-900' : 'text-slate-400'}>
+                  <span className={`truncate ${details.location.length > 0 ? 'text-slate-900' : 'text-slate-400'}`}>
                     {details.location.length > 0 
-                      ? `${details.location.length} location${details.location.length > 1 ? 's' : ''} selected`
+                      ? details.location
+                          .map(locationValue => {
+                            const location = locationOptions.find(opt => opt.value === locationValue)
+                            return location ? location.label : locationValue
+                          })
+                          .filter(label => label !== 'Select All')
+                          .join(', ')
                       : 'Select location'}
                   </span>
-                  <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isLocationDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform flex-shrink-0 ml-2 ${isLocationDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
                 {isLocationDropdownOpen && (
@@ -299,6 +379,18 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
                         </label>
                       )
                     })}
+                    <div className="border-t border-slate-200"></div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleOpenModal('location')
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 text-sm text-primary transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>New location</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -338,6 +430,14 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
           </button>
         </footer>
       </aside>
+
+      {/* New Tag/Location Modal */}
+      <NewTagModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSave={modalType === 'tag' ? handleSaveNewTag : handleSaveNewLocation}
+        type={modalType}
+      />
     </div>
   )
 }

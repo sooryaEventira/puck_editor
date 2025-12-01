@@ -318,15 +318,15 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
           <div className="border border-slate-200 rounded-lg bg-white p-4 md:p-8 min-h-[400px]">
             {/* Folders */}
             {folders.length > 0 && (
-              <div className="flex flex-wrap gap-8 mb-6">
+              <div className="flex flex-wrap gap-8 mb-6 -mt-4">
                 {folders.map((folder) => (
                   <div
                     key={folder.id}
                     onDragOver={handleDragOver}
                     onDrop={() => handleDrop(folder.id)}
-                    className="flex flex-col items-center gap-2 cursor-pointer group"
+                    className="flex flex-col items-center gap-2 cursor-pointer group p-3 rounded-lg transition-colors duration-200 hover:bg-slate-100"
                   >
-                    <div className="w-12 h-12 flex items-center justify-center">
+                    <div className="w-8 h-8 flex items-center justify-center">
                       <Folder className="h-20 w-20 text-primary" />
                     </div>
                     <span className="text-xs font-medium text-slate-700 text-center max-w-[100px] leading-tight">

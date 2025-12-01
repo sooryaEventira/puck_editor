@@ -1,18 +1,27 @@
-import React, { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight } from '@untitled-ui/icons-react'
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { ChevronLeft, ChevronRight, Pencil01 } from '@untitled-ui/icons-react'
 
 interface WeekDateSelectorProps {
   initialDate?: Date
   onDateChange?: (date: Date) => void
+  onDateRangeChange?: (startDate: Date, endDate: Date) => void
   className?: string
 }
 
 const WeekDateSelector: React.FC<WeekDateSelectorProps> = ({
   initialDate = new Date(),
   onDateChange,
+  onDateRangeChange,
   className = ''
 }) => {
   const [currentDate, setCurrentDate] = useState(initialDate)
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [startDate, setStartDate] = useState<Date | null>(null)
+  const [endDate, setEndDate] = useState<Date | null>(null)
+  const [tempStartDate, setTempStartDate] = useState<Date | null>(null)
+  const [tempEndDate, setTempEndDate] = useState<Date | null>(null)
+  const [firstMonth, setFirstMonth] = useState(new Date())
+  const calendarRef = useRef<HTMLDivElement>(null)
 
   // Generate week dates
   const getWeekDates = (date: Date) => {
@@ -28,8 +37,23 @@ const WeekDateSelector: React.FC<WeekDateSelectorProps> = ({
     })
   }
 
+  // Get day name abbreviation
+  const getDayName = (date: Date) => {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    return dayNames[date.getDay()]
+  }
+
   const weekDates = useMemo(() => getWeekDates(currentDate), [currentDate])
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+  // Always show 7-day week view, regardless of date range selection
+  const displayDates = useMemo(() => {
+    // Always return week dates (7 days) to maintain consistent display
+    return weekDates
+  }, [weekDates])
+
+  // Always show navigation arrows
+  const shouldShowArrows = true
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate)
@@ -39,7 +63,27 @@ const WeekDateSelector: React.FC<WeekDateSelectorProps> = ({
   }
 
   const isCurrentDay = (date: Date) => {
+    if (startDate && endDate) {
+      // If range is selected, highlight all dates in range
+      return isDateInRange(date, startDate, endDate)
+    }
     return date.toDateString() === currentDate.toDateString()
+  }
+
+  // Check if date is start date
+  const isStartDate = (date: Date) => {
+    return startDate && isSameDay(date, startDate)
+  }
+
+  // Check if date is end date
+  const isEndDate = (date: Date) => {
+    return endDate && isSameDay(date, endDate)
+  }
+
+  // Check if date is in range (but not start or end)
+  const isInRange = (date: Date) => {
+    if (!startDate || !endDate) return false
+    return isDateInRange(date, startDate, endDate) && !isStartDate(date) && !isEndDate(date)
   }
 
   const selectDate = (date: Date) => {
@@ -47,63 +91,461 @@ const WeekDateSelector: React.FC<WeekDateSelectorProps> = ({
     onDateChange?.(date)
   }
 
-  return (
-    <div className={`shedulebar flex items-center justify-between gap-2 ${className}`}>
-      {/* Left Arrow */}
-      <button
-        type="button"
-        onClick={() => navigateWeek('prev')}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-none bg-slate-100 text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-200 hover:-translate-y-0.5 sm:h-12 sm:w-12"
-        aria-label="Previous week"
-      >
-        <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-      </button>
+  // Calendar utilities
+  const getMonthDays = (referenceMonth: Date) => {
+    const startOfMonth = new Date(referenceMonth.getFullYear(), referenceMonth.getMonth(), 1)
+    const endOfMonth = new Date(referenceMonth.getFullYear(), referenceMonth.getMonth() + 1, 0)
+    const startDayOfWeek = startOfMonth.getDay()
+    const daysInMonth = endOfMonth.getDate()
+    const days: Array<Date | null> = []
 
-      {/* Date Cards - Scrollable on mobile */}
-      <div className="flex flex-1 gap-1 overflow-x-auto pb-2 sm:gap-3 sm:overflow-visible sm:pb-0 scrollbar-hide">
-        {weekDates.map((date, index) => {
-          const isSelected = isCurrentDay(date)
-          return (
+    // Adjust to start from Monday (0 = Monday, 6 = Sunday)
+    const startDayOffset = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1
+
+    for (let i = 0; i < startDayOffset; i += 1) {
+      days.push(null)
+    }
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      days.push(new Date(referenceMonth.getFullYear(), referenceMonth.getMonth(), day))
+    }
+
+    while (days.length % 7 !== 0) {
+      days.push(null)
+    }
+
+    return days
+  }
+
+  const isSameDay = (dateA: Date | null, dateB: Date | null) => {
+    if (!dateA || !dateB) return false
+    return (
+      dateA.getFullYear() === dateB.getFullYear() &&
+      dateA.getMonth() === dateB.getMonth() &&
+      dateA.getDate() === dateB.getDate()
+    )
+  }
+
+  const isDateInRange = (date: Date | null, start: Date | null, end: Date | null) => {
+    if (!date || !start || !end) return false
+    const dateTime = date.getTime()
+    const startTime = start.getTime()
+    const endTime = end.getTime()
+    return dateTime >= startTime && dateTime <= endTime
+  }
+
+  const handleDateClick = (date: Date) => {
+    if (!tempStartDate || (tempStartDate && tempEndDate)) {
+      // Start new selection
+      setTempStartDate(date)
+      setTempEndDate(null)
+    } else if (tempStartDate && !tempEndDate) {
+      // Complete selection
+      if (date < tempStartDate) {
+        setTempEndDate(tempStartDate)
+        setTempStartDate(date)
+      } else {
+        setTempEndDate(date)
+      }
+    }
+  }
+
+  const handleApply = () => {
+    if (tempStartDate && tempEndDate) {
+      setStartDate(tempStartDate)
+      setEndDate(tempEndDate)
+      onDateRangeChange?.(tempStartDate, tempEndDate)
+      // Update currentDate to the start date
+      setCurrentDate(tempStartDate)
+      onDateChange?.(tempStartDate)
+    }
+    setShowCalendar(false)
+  }
+
+  const handleCancel = () => {
+    setTempStartDate(startDate)
+    setTempEndDate(endDate)
+    setShowCalendar(false)
+  }
+
+  const handleEditClick = () => {
+    setTempStartDate(startDate)
+    setTempEndDate(endDate)
+    setShowCalendar(true)
+  }
+
+  // Close calendar when clicking outside
+  const handleDocumentClick = useCallback((event: MouseEvent) => {
+    if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+      setShowCalendar(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (showCalendar) {
+      document.addEventListener('mousedown', handleDocumentClick)
+      return () => document.removeEventListener('mousedown', handleDocumentClick)
+    }
+    return undefined
+  }, [showCalendar, handleDocumentClick])
+
+  // Initialize first month based on current date
+  useEffect(() => {
+    setFirstMonth(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1))
+  }, [currentDate])
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return ''
+    const month = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date)
+    const day = date.getDate().toString().padStart(2, '0')
+    const year = date.getFullYear()
+    return `${month} ${day}, ${year}`
+  }
+
+  const firstMonthDays = useMemo(() => getMonthDays(firstMonth), [firstMonth])
+  const secondMonth = useMemo(() => {
+    return new Date(firstMonth.getFullYear(), firstMonth.getMonth() + 1, 1)
+  }, [firstMonth])
+  const secondMonthDays = useMemo(() => getMonthDays(secondMonth), [secondMonth])
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ]
+
+  return (
+    <div className={`shedulebar relative flex items-center ${!startDate || !endDate ? 'justify-center' : 'justify-between'} gap-2 mt-2 w-full${className}`}>
+      {/* Left Arrow */}
+      {shouldShowArrows && (
+        <button
+          type="button"
+          onClick={() => navigateWeek('prev')}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-none bg-slate-100 text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-200 hover:-translate-y-0.5 sm:h-12 sm:w-12"
+          aria-label="Previous week"
+        >
+          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+        </button>
+      )}
+
+      {/* Date Cards - Scrollable */}
+      <div className={`relative flex justify-center`}>
+        <div className={`flex gap-1 overflow-x-auto pb-2 sm:gap-3 sm:pb-0 scrollbar-hide h-[70px] sm:overflow-visible`}>
+          {displayDates.map((date, index) => {
+            const isSelected = isCurrentDay(date)
+            const isStart = isStartDate(date)
+            const isEnd = isEndDate(date)
+            const isInRangeDate = isInRange(date)
+            
+            // Determine button styling
+            let buttonClass = 'bg-[#FAFAFA] text-[#414651] outline outline-1 outline-[#D5D7DA] hover:bg-slate-50 hover:-translate-y-0.5'
+            let textClass = 'font-bold text-[#414651]'
+            let numberClass = 'font-medium text-[#414651]'
+            
+            if (startDate && endDate) {
+              if (isStart || isEnd) {
+                // Start and end dates - primary color
+                buttonClass = 'bg-primary text-white shadow-md shadow-primary/30 outline-none'
+                textClass = 'font-bold text-white'
+                numberClass = 'font-medium text-white'
+              } else if (isInRangeDate) {
+                // Dates in range (between start and end) - light purple background
+                buttonClass = 'bg-primary/20 text-primary shadow-md outline outline-1 outline-primary/30 hover:bg-primary/30 hover:-translate-y-0.5'
+                textClass = 'font-bold text-primary'
+                numberClass = 'font-medium text-primary'
+              }
+            } else if (isSelected) {
+              // Normal selected date (no range)
+              buttonClass = 'bg-primary text-white shadow-lg shadow-primary/30 outline-none'
+              textClass = 'font-bold text-white'
+              numberClass = 'font-medium text-white'
+            }
+            
+            return (
+              <div key={`${date.toISOString()}-${index}`} className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => selectDate(date)}
+                  className={`inline-flex flex-col items-center justify-center rounded-[10px] px-1 py-2 text-[10px] shadow-md shadow-primary/30 transition-all duration-200 sm:px-[20px] sm:py-2.5 sm:text-sm min-w-[80px] sm:min-w-[100px] w-[140px] md:w-[140px] md:min-w-[140px] md:max-w-[140px] md:px-[30px] md:py-3 ${buttonClass}`}
+                >
+                  <div
+                    className={`leading-4 sm:leading-5 ${textClass}`}
+                    style={{ fontFamily: 'Inter' }}
+                  >
+                    {startDate && endDate ? getDayName(date) : dayNames[index]}
+                  </div>
+                  <div
+                    className={`leading-4 sm:leading-5 ${numberClass}`}
+                    style={{ fontFamily: 'Inter' }}
+                  >
+                    {date.getDate()}
+                  </div>
+                </button>
+              </div>
+            )
+          })}
+        </div>
+        {/* Edit Icon - always visible, positioned above and to the right */}
+        {displayDates.length > 0 && (
+          <div className="group absolute right-0 top-0 z-10">
             <button
-              key={index}
               type="button"
-              onClick={() => selectDate(date)}
-              className={`inline-flex shrink-0 flex-1 flex-col items-center justify-center rounded-[10px] px-1 py-2 text-[10px] transition-all duration-200 sm:px-[20px] sm:py-2.5 sm:text-sm md:min-w-[140px] md:px-[30px] md:py-3 ${
-                isSelected
-                  ? 'bg-primary text-white shadow-lg shadow-primary/30 outline-none'
-                  : 'bg-[#FAFAFA] text-[#414651] shadow-md outline outline-1 outline-[#D5D7DA] hover:bg-slate-50 hover:-translate-y-0.5'
-              }`}
+              onClick={handleEditClick}
+              className="flex h-5 w-5 -translate-y-4 translate-x-4 items-center justify-center rounded-full border-none bg-transparent text-slate-400 transition-all duration-200 hover:text-slate-600 sm:h-6 sm:w-6 sm:-translate-y-4 sm:translate-x-3"
+              aria-label="Edit date range"
             >
-              <div
-                className={`leading-4 sm:leading-5 ${
-                  isSelected ? 'font-bold text-white' : 'font-bold text-[#414651]'
-                }`}
-                style={{ fontFamily: 'Inter' }}
-              >
-                {dayNames[index]}
-              </div>
-              <div
-                className={`leading-4 sm:leading-5 ${
-                  isSelected ? 'font-medium text-white' : 'font-medium text-[#414651]'
-                }`}
-                style={{ fontFamily: 'Inter' }}
-              >
-                {date.getDate()}
-              </div>
+              <Pencil01 className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
-          )
-        })}
+            {/* Tooltip */}
+            <span className="pointer-events-none absolute left-6 top-5 -translate-y-8 translate-x-4 whitespace-nowrap rounded-md bg-primary/100 px-2 py-0.5 text-xs text-white opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100 sm:-translate-y-10 sm:translate-x-3">
+              Edit
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Right Arrow */}
-      <button
-        type="button"
-        onClick={() => navigateWeek('next')}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-none bg-slate-100 text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-200 hover:-translate-y-0.5 sm:h-12 sm:w-12"
-        aria-label="Next week"
-      >
-        <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-      </button>
+      {shouldShowArrows && (
+        <button
+          type="button"
+          onClick={() => navigateWeek('next')}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-none bg-slate-100 text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-200 hover:-translate-y-0.5 sm:h-12 sm:w-12"
+          aria-label="Next week"
+        >
+          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+        </button>
+      )}
+
+      {/* Date Range Calendar Popup - positioned outside scrollable container */}
+      {showCalendar && (
+        <div
+          ref={calendarRef}
+          className="absolute left-0 top-full z-[9999] mt-4 w-[calc(100vw-2rem)] max-w-xl rounded-xl border border-slate-200 bg-white shadow-2xl"
+        >
+          {/* Two Month Calendars */}
+          <div className="flex flex-col gap-6 md:flex-row" style={{ padding: '20px 24px' }}>
+            {/* First Month */}
+            <div className="flex-1 flex flex-col gap-3">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setFirstMonth(new Date(firstMonth.getFullYear(), firstMonth.getMonth() - 1, 1))}
+                  className="flex h-8 w-8 items-center justify-center rounded-md p-1.5"
+                  aria-label="Previous month"
+                >
+                  <ChevronLeft className="h-5 w-5 text-[#A4A7AE]" />
+                </button>
+                <div className="text-center text-sm font-semibold text-[#414651]" style={{ fontFamily: 'Inter', lineHeight: '20px' }}>
+                  {monthNames[firstMonth.getMonth()]} {firstMonth.getFullYear()}
+                </div>
+                <div className="h-8 w-8" /> {/* Spacer for alignment */}
+              </div>
+              
+              {/* Day headers */}
+              <div className="grid grid-cols-7">
+                {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((day) => (
+                  <div key={day} className="h-10 flex items-center justify-center">
+                    <span className="text-sm font-medium text-[#414651]" style={{ fontFamily: 'Inter', lineHeight: '20px' }}>
+                      {day}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Calendar grid */}
+              <div className="grid grid-cols-7" style={{ gap: 0 }}>
+                {firstMonthDays.map((day, index) => {
+                  if (!day) {
+                    return <div key={`empty-1-${index}`} className="h-10 w-10" style={{ margin: 0 }} />
+                  }
+                  
+                  const isCurrentMonth = day.getMonth() === firstMonth.getMonth()
+                  const isSelectedStart = tempStartDate && isSameDay(day, tempStartDate)
+                  const isSelectedEnd = tempEndDate && isSameDay(day, tempEndDate)
+                  const isInRange = tempStartDate && tempEndDate && isDateInRange(day, tempStartDate, tempEndDate) && !isSelectedStart && !isSelectedEnd
+                  const isToday = isSameDay(day, new Date())
+                  const isDisabled = !isCurrentMonth
+                  
+                  // Determine connector states
+                  const hasLeftConnector = isInRange || (isSelectedEnd && tempStartDate && day > tempStartDate)
+                  const hasRightConnector = isInRange || (isSelectedStart && tempEndDate && day < tempEndDate)
+                  
+                  return (
+                    <div key={day.toISOString()} className="relative" style={{ width: '40px', height: '40px', margin: 0 }}>
+                      {/* Range connectors */}
+                      {hasLeftConnector && (
+                        <div className="absolute left-0 top-0 h-10 w-5 bg-[#6938EF]" />
+                      )}
+                      {hasRightConnector && (
+                        <div className="absolute right-0 top-0 h-10 w-5 bg-[#6938EF]" />
+                      )}
+                      
+                      <button
+                        type="button"
+                        onClick={() => !isDisabled && handleDateClick(day)}
+                        disabled={isDisabled}
+                        className={`relative rounded-full flex items-center justify-center text-sm transition ${
+                          isSelectedStart || isSelectedEnd
+                            ? 'bg-[#6938EF] text-white font-medium'
+                            : isInRange
+                            ? 'bg-[#6938EF] text-white font-medium'
+                            : isDisabled
+                            ? 'text-[#717680] font-normal cursor-not-allowed'
+                            : 'text-[#414651] font-normal hover:bg-[#FAFAFA]'
+                        }`}
+                        style={{ fontFamily: 'Inter', lineHeight: '20px', width: '40px', height: '40px', margin: 0, padding: 0 }}
+                      >
+                        {day.getDate()}
+                        {/* Dot indicator for today */}
+                        {isToday && !isSelectedStart && !isSelectedEnd && (
+                          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[#6938EF] rounded-full" />
+                        )}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Second Month */}
+            <div className="flex-1 flex flex-col gap-3">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setFirstMonth(new Date(secondMonth.getFullYear(), secondMonth.getMonth() - 1, 1))}
+                  className="flex h-8 w-8 items-center justify-center rounded-md p-1.5"
+                  aria-label="Previous month"
+                >
+                  <ChevronLeft className="h-5 w-5 text-[#A4A7AE]" />
+                </button>
+                <div className="text-center text-sm font-semibold text-[#414651]" style={{ fontFamily: 'Inter', lineHeight: '20px' }}>
+                  {monthNames[secondMonth.getMonth()]} {secondMonth.getFullYear()}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFirstMonth(new Date(secondMonth.getFullYear(), secondMonth.getMonth() + 1, 1))}
+                  className="flex h-8 w-8 items-center justify-center rounded-md p-1.5"
+                  aria-label="Next month"
+                >
+                  <ChevronRight className="h-5 w-5 text-[#A4A7AE]" />
+                </button>
+              </div>
+              
+              {/* Day headers */}
+              <div className="grid grid-cols-7">
+                {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((day) => (
+                  <div key={day} className="h-10 flex items-center justify-center">
+                    <span className="text-sm font-medium text-[#414651]" style={{ fontFamily: 'Inter', lineHeight: '20px' }}>
+                      {day}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Calendar grid */}
+              <div className="grid grid-cols-7" style={{ gap: 0 }}>
+                {secondMonthDays.map((day, index) => {
+                  if (!day) {
+                    return <div key={`empty-2-${index}`} className="h-10 w-10" style={{ margin: 0 }} />
+                  }
+                  
+                  const isCurrentMonth = day.getMonth() === secondMonth.getMonth()
+                  const isSelectedStart = tempStartDate && isSameDay(day, tempStartDate)
+                  const isSelectedEnd = tempEndDate && isSameDay(day, tempEndDate)
+                  const isInRange = tempStartDate && tempEndDate && isDateInRange(day, tempStartDate, tempEndDate) && !isSelectedStart && !isSelectedEnd
+                  const isToday = isSameDay(day, new Date())
+                  const isDisabled = !isCurrentMonth
+                  
+                  // Determine connector states
+                  const hasLeftConnector = isInRange || (isSelectedEnd && tempStartDate && day > tempStartDate)
+                  const hasRightConnector = isInRange || (isSelectedStart && tempEndDate && day < tempEndDate)
+                  
+                  return (
+                    <div key={day.toISOString()} className="relative" style={{ width: '40px', height: '40px', margin: 0 }}>
+                      {/* Range connectors */}
+                      {hasLeftConnector && (
+                        <div className="absolute left-0 top-0 h-10 w-5 bg-[#6938EF]" />
+                      )}
+                      {hasRightConnector && (
+                        <div className="absolute right-0 top-0 h-10 w-5 bg-[#6938EF]" />
+                      )}
+                      
+                      <button
+                        type="button"
+                        onClick={() => !isDisabled && handleDateClick(day)}
+                        disabled={isDisabled}
+                        className={`relative rounded-full flex items-center justify-center text-sm transition ${
+                          isSelectedStart || isSelectedEnd
+                            ? 'bg-[#6938EF] text-white font-medium'
+                            : isInRange
+                            ? 'bg-[#6938EF] text-white font-medium'
+                            : isDisabled
+                            ? 'text-[#717680] font-normal cursor-not-allowed'
+                            : 'text-[#414651] font-normal hover:bg-[#FAFAFA]'
+                        }`}
+                        style={{ fontFamily: 'Inter', lineHeight: '20px', width: '40px', height: '40px', margin: 0, padding: 0 }}
+                      >
+                        {day.getDate()}
+                        {/* Dot indicator for today */}
+                        {isToday && !isSelectedStart && !isSelectedEnd && (
+                          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[#6938EF] rounded-full" />
+                        )}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer with Date Range Inputs and Buttons */}
+          <div className="border-t border-[#E9EAEB] p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-1 items-center gap-3">
+              <div className="w-[136px]">
+                <input
+                  type="text"
+                  readOnly
+                  value={formatDate(tempStartDate)}
+                  className="w-full px-3 py-2 bg-white border border-[#D5D7DA] rounded-lg text-base text-[#181D27] shadow-sm focus:outline-none"
+                  style={{ fontFamily: 'Inter', lineHeight: '24px', fontWeight: '400' }}
+                  placeholder="Start date"
+                />
+              </div>
+              <span className="text-[#A4A7AE] text-base" style={{ fontFamily: 'Inter', lineHeight: '24px' }}>–</span>
+              <div className="w-[136px]">
+                <input
+                  type="text"
+                  readOnly
+                  value={formatDate(tempEndDate)}
+                  className="w-full px-3 py-2 bg-white border border-[#D5D7DA] rounded-lg text-base text-[#181D27] shadow-sm focus:outline-none"
+                  style={{ fontFamily: 'Inter', lineHeight: '24px', fontWeight: '400' }}
+                  placeholder="End date"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-3.5 py-2.5 bg-white border border-[#D5D7DA] rounded-lg text-sm font-semibold text-[#414651] shadow-sm hover:bg-slate-50 transition focus:outline-none"
+                style={{ fontFamily: 'Inter', lineHeight: '20px' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleApply}
+                disabled={!tempStartDate || !tempEndDate}
+                className="px-3.5 py-2.5 bg-[#6938EF] rounded-lg text-sm font-semibold text-white shadow-sm hover:bg-[#5a2dd4] transition focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 border-2 border-white"
+                style={{ fontFamily: 'Inter', lineHeight: '20px' }}
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

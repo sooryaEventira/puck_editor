@@ -5,7 +5,7 @@ import ScheduleContent from './ScheduleContent'
 import SessionSlideout from './SessionSlideout'
 import ScheduleDetailsSlideout from './ScheduleDetailsSlideout'
 import SavedSchedulesTable from './SavedSchedulesTable'
-import { SavedSchedule, SessionDraft } from './sessionTypes'
+import { SavedSchedule, SavedSession, SessionDraft } from './sessionTypes'
 import { defaultSessionDraft } from './sessionConfig'
 import { defaultCards, ContentCard } from '../EventHubContent'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
@@ -90,9 +90,35 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   const [activeDraft, setActiveDraft] = React.useState<SessionDraft | null>(null)
   const [startInEditMode, setStartInEditMode] = React.useState(true)
   const [currentView, setCurrentView] = React.useState<'table' | 'content'>('table')
+  const [availableTags, setAvailableTags] = React.useState<string[]>([])
+  const [availableLocations, setAvailableLocations] = React.useState<string[]>([])
+  const [selectedDate, setSelectedDate] = React.useState<Date>(() => {
+    const date = new Date()
+    date.setHours(0, 0, 0, 0)
+    return date
+  })
+  const [parentSessionId, setParentSessionId] = React.useState<string | undefined>(undefined)
 
-  const handleAddSessionClick = () => {
-    setActiveScheduleId(null)
+  const handleAddSessionClick = (parentId?: string) => {
+    // Get the current schedule to access its tags and locations
+    const currentSchedule = activeScheduleId 
+      ? savedSchedules.find((item) => item.id === activeScheduleId)
+      : null
+    
+    // Set available tags and locations from the current schedule
+    if (currentSchedule) {
+      setAvailableTags(currentSchedule.availableTags || [])
+      setAvailableLocations(currentSchedule.availableLocations || [])
+    } else {
+      setAvailableTags([])
+      setAvailableLocations([])
+    }
+    
+    // Store parent session ID for parallel sessions
+    setParentSessionId(parentId)
+    
+    // Don't clear activeScheduleId - we want to add to the current schedule
+    // setActiveScheduleId(null)
     setActiveDraft({
       ...defaultSessionDraft,
       tags: [...defaultSessionDraft.tags],
@@ -120,15 +146,47 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       }
 
       if (activeScheduleId) {
-        return previous.map((item) =>
-          item.id === activeScheduleId ? { ...item, session: normalizedSession } : item
-        )
+        // Add session to existing schedule
+        const existingSchedule = previous.find((item) => item.id === activeScheduleId)
+        if (existingSchedule) {
+          // Normalize date to start of day for consistent comparison
+          const sessionDate = new Date(selectedDate)
+          sessionDate.setHours(0, 0, 0, 0)
+          
+          const newSession: SavedSession = {
+            ...normalizedSession,
+            id: `session-${Date.now()}`,
+            date: sessionDate,
+            parentId: parentSessionId
+          }
+          const existingSessions = existingSchedule.sessions || []
+          return previous.map((item) =>
+            item.id === activeScheduleId 
+              ? { 
+                  ...item, 
+                  sessions: [...existingSessions, newSession],
+                  availableTags: existingSchedule?.availableTags,
+                  availableLocations: existingSchedule?.availableLocations
+                } 
+              : item
+          )
+        }
       }
 
+      // If no active schedule, create new one (shouldn't happen in content view)
+      const sessionDate = new Date(selectedDate)
+      sessionDate.setHours(0, 0, 0, 0)
+      
       const newSchedule: SavedSchedule = {
         id: `schedule-${Date.now()}`,
         name: currentScheduleName,
-        session: normalizedSession
+        sessions: [{
+          ...normalizedSession,
+          id: `session-${Date.now()}`,
+          date: sessionDate
+        }],
+        availableTags: availableTags,
+        availableLocations: availableLocations
       }
 
       return [...previous, newSchedule]
@@ -136,6 +194,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
 
     setActiveDraft(null)
     setStartInEditMode(false)
+    setParentSessionId(undefined)
     setIsSessionSlideoutOpen(false)
   }
 
@@ -148,21 +207,28 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   }
 
   const handleSaveScheduleDetails = (details: { title: string; tags: string[]; location: string[]; description: string }) => {
+    // Filter out "selectall" and store only the selected tags and locations
+    const selectedTags = (details.tags || []).filter(tag => tag !== 'selectall')
+    const selectedLocations = (details.location || []).filter(loc => loc !== 'selectall')
+    
+    // Create a new schedule and save it to the table
     const newSchedule: SavedSchedule = {
       id: `schedule-${Date.now()}`,
       name: details.title || `Schedule ${savedSchedules.length + 1}`,
       session: {
         ...defaultSessionDraft,
         title: details.title,
-        location: details.location.join(', '),
-        tags: details.tags || [],
+        location: selectedLocations.length > 0 ? selectedLocations[0] : '',
+        tags: selectedTags,
         sections: details.description ? [{
           id: `section-${Date.now()}`,
           type: 'text',
           title: 'Description',
           description: details.description
         }] : []
-      }
+      },
+      availableTags: selectedTags,
+      availableLocations: selectedLocations
     }
 
     setSavedSchedules((previous) => [...previous, newSchedule])
@@ -174,6 +240,9 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
     if (!target) return
     setActiveScheduleId(scheduleId)
     setCurrentScheduleName(target.name)
+    // Set available tags and locations for this schedule
+    setAvailableTags(target.availableTags || [])
+    setAvailableLocations(target.availableLocations || [])
     setCurrentView('content')
   }
 
@@ -231,6 +300,12 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             onUpload={handleUpload}
             onAddSession={handleAddSessionClick}
             onBack={handleBackToTable}
+            sessions={activeScheduleId ? savedSchedules.find(s => s.id === activeScheduleId)?.sessions || [] : []}
+            onDateChange={(date) => {
+              const normalizedDate = new Date(date)
+              normalizedDate.setHours(0, 0, 0, 0)
+              setSelectedDate(normalizedDate)
+            }}
           />
         )}
       </div>
@@ -243,6 +318,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         startInEditMode={startInEditMode}
         topOffset={64}
         panelWidthRatio={0.8}
+        availableTags={availableTags}
+        availableLocations={availableLocations}
       />
 
       <ScheduleDetailsSlideout

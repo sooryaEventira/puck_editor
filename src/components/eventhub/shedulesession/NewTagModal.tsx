@@ -1,17 +1,21 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { HelpCircle } from '@untitled-ui/icons-react'
 import { Modal } from '../../ui'
 
 interface NewTagModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (tagName: string, color: string) => void
+  onSave: (name: string, color: string) => void
+  type?: 'tag' | 'location' // Add type prop to distinguish between tag and location
 }
 
-const NewTagModal: React.FC<NewTagModalProps> = ({ isOpen, onClose, onSave }) => {
-  const [tagName, setTagName] = useState('')
+const NewTagModal: React.FC<NewTagModalProps> = ({ isOpen, onClose, onSave, type = 'tag' }) => {
+  const [name, setName] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
   const [showColorDropdown, setShowColorDropdown] = useState(false)
+  const colorButtonRef = useRef<HTMLButtonElement>(null)
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null)
 
   // Predefined color options
   const colorOptions = [
@@ -28,23 +32,37 @@ const NewTagModal: React.FC<NewTagModalProps> = ({ isOpen, onClose, onSave }) =>
   ]
 
   const handleSave = () => {
-    if (tagName.trim() && selectedColor) {
-      onSave(tagName.trim(), selectedColor)
+    if (name.trim() && selectedColor) {
+      onSave(name.trim(), selectedColor)
       // Reset form
-      setTagName('')
+      setName('')
       setSelectedColor('')
       setShowColorDropdown(false)
     }
   }
 
   const handleClose = () => {
-    setTagName('')
+    setName('')
     setSelectedColor('')
     setShowColorDropdown(false)
     onClose()
   }
 
   const selectedColorOption = colorOptions.find((opt) => opt.value === selectedColor)
+
+  // Calculate dropdown position when it opens
+  useEffect(() => {
+    if (showColorDropdown && colorButtonRef.current) {
+      const rect = colorButtonRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width
+      })
+    } else {
+      setDropdownPosition(null)
+    }
+  }, [showColorDropdown])
 
   const footer = (
     <div className="flex items-center justify-between pb-4">
@@ -70,7 +88,7 @@ const NewTagModal: React.FC<NewTagModalProps> = ({ isOpen, onClose, onSave }) =>
         <button
           type="button"
           onClick={handleSave}
-          disabled={!tagName.trim() || !selectedColor}
+          disabled={!name.trim() || !selectedColor}
           className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Save
@@ -79,27 +97,32 @@ const NewTagModal: React.FC<NewTagModalProps> = ({ isOpen, onClose, onSave }) =>
     </div>
   )
 
+  const title = type === 'location' ? 'New location' : 'New tag'
+  const inputLabel = type === 'location' ? 'Location name' : 'Tag name'
+  const inputId = type === 'location' ? 'location-name' : 'tag-name'
+  const inputPlaceholder = type === 'location' ? 'Location name' : 'Tag name'
+
   return (
     <Modal
       isVisible={isOpen}
       onClose={handleClose}
-      title="New tag"
+      title={title}
       footer={footer}
       maxWidth="400px"
       padding={{ top: 24, right: 24, bottom: 24, left: 24 }}
     >
       <div className="space-y-2">
-        {/* Tag Name Input */}
+        {/* Name Input */}
         <div>
-          <label htmlFor="tag-name" className="block text-sm font-medium text-slate-700 mb-1">
-            Tag name <span className="text-red-500">*</span>
+          <label htmlFor={inputId} className="block text-sm font-medium text-slate-700 mb-1">
+            {inputLabel} <span className="text-red-500">*</span>
           </label>
           <input
-            id="tag-name"
+            id={inputId}
             type="text"
-            value={tagName}
-            onChange={(e) => setTagName(e.target.value)}
-            placeholder="Tag name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={inputPlaceholder}
             className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             autoFocus
           />
@@ -112,6 +135,7 @@ const NewTagModal: React.FC<NewTagModalProps> = ({ isOpen, onClose, onSave }) =>
           </label>
           <div className="relative">
             <button
+              ref={colorButtonRef}
               type="button"
               id="tag-color"
               onClick={() => setShowColorDropdown(!showColorDropdown)}
@@ -147,18 +171,26 @@ const NewTagModal: React.FC<NewTagModalProps> = ({ isOpen, onClose, onSave }) =>
               </svg>
             </button>
 
-            {showColorDropdown && (
+            {showColorDropdown && dropdownPosition && createPortal(
               <>
                 <div
-                  className="fixed inset-0 z-10"
+                  className="fixed inset-0 z-[10001]"
                   onClick={() => setShowColorDropdown(false)}
                 />
-                <div className="absolute z-20 mt-1 w-full rounded-md border border-slate-200 bg-white shadow-lg max-h-60 overflow-auto">
+                <div
+                  className="fixed z-[10002] rounded-md border border-slate-200 bg-white shadow-lg max-h-60 overflow-auto"
+                  style={{
+                    top: `${dropdownPosition.top}px`,
+                    left: `${dropdownPosition.left}px`,
+                    width: `${dropdownPosition.width}px`
+                  }}
+                >
                   {colorOptions.map((option) => (
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation()
                         setSelectedColor(option.value)
                         setShowColorDropdown(false)
                       }}
@@ -172,7 +204,8 @@ const NewTagModal: React.FC<NewTagModalProps> = ({ isOpen, onClose, onSave }) =>
                     </button>
                   ))}
                 </div>
-              </>
+              </>,
+              document.body
             )}
           </div>
         </div>

@@ -1,26 +1,47 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Upload01, Plus, ArrowNarrowLeft } from '@untitled-ui/icons-react'
 import WeekDateSelector from './WeekDateSelector'
 import UploadModal from './UploadModal'
+import ScheduleGrid from './ScheduleGrid'
+import { SavedSession } from './sessionTypes'
 
 interface ScheduleContentProps {
   scheduleName?: string
   onUpload?: () => void
-  onAddSession?: () => void
+  onAddSession?: (parentSessionId?: string) => void
   onBack?: () => void
+  sessions?: SavedSession[]
+  onDateChange?: (date: Date) => void
 }
 
 const ScheduleContent: React.FC<ScheduleContentProps> = ({
   scheduleName = 'Schedule 1',
   onUpload,
   onAddSession,
-  onBack
+  onBack,
+  sessions = [],
+  onDateChange
 }) => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const date = new Date()
+    date.setHours(0, 0, 0, 0)
+    return date
+  })
+
+  useEffect(() => {
+    // Initialize date when component mounts
+    const initialDate = new Date()
+    initialDate.setHours(0, 0, 0, 0)
+    setSelectedDate(initialDate)
+    onDateChange?.(initialDate)
+  }, [])
 
   const handleDateChange = (date: Date) => {
-    console.log('Selected date:', date)
-    // You can add additional logic here if needed
+    const normalizedDate = new Date(date)
+    normalizedDate.setHours(0, 0, 0, 0) // Normalize to start of day
+    setSelectedDate(normalizedDate)
+    onDateChange?.(normalizedDate)
   }
 
   const handleUploadClick = () => {
@@ -74,12 +95,17 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
 
       <div className="mt-6 flex min-h-[22rem] flex-col gap-6 overflow-hidden rounded border border-slate-200 bg-white px-4 py-6 shadow-sm md:min-h-[819px] md:px-8">
         {/* Date Selector */}
-        <WeekDateSelector onDateChange={handleDateChange} />
+        <WeekDateSelector 
+          initialDate={selectedDate} 
+          onDateChange={(date) => {
+            handleDateChange(date)
+          }} 
+        />
 
         <div>
           <button
             type="button"
-            onClick={onAddSession}
+            onClick={() => onAddSession?.()}
             className="inline-flex items-center justify-center gap-1 overflow-hidden rounded-lg bg-[#6938EF] px-3 py-1.5 text-white shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] "
             style={{ fontFamily: 'Inter' }}
           >
@@ -90,9 +116,17 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
           </button>
         </div>
 
-        <div className="flex flex-1 items-center justify-center text-center text-base text-slate-500">
-          Upload your schedule or create custom sessions!
-        </div>
+        {sessions && sessions.length > 0 ? (
+          <ScheduleGrid 
+            sessions={sessions} 
+            selectedDate={selectedDate} 
+            onAddParallelSession={(parentId) => onAddSession?.(parentId)} 
+          />
+        ) : (
+          <div className="flex flex-1 items-center justify-center text-center text-base text-slate-500">
+            Upload your schedule or create custom sessions!
+          </div>
+        )}
       </div>
 
       {/* Upload Modal */}

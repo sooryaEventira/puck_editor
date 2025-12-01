@@ -13,6 +13,8 @@ interface SessionSlideoutProps {
   startInEditMode?: boolean
   topOffset?: number
   panelWidthRatio?: number
+  availableTags?: string[]
+  availableLocations?: string[]
 }
 
 const SessionSlideout: React.FC<SessionSlideoutProps> = ({
@@ -22,7 +24,9 @@ const SessionSlideout: React.FC<SessionSlideoutProps> = ({
   initialDraft,
   startInEditMode = true,
   topOffset = 64,
-  panelWidthRatio = 0.8
+  panelWidthRatio = 0.8,
+  availableTags = [],
+  availableLocations = []
 }) => {
   const [draft, setDraft] = useState<SessionDraft>(defaultSessionDraft)
   const [tagsInput, setTagsInput] = useState('')
@@ -130,9 +134,20 @@ const SessionSlideout: React.FC<SessionSlideoutProps> = ({
   )
 
   useEffect(() => {
-    handleChange('tags', tagTokens)
+    // Only sync tags from tagsInput if we're using the Input field (no availableTags)
+    if (availableTags.length === 0) {
+      handleChange('tags', tagTokens)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tagTokens.join(',')])
+  }, [tagTokens.join(','), availableTags.length])
+
+  // Sync tagsInput with draft.tags when using dropdowns
+  useEffect(() => {
+    if (availableTags.length > 0 && draft.tags) {
+      setTagsInput(draft.tags.join(', '))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.tags.join(','), availableTags.length])
 
   const handleSave = () => {
     if (onSave) {
@@ -212,6 +227,8 @@ const SessionSlideout: React.FC<SessionSlideoutProps> = ({
               onFieldChange={handleChange}
               onTagsInputChange={setTagsInput}
               onAddSectionClick={handleAddSection}
+              availableTags={availableTags}
+              availableLocations={availableLocations}
             />
           ) : (
             <SessionSummaryView session={draft} />

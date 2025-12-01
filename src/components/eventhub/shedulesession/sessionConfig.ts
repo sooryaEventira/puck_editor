@@ -24,5 +24,6 @@ export const defaultSessionDraft: SessionDraft = {
   location: '',
   sessionType: '',
   tags: [],
-  sections: []
+  sections: [],
+  attachments: []
 }

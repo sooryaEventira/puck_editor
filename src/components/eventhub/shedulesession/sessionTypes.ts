@@ -29,10 +29,20 @@ export interface SessionDraft {
   sessionType: string
   tags: string[]
   sections: SessionSection[]
+  attachments?: File[]
+}
+
+export interface SavedSession extends SessionDraft {
+  id: string
+  date?: Date
+  parentId?: string // ID of parent session if this is a parallel session
 }
 
 export interface SavedSchedule {
   id: string
   name: string
-  session: SessionDraft
+  session?: SessionDraft // Keep for backward compatibility
+  sessions?: SavedSession[] // New: array of sessions
+  availableTags?: string[]
+  availableLocations?: string[]
 }
