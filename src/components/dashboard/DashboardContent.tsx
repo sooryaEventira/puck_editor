@@ -33,16 +33,16 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   eventDrafts
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header Section */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-primary-dark">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-semibold text-primary-dark">
           {title}
         </h1>
         <button
           type="button"
           onClick={onNewEventClick}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
         >
           <span>+</span>
           <span>New event</span>

@@ -34,10 +34,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   const [activeItemId, setActiveItemId] = useState('events')
   const [searchValue, setSearchValue] = useState('')
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   const handleSidebarItemClick = (itemId: string) => {
     setActiveItemId(itemId)
     onSidebarItemClick?.(itemId)
+    // Close sidebar on mobile when item is clicked
+    setIsSidebarOpen(false)
+  }
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen)
   }
 
   return (
@@ -47,6 +54,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         organizationName={organizationName}
         activeItemId={activeItemId}
         onItemClick={handleSidebarItemClick}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
       {/* Navbar */}
@@ -59,10 +68,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         onNewEventClick={onNewEventClick}
         userAvatarUrl={userAvatarUrl}
         userEmail={userEmail}
+        onMenuClick={toggleSidebar}
+        isSidebarOpen={isSidebarOpen}
       />
 
+
       {/* Main Content */}
-      <main className="ml-[250px] mt-16 p-6">
+      <main className="lg:ml-[250px] mt-16 p-4 sm:p-6">
         <DashboardContent
           title={title}
           onNewEventClick={onNewEventClick}

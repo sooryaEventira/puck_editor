@@ -224,7 +224,7 @@ export function DividerLineTable<TData>({
                   key={column.id}
                   scope="col"
                   className={twMerge(
-                    'px-6 py-4 text-xs font-semibold uppercase tracking-wide text-primary border-b border-slate-200',
+                    'px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold uppercase tracking-wide text-primary border-b border-slate-200',
                     column.align === 'right' ? 'text-right' : column.align === 'center' ? 'text-center' : '',
                     column.headerClassName
                   )}
@@ -257,10 +257,10 @@ export function DividerLineTable<TData>({
                       key={column.id}
                       className={twMerge(
                         column.align === 'right'
-                          ? 'px-6 py-4 text-right'
+                          ? 'px-3 sm:px-6 py-3 sm:py-4 text-right'
                           : column.align === 'center'
-                          ? 'px-6 py-4 text-center'
-                          : 'px-6 py-4',
+                          ? 'px-3 sm:px-6 py-3 sm:py-4 text-center'
+                          : 'px-3 sm:px-6 py-3 sm:py-4',
                         column.cellClassName
                       )}
                     >

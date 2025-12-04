@@ -6,7 +6,8 @@ import {
   BarChart03, 
   Settings01, 
   CreditCard01,
-  ChevronDown
+  ChevronDown,
+  XClose
 } from '@untitled-ui/icons-react'
 import logoImage from '../../assets/images/Logo_text.png'
 
@@ -21,6 +22,8 @@ interface DashboardSidebarProps {
   activeItemId?: string
   onItemClick?: (itemId: string) => void
   onOrganizationChange?: () => void
+  isOpen?: boolean
+  onClose?: () => void
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -36,22 +39,55 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   organizationName = 'Web Summit',
   activeItemId = 'events',
   onItemClick,
-  onOrganizationChange
+  onOrganizationChange,
+  isOpen = false,
+  onClose
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-[250px] bg-[#1e1b4b]">
-      <div className="w-full h-full pt-6 flex flex-col items-start gap-20">
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-[45] bg-black/50 backdrop-blur-sm lg:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside 
+        className={`fixed left-0 top-0 h-screen w-[250px] bg-[#1e1b4b] transform transition-transform duration-300 ease-in-out overflow-y-auto ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:translate-x-0 lg:z-40`}
+        style={isOpen ? { zIndex: 60 } : undefined}
+      >
+      <div className="w-full min-h-full flex flex-col items-start">
         {/* Logo and Organization Section */}
-        <div className="self-stretch px-5 flex flex-col items-start gap-6">
-          {/* Logo Section */}
-          <div className="inline-flex items-center gap-2.5">
-            <img 
-              src={logoImage} 
-              alt="Eventira Logo" 
-              className="h-10 object-contain"
-            />
+        <div className="self-stretch px-5 pt-6 pb-4 flex flex-col items-start gap-6 flex-shrink-0">
+          {/* Logo and Close Button Row */}
+          <div className="w-full flex items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-2.5 flex-1 min-w-0">
+              <img 
+                src={logoImage} 
+                alt="Eventira Logo" 
+                className="h-10 w-auto max-w-[200px] object-contain"
+                onError={() => {
+                  console.error('Logo image failed to load:', logoImage)
+                }}
+              />
+            </div>
+            {/* Close Button for Mobile */}
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="lg:hidden flex items-center justify-center text-white hover:bg-white/30 active:bg-white/40 transition-all -mt-10  shadow-lg bg-white/10 flex-shrink-0"
+                aria-label="Close menu"
+              >
+                <XClose className="h-4 w-4" strokeWidth={2.5} />
+              </button>
+            )}
           </div>
 
           {/* Organization Dropdown Card */}
@@ -94,7 +130,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         </div>
 
         {/* Navigation Menu */}
-        <div className="self-stretch px-4 flex flex-col items-start">
+        <div className="self-stretch px-4 py-4 flex flex-col items-start gap-1 flex-shrink-0">
           {sidebarItems.map((item) => {
             const isActive = item.id === activeItemId
             return (
@@ -104,7 +140,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               >
                 <button
                   type="button"
-                  onClick={() => onItemClick?.(item.id)}
+                  onClick={() => {
+                    onItemClick?.(item.id)
+                    onClose?.() // Close sidebar on mobile when item is clicked
+                  }}
                   className={`flex-1 flex items-center gap-3 px-3 py-2 ${
                     isActive 
                       ? 'bg-[#4A1FB8] rounded-lg' 
@@ -112,7 +151,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   } border-none cursor-pointer transition-all duration-200`}
                 >
                   <div className="flex-1 flex items-center gap-2">
-                    <div className="w-5 h-5 relative overflow-hidden flex items-center justify-center">
+                    <div className="w-5 h-5 relative overflow-hidden flex items-center justify-center flex-shrink-0">
                       <div className="text-white">
                         {item.icon}
                       </div>
@@ -128,6 +167,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         </div>
       </div>
     </aside>
+    </>
   )
 }
 

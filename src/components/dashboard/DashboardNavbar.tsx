@@ -8,6 +8,8 @@ interface DashboardNavbarProps {
   onProfileClick?: () => void
   onLogout?: () => void
   onNewEventClick?: () => void
+  onMenuClick?: () => void
+  isSidebarOpen?: boolean
   userAvatarUrl?: string
   userEmail?: string
 }
@@ -19,6 +21,8 @@ const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
   onProfileClick,
   onLogout,
   onNewEventClick,
+  onMenuClick,
+  isSidebarOpen = false,
   userAvatarUrl,
   userEmail
 }) => {
@@ -54,22 +58,36 @@ const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
 
   return (
     <nav
-      className="fixed top-0 left-[250px] right-0 z-50 h-16 bg-white border-b border-[#E9EAEB] flex items-center shadow-md"
+      className="fixed top-0 left-0 lg:left-[250px] right-0 h-16 bg-white border-b border-[#E9EAEB] flex items-center shadow-md z-50 overflow-visible"
+      style={isSidebarOpen ? { zIndex: 45 } : undefined}
     >
-      <div className="w-full h-full max-w-[1280px] px-8 flex items-center justify-end mx-auto">
-        <div className="flex items-center gap-3">
+      <div className="w-full h-full max-w-[1280px] px-3 sm:px-6 lg:px-8 flex items-center justify-between mx-auto min-w-0">
+        {/* Mobile Menu Button */}
+        {onMenuClick && (
+          <button
+            type="button"
+            onClick={onMenuClick}
+            className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 border-2 border-slate-400 hover:bg-slate-200 hover:border-slate-500 active:bg-slate-300 transition-all shadow-md flex-shrink-0"
+            aria-label="Toggle menu"
+          >
+            <svg className="h-6 w-6 text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
+
+        <div className="flex items-center gap-1 sm:gap-2 lg:ml-auto flex-shrink-0 min-w-0">
           {/* Icons Container */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {/* Search Icon */}
             <button
               type="button"
               onClick={onSearchClick}
-              className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-slate-100 transition-colors"
+              className="flex items-center svg-ic  justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-md hover:bg-slate-100 active:bg-slate-200 transition-colors flex-shrink-0"
               aria-label="Search"
             >
               <SearchLg 
-                className="h-5 w-5" 
-                style={{ color: '#A4A7AE', stroke: '#A4A7AE', fill: 'none' }}
+                className="h-5 w-5 text-slate-700 stroke-[#334155] stroke-[2] fill-none" 
               />
             </button>
 
@@ -77,29 +95,28 @@ const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
             <button
               type="button"
               onClick={onNotificationClick}
-              className="flex items-center justify-center w-10 h-10 rounded-md hover:bg-slate-100 transition-colors"
+              className="flex items-center svg-ic justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-md hover:bg-slate-100 active:bg-slate-200 transition-colors flex-shrink-0"
               aria-label="Notifications"
             >
               <Bell01 
-                className="h-5 w-5" 
-                style={{ color: '#A4A7AE', stroke: '#A4A7AE', fill: 'none' }}
+                className="h-5 w-5  stroke-[red] fill-[#334155]" 
               />
             </button>
           </div>
 
           {/* Profile Avatar with Dropdown */}
-          <div className="relative flex flex-col items-start" ref={profileMenuRef}>
+          <div className="relative flex flex-col items-start flex-shrink-0" ref={profileMenuRef}>
             <button
               type="button"
               onClick={handleProfileClick}
-              className="w-10 h-10 rounded-full overflow-hidden border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.12)] transition-colors"
+              className="w-9 h-9 sm:w-10 svg-ic sm:h-10 rounded-full overflow-hidden border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.12)] transition-colors flex-shrink-0"
               aria-label="Profile"
             >
               {userAvatarUrl ? (
                 <img
                   src={userAvatarUrl}
                   alt="Profile"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover "
                 />
               ) : (
                 <div className="w-full h-full bg-slate-200 flex items-center justify-center">
