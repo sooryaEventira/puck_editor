@@ -1,0 +1,46 @@
+import React from 'react'
+import toast from 'react-hot-toast'
+import { Toast } from 'react-hot-toast'
+
+interface EmailVerifiedToastProps {
+  t: Toast
+}
+
+export const EmailVerifiedToast: React.FC<EmailVerifiedToastProps> = ({ t }) => {
+  return (
+    <div
+      className={`${
+        t.visible ? 'animate-enter' : 'animate-leave'
+      } max-w-md w-full bg-[#E9D5FF] shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+      style={{
+        boxShadow: '0px 1px 2px rgba(10, 12.67, 18, 0.05)',
+      }}
+    >
+      <div className="flex-1 w-0 p-3">
+        <div className="flex items-center gap-2">
+          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[#5925DC] flex items-center justify-center">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 3L4.5 8.5L2 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <div className="ml-2 flex-1">
+            <p className="text-sm font-medium text-[#5925DC]">
+              Email verified!
+            </p>
+          </div>
+          <div className="ml-4 flex-shrink-0 flex">
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="inline-flex text-[#5925DC] hover:text-[#7C3AED] focus:outline-none"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+

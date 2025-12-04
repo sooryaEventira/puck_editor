@@ -36,4 +36,7 @@ export type {
   DividerLineTableSortDescriptor
 } from './DividerLineTable'
 
+export { default as SocialButton } from './SocialButton'
+export type { SocialButtonProps, SocialProvider } from './SocialButton'
+
 

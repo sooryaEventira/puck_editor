@@ -94,5 +94,15 @@ export const showToast = {
   dismissAll: () => {
     toast.dismiss()
   },
+
+  /**
+   * Custom email verified notification (purple with checkmark)
+   * This is handled by toastHelpers.tsx to allow JSX
+   */
+  emailVerified: () => {
+    import('./toastHelpers').then(({ showEmailVerifiedToast }) => {
+      showEmailVerifiedToast()
+    })
+  },
 }
 

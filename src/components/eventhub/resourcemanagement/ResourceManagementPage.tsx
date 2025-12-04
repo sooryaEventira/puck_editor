@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo } from 'react'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import { defaultCards, ContentCard } from '../EventHubContent'
-import { InfoCircle, CodeBrowser, Globe01, Folder, Upload01, Plus, SearchLg, FilterLines } from '@untitled-ui/icons-react'
+import { InfoCircle, CodeBrowser, Globe01, Folder, Upload01, Plus, SearchLg, FilterLines, DotsVertical } from '@untitled-ui/icons-react'
 
 export interface MediaFile {
   id: string
@@ -38,8 +38,6 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
   const [files, setFiles] = useState<MediaFile[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('all')
-  const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false)
-  const [newFolderName, setNewFolderName] = useState('')
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -90,16 +88,12 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
   }
 
   const handleCreateFolder = () => {
-    if (newFolderName.trim()) {
-      const newFolder: MediaFolder = {
-        id: `folder-${Date.now()}`,
-        name: newFolderName.trim(),
-        files: []
-      }
-      setFolders([...folders, newFolder])
-      setNewFolderName('')
-      setIsNewFolderModalOpen(false)
+    const newFolder: MediaFolder = {
+      id: `folder-${Date.now()}`,
+      name: 'New folder',
+      files: []
     }
+    setFolders([...folders, newFolder])
   }
 
   const handleUploadClick = () => {
@@ -242,7 +236,7 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setIsNewFolderModalOpen(true)}
+                onClick={handleCreateFolder}
                 className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-black border border-slate-200 shadow-sm bg-white transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <Plus className="h-4 w-4" />
@@ -345,32 +339,36 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
                     key={file.id}
                     draggable
                     onDragStart={() => handleDragStart(file.id)}
-                    className="relative group flex flex-col gap-2 p-3 rounded-lg border border-slate-200 bg-white hover:border-primary/40 hover:shadow-md transition cursor-move"
+                    className="group flex w-full cursor-move flex-col items-center justify-center gap-2 rounded-lg border border-[#D5D7DA] bg-white p-3"
                   >
-                    {file.type === 'image' && file.preview ? (
-                      <div className="w-full aspect-square rounded-lg overflow-hidden bg-slate-100">
-                        <img
-                          src={file.preview}
-                          alt={file.name}
-                          className="w-full h-full object-cover"
-                        />
+                    <div className="relative flex h-40 flex-col items-end justify-between self-stretch rounded-xl pt-1.5 pr-1.5">
+                      <div className="absolute left-0 top-0 inline-flex h-40 w-[calc(100%-6px)] items-center justify-center overflow-hidden rounded bg-white">
+                        {file.type === 'image' && file.preview ? (
+                          <img
+                            src={file.preview}
+                            alt={file.name}
+                            className="relative h-full w-full flex-1 self-stretch rounded border border-black/8 object-cover"
+                          />
+                        ) : (
+                          <div className="relative flex h-full w-full flex-1 items-center justify-center self-stretch rounded border border-black/8 bg-slate-100 text-5xl">
+                            {getFileIcon(file)}
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="w-full aspect-square rounded-lg bg-slate-100 flex items-center justify-center text-4xl">
-                        {getFileIcon(file)}
-                      </div>
-                    )}
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-xs font-medium text-slate-700 flex-1 line-clamp-2">{file.name}</span>
                       <button
                         type="button"
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-slate-100 transition text-slate-500"
+                        className="relative z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 transition-colors duration-200 group-hover:bg-black/40"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // Add menu action here if needed
+                        }}
                         aria-label="More options"
                       >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                        </svg>
+                        <DotsVertical className="h-4 w-4 text-slate-600 transition-colors duration-200 group-hover:text-white" />
                       </button>
+                    </div>
+                    <div className="w-full break-words text-center text-base font-semibold leading-6 text-[#181D27]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                      {file.name}
                     </div>
                   </div>
                 ))}
@@ -392,48 +390,6 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
         </div>
       </div>
 
-      {/* New Folder Modal */}
-      {isNewFolderModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
-            <h2 className="text-lg font-semibold text-slate-800 mb-4">Create New Folder</h2>
-            <input
-              type="text"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="Folder name"
-              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 mb-4"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleCreateFolder()
-                } else if (e.key === 'Escape') {
-                  setIsNewFolderModalOpen(false)
-                }
-              }}
-              autoFocus
-            />
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsNewFolderModalOpen(false)
-                  setNewFolderName('')
-                }}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateFolder}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-[#5A1684] transition"
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

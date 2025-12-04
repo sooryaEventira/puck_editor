@@ -166,7 +166,7 @@ const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
   ({ className, ...props }, ref) => (
     <thead
       ref={ref}
-      className={twMerge('bg-slate-50 text-slate-500', className)}
+      className={twMerge('bg-slate-50 text-primary', className)}
       {...props}
     />
   )

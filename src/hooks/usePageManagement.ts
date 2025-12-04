@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Page } from '../types'
 import { logger } from '../utils/logger'
-import { API_ENDPOINTS } from '../config/env'
+import { API_ENDPOINTS, env } from '../config/env'
+import { isPageApiAvailable, safeFetch } from '../utils/apiHelpers'
 
 // Function to convert HeadingBlock to Heading for compatibility
 const convertHeadingBlock = (item: any) => {
@@ -220,8 +221,20 @@ export const usePageManagement = () => {
 
   // Function to load all pages from server
   const loadPages = async () => {
+    // Skip page API calls if PAGE_API_URL is not configured
+    if (!isPageApiAvailable()) {
+      logger.debug('Page API URL not configured, skipping server load')
+      return
+    }
+
     try {
-      const response = await fetch(API_ENDPOINTS.GET_PAGES)
+      const response = await safeFetch(API_ENDPOINTS.GET_PAGES)
+      
+      if (!response || !response.ok) {
+        logger.debug('Page API not available, using local storage')
+        return
+      }
+      
       const result = await response.json()
       
       if (result.success) {

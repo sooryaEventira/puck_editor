@@ -58,7 +58,7 @@ const SortIcon: React.FC<SortIconProps> = ({ direction, active }) => {
   if (!active) {
     return (
       <svg
-        className={twMerge(base, 'text-slate-300 group-hover:text-slate-400')}
+        className={twMerge(base, 'text-primary/50 group-hover:text-primary/70')}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -196,7 +196,7 @@ export function DividerLineTable<TData>({
       <button
         type="button"
         onClick={() => handleSortClick(column)}
-        className="group inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500"
+        className="group inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-primary"
       >
         <span>{column.header}</span>
         <SortIcon active={isSorted} direction={isSorted ? sortDescriptor?.direction : undefined} />
@@ -224,7 +224,7 @@ export function DividerLineTable<TData>({
                   key={column.id}
                   scope="col"
                   className={twMerge(
-                    'px-6 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 border-b border-slate-200',
+                    'px-6 py-4 text-xs font-semibold uppercase tracking-wide text-primary border-b border-slate-200',
                     column.align === 'right' ? 'text-right' : column.align === 'center' ? 'text-center' : '',
                     column.headerClassName
                   )}
@@ -257,10 +257,10 @@ export function DividerLineTable<TData>({
                       key={column.id}
                       className={twMerge(
                         column.align === 'right'
-                          ? 'px-6 py-2 text-right'
+                          ? 'px-6 py-4 text-right'
                           : column.align === 'center'
-                          ? 'px-6 py-2 text-center'
-                          : 'px-6 py-2',
+                          ? 'px-6 py-4 text-center'
+                          : 'px-6 py-4',
                         column.cellClassName
                       )}
                     >
