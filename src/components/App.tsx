@@ -11,7 +11,6 @@ import { DashboardLayout } from './dashboard'
 import { logger } from '../utils/logger'
 import { setupPuckStyling } from '../utils/puckStyling'
 import { showToast } from '../utils/toast'
-import { showEmailVerifiedToast } from '../utils/toastHelpers'
 import { verifyRegistrationOtp, createPassword, createOrganization } from '../services/authService'
 
 const App: React.FC = () => {
@@ -151,8 +150,7 @@ const App: React.FC = () => {
       const response = await verifyRegistrationOtp(registrationEmail, code)
       
       if (response.status === 'success') {
-        // Show toast notification
-        showEmailVerifiedToast()
+        // Toast notification is already shown by authService
         // Navigate to password creation page
         setShowEmailVerification(false)
         setShowCreatePassword(true)

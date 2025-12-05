@@ -5,6 +5,8 @@ export { default as Select } from './Select'
 export type { SelectProps, SelectOption } from './Select'
 
 export { default as DatePicker } from './DatePicker'
+export { default as DateRangePicker } from './DateRangePicker'
+export type { DateRange } from './DateRangePicker'
 
 export { default as Badge } from './Badge'
 export type { BadgeProps } from './Badge'

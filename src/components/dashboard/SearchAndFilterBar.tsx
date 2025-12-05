@@ -1,25 +1,26 @@
 import React from 'react'
-import { SearchLg, Calendar, FilterLines } from '@untitled-ui/icons-react'
+import { SearchLg, FilterLines } from '@untitled-ui/icons-react'
+import { DateRangePicker, type DateRange } from '../ui/untitled'
 
 interface SearchAndFilterBarProps {
   searchValue?: string
   onSearchChange?: (value: string) => void
-  dateRange?: string
-  onDateRangeClick?: () => void
+  dateRange?: DateRange
+  onDateRangeChange?: (range: DateRange) => void
   onFilterClick?: () => void
 }
 
 const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
   searchValue = '',
   onSearchChange,
-  dateRange = 'Jan 10, 2025 – Jan 16, 2025',
-  onDateRangeClick,
+  dateRange,
+  onDateRangeChange,
   onFilterClick
 }) => {
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
       {/* Search Input */}
-      <div className="w-full sm:w-auto sm:flex-1 bg-white overflow-hidden rounded-lg border border-[#D5D7DA] inline-flex items-center justify-start gap-2 shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] px-3 py-2" style={{ outline: '1px #D5D7DA solid', outlineOffset: '-1px', maxWidth: '100%' }}>
+      <div className="w-full sm:w-[500px] bg-white overflow-hidden rounded-lg border border-[#D5D7DA] outline outline-1 outline-[#D5D7DA] outline-offset-[-1px] inline-flex items-center justify-start gap-2 shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] px-3 py-2">
         <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
           {/* Icon Container */}
           <div className="w-5 h-5 relative overflow-hidden flex items-center justify-center flex-shrink-0">
@@ -41,15 +42,12 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
       {/* Right Side - Date Range Filter and Filter Button */}
       <div className="flex items-center gap-2 flex-shrink-0">
         {/* Date Range Filter */}
-        <button
-          type="button"
-          onClick={onDateRangeClick}
-          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg border border-[#D5D7DA] bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap"
-        >
-          <Calendar className="h-4 w-4 text-slate-500 flex-shrink-0" />
-          <span className="hidden sm:inline">{dateRange}</span>
-          <span className="sm:hidden">Date</span>
-        </button>
+        <DateRangePicker
+          id="date-range-picker"
+          value={dateRange}
+          onChange={(range) => onDateRangeChange?.(range)}
+          placeholder="Select date range"
+        />
 
         {/* Filter Button */}
         <button

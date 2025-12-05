@@ -2,20 +2,23 @@ import React from 'react'
 import SummaryCards from './SummaryCards'
 import SearchAndFilterBar from './SearchAndFilterBar'
 import EventsTable from './EventsTable'
+import type { Event } from './EventsTable'
+import type { DateRange } from '../ui/untitled'
 
 interface DashboardContentProps {
   title?: string
   onNewEventClick?: () => void
   searchValue?: string
   onSearchChange?: (value: string) => void
-  dateRange?: string
-  onDateRangeClick?: () => void
+  dateRange?: DateRange
+  onDateRangeChange?: (range: DateRange) => void
   onFilterClick?: () => void
   onEditEvent?: (eventId: string) => void
   onSortEvents?: (column: string) => void
   totalEvents?: number
   liveEvents?: number
   eventDrafts?: number
+  events?: Event[]
 }
 
 const DashboardContent: React.FC<DashboardContentProps> = ({
@@ -24,13 +27,14 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   searchValue,
   onSearchChange,
   dateRange,
-  onDateRangeClick,
+  onDateRangeChange,
   onFilterClick,
   onEditEvent,
   onSortEvents,
   totalEvents,
   liveEvents,
-  eventDrafts
+  eventDrafts,
+  events
 }) => {
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -61,14 +65,16 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
         searchValue={searchValue}
         onSearchChange={onSearchChange}
         dateRange={dateRange}
-        onDateRangeClick={onDateRangeClick}
+        onDateRangeChange={onDateRangeChange}
         onFilterClick={onFilterClick}
       />
 
       {/* Events Table */}
       <EventsTable
+        events={events}
         onEditClick={onEditEvent}
         onSort={onSortEvents}
+        searchValue={searchValue}
       />
     </div>
   )

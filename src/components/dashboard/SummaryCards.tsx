@@ -10,7 +10,7 @@ interface SummaryCardProps {
 
 const SummaryCard: React.FC<SummaryCardProps> = ({ title, value, icon, iconBgColor }) => {
   return (
-    <div className="w-full h-full bg-white inline-flex flex-col items-start justify-start p-5 rounded-xl border border-[#E9EAEB] gap-5 shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)]">
+    <div className="w-full h-full bg-white inline-flex flex-col items-start justify-start p-5 rounded-xl border border-[#E9EAEB] gap-5 shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] transition-all duration-300 hover:shadow-[0px_4px_8px_rgba(10,12.67,18,0.1)]">
       {/* Icon and Label Row */}
       <div className="self-stretch inline-flex items-center justify-start gap-2">
         {/* Icon Container */}

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { Edit05 } from '@untitled-ui/icons-react'
 import { DividerLineTable, type DividerLineTableColumn, type DividerLineTableSortDescriptor } from '../ui/untitled'
 
-interface Event {
+export interface Event {
   id: string
   name: string
   status: 'Live' | 'Draft'
@@ -12,10 +12,51 @@ interface Event {
   createdBy: string
 }
 
+// Default events data
+export const defaultEvents: Event[] = [
+  {
+    id: '1',
+    name: 'Global Tech Innovation Summit 2025',
+    status: 'Live',
+    attendanceType: 'Online',
+    registrations: 300,
+    eventDate: 'Jan 13, 2025',
+    createdBy: 'Olivia Rhye'
+  },
+  {
+    id: '2',
+    name: 'Healthcare Leaders Conference...',
+    status: 'Live',
+    attendanceType: 'Offline',
+    registrations: 400,
+    eventDate: 'Jan 15, 2025',
+    createdBy: 'Phoenix Baker'
+  },
+  {
+    id: '3',
+    name: 'Future of Design Expo & Awards',
+    status: 'Live',
+    attendanceType: 'Hybrid',
+    registrations: 200,
+    eventDate: 'Jan 20, 2025',
+    createdBy: 'Lana Steiner'
+  },
+  {
+    id: '4',
+    name: 'Global Tech Innovation Summit 2025',
+    status: 'Draft',
+    attendanceType: 'Online',
+    registrations: 100,
+    eventDate: 'Feb 1, 2025',
+    createdBy: 'Demi Wilkinson'
+  }
+]
+
 interface EventsTableProps {
   events?: Event[]
   onEditClick?: (eventId: string) => void
   onSort?: (column: string) => void
+  searchValue?: string
 }
 
 const StatusBadge: React.FC<{ status: 'Live' | 'Draft' }> = ({ status }) => {
@@ -44,46 +85,10 @@ const AttendanceTypeBadge: React.FC<{ type: 'Online' | 'Offline' | 'Hybrid' }> =
 }
 
 const EventsTable: React.FC<EventsTableProps> = ({
-  events = [
-    {
-      id: '1',
-      name: 'Global Tech Innovation Summit 2025',
-      status: 'Live',
-      attendanceType: 'Online',
-      registrations: 300,
-      eventDate: 'Jan 13, 2025',
-      createdBy: 'Olivia Rhye'
-    },
-    {
-      id: '2',
-      name: 'Healthcare Leaders Conference...',
-      status: 'Live',
-      attendanceType: 'Offline',
-      registrations: 400,
-      eventDate: 'Jan 13, 2025',
-      createdBy: 'Phoenix Baker'
-    },
-    {
-      id: '3',
-      name: 'Future of Design Expo & Awards',
-      status: 'Live',
-      attendanceType: 'Hybrid',
-      registrations: 200,
-      eventDate: 'Jan 13, 2025',
-      createdBy: 'Lana Steiner'
-    },
-    {
-      id: '4',
-      name: 'Global Tech Innovation Summit 2025',
-      status: 'Draft',
-      attendanceType: 'Online',
-      registrations: 100,
-      eventDate: 'Jan 13, 2025',
-      createdBy: 'Demi Wilkinson'
-    }
-  ],
+  events = defaultEvents,
   onEditClick,
-  onSort
+  onSort,
+  searchValue = ''
 }) => {
   const [sortDescriptor, setSortDescriptor] = useState<DividerLineTableSortDescriptor | undefined>()
 
@@ -168,7 +173,9 @@ const EventsTable: React.FC<EventsTableProps> = ({
       size="md"
       emptyState={
         <div className="flex min-h-[200px] items-center justify-center text-sm text-slate-500">
-          No events available.
+          {searchValue.trim() 
+            ? `No events found matching "${searchValue}".` 
+            : 'No events available.'}
         </div>
       }
     />
