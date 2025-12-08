@@ -61,7 +61,7 @@ const DashboardNavbar: React.FC<DashboardNavbarProps> = ({
       className="fixed top-0 left-0 lg:left-[250px] right-0 h-16 bg-white border-b border-[#E9EAEB] flex items-center shadow-md z-50 overflow-visible"
       style={isSidebarOpen ? { zIndex: 45 } : undefined}
     >
-      <div className="w-full h-full max-w-[1280px] px-3 sm:px-6 lg:px-8 flex items-center justify-between mx-auto min-w-0">
+      <div className="w-full h-full px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-8 flex items-center justify-between min-w-0">
         {/* Mobile Menu Button */}
         {onMenuClick && (
           <button

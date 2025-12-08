@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react'
 import DashboardSidebar from './DashboardSidebar'
 import DashboardNavbar from './DashboardNavbar'
 import DashboardContent from './DashboardContent'
+import NewEventForm, { type EventFormData } from './NewEventForm'
 import { defaultEvents, type Event } from './EventsTable'
 import type { DateRange } from '../ui/untitled'
 
@@ -38,6 +39,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [searchValue, setSearchValue] = useState('')
   const [dateRange, setDateRange] = useState<DateRange>({ start: null, end: null })
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [showNewEventForm, setShowNewEventForm] = useState(false)
   
   // Events data - in a real app, this would come from an API or context
   const [events] = useState<Event[]>(defaultEvents)
@@ -125,6 +127,32 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     setIsSidebarOpen(!isSidebarOpen)
   }
 
+  const handleNewEventClick = () => {
+    setShowNewEventForm(true)
+    onNewEventClick?.()
+  }
+
+  const handleFormClose = () => {
+    setShowNewEventForm(false)
+  }
+
+  const handleFormSubmit = (data: EventFormData) => {
+    console.log('Event form submitted:', data)
+    // TODO: Handle form submission (e.g., API call)
+    setShowNewEventForm(false)
+    onNewEventClick?.()
+  }
+
+  // Show form overlay if form is open
+  if (showNewEventForm) {
+    return (
+      <NewEventForm
+        onClose={handleFormClose}
+        onSubmit={handleFormSubmit}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Sidebar */}
@@ -143,7 +171,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         onNotificationClick={onNotificationClick}
         onProfileClick={onProfileClick}
         onLogout={onLogout}
-        onNewEventClick={onNewEventClick}
+        onNewEventClick={handleNewEventClick}
         userAvatarUrl={userAvatarUrl}
         userEmail={userEmail}
         onMenuClick={toggleSidebar}
@@ -155,7 +183,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <main className="lg:ml-[250px] mt-16 p-4 sm:p-6">
         <DashboardContent
           title={title}
-          onNewEventClick={onNewEventClick}
+          onNewEventClick={handleNewEventClick}
           searchValue={searchValue}
           onSearchChange={setSearchValue}
           dateRange={dateRange}
