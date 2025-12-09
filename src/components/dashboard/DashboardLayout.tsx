@@ -1,8 +1,11 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import DashboardSidebar from './DashboardSidebar'
 import DashboardNavbar from './DashboardNavbar'
 import DashboardContent from './DashboardContent'
 import NewEventForm, { type EventFormData } from './NewEventForm'
+import TemplateSelectionPage from './TemplateSelectionPage'
+import EventWebsitePage from '../eventhub/EventWebsitePage'
+import WebsitePreviewPage from '../eventhub/WebsitePreviewPage'
 import { defaultEvents, type Event } from './EventsTable'
 import type { DateRange } from '../ui/untitled'
 
@@ -40,6 +43,68 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [dateRange, setDateRange] = useState<DateRange>({ start: null, end: null })
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [showNewEventForm, setShowNewEventForm] = useState(false)
+  const [showTemplatePage, setShowTemplatePage] = useState(false)
+  const [showEventWebsitePage, setShowEventWebsitePage] = useState(false)
+  const [showPreviewPage, setShowPreviewPage] = useState(false)
+  const [previewPageId, setPreviewPageId] = useState<string>('')
+
+  // Check if we should show template page or event website page based on URL
+  useEffect(() => {
+    const checkRoute = () => {
+      const path = window.location.pathname
+      if (path === '/event/create/template') {
+        setShowTemplatePage(true)
+        setShowNewEventForm(false)
+        setShowEventWebsitePage(false)
+        setShowPreviewPage(false)
+      } else if (path.startsWith('/event/website/preview/')) {
+        // Extract pageId from path: /event/website/preview/:pageId
+        const pageIdMatch = path.match(/\/event\/website\/preview\/(.+)/)
+        const pageId = pageIdMatch ? pageIdMatch[1] : 'welcome'
+        setPreviewPageId(pageId)
+        setShowPreviewPage(true)
+        setShowEventWebsitePage(false)
+        setShowTemplatePage(false)
+        setShowNewEventForm(false)
+      } else if (path === '/event/website') {
+        setShowEventWebsitePage(true)
+        setShowTemplatePage(false)
+        setShowNewEventForm(false)
+        setShowPreviewPage(false)
+      } else {
+        setShowTemplatePage(false)
+        setShowEventWebsitePage(false)
+        setShowPreviewPage(false)
+      }
+    }
+
+    // Check on mount
+    checkRoute()
+
+    // Listen for navigation events
+    const handleLocationChange = () => {
+      checkRoute()
+    }
+
+    // Listen for custom event to open form
+    const handleOpenForm = () => {
+      setShowTemplatePage(false)
+      setShowEventWebsitePage(false)
+      setShowNewEventForm(true)
+    }
+
+    // Check route periodically (in case of programmatic navigation)
+    const interval = setInterval(checkRoute, 100)
+
+    window.addEventListener('popstate', handleLocationChange)
+    window.addEventListener('open-event-form', handleOpenForm)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('popstate', handleLocationChange)
+      window.removeEventListener('open-event-form', handleOpenForm)
+    }
+  }, [])
   
   // Events data - in a real app, this would come from an API or context
   const [events] = useState<Event[]>(defaultEvents)
@@ -141,6 +206,38 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     // TODO: Handle form submission (e.g., API call)
     setShowNewEventForm(false)
     onNewEventClick?.()
+  }
+
+  // Show preview page
+  if (showPreviewPage) {
+    return (
+      <WebsitePreviewPage
+        pageId={previewPageId}
+        onBackClick={() => {
+          window.history.pushState({}, '', '/event/website')
+          window.dispatchEvent(new PopStateEvent('popstate'))
+        }}
+        userAvatarUrl={userAvatarUrl}
+      />
+    )
+  }
+
+  // Show event website page
+  if (showEventWebsitePage) {
+    return (
+      <EventWebsitePage
+        onBackClick={() => {
+          window.history.pushState({}, '', '/dashboard')
+          window.dispatchEvent(new PopStateEvent('popstate'))
+        }}
+        userAvatarUrl={userAvatarUrl}
+      />
+    )
+  }
+
+  // Show template selection page
+  if (showTemplatePage) {
+    return <TemplateSelectionPage />
   }
 
   // Show form overlay if form is open

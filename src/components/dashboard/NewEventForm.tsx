@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import logoImage from '../../assets/images/Logo.png'
-import { ProgressSteps, type ProgressStep } from '../ui/untitled'
+import { ProgressSteps } from '../ui/untitled'
 import EventDetailsStep from './NewEventForm/EventDetailsStep'
 import DesignStep from './NewEventForm/DesignStep'
+import { useEventForm } from '../../contexts/EventFormContext'
 
 interface NewEventFormProps {
   onClose: () => void
@@ -13,39 +14,34 @@ export interface EventFormData {
   // Step 1 - Event Details
   eventName: string
   startDate: string
-  startTime: string
-  startTimezone: string
   endDate: string
-  endTime: string
-  endTimezone: string
+  timezone: string
   fixTimezoneForAttendees: boolean
   location: string
   attendees: number
-  eventExperience: 'in-person' | 'virtual' | 'hybrid'
+  eventExperience: 'in-person' | 'virtual' | 'hybrid' | ''
   
   // Step 2 - Design
-  colorScheme: string
-  font: string
   logo: File | null
   banner: File | null
 }
 
+// Total steps - update this as you add more steps
+// Currently: Step 1 (Event Details), Step 2 (Design)
+const TOTAL_STEPS = 2
+
 const NewEventForm: React.FC<NewEventFormProps> = ({ onClose, onSubmit }) => {
+  const { setEventData } = useEventForm()
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState<EventFormData>({
     eventName: '',
     startDate: '',
-    startTime: '',
-    startTimezone: 'UTC-5',
     endDate: '',
-    endTime: '',
-    endTimezone: 'UTC-5',
+    timezone: '', // Will be auto-detected by TimezoneSelector component
     fixTimezoneForAttendees: true,
     location: '',
     attendees: 0,
-    eventExperience: 'in-person',
-    colorScheme: '',
-    font: 'Inter',
+    eventExperience: '',
     logo: null,
     banner: null
   })
@@ -60,17 +56,28 @@ const NewEventForm: React.FC<NewEventFormProps> = ({ onClose, onSubmit }) => {
       if (
         formData.eventName &&
         formData.startDate &&
-        formData.startTime &&
         formData.endDate &&
-        formData.endTime &&
+        formData.timezone &&
         formData.location &&
         formData.attendees > 0
       ) {
         setCurrentStep(2)
       }
-    } else if (currentStep === 2) {
-      // Submit form
-      onSubmit(formData)
+    } else if (currentStep === TOTAL_STEPS) {
+      // Step 2 (Design) - Save data and navigate to template selection
+      // Save to global context
+      setEventData(formData)
+
+      // Log form data to console
+      console.log('Form Data for Backend:', formData)
+
+      // Navigate to template selection page
+      window.history.pushState({}, '', '/event/create/template')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    } else {
+      // Intermediate steps - move to next step
+      // Add validation here for future steps if needed
+      setCurrentStep(currentStep + 1)
     }
   }
 
@@ -84,9 +91,8 @@ const NewEventForm: React.FC<NewEventFormProps> = ({ onClose, onSubmit }) => {
     return !!(
       formData.eventName &&
       formData.startDate &&
-      formData.startTime &&
       formData.endDate &&
-      formData.endTime &&
+      formData.timezone &&
       formData.location &&
       formData.attendees > 0
     )
@@ -150,7 +156,7 @@ const NewEventForm: React.FC<NewEventFormProps> = ({ onClose, onSubmit }) => {
             disabled={currentStep === 1 && !isStep1Valid()}
             className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#6938EF] hover:bg-[#5925DC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#6938EF]"
           >
-            {currentStep === 2 ? 'Submit' : 'Next'}
+            Next
           </button>
         </div>
       </div>

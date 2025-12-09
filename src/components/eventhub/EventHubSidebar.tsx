@@ -26,7 +26,7 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
   onItemClick
 }) => {
   const [isMobileOpen, setIsMobileOpen] = React.useState(false)
-  const [expandedItems, setExpandedItems] = React.useState<string[]>(['event-hub'])
+  const [expandedItems, setExpandedItems] = React.useState<string[]>([])
 
   // Keep parent items expanded if any of their sub-items are active
   React.useEffect(() => {
@@ -47,16 +47,7 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
 
   const handleItemClick = (itemId: string, hasSubItems: boolean) => {
     if (hasSubItems) {
-      // For Event Hub, always keep it expanded - don't allow collapsing
-      // But still trigger navigation if clicked
-      if (itemId === 'event-hub') {
-        // Navigate to event hub page when clicking the parent
-        if (onItemClick) {
-          onItemClick(itemId)
-        }
-        return
-      }
-      // Toggle expansion for other items
+      // Toggle expansion for items with sub-items
       setExpandedItems((prev) =>
         prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
       )
@@ -80,10 +71,6 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
   }
 
   const isExpanded = (itemId: string) => {
-    // Event Hub should always be expanded
-    if (itemId === 'event-hub') {
-      return true
-    }
     return expandedItems.includes(itemId)
   }
   const hasSubItems = (item: SidebarItem): boolean => !!(item.subItems && item.subItems.length > 0)

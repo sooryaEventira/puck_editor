@@ -8,6 +8,7 @@ import { EventHubPage, EventHubNavbar, SchedulePage, CommunicationPage, Resource
 import EditorView from './EditorView'
 import { LoginPage, RegistrationPage, EmailVerificationPage, CreatePasswordPage, EventspaceSetupPage } from '../pages'
 import { DashboardLayout } from './dashboard'
+import { EventFormProvider } from '../contexts/EventFormContext'
 import { logger } from '../utils/logger'
 import { setupPuckStyling } from '../utils/puckStyling'
 import { showToast } from '../utils/toast'
@@ -389,27 +390,29 @@ const App: React.FC = () => {
     console.log('🏠 Rendering Dashboard with organization:', organizationName)
     
     return (
-      <DashboardLayout
-        organizationName={organizationName}
-        title="Web Submit Events"
-        userAvatarUrl=""
-        userEmail={userEmail}
-        onSidebarItemClick={(itemId) => {
-          console.log('Sidebar item clicked:', itemId)
-          // Handle navigation to different sections
-          if (itemId === 'events') {
-            setCurrentView('events')
-          }
-          // Add other navigation handlers as needed
-        }}
-        onSearchClick={() => console.log('Search clicked')}
-        onNotificationClick={() => console.log('Notification clicked')}
-        onProfileClick={handleProfileClick}
-        onLogout={handleLogout}
-        onNewEventClick={() => console.log('New event clicked')}
-        onEditEvent={(eventId) => console.log('Edit event:', eventId)}
-        onSortEvents={(column) => console.log('Sort by:', column)}
-      />
+      <EventFormProvider>
+        <DashboardLayout
+          organizationName={organizationName}
+          title="Web Submit Events"
+          userAvatarUrl=""
+          userEmail={userEmail}
+          onSidebarItemClick={(itemId) => {
+            console.log('Sidebar item clicked:', itemId)
+            // Handle navigation to different sections
+            if (itemId === 'events') {
+              setCurrentView('events')
+            }
+            // Add other navigation handlers as needed
+          }}
+          onSearchClick={() => console.log('Search clicked')}
+          onNotificationClick={() => console.log('Notification clicked')}
+          onProfileClick={handleProfileClick}
+          onLogout={handleLogout}
+          onNewEventClick={() => console.log('New event clicked')}
+          onEditEvent={(eventId) => console.log('Edit event:', eventId)}
+          onSortEvents={(column) => console.log('Sort by:', column)}
+        />
+      </EventFormProvider>
     )
   }
 

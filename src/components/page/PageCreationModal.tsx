@@ -3,10 +3,43 @@ import clsx from 'clsx'
 import { HelpCircle } from '@untitled-ui/icons-react'
 import { Modal } from '../ui'
 
+export type PageType = 
+  | 'attendee'
+  | 'schedule'
+  | 'html-general'
+  | 'folder'
+  | 'organization'
+  | 'hyperlink'
+  | 'qr-scanner'
+  | 'documents'
+  | 'gallery'
+  | 'forms'
+  | 'meeting-room'
+
+interface PageTypeOption {
+  id: PageType
+  title: string
+  description: string
+}
+
+const pageTypes: PageTypeOption[] = [
+  { id: 'attendee', title: 'Attendee page', description: 'List out users' },
+  { id: 'schedule', title: 'Schedule page', description: 'Create sessions' },
+  { id: 'html-general', title: 'HTML/General page', description: 'Create welcome page, venue, etc.' },
+  { id: 'folder', title: 'Folder', description: 'Create folders' },
+  { id: 'organization', title: 'Organization page', description: 'List partners, exhibitors' },
+  { id: 'hyperlink', title: 'Hyperlink', description: 'Insert any link' },
+  { id: 'qr-scanner', title: 'App QR Scanner', description: 'Add QR code' },
+  { id: 'documents', title: 'Documents list', description: 'List your documents' },
+  { id: 'gallery', title: 'Gallery page', description: 'List partners, exhibitors' },
+  { id: 'forms', title: 'Forms', description: 'Insert any link' },
+  { id: 'meeting-room', title: 'Meeting room', description: 'Add QR code' }
+]
+
 interface PageCreationModalProps {
   isVisible: boolean
   onClose: () => void
-  onSelect: (mode: 'scratch' | 'template' | 'html', blockType?: string) => void
+  onSelect: (pageType: PageType) => void
 }
 
 const PageCreationModal: React.FC<PageCreationModalProps> = ({
@@ -14,14 +47,13 @@ const PageCreationModal: React.FC<PageCreationModalProps> = ({
   onClose,
   onSelect
 }) => {
-  const [selectedMode, setSelectedMode] = useState<'scratch' | 'template' | 'html'>('scratch')
+  const [selectedPageType, setSelectedPageType] = useState<PageType>('attendee')
 
   const handleSelect = () => {
-    const mode = selectedMode
     onClose()
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        onSelect(mode)
+        onSelect(selectedPageType)
       })
     })
   }
@@ -48,7 +80,7 @@ const PageCreationModal: React.FC<PageCreationModalProps> = ({
           type="button"
           onClick={handleSelect}
           data-modal-select-button="true"
-          className="min-w-[80px] rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
+          className="min-w-[80px] rounded-md bg-[#6938EF] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#5925DC]"
         >
           Select
         </button>
@@ -59,28 +91,30 @@ const PageCreationModal: React.FC<PageCreationModalProps> = ({
   const optionBaseClasses =
     'relative flex w-full cursor-pointer flex-col gap-1 rounded-lg border bg-white p-3 transition hover:border-primary/40 hover:bg-primary/5 focus:outline-none'
 
-  const renderCard = (
-    mode: 'scratch' | 'template' | 'html',
-    title: string,
-    description: string,
-    extraClasses?: string
-  ) => {
-    const isSelected = selectedMode === mode
+  const renderCard = (pageType: PageTypeOption) => {
+    const isSelected = selectedPageType === pageType.id
     return (
       <button
-        key={mode}
+        key={pageType.id}
         type="button"
-        onClick={() => setSelectedMode(mode)}
-        className={clsx(optionBaseClasses, extraClasses, isSelected ? 'border-2 border-primary bg-primary/5' : 'border-slate-200')}
+        onClick={() => setSelectedPageType(pageType.id)}
+        className={clsx(
+          optionBaseClasses,
+          isSelected ? 'border-2 border-[#6938EF] bg-[#6938EF]/10' : 'border-slate-200'
+        )}
       >
         <div className="flex flex-1 flex-col gap-1 pr-9 text-left">
-          <span className="text-[15px] font-semibold text-slate-900">{title}</span>
-          <span className="line-clamp-1 text-[13px] text-slate-500">{description}</span>
+          <span className={clsx('text-[15px] font-semibold', isSelected ? 'text-[#6938EF]' : 'text-slate-900')}>
+            {pageType.title}
+          </span>
+          <span className="line-clamp-1 text-[13px] text-slate-500">{pageType.description}</span>
         </div>
         <span
           className={clsx(
             'absolute right-3 top-3 h-5 w-5 rounded-full border transition',
-            isSelected ? 'border-[6px] border-primary' : 'border-2 border-slate-300'
+            isSelected 
+              ? 'border-[6px] border-[#6938EF]' 
+              : 'border-2 border-slate-300'
           )}
           aria-hidden="true"
         />
@@ -92,29 +126,23 @@ const PageCreationModal: React.FC<PageCreationModalProps> = ({
     <Modal
       isVisible={isVisible}
       onClose={onClose}
-      title="Select from below"
-      width={548}
-      height={350}
-      maxWidth={548}
+      title="Pages"
+      width={900}
+      maxWidth={900}
       maxHeight="90vh"
       borderRadius={16}
       footer={footer}
       zIndex={10000}
-      padding={{ top: 0, right: 0, bottom: 24, left: 0 }}
+      padding={{ top: 0, right: 0, bottom: 0, left: 0 }}
       customHeader={(
-        <div className="inline-flex w-full flex-col items-start justify-start gap-4 self-stretch px-6 pt-1.5">
-          <div className="flex w-full flex-col items-start justify-start gap-1">
-            <p className="font-['Inter'] text-base font-semibold leading-6 text-slate-900">Select from below</p>
-            <p className="font-['Inter'] text-sm font-normal leading-5 text-slate-500">Choose how you want to build your page</p>
-          </div>
+        <div className="flex w-full items-center justify-between px-6 pt-6 pb-4">
+          <h2 className="text-xl font-semibold text-slate-900">Pages</h2>
         </div>
       )}
       contentStyle={{ padding: 0 }}
     >
-      <div className="grid gap-3 px-6 py-1.5 sm:grid-cols-2 sm:justify-items-center">
-        {renderCard('scratch', 'Create from scratch', 'Create a custom page from scratch.', 'sm:w-[240px]')}
-        {renderCard('template', 'Templates', 'Choose from pre-designed layouts.', 'sm:w-[240px]')}
-        {renderCard('html', 'HTML Code', 'Paste html code to create custom pages.', 'sm:col-span-2 sm:w-[240px] sm:justify-self-center')}
+      <div className="grid grid-cols-3 gap-3 px-6 pb-6 mt-4">
+        {pageTypes.map((pageType) => renderCard(pageType))}
       </div>
     </Modal>
   )

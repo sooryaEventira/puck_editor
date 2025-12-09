@@ -53,21 +53,33 @@ const HeroSection = ({
 
   // Get the current background image (uploaded or prop)
   const currentBackgroundImage = uploadedImageUrl || backgroundImage
+  
+  // Use contain to show full image without cropping, or cover if no image
+  const backgroundSizeValue = currentBackgroundImage ? 'contain' : 'cover'
+  
   const heroStyle: React.CSSProperties = {
-    background: currentBackgroundImage ? `url(${currentBackgroundImage})` : backgroundColor,
-    backgroundSize: 'cover',
+    background: currentBackgroundImage 
+      ? `${backgroundColor || '#1a1a1a'} url(${currentBackgroundImage})` 
+      : backgroundColor,
+    backgroundSize: backgroundSizeValue,
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
     color: textColor,
-    height: height,
+    minHeight: currentBackgroundImage ? '600px' : '300px',
+    height: currentBackgroundImage ? 'auto' : (height || '500px'),
     display: 'flex',
     alignItems: 'center',
     justifyContent: alignment === 'left' ? 'flex-start' : alignment === 'right' ? 'flex-end' : 'center',
-    padding: '80px 40px',
+    padding: 'clamp(40px, 8vw, 80px) clamp(20px, 4vw, 40px)',
     margin: '0',
     position: 'relative',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    width: '100%',
+    aspectRatio: currentBackgroundImage ? 'auto' : undefined
   }
+
+  // Add responsive height via CSS custom properties and media queries
+  const heroClassName = 'w-full'
 
   const overlayStyle: React.CSSProperties = {
     position: 'absolute',
@@ -84,12 +96,13 @@ const HeroSection = ({
     maxWidth: '800px',
     zIndex: 2,
     position: 'relative',
-    width: '100%'
+    width: '100%',
+    padding: '0 clamp(10px, 2vw, 20px)'
   }
 
   const titleStyle: React.CSSProperties = {
-    margin: '0 0 20px 0',
-    fontSize: titleSize,
+    margin: '0 0 15px 0',
+    fontSize: 'clamp(1.75rem, 4vw, 3.5rem)',
     fontWeight: 'bold',
     lineHeight: '1.1',
     color: '#FFFFFF',
@@ -97,8 +110,8 @@ const HeroSection = ({
   }
 
   const subtitleStyle: React.CSSProperties = {
-    margin: '0 0 30px 0',
-    fontSize: subtitleSize,
+    margin: '0 0 20px 0',
+    fontSize: 'clamp(0.875rem, 2vw, 1.25rem)',
     opacity: 0.95,
     color: '#FFFFFF',
     textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
@@ -107,19 +120,19 @@ const HeroSection = ({
 
   const getButtonPadding = (size: 'small' | 'medium' | 'large') => {
     switch (size) {
-      case 'small': return '8px 16px'
-      case 'medium': return '12px 24px'
-      case 'large': return '16px 32px'
-      default: return '16px 32px'
+      case 'small': return 'clamp(6px, 1.5vw, 8px) clamp(12px, 2vw, 16px)'
+      case 'medium': return 'clamp(10px, 2vw, 12px) clamp(18px, 3vw, 24px)'
+      case 'large': return 'clamp(12px, 2.5vw, 16px) clamp(24px, 4vw, 32px)'
+      default: return 'clamp(12px, 2.5vw, 16px) clamp(24px, 4vw, 32px)'
     }
   }
 
   const getButtonFontSize = (size: 'small' | 'medium' | 'large') => {
     switch (size) {
-      case 'small': return '14px'
-      case 'medium': return '16px'
-      case 'large': return '18px'
-      default: return '18px'
+      case 'small': return 'clamp(12px, 2vw, 14px)'
+      case 'medium': return 'clamp(14px, 2.5vw, 16px)'
+      case 'large': return 'clamp(14px, 3vw, 18px)'
+      default: return 'clamp(14px, 3vw, 18px)'
     }
   }
 
@@ -175,6 +188,7 @@ const HeroSection = ({
   return (
     <div 
       style={heroStyle}
+      className={heroClassName}
       onClick={() => fileInputRef.current?.click()}
       onMouseEnter={(e) => {
         e.currentTarget.style.cursor = 'pointer'
@@ -226,7 +240,7 @@ const HeroSection = ({
         )}
         {buttons && buttons.length > 0 && (
           <div style={{ 
-            marginTop: '30px',
+            marginTop: 'clamp(20px, 4vw, 30px)',
             display: 'flex',
             flexWrap: 'wrap',
             gap: buttonSpacing,

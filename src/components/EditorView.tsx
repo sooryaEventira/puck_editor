@@ -4,7 +4,7 @@ import '@measured/puck/puck.css'
 
 import { config } from '../config/puckConfig'
 import { PageSidebar } from './page'
-import PageCreationModal from './page/PageCreationModal'
+import PageCreationModal, { type PageType } from './page/PageCreationModal'
 import BlockTypeSelectionModal from './page/BlockTypeSelectionModal'
 import TemplateSelectionModal from './page/TemplateSelectionModal'
 import Preview from './Preview'
@@ -46,18 +46,15 @@ export const EditorView: React.FC<EditorViewProps> = ({
   pages,
   puckUi,
   showPreview,
-  showLeftSidebar,
   showRightSidebar,
   onPublish,
   onChange,
   onDataChange,
   onPageSelect,
-  onAddPage,
   onManagePages,
   onNavigateToEditor,
   onAddComponent,
   onPreviewToggle,
-  onBack,
   onCreatePageFromTemplate,
   onCreateNewPage,
 }) => {
@@ -81,23 +78,40 @@ export const EditorView: React.FC<EditorViewProps> = ({
     setShowCustomSidebar(prev => !prev)
   }
 
-  const handlePageCreationSelect = (mode: 'scratch' | 'template' | 'html', blockType?: string) => {
-    if (mode === 'template') {
-      setShowTemplateModal(true)
-      return
-    }
-    
-    if (mode === 'scratch') {
-      // Keep component sidebar visible (don't show custom sidebar) and create new page
-      setShowCustomSidebar(false)
-      if (onCreateNewPage) {
-        onCreateNewPage()
-      }
-      return
+  const handlePageCreationSelect = (pageType: PageType) => {
+    // Handle different page types
+    switch (pageType) {
+      case 'html-general':
+        // For HTML/General page, create from scratch
+        setShowCustomSidebar(false)
+        if (onCreateNewPage) {
+          onCreateNewPage()
+        }
+        break
+      case 'attendee':
+      case 'schedule':
+      case 'folder':
+      case 'organization':
+      case 'hyperlink':
+      case 'qr-scanner':
+      case 'documents':
+      case 'gallery':
+      case 'forms':
+      case 'meeting-room':
+        // TODO: Implement specific page type creation logic
+        console.log('Creating page type:', pageType)
+        setShowCustomSidebar(false)
+        if (onCreateNewPage) {
+          onCreateNewPage()
+        }
+        break
+      default:
+        console.log('Unknown page type:', pageType)
+        break
     }
   }
 
-  const handleBlockTypeSelect = (blockType: string) => {
+  const handleBlockTypeSelect = (_blockType: string) => {
     setShowBlockTypeModal(false)
     setShowCustomSidebar(false)
   }

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react'
+import React, { useRef, useState, useCallback, useEffect } from 'react'
 import { Upload01, X } from '@untitled-ui/icons-react'
 
 interface UploadedFile {
@@ -27,9 +27,27 @@ const FileUpload: React.FC<FileUploadProps> = ({
   maxHeight: _maxHeight
 }) => {
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadIntervalRef = useRef<number | null>(null)
+
+  // Clear interval on unmount
+  useEffect(() => {
+    return () => {
+      if (uploadIntervalRef.current) {
+        clearInterval(uploadIntervalRef.current)
+        uploadIntervalRef.current = null
+      }
+    }
+  }, [])
 
   const handleFileSelect = useCallback((file: File) => {
+    // Clear any existing interval before starting a new upload
+    if (uploadIntervalRef.current) {
+      clearInterval(uploadIntervalRef.current)
+      uploadIntervalRef.current = null
+    }
+
     onChange(file)
     
     // Simulate upload progress
@@ -41,14 +59,26 @@ const FileUpload: React.FC<FileUploadProps> = ({
     setUploadedFile(uploadFile)
 
     // Simulate upload progress
-    const interval = setInterval(() => {
+    uploadIntervalRef.current = setInterval(() => {
       setUploadedFile((prev) => {
-        if (!prev) return null
+        if (!prev) {
+          // If prev is null, clear interval and return null
+          if (uploadIntervalRef.current) {
+            clearInterval(uploadIntervalRef.current)
+            uploadIntervalRef.current = null
+          }
+          return null
+        }
+        
         const newProgress = Math.min(prev.progress + 10, 100)
         const newStatus = newProgress >= 100 ? 'complete' : 'uploading'
         
         if (newProgress >= 100) {
-          clearInterval(interval)
+          // Clear interval when upload completes
+          if (uploadIntervalRef.current) {
+            clearInterval(uploadIntervalRef.current)
+            uploadIntervalRef.current = null
+          }
         }
         
         return {
@@ -60,23 +90,47 @@ const FileUpload: React.FC<FileUploadProps> = ({
     }, 200)
   }, [onChange])
 
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    e.dataTransfer.dropEffect = 'copy'
   }
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    // Only set isDragging to false if we're leaving the drop zone entirely
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX
+    const y = e.clientY
+    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+      setIsDragging(false)
+    }
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    setIsDragging(false)
 
     const files = e.dataTransfer.files
     if (files && files.length > 0) {
-      handleFileSelect(files[0])
+      const file = files[0]
+      // Validate file type
+      if (accept && accept !== '*/*' && accept !== 'image/*') {
+        const acceptedTypes = accept.split(',').map(t => t.trim())
+        const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
+        if (!acceptedTypes.some(type => type.includes(fileExtension) || type.includes('image/*'))) {
+          return
+        }
+      }
+      handleFileSelect(file)
     }
   }
 
@@ -92,6 +146,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
   }
 
   const handleDelete = () => {
+    // Clear any running upload interval
+    if (uploadIntervalRef.current) {
+      clearInterval(uploadIntervalRef.current)
+      uploadIntervalRef.current = null
+    }
+    
     onChange(null)
     setUploadedFile(null)
     if (fileInputRef.current) {
@@ -118,11 +178,16 @@ const FileUpload: React.FC<FileUploadProps> = ({
       
       {/* Upload Area */}
       <div
+        onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleClick}
-        className="self-stretch px-6 py-4 bg-white rounded-xl outline outline-1 outline-[#D5D7DA] outline-offset-[-1px] flex flex-col items-center gap-1 cursor-pointer"
+        className={`self-stretch px-6 py-4 bg-white rounded-xl outline outline-1 outline-offset-[-1px] flex flex-col items-center gap-1 cursor-pointer transition-colors ${
+          isDragging 
+            ? 'outline-[#6938EF] outline-2 bg-[#6938EF]/5' 
+            : 'outline-[#D5D7DA]'
+        }`}
       >
         <div className="self-stretch flex flex-col items-center gap-3">
           {/* Icon Container */}
