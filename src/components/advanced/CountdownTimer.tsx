@@ -88,268 +88,98 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ heading, targetDate }) 
 
   const isExpired = timeLeft.months === 0 && timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
 
+  // Helper component for time unit cards
+  const TimeUnitCard: React.FC<{
+    value: number;
+    label: string;
+    gradient: string;
+    shadowColor: string;
+  }> = ({ value, label, gradient, shadowColor }) => {
+    return (
+      <div
+        style={{
+          background: gradient,
+          boxShadow: `0 8px 25px ${shadowColor}`
+        }}
+        className="flex flex-col items-center rounded-2xl p-7 min-w-[90px] transition-all duration-300 cursor-pointer relative overflow-hidden"
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)';
+          e.currentTarget.style.boxShadow = `0 12px 35px ${shadowColor.replace('0.3', '0.4')}`;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1) translateY(0)';
+          e.currentTarget.style.boxShadow = `0 8px 25px ${shadowColor}`;
+        }}
+      >
+        <div className="text-[42px] font-black text-white leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+          {formatNumber(value)}
+        </div>
+        <div className="mt-3 text-[13px] uppercase tracking-wider text-white/90 font-semibold">
+          {label}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '48px 24px',
-      backgroundColor: '#ffffff',
-      borderRadius: '20px',
-      boxShadow: '0 20px 40px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.06)',
-      minHeight: '300px',
-      border: '1px solid #f1f5f9'
-    }}>
+    <div className="flex flex-col items-center justify-center py-12 px-6 bg-white rounded-[20px] shadow-[0_20px_40px_rgba(0,0,0,0.1),0_8px_16px_rgba(0,0,0,0.06)] min-h-[300px] border border-slate-100">
       {/* Heading */}
       <h2 
         contentEditable
         suppressContentEditableWarning={true}
         data-puck-field="heading"
         style={{
-          fontSize: '32px',
-          fontWeight: '700',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          marginBottom: '40px',
-          textAlign: 'center',
-          cursor: 'text',
-          outline: 'none',
-          letterSpacing: '-0.02em'
+          backgroundClip: 'text'
         }}
+        className="text-[32px] font-bold mb-10 text-center cursor-text outline-none tracking-tight"
       >
         {heading}
       </h2>
 
       {/* Countdown Timer */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        gap: '24px',
-        maxWidth: '800px'
-      }}>
+      <div className="flex flex-wrap justify-center gap-6 max-w-[800px]">
         {/* Months */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          borderRadius: '16px',
-          boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
-          padding: '28px 24px',
-          minWidth: '90px',
-          transition: 'all 0.3s ease',
-          cursor: 'pointer',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 12px 35px rgba(102, 126, 234, 0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1) translateY(0)';
-          e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
-        }}>
-          <div style={{
-            fontSize: '42px',
-            fontWeight: '900',
-            color: '#ffffff',
-            lineHeight: '1',
-            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}>
-            {formatNumber(timeLeft.months)}
-          </div>
-          <div style={{
-            marginTop: '12px',
-            fontSize: '13px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            color: 'rgba(255,255,255,0.9)',
-            fontWeight: '600'
-          }}>
-            {timeLeft.months === 1 ? 'Month' : 'Months'}
-          </div>
-        </div>
+        <TimeUnitCard
+          value={timeLeft.months}
+          label={timeLeft.months === 1 ? 'Month' : 'Months'}
+          gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          shadowColor="rgba(102, 126, 234, 0.3)"
+        />
 
         {/* Days */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-          borderRadius: '16px',
-          boxShadow: '0 8px 25px rgba(240, 147, 251, 0.3)',
-          padding: '28px 24px',
-          minWidth: '90px',
-          transition: 'all 0.3s ease',
-          cursor: 'pointer',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 12px 35px rgba(240, 147, 251, 0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1) translateY(0)';
-          e.currentTarget.style.boxShadow = '0 8px 25px rgba(240, 147, 251, 0.3)';
-        }}>
-          <div style={{
-            fontSize: '42px',
-            fontWeight: '900',
-            color: '#ffffff',
-            lineHeight: '1',
-            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}>
-            {formatNumber(timeLeft.days)}
-          </div>
-          <div style={{
-            marginTop: '12px',
-            fontSize: '13px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            color: 'rgba(255,255,255,0.9)',
-            fontWeight: '600'
-          }}>
-            {timeLeft.days === 1 ? 'Day' : 'Days'}
-          </div>
-        </div>
+        <TimeUnitCard
+          value={timeLeft.days}
+          label={timeLeft.days === 1 ? 'Day' : 'Days'}
+          gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+          shadowColor="rgba(240, 147, 251, 0.3)"
+        />
 
         {/* Hours */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-          borderRadius: '16px',
-          boxShadow: '0 8px 25px rgba(79, 172, 254, 0.3)',
-          padding: '28px 24px',
-          minWidth: '90px',
-          transition: 'all 0.3s ease',
-          cursor: 'pointer',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 12px 35px rgba(79, 172, 254, 0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1) translateY(0)';
-          e.currentTarget.style.boxShadow = '0 8px 25px rgba(79, 172, 254, 0.3)';
-        }}>
-          <div style={{
-            fontSize: '42px',
-            fontWeight: '900',
-            color: '#ffffff',
-            lineHeight: '1',
-            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}>
-            {formatNumber(timeLeft.hours)}
-          </div>
-          <div style={{
-            marginTop: '12px',
-            fontSize: '13px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            color: 'rgba(255,255,255,0.9)',
-            fontWeight: '600'
-          }}>
-            {timeLeft.hours === 1 ? 'Hour' : 'Hours'}
-          </div>
-        </div>
+        <TimeUnitCard
+          value={timeLeft.hours}
+          label={timeLeft.hours === 1 ? 'Hour' : 'Hours'}
+          gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+          shadowColor="rgba(79, 172, 254, 0.3)"
+        />
 
         {/* Minutes */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-          borderRadius: '16px',
-          boxShadow: '0 8px 25px rgba(67, 233, 123, 0.3)',
-          padding: '28px 24px',
-          minWidth: '90px',
-          transition: 'all 0.3s ease',
-          cursor: 'pointer',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 12px 35px rgba(67, 233, 123, 0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1) translateY(0)';
-          e.currentTarget.style.boxShadow = '0 8px 25px rgba(67, 233, 123, 0.3)';
-        }}>
-          <div style={{
-            fontSize: '42px',
-            fontWeight: '900',
-            color: '#ffffff',
-            lineHeight: '1',
-            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}>
-            {formatNumber(timeLeft.minutes)}
-          </div>
-          <div style={{
-            marginTop: '12px',
-            fontSize: '13px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            color: 'rgba(255,255,255,0.9)',
-            fontWeight: '600'
-          }}>
-            {timeLeft.minutes === 1 ? 'Minute' : 'Minutes'}
-          </div>
-        </div>
+        <TimeUnitCard
+          value={timeLeft.minutes}
+          label={timeLeft.minutes === 1 ? 'Minute' : 'Minutes'}
+          gradient="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
+          shadowColor="rgba(67, 233, 123, 0.3)"
+        />
 
         {/* Seconds */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-          borderRadius: '16px',
-          boxShadow: '0 8px 25px rgba(250, 112, 154, 0.3)',
-          padding: '28px 24px',
-          minWidth: '90px',
-          transition: 'all 0.3s ease',
-          cursor: 'pointer',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 12px 35px rgba(250, 112, 154, 0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1) translateY(0)';
-          e.currentTarget.style.boxShadow = '0 8px 25px rgba(250, 112, 154, 0.3)';
-        }}>
-          <div style={{
-            fontSize: '42px',
-            fontWeight: '900',
-            color: '#ffffff',
-            lineHeight: '1',
-            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}>
-            {formatNumber(timeLeft.seconds)}
-          </div>
-          <div style={{
-            marginTop: '12px',
-            fontSize: '13px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            color: 'rgba(255,255,255,0.9)',
-            fontWeight: '600'
-          }}>
-            {timeLeft.seconds === 1 ? 'Second' : 'Seconds'}
-          </div>
-        </div>
+        <TimeUnitCard
+          value={timeLeft.seconds}
+          label={timeLeft.seconds === 1 ? 'Second' : 'Seconds'}
+          gradient="linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
+          shadowColor="rgba(250, 112, 154, 0.3)"
+        />
       </div>
 
       {/* Target Date Editor */}

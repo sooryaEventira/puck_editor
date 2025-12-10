@@ -52,6 +52,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   useEffect(() => {
     const checkRoute = () => {
       const path = window.location.pathname
+      // Don't handle editor routes here - they're handled by App.tsx
+      if (path.startsWith('/event/website/editor/')) {
+        return
+      }
+      
       if (path === '/event/create/template') {
         setShowTemplatePage(true)
         setShowNewEventForm(false)

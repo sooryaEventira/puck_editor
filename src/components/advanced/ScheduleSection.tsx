@@ -43,71 +43,29 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   return (
     <section 
-      style={{ 
-        // backgroundColor,
-        padding,
-        width: '100%',
-        minHeight: '400px'
-      }}
+      style={{ padding }}
+      className="w-full min-h-[400px]"
     >
       {/* Main Container */}
-      <div 
-        style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          padding: '2rem',
-          position: 'relative'
-        }}
-      >
+      <div className="max-w-[1200px] mx-auto bg-white rounded-xl shadow-md p-8 relative">
         {/* Time Indicator */}
-        <div 
-          style={{
-            position: 'absolute',
-            left: '-80px',
-            top: '2rem',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center'
-          }}
-        >
-          <div 
-            style={{
-              backgroundColor: '#f3f4f6',
-              borderRadius: '8px',
-              padding: '0.5rem 1rem',
-              marginBottom: '0.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
+        <div className="absolute -left-20 top-8 flex flex-col items-center">
+          <div className="bg-gray-100 rounded-lg px-4 py-2 mb-2 flex items-center gap-2">
             <input 
               type="checkbox" 
-              style={{ margin: 0 }}
+              className="m-0"
             />
-            <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
+            <span className="text-sm font-medium">
               {sessions[0]?.time?.split(' - ')[0] || '08:00 AM'}
             </span>
           </div>
-          <div 
-            style={{
-              backgroundColor: '#dbeafe',
-              color: '#1e40af',
-              padding: '0.25rem 0.75rem',
-              borderRadius: '9999px',
-              fontSize: '0.75rem',
-              fontWeight: '500'
-            }}
-          >
+          <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
             {sessions.length} parallel session{sessions.length !== 1 ? 's' : ''}
           </div>
         </div>
 
         {/* Sessions List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: gap }}>
+        <div className="flex flex-col" style={{ gap }}>
           {sessions.map((session, index) => {
             // Show first 2 sessions by default, rest only when expanded
             const shouldShow = index < 2 || isScheduleExpanded
@@ -116,26 +74,13 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             return (
             <div 
               key={index}
-              style={{
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                paddingLeft: '8rem',
-                paddingRight: '8rem',
-                position: 'relative',
-                backgroundColor: '#ffffff'
-              }}
+              className="border border-gray-200 rounded-lg pl-32 pr-32 relative bg-white"
             >
               {/* Session Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <div style={{ flex: 1 }}>
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
                   <h3 
-                    style={{
-                      fontSize: '1.125rem',
-                      fontWeight: '600',
-                      color: '#111827',
-                      margin: 0,
-                      marginBottom: '0.5rem'
-                    }}
+                    className="text-lg font-semibold text-gray-900 m-0 mb-2"
                     data-puck-field={`sessions[${index}].title`}
                     contentEditable
                     suppressContentEditableWarning={true}
@@ -144,8 +89,8 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   </h3>
                   
                   {/* Session Details */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.875rem' }}>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-gray-500 text-sm">
                       <span>🕐</span>
                       <span 
                         data-puck-field={`sessions[${index}].time`}
@@ -155,7 +100,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                         {session.time}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.875rem' }}>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm">
                       <span>📍</span>
                       <span 
                         data-puck-field={`sessions[${index}].room`}
@@ -165,7 +110,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                         {session.room}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.875rem' }}>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm">
                       <span>👤</span>
                       <span 
                         data-puck-field={`sessions[${index}].mode`}
@@ -179,66 +124,13 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 </div>
 
                 {/* Right Side Icons */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
-                  {/* Recording Badge */}
-                  {/* <div 
-                    style={{
-                      backgroundColor: '#dbeafe',
-                      color: '#1e40af',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '9999px',
-                      fontSize: '0.75rem',
-                      fontWeight: '500',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem'
-                    }}
-                  >
-                    <span>📹</span>
-                    <span>{index + 1}</span>
-                  </div> */}
-
-                  {/* Session Icon */}
-                  {/* <div 
-                    style={{
-                      width: '48px',
-                      height: '48px',
-                      backgroundColor: '#f97316',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.5rem'
-                    }}
-                    data-puck-field={`sessions[${index}].icon`}
-                    contentEditable
-                    suppressContentEditableWarning={true}
-                  >
-                    {session.icon}
-                  </div> */}
-
+                <div className="flex items-center gap-3 flex-shrink-0">
                   {/* Menu Icons */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <button 
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '0.25rem',
-                        color: '#6b7280'
-                      }}
-                    >
+                  <div className="flex flex-col gap-1">
+                    <button className="bg-none border-none cursor-pointer p-1 text-gray-500">
                       ⋯
                     </button>
-                    <button 
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '0.25rem',
-                        color: '#6b7280'
-                      }}
-                    >
+                    <button className="bg-none border-none cursor-pointer p-1 text-gray-500">
                       ➕
                     </button>
                   </div>
@@ -246,14 +138,9 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               </div>
 
               {/* Session Description */}
-              <div style={{ marginBottom: '1rem' }}>
+              <div className="mb-4">
                 <p 
-                  style={{
-                    color: '#6b7280',
-                    fontSize: '0.875rem',
-                    margin: 0,
-                    lineHeight: '1.5'
-                  }}
+                  className="text-gray-500 text-sm m-0 leading-relaxed"
                   data-puck-field={`sessions[${index}].description`}
                   contentEditable
                   suppressContentEditableWarning={true}
@@ -264,15 +151,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 {session.description.length > 50 && (
                   <button
                     onClick={() => toggleSession(index)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#3b82f6',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem',
-                      marginTop: '0.5rem',
-                      textDecoration: 'underline'
-                    }}
+                    className="bg-none border-none text-blue-500 cursor-pointer text-sm mt-2 underline"
                   >
                     {expandedSessions.has(index) ? 'See less' : 'See more'}
                   </button>
@@ -284,21 +163,10 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         </div>
 
         {/* View Full Schedule Button */}
-        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+        <div className="mt-8 text-center">
           <button 
             onClick={toggleSchedule}
-            style={{
-              backgroundColor: '#7c3aed',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '0.75rem 2rem',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              width: '100%',
-              maxWidth: '300px'
-            }}
+            className="bg-purple-600 text-white border-none rounded-lg py-3 px-8 text-base font-semibold cursor-pointer w-full max-w-[300px] hover:bg-purple-700 transition-colors"
             data-puck-field="buttonText"
             contentEditable
             suppressContentEditableWarning={true}
@@ -310,12 +178,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
       {/* Empty State */}
       {sessions.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '3rem',
-          color: '#6b7280',
-          fontSize: '1.125rem'
-        }}>
+        <div className="text-center py-12 text-gray-500 text-lg">
           No sessions added yet. Add sessions using the properties panel.
         </div>
       )}

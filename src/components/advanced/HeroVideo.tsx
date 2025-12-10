@@ -125,15 +125,10 @@ const HeroVideo = ({
         `}
       </style>
       <div 
-        className="hero-video-container"
+        className="hero-video-container relative min-h-[400px] overflow-hidden flex items-center"
         style={{
-          position: 'relative',
           height: height || '500px',
-          minHeight: '400px',
           backgroundColor: backgroundColor || '#000000',
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
           justifyContent: getAlignment(alignment)
         }}
       >
@@ -143,15 +138,7 @@ const HeroVideo = ({
           <img
             src={uploadedVideoUrl || videoUrlValue}
             alt="Hero background"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              zIndex: 1
-            }}
+            className="absolute top-0 left-0 w-full h-full object-cover z-[1]"
             onLoad={() => {
               setIsVideoLoaded(true);
               setVideoError(false);
@@ -166,15 +153,7 @@ const HeroVideo = ({
             muted
             loop
             playsInline
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              zIndex: 1
-            }}
+            className="absolute top-0 left-0 w-full h-full object-cover z-[1]"
             onLoadedData={() => {
               setIsVideoLoaded(true);
               setVideoError(false);
@@ -190,15 +169,9 @@ const HeroVideo = ({
       ) : (
         <div 
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-            zIndex: 1,
-            cursor: 'pointer'
+            background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)'
           }}
+          className="absolute top-0 left-0 w-full h-full z-[1] cursor-pointer"
           onClick={handleFileUpload}
         />
       )}
@@ -206,28 +179,19 @@ const HeroVideo = ({
       {/* Overlay - Clickable for upload */}
       <div 
         style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: `rgba(0, 0, 0, ${overlayOpacity || 0.4})`,
-          zIndex: 2,
-          cursor: 'pointer'
+          backgroundColor: `rgba(0, 0, 0, ${overlayOpacity || 0.4})`
         }}
+        className="absolute top-0 left-0 w-full h-full z-[2] cursor-pointer"
         onClick={handleFileUpload}
       />
 
       {/* Content */}
-      <div style={{
-        position: 'relative',
-        zIndex: 3,
-        textAlign: alignment || 'center',
-        color: textColor || '#ffffff',
-        maxWidth: '800px',
-        padding: '2rem',
-        width: '100%'
-      }}>
+      <div 
+        style={{
+          color: textColor || '#ffffff'
+        }}
+        className={`relative z-[3] max-w-[800px] p-8 w-full ${alignment === 'left' ? 'text-left' : alignment === 'right' ? 'text-right' : 'text-center'}`}
+      >
         {/* Title */}
         <h1 
           contentEditable
@@ -235,15 +199,9 @@ const HeroVideo = ({
           data-puck-field="title"
           style={{
             fontSize: getTitleSize(titleSize),
-            fontWeight: 'bold',
-            margin: '0 0 1rem 0',
-            lineHeight: '1.2',
-            textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-            cursor: 'text',
-            outline: 'none',
-            color: textColor || '#ffffff',
-            minHeight: '60px'
+            color: textColor || '#ffffff'
           }}
+          className="font-bold m-0 mb-4 leading-tight drop-shadow-[2px_2px_4px_rgba(0,0,0,0.5)] cursor-text outline-none min-h-[60px]"
         >
           {title}
         </h1>
@@ -255,14 +213,9 @@ const HeroVideo = ({
           data-puck-field="subtitle"
           style={{
             fontSize: getSubtitleSize(subtitleSize),
-            margin: '0 0 2rem 0',
-            lineHeight: '1.6',
-            textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
-            cursor: 'text',
-            outline: 'none',
-            minHeight: '40px',
             color: textColor || '#ffffff'
           }}
+          className="m-0 mb-8 leading-relaxed drop-shadow-[1px_1px_2px_rgba(0,0,0,0.5)] cursor-text outline-none min-h-[40px]"
         >
           {subtitle}
         </p>
@@ -275,81 +228,38 @@ const HeroVideo = ({
           suppressContentEditableWarning={true}
           data-puck-field="buttonText"
           style={{
-            display: 'inline-block',
             backgroundColor: buttonColor || '#007bff',
             color: buttonTextColor || '#ffffff',
-            textDecoration: 'none',
-            borderRadius: '6px',
-            fontWeight: '600',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-            cursor: 'text',
-            outline: 'none',
             ...getButtonSize(buttonSize)
           }}
+          className="inline-block no-underline rounded-md font-semibold transition-all duration-300 shadow-lg cursor-text outline-none hover:-translate-y-0.5"
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
             e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
             e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
           }}
         >
           {buttonText}
         </a>
 
-
         {/* Loading Indicator */}
         {videoUrlValue && !isVideoLoaded && !videoError && (
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            color: 'white',
-            fontSize: '1.2rem',
-            zIndex: 4
-          }}>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-xl z-[4]">
             Loading video...
           </div>
         )}
 
-
         {/* Upload Hint - Show on hover */}
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          background: 'rgba(0, 0, 0, 0.7)',
-          color: 'white',
-          padding: '8px 12px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          zIndex: 10,
-          opacity: 0,
-          transition: 'opacity 0.3s ease',
-          pointerEvents: 'none'
-        }}
-        className="upload-hint"
+        <div 
+          className="upload-hint absolute top-5 right-5 bg-black/70 text-white px-3 py-2 rounded text-xs z-10 opacity-0 transition-opacity duration-300 pointer-events-none"
         >
           🎬 Click background to upload image or video
         </div>
 
         {/* Media Error Message */}
         {videoError && (
-          <div style={{
-            position: 'absolute',
-            top: '10px',
-            left: '10px',
-            background: 'rgba(220, 53, 69, 0.9)',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '4px',
-            fontSize: '12px',
-            zIndex: 10,
-            maxWidth: '200px'
-          }}>
+          <div className="absolute top-2.5 left-2.5 bg-red-600/90 text-white px-3 py-2 rounded text-xs z-10 max-w-[200px]">
             ❌ Media failed to load
           </div>
         )}

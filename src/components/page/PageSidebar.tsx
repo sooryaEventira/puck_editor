@@ -11,8 +11,6 @@ interface PageSidebarProps {
   onManagePages: () => void
   onShowComponentSidebar?: () => void
   onBackClick?: () => void
-  onToggleSidebar?: () => void
-  isSidebarCollapsed?: boolean
 }
 
 const PageSidebar: React.FC<PageSidebarProps> = ({
@@ -21,25 +19,29 @@ const PageSidebar: React.FC<PageSidebarProps> = ({
   currentPageName,
   onPageSelect,
   onShowComponentSidebar,
-  onBackClick,
-  onToggleSidebar,
-  isSidebarCollapsed = false
+  onBackClick
 }) => {
-  if (isSidebarCollapsed) {
-    return null
-  }
-  
+  // Debug log
+  React.useEffect(() => {
+    console.log('📋 PageSidebar rendered - onBackClick:', typeof onBackClick, onBackClick ? 'provided' : 'missing')
+  }, [onBackClick])
+
   return (
   <aside className="flex h-full w-[280px] min-w-[280px] flex-shrink-0 flex-col border-r border-slate-200 bg-white">
     <header className="px-4 pb-3 pt-2">
-      {/* First row: Left arrow and toggle icon */}
-      <div className="flex items-center justify-between mb-2">
+      {/* First row: Left arrow */}
+      <div className="flex items-center mb-2">
         <div className="flex items-center gap-2">
           {onBackClick && (
             <>
               <button
                 type="button"
-                onClick={onBackClick}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('🔙 Back button clicked in PageSidebar')
+                  onBackClick()
+                }}
                 className="flex h-6 w-6 items-center justify-center text-slate-600 hover:text-slate-900 transition-colors"
                 aria-label="Go back"
               >
@@ -70,46 +72,6 @@ const PageSidebar: React.FC<PageSidebarProps> = ({
             </button>
           )}
         </div>
-        {onToggleSidebar && (
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            className="flex h-5 w-5 items-center justify-center text-slate-500 transition hover:text-slate-700"
-            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isSidebarCollapsed ? (
-              <svg
-                aria-hidden="true"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M9 3v18" />
-                <path d="M15 12l3-3-3-3" />
-              </svg>
-            ) : (
-              <svg
-                aria-hidden="true"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M9 3v18" />
-                <path d="M12 15l-3-3 3-3" />
-              </svg>
-            )}
-          </button>
-        )}
       </div>
       {/* Second row: Website Pages title */}
       <h2 className="text-[13px] font-bold uppercase tracking-[0.05em] text-slate-700 mt-4">

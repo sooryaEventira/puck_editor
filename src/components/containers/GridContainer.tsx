@@ -10,18 +10,14 @@ const GridContainer = ({ columns = 2, gap = '16px', rowGap = '16px', puck, ...pr
   const hasZoneContent = Object.keys(props).some(key => key.startsWith('column-') && Array.isArray(props[key]))
   
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: `repeat(${columns}, 1fr)`,
-      gap: gap,
-      rowGap: rowGap,
-      padding: '16px',
-      margin: '16px 0',
-      backgroundColor: '#f8f9fa',
-      borderRadius: '8px',
-      border: '1px solid #e9ecef',
-      minHeight: '100px'
-    }}>
+    <div 
+      style={{
+        gridTemplateColumns: `repeat(${columns}, 1fr)`,
+        gap: gap,
+        rowGap: rowGap
+      }}
+      className="grid p-4 my-4 bg-gray-50 rounded-lg border border-gray-200 min-h-[100px]"
+    >
       {columnIndices.map((index) => {
         const zoneName = `column-${index}`
         
@@ -29,7 +25,7 @@ const GridContainer = ({ columns = 2, gap = '16px', rowGap = '16px', puck, ...pr
           // In preview mode, render zone content if available
           const zoneContent = props[zoneName] || []
           return (
-            <div key={index} style={{ minHeight: '50px' }}>
+            <div key={index} className="min-h-[50px]">
               {zoneContent.length > 0 ? (
                 zoneContent.map((item: any, itemIndex: number) => {
                   const Component = config.components[item.type as keyof typeof config.components]?.render
@@ -40,16 +36,7 @@ const GridContainer = ({ columns = 2, gap = '16px', rowGap = '16px', puck, ...pr
                   ) : null
                 })
               ) : (
-                <div style={{ 
-                  minHeight: '50px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  color: '#6b7280',
-                  fontSize: '14px',
-                  border: '1px dashed #d1d5db',
-                  borderRadius: '4px'
-                }}>
+                <div className="min-h-[50px] flex items-center justify-center text-gray-500 text-sm border border-dashed border-gray-300 rounded">
                   Column {index + 1}
                 </div>
               )}
@@ -58,7 +45,7 @@ const GridContainer = ({ columns = 2, gap = '16px', rowGap = '16px', puck, ...pr
         } else {
           // In editor mode, use DropZone
           return (
-            <div key={index} style={{ minHeight: '50px' }}>
+            <div key={index} className="min-h-[50px]">
               <DropZone zone={zoneName} />
             </div>
           )

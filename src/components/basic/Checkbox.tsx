@@ -50,35 +50,15 @@ const Checkbox: React.FC<CheckboxProps> = ({ label, checked, onChange }) => {
           console.log('Container: No onChange prop provided - using internal state only');
         }
       }}
-      style={{ 
-        padding: "8px", 
-        // border: "1px solid #e5e7eb", 
-        // borderRadius: "4px", 
-        // backgroundColor: "#f9fafb",
-        cursor: "pointer"
-      }}
+      className="p-2 cursor-pointer"
     >
-      <label
-        style={{
-          display: "flex",
-          alignItems: "center",
-          cursor: "pointer",
-          padding: "4px 0",
-          fontSize: "14px",
-          color: "#374151",
-        }}
-      >
+      <label className="flex items-center cursor-pointer py-1 text-sm text-gray-700">
         <input
           type="checkbox"
           checked={isChecked}
           onChange={handleChange}
-          style={{
-            marginRight: "8px",
-            width: "18px",
-            height: "18px",
-            cursor: "pointer",
-            accentColor: "#3b82f6"
-          }}
+          style={{ accentColor: "#3b82f6" }}
+          className="mr-2 w-[18px] h-[18px] cursor-pointer"
         />
         {label}
       </label>

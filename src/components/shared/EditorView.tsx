@@ -2,14 +2,14 @@ import React, { useEffect, useState, createContext, useContext, useRef } from 'r
 import { Puck } from '@measured/puck'
 import '@measured/puck/puck.css'
 
-import { config } from '../config/puckConfig'
-import { PageSidebar } from './page'
-import PageCreationModal, { type PageType } from './page/PageCreationModal'
-import BlockTypeSelectionModal from './page/BlockTypeSelectionModal'
-import TemplateSelectionModal from './page/TemplateSelectionModal'
+import { config } from '../../config/puckConfig'
+import { PageSidebar } from '../page'
+import PageCreationModal, { type PageType } from '../page/PageCreationModal'
+import BlockTypeSelectionModal from '../page/BlockTypeSelectionModal'
+import TemplateSelectionModal from '../page/TemplateSelectionModal'
 import Preview from './Preview'
-import { NavigationProvider } from '../contexts/NavigationContext'
-import { Page } from '../types'
+import { NavigationProvider } from '../../contexts/NavigationContext'
+import { Page } from '../../types'
 
 // Context to provide current data to custom fields
 const PuckDataContext = createContext<any>(null)
@@ -69,13 +69,72 @@ export const EditorView: React.FC<EditorViewProps> = ({
   // This ensures we always publish the most up-to-date data
   const latestDataRef = useRef(currentData)
   
+  // Get banner URL for key generation (to force re-render when banner changes)
+  const bannerUrl = typeof window !== 'undefined' ? localStorage.getItem('event-form-banner') : null
+  const bannerKey = bannerUrl ? bannerUrl.substring(0, 20).replace(/[^a-zA-Z0-9]/g, '') : 'no-banner'
+  
   // Update the ref whenever currentData changes
   useEffect(() => {
     latestDataRef.current = currentData
-  }, [currentData])
+    
+    // Check for duplicates
+    if (currentData?.content) {
+      const typeCounts: Record<string, number> = {}
+      const componentDetails: Record<string, any[]> = {}
+      
+      currentData.content.forEach((item: any, index: number) => {
+        const type = item.type
+        typeCounts[type] = (typeCounts[type] || 0) + 1
+        
+        if (!componentDetails[type]) {
+          componentDetails[type] = []
+        }
+        componentDetails[type].push({
+          index,
+          id: item.props?.id || 'no-id',
+          props: item.props
+        })
+      })
+      
+      // Warn if PricingPlans appears multiple times (duplicates are handled by usePageManagement)
+      if (typeCounts['PricingPlans'] > 1) {
+        // Duplicates are cleaned up automatically
+      }
+    }
+  }, [currentData, currentPage, currentPageName])
 
   const handleBackButtonClick = () => {
     setShowCustomSidebar(prev => !prev)
+  }
+
+  const handleNavigateToPreview = () => {
+    // First, try to get page ID from URL (most reliable)
+    const path = window.location.pathname
+    let pageId: string | null = null
+    
+    if (path.startsWith('/event/website/editor/')) {
+      // Extract pageId from current editor URL
+      const pageIdMatch = path.match(/\/event\/website\/editor\/(.+)/)
+      pageId = pageIdMatch ? pageIdMatch[1] : null
+    }
+    
+    // Fallback to currentPage prop if URL extraction fails
+    if (!pageId && currentPage) {
+      pageId = currentPage.endsWith('.json') 
+        ? currentPage.replace('.json', '') 
+        : currentPage
+    }
+    
+    // Final fallback
+    if (!pageId) {
+      pageId = 'welcome'
+    }
+    
+    const previewUrl = `/event/website/preview/${pageId}`
+    
+    // Use window.location.href for full navigation to ensure route handlers respond
+    // This will trigger a proper route change and component remount
+    window.location.href = previewUrl
   }
 
   const handlePageCreationSelect = (pageType: PageType) => {
@@ -99,14 +158,12 @@ export const EditorView: React.FC<EditorViewProps> = ({
       case 'forms':
       case 'meeting-room':
         // TODO: Implement specific page type creation logic
-        console.log('Creating page type:', pageType)
         setShowCustomSidebar(false)
         if (onCreateNewPage) {
           onCreateNewPage()
         }
         break
       default:
-        console.log('Unknown page type:', pageType)
         break
     }
   }
@@ -189,29 +246,16 @@ export const EditorView: React.FC<EditorViewProps> = ({
       ) : (
         <NavigationProvider onNavigateToEditor={onNavigateToEditor} onAddComponent={onAddComponent}>
           {showCustomSidebar && (() => {
-            // Log for debugging
-            console.log('Custom sidebar - All pages:', pages.map(p => `${p.name} (${p.id})`))
-            console.log('Custom sidebar - Current page:', currentPage, currentPageName)
+            // Filter out Page 1 from the pages array
+            const pagesForSidebar = pages
+              .filter(page => page.id !== 'page1')
+              .map(page => ({ id: page.id, name: page.name }))
             
-            // Start with ALL pages from the pages array - don't filter anything
-            const pagesForSidebar = pages.map(page => ({ id: page.id, name: page.name }))
-            
-            // Always ensure Page 1 is in the sidebar if it exists (check by ID, not name, since names can be changed)
-            const page1Exists = pagesForSidebar.some(p => p.id === 'page1')
-            if (!page1Exists) {
-              // Try to get the actual name from pages array, or use default
-              const page1 = pages.find(p => p.id === 'page1')
-              const page1Name = page1?.name || 'Page 1'
-              pagesForSidebar.push({ id: 'page1', name: page1Name })
-            }
-            
-            // Ensure current page is included if not already in the list
+            // Ensure current page is included if not already in the list (but not if it's page1)
             const currentPageExists = pagesForSidebar.some(p => p.id === currentPage || p.name === currentPageName)
-            if (!currentPageExists && currentPage && currentPageName) {
+            if (!currentPageExists && currentPage && currentPage !== 'page1' && currentPageName) {
               pagesForSidebar.push({ id: currentPage, name: currentPageName })
             }
-            
-            console.log('Custom sidebar - Pages to display:', pagesForSidebar.map(p => `${p.name} (${p.id})`))
             
             return (
               <div className="absolute inset-y-0 left-0 w-[280px] border-r border-slate-200 bg-white z-[1000]">
@@ -220,13 +264,8 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   currentPage={currentPage}
                   currentPageName={currentPageName}
                   onPageSelect={async (pageId) => {
-                    console.log('PageSidebar: Page selected:', pageId)
-                    console.log('PageSidebar: Current page:', currentPage)
-                    console.log('PageSidebar: Available pages:', pages.map(p => `${p.name} (${p.id})`))
-                    
                     // Don't reload if clicking the same page
                     if (pageId === currentPage) {
-                      console.log('PageSidebar: Same page selected, skipping')
                       return
                     }
                     
@@ -234,23 +273,20 @@ export const EditorView: React.FC<EditorViewProps> = ({
                       // Try to find the page in the pages array
                       const page = pages.find(p => p.id === pageId)
                       if (page) {
-                        console.log('PageSidebar: Found page in array, loading:', page.filename)
                         await onPageSelect(page.filename)
                       } else {
                         // Page not in array, but try to load it anyway using the pageId
                         // This handles cases where Page 1 or Page 2 might not be in the array yet
-                        console.log('PageSidebar: Page not in array, trying to load by ID:', pageId)
                         const filename = pageId.endsWith('.json') ? pageId : `${pageId}.json`
-                        console.log('PageSidebar: Calling onPageSelect with filename:', filename)
                         await onPageSelect(filename)
                       }
-                      console.log('PageSidebar: Page load completed')
                     } catch (error) {
-                      console.error('PageSidebar: Error loading page:', error)
+                      // Error loading page - silently fail
                     }
                   }}
                   onAddPage={() => setShowPageCreationModal(true)}
                   onManagePages={onManagePages}
+                  onBackClick={handleNavigateToPreview}
                 />
               </div>
             )
@@ -416,9 +452,9 @@ export const EditorView: React.FC<EditorViewProps> = ({
             </style>
             <PuckDataContext.Provider value={{ data: currentData, onChange }}>
               <Puck 
-                key={`${currentPage}-sidebar-${showCustomSidebar}`}
+                key={`${currentPage}-sidebar-${showCustomSidebar}-banner-${bannerKey.substring(0, 20)}`}
                 config={config as any} 
-                data={currentData}
+                data={currentData || { content: [], root: { props: {} }, zones: {} }}
                 ui={showCustomSidebar ? {
                   ...puckUi,
                   leftSideBarVisible: false,
@@ -432,6 +468,20 @@ export const EditorView: React.FC<EditorViewProps> = ({
                 onChange={(data: any) => {
                   // Update the ref with the latest data (including zones)
                   latestDataRef.current = data
+                  
+                  // Preserve banner image from localStorage if HeroSection is being updated
+                  const bannerUrl = localStorage.getItem('event-form-banner')
+                  if (bannerUrl && data?.content) {
+                    const heroSection = data.content.find((item: any) => item.type === 'HeroSection')
+                    if (heroSection && heroSection.props.backgroundImage !== bannerUrl) {
+                      // If HeroSection exists but doesn't have the banner, update it
+                      const hasDefaultImage = heroSection.props.backgroundImage?.includes('unsplash.com/photo-1540575467063')
+                      if (hasDefaultImage || !heroSection.props.backgroundImage) {
+                        heroSection.props.backgroundImage = bannerUrl
+                      }
+                    }
+                  }
+                  
                   // Call the original onChange handler
                   onChange(data)
                 }}

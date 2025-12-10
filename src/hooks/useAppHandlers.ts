@@ -5,6 +5,7 @@
 
 import { logger } from '../utils/logger'
 import { showToast } from '../utils/toast'
+import { type PageType } from '../components/page/PageCreationModal'
 
 interface UseAppHandlersProps {
   setCurrentView: (view: 'editor' | 'events') => void
@@ -44,18 +45,36 @@ export const useAppHandlers = ({
   }
 
   /**
-   * Handle page creation mode selection
+   * Handle page creation type selection
    */
-  const handlePageCreationSelect = (mode: 'scratch' | 'template' | 'html', blockType?: string) => {
-    logger.debug('Page creation mode selected:', mode)
-    if (mode === 'scratch' && blockType) {
-      logger.debug('Block type selected:', blockType)
-      // Handle block type selection for scratch mode
-      // You can implement specific logic based on blockType here
+  const handlePageCreationSelect = (pageType: PageType) => {
+    logger.debug('Page creation type selected:', pageType)
+    
+    // Handle different page types
+    switch (pageType) {
+      case 'html-general':
+        // HTML/General page - create from scratch
+        createNewPage()
+        break
+      case 'attendee':
+      case 'schedule':
+      case 'folder':
+      case 'organization':
+      case 'hyperlink':
+      case 'qr-scanner':
+      case 'documents':
+      case 'gallery':
+      case 'forms':
+      case 'meeting-room':
+        // TODO: Implement specific page type creation logic
+        logger.debug('Creating page type:', pageType)
+        createNewPage()
+        break
+      default:
+        logger.warn('Unknown page type:', pageType)
+        createNewPage()
+        break
     }
-    // For now, all modes will create a new page from scratch
-    // You can implement different logic for each mode later
-    createNewPage()
   }
 
   /**

@@ -95,40 +95,24 @@ const Navigation = ({
     setTempMenuItems(items.join(','));
   };
 
+  const justifyContentClass = alignment === 'center' ? 'justify-center' : alignment === 'right' ? 'justify-end' : 'justify-between'
+
   return (
-    <nav style={{
-      backgroundColor: finalBackgroundColor || '#27115F',
-      padding: finalPadding || '1rem 2rem',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      position: 'relative',
-      zIndex: 1000,
-      minHeight: '60px'
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: alignment === 'center' ? 'center' : alignment === 'right' ? 'flex-end' : 'space-between',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        flexWrap: 'wrap',
-        gap: '1rem'
-      }} className="nav-container">
+    <nav 
+      style={{
+        backgroundColor: finalBackgroundColor || '#27115F',
+        padding: finalPadding || '1rem 2rem'
+      }}
+      className="shadow-md relative z-[1000] min-h-[60px]"
+    >
+      <div className={`flex items-center ${justifyContentClass} max-w-[1200px] mx-auto flex-wrap gap-4 nav-container`}>
         {/* Logo Section */}
-        <div className="logo-section" style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          flexShrink: 0
-        }}>
+        <div className="logo-section flex items-center gap-2 flex-shrink-0">
           {logoValue && (
             <img 
               src={logoValue} 
               alt={logoTextValue || 'Logo'} 
-              style={{
-                height: '40px',
-                width: 'auto',
-                objectFit: 'contain'
-              }}
+              className="h-10 w-auto object-contain"
               onError={(e) => {
                 console.log('Logo image failed to load:', logoValue);
                 e.currentTarget.style.display = 'none';
@@ -140,208 +124,88 @@ const Navigation = ({
             suppressContentEditableWarning={true}
             data-puck-field="logoText"
             style={{
-              fontSize: '1.5rem',
-              fontWeight: 'bold',
-              color: finalLogoColor || finalTextColor || '#ffffff',
-              cursor: 'text',
-              minWidth: '100px',
-              outline: 'none'
+              color: finalLogoColor || finalTextColor || '#ffffff'
             }}
+            className="text-2xl font-bold cursor-text min-w-[100px] outline-none"
           >
             {logoText}
           </div>
         </div>
 
         {/* Mobile Icons Section */}
-        <div className="mobile-icons" style={{
-          display: 'none',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
+        <div className="mobile-icons hidden items-center gap-4">
           {/* Headphones Icon */}
-          <div style={{
-            color: '#ffffff',
-            fontSize: '20px',
-            cursor: 'pointer',
-            padding: '8px',
-            borderRadius: '4px',
-            transition: 'background-color 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}>
+          <div 
+            className="text-white text-xl cursor-pointer p-2 rounded transition-colors duration-300 hover:bg-white/10"
+          >
             🎧
           </div>
 
           {/* Bell Icon */}
-          <div style={{
-            color: '#ffffff',
-            fontSize: '20px',
-            cursor: 'pointer',
-            padding: '8px',
-            borderRadius: '4px',
-            transition: 'background-color 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}>
+          <div 
+            className="text-white text-xl cursor-pointer p-2 rounded transition-colors duration-300 hover:bg-white/10"
+          >
             🔔
           </div>
 
           {/* Profile Picture */}
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            border: '2px solid #ffffff',
-            overflow: 'hidden',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#f0f0f0'
-          }}>
-            <span style={{ fontSize: '18px' }}>👤</span>
+          <div className="w-9 h-9 rounded-full border-2 border-white overflow-hidden cursor-pointer flex items-center justify-center bg-gray-100">
+            <span className="text-lg">👤</span>
           </div>
         </div>
 
         {/* Desktop Menu Items */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '2rem',
-          flexWrap: 'wrap'
-        }} className="desktop-menu">
+        <div className="desktop-menu flex items-center gap-8 flex-wrap">
           {parsedMenuItems.map((item: { label: string; link: string }, index: number) => (
             <a
               key={index}
               href={item.link}
               onClick={(e) => handleLinkClick(e, item.link)}
               style={{
-                color: finalLinkColor || finalTextColor || '#ffffff',
-                textDecoration: 'none',
-                fontWeight: '500',
-                fontSize: '1rem',
-                padding: '0.5rem 0',
-                position: 'relative',
-                transition: 'color 0.3s ease',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                borderBottom: index === 0 ? '1px solid #ffffff' : 'none' // Active state for first item
+                color: finalLinkColor || finalTextColor || '#ffffff'
               }}
+              className={`no-underline font-medium text-base py-2 relative transition-colors duration-300 cursor-pointer flex items-center gap-1 ${index === 0 ? 'border-b border-white' : ''}`}
               data-puck-field={`menuItems`}
               contentEditable
               suppressContentEditableWarning={true}
             >
               {index === 0 && (
-                <span style={{ fontSize: '14px' }}>🏠</span>
+                <span className="text-sm">🏠</span>
               )}
               {item.label}
               {index > 0 && index < 6 && (
-                <span style={{ fontSize: '12px' }}>▼</span>
+                <span className="text-xs">▼</span>
               )}
             </a>
           ))}
         </div>
 
         {/* Desktop Right Side User Elements */}
-        <div className="desktop-user-elements" style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
+        <div className="desktop-user-elements flex items-center gap-4">
           {/* Edit Button */}
           <button
             onClick={startEditingMenu}
-            style={{
-              background: '#6B46C1', // Brighter purple background
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '8px 16px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'background-color 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#553C9A';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#6B46C1';
-            }}
+            className="bg-purple-600 text-white border-none rounded-md py-2 px-4 text-sm font-medium cursor-pointer flex items-center gap-1.5 transition-colors duration-300 hover:bg-purple-700"
           >
-            <span style={{ fontSize: '14px' }}>✏️</span>
+            <span className="text-sm">✏️</span>
             Edit
           </button>
 
           {/* Desktop Icons */}
-          <div className="desktop-icons" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem'
-          }}>
+          <div className="desktop-icons flex items-center gap-4">
             {/* Headphones Icon */}
-            <div style={{
-              color: '#ffffff',
-              fontSize: '20px',
-              cursor: 'pointer',
-              padding: '8px',
-              borderRadius: '4px',
-              transition: 'background-color 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}>
+            <div className="text-white text-xl cursor-pointer p-2 rounded transition-colors duration-300 hover:bg-white/10">
               🎧
             </div>
 
             {/* Bell Icon */}
-            <div style={{
-              color: '#ffffff',
-              fontSize: '20px',
-              cursor: 'pointer',
-              padding: '8px',
-              borderRadius: '4px',
-              transition: 'background-color 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}>
+            <div className="text-white text-xl cursor-pointer p-2 rounded transition-colors duration-300 hover:bg-white/10">
               🔔
             </div>
 
             {/* Profile Picture */}
-            <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              border: '2px solid #ffffff',
-              overflow: 'hidden',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#f0f0f0'
-            }}>
-              <span style={{ fontSize: '18px' }}>👤</span>
+            <div className="w-9 h-9 rounded-full border-2 border-white overflow-hidden cursor-pointer flex items-center justify-center bg-gray-100">
+              <span className="text-lg">👤</span>
             </div>
           </div>
         </div>
@@ -349,70 +213,50 @@ const Navigation = ({
         {/* Mobile Menu Toggle Button */}
         <button
           onClick={toggleMobileMenu}
-          style={{
-            display: 'none',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '0.5rem',
-            flexDirection: 'column',
-            gap: '4px'
-          }}
-          className="mobile-menu-toggle"
+          className="mobile-menu-toggle hidden bg-none border-none cursor-pointer p-2 flex-col gap-1"
         >
-          <div style={{
-            width: '25px',
-            height: '3px',
-            backgroundColor: textColor || '#ffffff',
-            transition: 'all 0.3s ease',
-            transform: isMobileMenuOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none'
-          }}></div>
-          <div style={{
-            width: '25px',
-            height: '3px',
-            backgroundColor: textColor || '#ffffff',
-            transition: 'all 0.3s ease',
-            opacity: isMobileMenuOpen ? '0' : '1'
-          }}></div>
-          <div style={{
-            width: '25px',
-            height: '3px',
-            backgroundColor: textColor || '#ffffff',
-            transition: 'all 0.3s ease',
-            transform: isMobileMenuOpen ? 'rotate(-45deg) translate(7px, -6px)' : 'none'
-          }}></div>
+          <div 
+            style={{
+              backgroundColor: textColor || '#ffffff',
+              transform: isMobileMenuOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none'
+            }}
+            className="w-[25px] h-0.5 transition-all duration-300"
+          ></div>
+          <div 
+            style={{
+              backgroundColor: textColor || '#ffffff',
+              opacity: isMobileMenuOpen ? '0' : '1'
+            }}
+            className="w-[25px] h-0.5 transition-all duration-300"
+          ></div>
+          <div 
+            style={{
+              backgroundColor: textColor || '#ffffff',
+              transform: isMobileMenuOpen ? 'rotate(-45deg) translate(7px, -6px)' : 'none'
+            }}
+            className="w-[25px] h-0.5 transition-all duration-300"
+          ></div>
         </button>
 
       </div>
 
       {/* Mobile Menu Dropdown */}
-      <div style={{
-        display: isMobileMenuOpen ? 'block' : 'none',
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        right: 0,
-        backgroundColor: finalBackgroundColor || '#27115F',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        zIndex: 1000,
-        padding: '1rem 0'
-      }} className="mobile-menu">
+      <div 
+        style={{
+          display: isMobileMenuOpen ? 'block' : 'none',
+          backgroundColor: finalBackgroundColor || '#27115F'
+        }}
+        className="mobile-menu absolute top-full left-0 right-0 shadow-md z-[1000] py-4"
+      >
         {parsedMenuItems.map((item: { label: string; link: string }, index: number) => (
           <a
             key={index}
             href={item.link}
             onClick={(e) => handleLinkClick(e, item.link)}
             style={{
-              display: 'block',
-              color: finalLinkColor || finalTextColor || '#ffffff',
-              textDecoration: 'none',
-              fontWeight: '500',
-              fontSize: '1.1rem',
-              padding: '1rem 2rem',
-              borderBottom: '1px solid rgba(255,255,255,0.1)',
-              transition: 'background-color 0.3s ease',
-              cursor: 'pointer'
+              color: finalLinkColor || finalTextColor || '#ffffff'
             }}
+            className="block no-underline font-medium text-lg py-4 px-8 border-b border-white/10 transition-colors duration-300 cursor-pointer hover:bg-white/10"
             data-puck-field={`menuItems`}
             contentEditable
             suppressContentEditableWarning={true}
@@ -424,88 +268,48 @@ const Navigation = ({
 
       {/* Menu Editing Interface */}
       {isEditingMenu && (
-        <div style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: finalBackgroundColor || '#27115F',
-          border: '2px solid #ffffff',
-          borderRadius: '8px',
-          padding: '20px',
-          zIndex: 10000,
-          minWidth: '400px',
-          maxWidth: '600px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
-        }}>
-          <h3 style={{ margin: '0 0 15px 0', color: '#ffffff' }}>Edit Navigation Menu</h3>
+        <div 
+          style={{
+            background: finalBackgroundColor || '#27115F'
+          }}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 border-white rounded-lg p-5 z-[10000] min-w-[400px] max-w-[600px] shadow-2xl"
+        >
+          <h3 className="m-0 mb-4 text-white">Edit Navigation Menu</h3>
           
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#ffffff' }}>
+          <div className="mb-4">
+            <label className="block mb-1.5 font-bold text-white">
               Menu Items (format: Label|Link, Label|Link):
             </label>
             <textarea
               value={tempMenuItems}
               onChange={(e) => setTempMenuItems(e.target.value)}
-              style={{
-                width: '100%',
-                height: '100px',
-                padding: '8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '14px',
-                resize: 'vertical'
-              }}
+              className="w-full h-[100px] p-2 border border-gray-300 rounded text-sm resize-y"
               placeholder="About|/about,Speakers|/speakers,Schedule|/schedule"
             />
           </div>
 
-          <div style={{ marginBottom: '15px' }}>
+          <div className="mb-4">
             <button
               onClick={addMenuItem}
-              style={{
-                background: '#007bff',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                marginRight: '10px'
-              }}
+              className="bg-blue-500 text-white border-none py-2 px-4 rounded cursor-pointer mr-2.5 hover:bg-blue-600 transition-colors"
             >
               ➕ Add Item
             </button>
-            <span style={{ fontSize: '12px', color: '#ffffff' }}>
+            <span className="text-xs text-white">
               Click to add a new menu item
             </span>
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#ffffff' }}>Current Menu Items:</h4>
+          <div className="mb-5">
+            <h4 className="m-0 mb-2.5 text-sm text-white">Current Menu Items:</h4>
             {parsedMenuItems.map((item: { label: string; link: string }, index: number) => (
-              <div key={index} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '8px',
-                background: '#6B46C1',
-                marginBottom: '5px',
-                borderRadius: '4px'
-              }}>
-                <span style={{ fontSize: '14px', color: '#ffffff' }}>
+              <div key={index} className="flex justify-between items-center p-2 bg-purple-600 mb-1.5 rounded">
+                <span className="text-sm text-white">
                   <strong>{item.label}</strong> → {item.link}
                 </span>
                 <button
                   onClick={() => deleteMenuItem(index)}
-                  style={{
-                    background: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
-                  }}
+                  className="bg-red-500 text-white border-none py-1 px-2 rounded cursor-pointer text-xs hover:bg-red-600 transition-colors"
                 >
                   🗑️ Delete
                 </button>
@@ -513,30 +317,16 @@ const Navigation = ({
             ))}
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <div className="flex gap-2.5 justify-end">
             <button
               onClick={cancelMenuEdit}
-              style={{
-                background: '#6c757d',
-                color: 'white',
-                border: 'none',
-                padding: '10px 20px',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="bg-gray-500 text-white border-none py-2.5 px-5 rounded cursor-pointer hover:bg-gray-600 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={saveMenuChanges}
-              style={{
-                background: '#28a745',
-                color: 'white',
-                border: 'none',
-                padding: '10px 20px',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="bg-green-500 text-white border-none py-2.5 px-5 rounded cursor-pointer hover:bg-green-600 transition-colors"
             >
               Save Changes
             </button>

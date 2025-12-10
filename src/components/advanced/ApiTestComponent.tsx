@@ -97,50 +97,21 @@ const ApiTestComponent: React.FC<ApiTestComponentProps> = () => {
   };
 
   return (
-    <div style={{
-      padding: '20px',
-      maxWidth: '600px',
-      margin: '0 auto',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      border: '1px solid #e5e7eb',
-      borderRadius: '8px',
-      backgroundColor: '#f9fafb'
-    }}>
-      <h2 style={{
-        color: '#1f2937',
-        marginBottom: '20px',
-        textAlign: 'center',
-        fontSize: '24px'
-      }}>
+    <div className="p-5 max-w-[600px] mx-auto font-sans border border-gray-200 rounded-lg bg-gray-50">
+      <h2 className="text-gray-800 mb-5 text-center text-2xl">
         🔗 API Test with Auth
       </h2>
 
       {/* Configuration Section */}
-      <div style={{
-        backgroundColor: '#f3f4f6',
-        padding: '15px',
-        borderRadius: '8px',
-        marginBottom: '20px',
-        border: '1px solid #d1d5db'
-      }}>
-        <h3 style={{
-          margin: '0 0 15px 0',
-          color: '#374151',
-          fontSize: '16px'
-        }}>
+      <div className="bg-gray-100 p-4 rounded-lg mb-5 border border-gray-300">
+        <h3 className="m-0 mb-4 text-gray-700 text-base">
           🔐 Authentication & URL Configuration
         </h3>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="flex flex-col gap-2.5">
           {/* Token Input */}
           <div>
-            <label style={{
-              display: 'block',
-              fontSize: '12px',
-              color: '#6b7280',
-              marginBottom: '4px',
-              fontWeight: '500'
-            }}>
+            <label className="block text-xs text-gray-500 mb-1 font-medium">
               Authorization Token:
             </label>
             <input
@@ -148,30 +119,16 @@ const ApiTestComponent: React.FC<ApiTestComponentProps> = () => {
               placeholder="Enter your token (e.g., Bearer abc123 or just abc123)"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                boxSizing: 'border-box'
-              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm box-border"
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-              <small style={{ color: '#9ca3af', fontSize: '11px' }}>
+            <div className="flex justify-between items-center mt-1">
+              <small className="text-gray-400 text-[11px]">
                 Will automatically add "Bearer " prefix if not present
               </small>
               {token && (
                 <button
                   onClick={() => setToken('')}
-                  style={{
-                    fontSize: '11px',
-                    color: '#dc2626',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    textDecoration: 'underline'
-                  }}
+                  className="text-[11px] text-red-600 bg-none border-none cursor-pointer underline"
                 >
                   Clear Token
                 </button>
@@ -180,19 +137,15 @@ const ApiTestComponent: React.FC<ApiTestComponentProps> = () => {
           </div>
 
           {/* Custom URL Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             <input
               type="checkbox"
               id="useCustomUrl"
               checked={useCustomUrl}
               onChange={(e) => setUseCustomUrl(e.target.checked)}
-              style={{ margin: '0' }}
+              className="m-0"
             />
-            <label htmlFor="useCustomUrl" style={{
-              fontSize: '12px',
-              color: '#6b7280',
-              cursor: 'pointer'
-            }}>
+            <label htmlFor="useCustomUrl" className="text-xs text-gray-500 cursor-pointer">
               Use Custom API Endpoint
             </label>
           </div>
@@ -200,13 +153,7 @@ const ApiTestComponent: React.FC<ApiTestComponentProps> = () => {
           {/* Custom URL Input */}
           {useCustomUrl && (
             <div>
-              <label style={{
-                display: 'block',
-                fontSize: '12px',
-                color: '#6b7280',
-                marginBottom: '4px',
-                fontWeight: '500'
-              }}>
+              <label className="block text-xs text-gray-500 mb-1 font-medium">
                 Custom API URL:
               </label>
               <input
@@ -214,14 +161,7 @@ const ApiTestComponent: React.FC<ApiTestComponentProps> = () => {
                 placeholder="https://api.example.com/endpoint"
                 value={customUrl}
                 onChange={(e) => setCustomUrl(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm box-border"
               />
             </div>
           )}
@@ -229,25 +169,11 @@ const ApiTestComponent: React.FC<ApiTestComponentProps> = () => {
       </div>
 
       {/* API Buttons */}
-      <div style={{
-        display: 'flex',
-        gap: '10px',
-        justifyContent: 'center',
-        marginBottom: '20px'
-      }}>
+      <div className="flex gap-2.5 justify-center mb-5">
         <button
           onClick={testGetApi}
           disabled={loading}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: loading ? '#9ca3af' : '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontSize: '16px',
-            fontWeight: '500'
-          }}
+          className={`py-3 px-6 text-white border-none rounded-md ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 cursor-pointer'} text-base font-medium`}
         >
           {loading ? 'Loading...' : 'GET API'}
         </button>
@@ -255,16 +181,7 @@ const ApiTestComponent: React.FC<ApiTestComponentProps> = () => {
         <button
           onClick={testPostApi}
           disabled={loading}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: loading ? '#9ca3af' : '#059669',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontSize: '16px',
-            fontWeight: '500'
-          }}
+          className={`py-3 px-6 text-white border-none rounded-md ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-600 cursor-pointer'} text-base font-medium`}
         >
           {loading ? 'Loading...' : 'POST API'}
         </button>
@@ -272,60 +189,25 @@ const ApiTestComponent: React.FC<ApiTestComponentProps> = () => {
 
       {/* Error Display */}
       {error && (
-        <div style={{
-          backgroundColor: '#fef2f2',
-          border: '1px solid #fecaca',
-          color: '#dc2626',
-          padding: '12px',
-          borderRadius: '6px',
-          marginBottom: '15px',
-          fontSize: '14px'
-        }}>
+        <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-md mb-4 text-sm">
           {error}
         </div>
       )}
 
       {/* Result Display */}
       {result && (
-        <div style={{
-          backgroundColor: '#f0f9ff',
-          border: '1px solid #bae6fd',
-          borderRadius: '6px',
-          padding: '15px',
-          marginBottom: '15px'
-        }}>
-          <h3 style={{
-            margin: '0 0 10px 0',
-            color: '#0c4a6e',
-            fontSize: '16px'
-          }}>
+        <div className="bg-sky-50 border border-sky-200 rounded-md p-4 mb-4">
+          <h3 className="m-0 mb-2.5 text-sky-900 text-base">
             API Response:
           </h3>
-          <pre style={{
-            backgroundColor: 'white',
-            padding: '10px',
-            borderRadius: '4px',
-            fontSize: '12px',
-            color: '#374151',
-            overflow: 'auto',
-            border: '1px solid #e5e7eb',
-            margin: '0'
-          }}>
+          <pre className="bg-white p-2.5 rounded text-xs text-gray-700 overflow-auto border border-gray-200 m-0">
             {result}
           </pre>
         </div>
       )}
 
       {/* API Info */}
-      <div style={{
-        fontSize: '12px',
-        color: '#6b7280',
-        textAlign: 'center',
-        backgroundColor: 'white',
-        padding: '10px',
-        borderRadius: '4px',
-        border: '1px solid #e5e7eb'
-      }}>
+      <div className="text-xs text-gray-500 text-center bg-white p-2.5 rounded border border-gray-200">
         <strong>Default Test API:</strong> JSONPlaceholder<br/>
         <strong>GET:</strong> /posts/1 | <strong>POST:</strong> /posts<br/>
         <strong>Features:</strong> Token Authentication | Custom URLs

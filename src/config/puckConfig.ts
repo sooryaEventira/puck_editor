@@ -9,11 +9,12 @@ import {
 import {
   HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer
 } from '../components/advanced'
+import TwoColumnContent from '../components/advanced/TwoColumnContent'
 import FeedbackForm from '../components/advanced/FeedbackForm'
 import ImageSimple from '../components/advanced/ImageSimple'
-import CustomButtonField from '../components/CustomButtonField'
-import SchedulesSectionField from '../components/SchedulesSectionField'
-import PdfSelectField from '../components/PdfSelectField'
+import CustomButtonField from '../components/fields/CustomButtonField'
+import SchedulesSectionField from '../components/fields/SchedulesSectionField'
+import PdfSelectField from '../components/fields/PdfSelectField'
 
 // Import split config modules
 import { viewports } from './puck/viewports'
@@ -101,12 +102,12 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "PricingPlans", "FAQSection", "FAQAccordion", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["HeroSection", "HeroVideo", "SchedulePage", "AboutSection", "PricingPlans", "FAQSection", "FAQAccordion", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm"]
+          components: ["HeroSection", "HeroVideo", "SchedulePage", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm"]
         },
         media: {
           title: "Media",
@@ -1331,10 +1332,103 @@ export const config = {
              backgroundColor: '#ffffff',
              textColor: '#333333',
              padding: '3rem 2rem'
-           },
-           render: AboutSection
-         },
-         PricingPlans: {
+          },
+          render: AboutSection
+        },
+        TwoColumnContent: {
+          label: "📑 Two Column Content",
+          fields: {
+            leftTitle: {
+              type: 'text' as const,
+              label: 'Left Column Title',
+              placeholder: 'About the event',
+              contentEditable: true
+            },
+            leftContent: {
+              type: 'textarea' as const,
+              label: 'Left Column Content',
+              placeholder: 'Enter left column content...',
+              contentEditable: true
+            },
+            rightTitle: {
+              type: 'text' as const,
+              label: 'Right Column Title',
+              placeholder: 'Sponsor',
+              contentEditable: true
+            },
+            rightContent: {
+              type: 'textarea' as const,
+              label: 'Right Column Content',
+              placeholder: 'Enter right column content...',
+              contentEditable: true
+            },
+            showRightIcon: {
+              type: 'radio' as const,
+              label: 'Show Right Icon',
+              options: [
+                { label: 'Yes', value: true },
+                { label: 'No', value: false }
+              ]
+            },
+            backgroundColor: {
+              type: 'text' as const,
+              label: 'Background Color',
+              placeholder: '#ffffff'
+            },
+            textColor: {
+              type: 'text' as const,
+              label: 'Text Color',
+              placeholder: '#000000'
+            },
+            titleColor: {
+              type: 'text' as const,
+              label: 'Title Color',
+              placeholder: '#000000'
+            },
+            padding: {
+              type: 'text' as const,
+              label: 'Padding',
+              placeholder: '24px'
+            },
+            gap: {
+              type: 'text' as const,
+              label: 'Gap',
+              placeholder: '32px'
+            },
+            borderRadius: {
+              type: 'text' as const,
+              label: 'Border Radius',
+              placeholder: '8px'
+            },
+            borderColor: {
+              type: 'text' as const,
+              label: 'Border Color',
+              placeholder: '#e3f2fd'
+            },
+            borderWidth: {
+              type: 'text' as const,
+              label: 'Border Width',
+              placeholder: '1px'
+            }
+          },
+          defaultProps: {
+            leftTitle: 'About the event',
+            leftContent: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+            rightTitle: 'Sponsor',
+            rightContent: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+            showRightIcon: true,
+            backgroundColor: '#ffffff',
+            textColor: '#000000',
+            titleColor: '#000000',
+            padding: '24px',
+            gap: '32px',
+            borderRadius: '8px',
+            borderColor: '#e3f2fd',
+            borderWidth: '1px'
+          },
+          render: TwoColumnContent
+        },
+        PricingPlans: {
            label: "💰 Pricing Plans",
            fields: {
              plans: {

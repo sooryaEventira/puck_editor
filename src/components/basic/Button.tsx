@@ -2,31 +2,30 @@ import React from 'react'
 import { ButtonProps } from '../../types'
 
 const Button: React.FC<ButtonProps> = ({ text, variant = 'primary', size = 'medium', textColor, backgroundColor, onClick }) => {
-  const sizeStyles: Record<string, React.CSSProperties> = {
-    small: { padding: '8px 16px', fontSize: '14px' },
-    medium: { padding: '12px 24px', fontSize: '16px' },
-    large: { padding: '16px 32px', fontSize: '18px' }
+  const sizeClasses: Record<string, string> = {
+    small: 'py-2 px-4 text-sm',
+    medium: 'py-3 px-6 text-base',
+    large: 'py-4 px-8 text-lg'
   }
   
-  const variantStyles: Record<string, React.CSSProperties> = {
-    primary: { backgroundColor: '#007bff', color: textColor || 'white' },
-    secondary: { backgroundColor: '#6c757d', color: textColor || 'white' },
-    success: { backgroundColor: '#28a745', color: textColor || 'white' },
-    danger: { backgroundColor: '#dc3545', color: textColor || 'white' }
+  const variantClasses: Record<string, string> = {
+    primary: 'bg-blue-500',
+    secondary: 'bg-gray-500',
+    success: 'bg-green-500',
+    danger: 'bg-red-500'
+  }
+  
+  // Dynamic styles that need to remain inline
+  const dynamicStyle: React.CSSProperties = {
+    ...(backgroundColor && { backgroundColor }),
+    ...(textColor && { color: textColor })
   }
   
   return (
     <button 
       onClick={onClick}
-      style={{
-        ...sizeStyles[size],
-        ...variantStyles[variant],
-        ...(backgroundColor && { backgroundColor }),
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        margin: '8px 0'
-      }}
+      style={dynamicStyle}
+      className={`${sizeClasses[size]} ${variantClasses[variant]} ${textColor ? '' : 'text-white'} border-none rounded cursor-pointer my-2`}
     >
       {text}
     </button>

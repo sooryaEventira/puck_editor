@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 import { usePageManagement } from '../hooks/usePageManagement'
 import { usePublish } from '../hooks/usePublish'
 import { useAppHandlers } from '../hooks/useAppHandlers'
 import { PageManager, PageNameDialog, PageCreationModal } from './page'
 import { EventHubPage, EventHubNavbar, SchedulePage, CommunicationPage, ResourceManagementPage } from './eventhub'
-import EditorView from './EditorView'
+import EditorView from './shared/EditorView'
 import { LoginPage, RegistrationPage, EmailVerificationPage, CreatePasswordPage, EventspaceSetupPage } from '../pages'
 import { DashboardLayout } from './dashboard'
-import { EventFormProvider } from '../contexts/EventFormContext'
+import { EventFormProvider, useEventForm } from '../contexts/EventFormContext'
 import { logger } from '../utils/logger'
 import { setupPuckStyling } from '../utils/puckStyling'
 import { showToast } from '../utils/toast'
@@ -34,9 +34,9 @@ const App: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false)
   const [currentView, setCurrentView] = useState<'dashboard' | 'editor' | 'events' | 'schedule' | 'communication' | 'resource-management'>('dashboard')
   const [puckUi, setPuckUi] = useState<any>(undefined)
-  const [showLeftSidebar, setShowLeftSidebar] = useState(true)
-  const [showRightSidebar, setShowRightSidebar] = useState(true)
   const [showPageCreationModal, setShowPageCreationModal] = useState(false)
+  const [showLeftSidebar] = useState(true)
+  const [showRightSidebar] = useState(true)
   
   logger.debug('🔄 App component rendering, currentView:', currentView);
   
@@ -70,7 +70,6 @@ const App: React.FC = () => {
 
   // App event handlers
   const {
-    handleCreateEvent,
     handleProfileClick,
     handlePageCreationSelect,
     handleNavigateToEditor,
@@ -116,16 +115,10 @@ const App: React.FC = () => {
     logger.debug('📍 Navigating back to event hub')
   }
 
-  // Handle navigation to schedule page
-  const handleNavigateToSchedule = () => {
-    setCurrentView('schedule')
-    logger.debug('📍 Navigating to schedule page')
-  }
 
   // Handle login
-  const handleLogin = (email: string, password: string) => {
+  const handleLogin = (_email: string, _password: string) => {
     // TODO: Implement actual authentication logic
-    console.log('Login attempt:', email, password)
     // For now, just set authenticated to true
     setIsAuthenticated(true)
     localStorage.setItem('isAuthenticated', 'true')
@@ -134,7 +127,6 @@ const App: React.FC = () => {
   // Handle registration
   const handleRegistration = (email: string) => {
     // TODO: Implement actual registration logic (send OTP email)
-    console.log('Registration attempt:', email)
     // Store email and navigate to verification page
     setRegistrationEmail(email)
     setShowRegistration(false)
@@ -175,37 +167,25 @@ const App: React.FC = () => {
       // Call the create password API with email and password
       const response = await createPassword(registrationEmail, password)
       
-      console.log('Password creation response:', response)
-      console.log('Response status:', response.status)
-      console.log('Response data:', response.data)
-      
       // Store tokens in localStorage if available
       if (response.data) {
         const { access, refresh, user } = response.data
         if (access) {
           localStorage.setItem('accessToken', access)
-          console.log('Access token stored')
         }
         if (refresh) {
           localStorage.setItem('refreshToken', refresh)
-          console.log('Refresh token stored')
         }
         
         // Store user data
         if (user?.email) {
           localStorage.setItem('userEmail', user.email)
-          console.log('User email stored:', user.email)
         }
       }
       
       // Navigate to eventspace setup page - always navigate if API call succeeded
-      console.log('Navigating to eventspace setup page...')
-      
-      // Update both states to navigate
       setShowCreatePassword(false)
       setShowEventspaceSetup(true)
-      
-      console.log('Navigation triggered - showCreatePassword set to false, showEventspaceSetup set to true')
     } catch (error) {
       // Error is already handled in authService with toast
       // Set local error state for UI display
@@ -225,8 +205,6 @@ const App: React.FC = () => {
       // Call the create organization API
       const organization = await createOrganization(eventspaceName)
       
-      console.log('Organization created successfully:', organization)
-      
       // Store organization data in localStorage
       if (organization.uuid) {
         localStorage.setItem('organizationUuid', organization.uuid)
@@ -234,13 +212,11 @@ const App: React.FC = () => {
       }
       
       // Complete setup and authenticate user
-      console.log('✅ Organization setup complete, navigating to dashboard...')
       setIsAuthenticated(true)
       localStorage.setItem('isAuthenticated', 'true')
       setShowEventspaceSetup(false)
       // Navigate to dashboard
       setCurrentView('dashboard')
-      console.log('📍 Dashboard view set, authentication status:', true)
     } catch (error) {
       // Error is already handled in authService with toast
       // Set local error state for UI display
@@ -254,7 +230,6 @@ const App: React.FC = () => {
   // Handle resend OTP code
   const handleResendCode = () => {
     // TODO: Implement actual resend logic
-    console.log('Resending OTP code to:', registrationEmail)
   }
 
   // Handle logout - clear all authentication data
@@ -272,28 +247,22 @@ const App: React.FC = () => {
     
     // Show logout confirmation
     showToast.success('Logged out successfully')
-    
-    // Navigate to login page (will happen automatically via isAuthenticated state)
-    console.log('✅ User logged out successfully')
   }
 
   // Handle social sign-in (placeholder)
   const handleGoogleSignIn = () => {
-    console.log('Google sign in')
     // TODO: Implement Google OAuth
     setIsAuthenticated(true)
     localStorage.setItem('isAuthenticated', 'true')
   }
 
   const handleMicrosoftSignIn = () => {
-    console.log('Microsoft sign in')
     // TODO: Implement Microsoft OAuth
     setIsAuthenticated(true)
     localStorage.setItem('isAuthenticated', 'true')
   }
 
   const handleMagicLinkSignIn = () => {
-    console.log('Magic link sign in')
     // TODO: Implement magic link authentication
   }
 
@@ -303,6 +272,80 @@ const App: React.FC = () => {
       return setupPuckStyling()
     }
   }, [showPreview, isAuthenticated])
+
+  // Store loadPage in a ref to avoid re-running effect when function reference changes
+  const loadPageRef = useRef(loadPage)
+  const currentViewRef = useRef(currentView)
+  
+  useEffect(() => {
+    loadPageRef.current = loadPage
+  }, [loadPage])
+  
+  useEffect(() => {
+    currentViewRef.current = currentView
+  }, [currentView])
+
+  // Detect editor route from WebsitePreviewPage and handle route changes
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return
+    }
+
+    let lastCheckedPath = ''
+
+    const checkRoute = () => {
+      const path = window.location.pathname
+      
+      // Skip if path hasn't changed
+      if (path === lastCheckedPath) {
+        return
+      }
+      
+      lastCheckedPath = path
+      
+      if (path.startsWith('/event/website/editor/')) {
+        // Extract pageId from path: /event/website/editor/:pageId
+        const pageIdMatch = path.match(/\/event\/website\/editor\/(.+)/)
+        const pageId = pageIdMatch ? pageIdMatch[1] : 'welcome'
+        
+        logger.debug('📍 Editor route detected:', pageId)
+        
+        // Only switch to editor view if not already in editor view
+        if (currentViewRef.current !== 'editor') {
+          setCurrentView('editor')
+        }
+        setShowPreview(false)
+        
+        // Load the page data - ensure it loads even if page is not in pages array
+        const pageFilename = pageId.endsWith('.json') ? pageId : `${pageId}.json`
+        loadPageRef.current(pageFilename)
+          .catch((error) => {
+            logger.debug('Failed to load page from editor route:', error)
+          })
+      } else if (path.startsWith('/event/website/preview/') || path.startsWith('/event/website')) {
+        // If navigating to preview or website management, switch to dashboard view
+        // DashboardLayout will handle showing the correct page
+        logger.debug('📍 Preview/Website route detected, switching to dashboard view')
+        if (currentViewRef.current !== 'dashboard') {
+          setCurrentView('dashboard')
+        }
+      }
+    }
+
+    // Check on mount
+    checkRoute()
+
+    // Listen for navigation events
+    const handleLocationChange = () => {
+      checkRoute()
+    }
+
+    window.addEventListener('popstate', handleLocationChange)
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange)
+    }
+  }, [isAuthenticated])
 
   // Listen for navigation to schedule page
   useEffect(() => {
@@ -363,7 +406,7 @@ const App: React.FC = () => {
       return (
         <RegistrationPage
           onSubmit={handleRegistration}
-          onTermsClick={() => console.log('Terms and Conditions clicked')}
+          onTermsClick={() => {}}
           onAlreadyHaveAccount={() => setShowRegistration(false)}
           onClose={() => setShowRegistration(false)}
         />
@@ -376,7 +419,7 @@ const App: React.FC = () => {
         onGoogleSignIn={handleGoogleSignIn}
         onMicrosoftSignIn={handleMicrosoftSignIn}
         onMagicLinkSignIn={handleMagicLinkSignIn}
-        onForgotPassword={() => console.log('Forgot password clicked')}
+        onForgotPassword={() => {}}
         onNavigateToRegistration={() => setShowRegistration(true)}
       />
     )
@@ -387,8 +430,6 @@ const App: React.FC = () => {
     const organizationName = localStorage.getItem('organizationName') || 'Web Summit'
     const userEmail = localStorage.getItem('userEmail') || ''
     
-    console.log('🏠 Rendering Dashboard with organization:', organizationName)
-    
     return (
       <EventFormProvider>
         <DashboardLayout
@@ -397,20 +438,19 @@ const App: React.FC = () => {
           userAvatarUrl=""
           userEmail={userEmail}
           onSidebarItemClick={(itemId) => {
-            console.log('Sidebar item clicked:', itemId)
             // Handle navigation to different sections
             if (itemId === 'events') {
               setCurrentView('events')
             }
             // Add other navigation handlers as needed
           }}
-          onSearchClick={() => console.log('Search clicked')}
-          onNotificationClick={() => console.log('Notification clicked')}
+          onSearchClick={() => {}}
+          onNotificationClick={() => {}}
           onProfileClick={handleProfileClick}
           onLogout={handleLogout}
-          onNewEventClick={() => console.log('New event clicked')}
-          onEditEvent={(eventId) => console.log('Edit event:', eventId)}
-          onSortEvents={(column) => console.log('Sort by:', column)}
+          onNewEventClick={() => {}}
+          onEditEvent={(_eventId) => {}}
+          onSortEvents={(_column) => {}}
         />
       </EventFormProvider>
     )
@@ -479,65 +519,133 @@ const App: React.FC = () => {
 
   // Render Editor Page
   return (
+    <EditorViewWithNavbar
+      currentData={currentData}
+      currentPage={currentPage}
+      currentPageName={currentPageName}
+      pages={pages}
+      puckUi={puckUi}
+      showPreview={showPreview}
+      showLeftSidebar={showLeftSidebar}
+      showRightSidebar={showRightSidebar}
+      showPageManager={showPageManager}
+      showPageNameDialog={showPageNameDialog}
+      showPageCreationModal={showPageCreationModal}
+      onPublish={handlePublish}
+      onDataChange={handleDataChange}
+      setCurrentData={setCurrentData}
+      loadPage={loadPage}
+      setShowPageManager={setShowPageManager}
+      setShowPageNameDialog={setShowPageNameDialog}
+      setCurrentPageName={setCurrentPageName}
+      confirmNewPage={confirmNewPage}
+      setShowPageCreationModal={setShowPageCreationModal}
+      handlePageCreationSelect={handlePageCreationSelect}
+      handleNavigateToEditor={handleNavigateToEditor}
+      handleAddComponent={handleAddComponent}
+      setShowPreview={setShowPreview}
+      handleBackToEditor={handleBackToEditor}
+      createPageFromTemplate={createPageFromTemplate}
+      createNewPage={createNewPage}
+      handleProfileClick={handleProfileClick}
+    />
+  )
+}
+
+// Wrapper component to access EventFormContext
+const EditorViewWithNavbar: React.FC<{
+  currentData: any
+  currentPage: string
+  currentPageName: string
+  pages: any[]
+  puckUi: any
+  showPreview: boolean
+  showLeftSidebar: boolean
+  showRightSidebar: boolean
+  showPageManager: boolean
+  showPageNameDialog: boolean
+  showPageCreationModal: boolean
+  onPublish: (data: any) => void
+  onDataChange: (data: any) => void
+  setCurrentData: (data: any) => void
+  loadPage: (filename: string) => Promise<any>
+  setShowPageManager: (show: boolean) => void
+  setShowPageNameDialog: (show: boolean) => void
+  setCurrentPageName: (name: string) => void
+  confirmNewPage: (pageName: string) => void
+  setShowPageCreationModal: (show: boolean) => void
+  handlePageCreationSelect: (pageType: any) => void
+  handleNavigateToEditor: () => void
+  handleAddComponent: (componentType: string, props?: any) => void
+  setShowPreview: (show: boolean) => void
+  handleBackToEditor: () => void
+  createPageFromTemplate: (templateType: string) => Promise<any>
+  createNewPage: () => void
+  handleProfileClick: () => void
+}> = (props) => {
+  const { eventData } = useEventForm()
+  const userAvatarUrl = localStorage.getItem('userAvatarUrl') || ''
+  
+  return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Global Navbar - EventHubNavbar */}
       <EventHubNavbar
-        eventName="Highly important conference of 2025"
+        eventName={eventData?.eventName || 'Highly important conference of 2025'}
         isDraft={true}
-        onBackClick={handleBackToEditor}
+        onBackClick={props.handleBackToEditor}
         onSearchClick={() => {}}
         onNotificationClick={() => {}}
-        onProfileClick={handleProfileClick}
-        userAvatarUrl=""
+        onProfileClick={props.handleProfileClick}
+        userAvatarUrl={userAvatarUrl}
       />
 
       {/* Page Manager */}
       <PageManager
-        pages={pages}
-        currentPage={currentPage}
-        onPageSelect={loadPage}
-        isVisible={showPageManager}
+        pages={props.pages}
+        currentPage={props.currentPage}
+        onPageSelect={props.loadPage}
+        isVisible={props.showPageManager}
       />
 
       {/* Page Name Dialog */}
       <PageNameDialog
-        isVisible={showPageNameDialog}
-        pageName={currentPageName}
-        onPageNameChange={setCurrentPageName}
-        onConfirm={confirmNewPage}
-        onCancel={() => setShowPageNameDialog(false)}
+        isVisible={props.showPageNameDialog}
+        pageName={props.currentPageName}
+        onPageNameChange={props.setCurrentPageName}
+        onConfirm={props.confirmNewPage}
+        onCancel={() => props.setShowPageNameDialog(false)}
       />
 
       {/* Page Creation Modal */}
       <PageCreationModal
-        isVisible={showPageCreationModal}
-        onClose={() => setShowPageCreationModal(false)}
-        onSelect={handlePageCreationSelect}
+        isVisible={props.showPageCreationModal}
+        onClose={() => props.setShowPageCreationModal(false)}
+        onSelect={props.handlePageCreationSelect}
       />
 
       {/* Main Content - Editor View */}
       <EditorView
-        currentData={currentData}
-        currentPage={currentPage}
-        currentPageName={currentPageName}
-        pages={pages}
-        puckUi={puckUi}
-        showPreview={showPreview}
-        showLeftSidebar={showLeftSidebar}
-        showRightSidebar={showRightSidebar}
-        showPageManager={showPageManager}
-        onPublish={handlePublish}
-        onChange={handleDataChange}
-        onDataChange={setCurrentData}
-        onPageSelect={loadPage}
-        onAddPage={() => setShowPageCreationModal(true)}
-        onManagePages={() => setShowPageManager(!showPageManager)}
-        onNavigateToEditor={handleNavigateToEditor}
-        onAddComponent={handleAddComponent}
-        onPreviewToggle={() => setShowPreview(!showPreview)}
-        onBack={handleBackToEditor}
-        onCreatePageFromTemplate={createPageFromTemplate}
-        onCreateNewPage={createNewPage}
+        currentData={props.currentData}
+        currentPage={props.currentPage}
+        currentPageName={props.currentPageName}
+        pages={props.pages}
+        puckUi={props.puckUi}
+        showPreview={props.showPreview}
+        showLeftSidebar={props.showLeftSidebar}
+        showRightSidebar={props.showRightSidebar}
+        showPageManager={props.showPageManager}
+        onPublish={props.onPublish}
+        onChange={props.onDataChange}
+        onDataChange={props.setCurrentData}
+        onPageSelect={props.loadPage}
+        onAddPage={() => props.setShowPageCreationModal(true)}
+        onManagePages={() => props.setShowPageManager(!props.showPageManager)}
+        onNavigateToEditor={props.handleNavigateToEditor}
+        onAddComponent={props.handleAddComponent}
+        onPreviewToggle={() => props.setShowPreview(!props.showPreview)}
+        onBack={props.handleBackToEditor}
+        onCreatePageFromTemplate={props.createPageFromTemplate}
+        onCreateNewPage={props.createNewPage}
       />
     </div>
   )

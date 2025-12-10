@@ -1264,10 +1264,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                     console.log('Export schedule');
                     setIsHeaderDropdownOpen(false);
                   }}
+                  className="w-full py-2 px-3 border-none"
                   style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: 'none',
                     backgroundColor: 'transparent',
                     color: '#374151',
                     fontSize: '14px',
@@ -1292,10 +1290,8 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
                     console.log('Print schedule');
                     setIsHeaderDropdownOpen(false);
                   }}
+                  className="w-full py-2 px-3 border-none"
                   style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: 'none',
                     backgroundColor: 'transparent',
                     color: '#374151',
                     fontSize: '14px',

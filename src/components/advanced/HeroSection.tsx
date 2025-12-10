@@ -20,8 +20,6 @@ const HeroSection = ({
   height = '500px',
   alignment = 'center',
   overlayOpacity = 0.4,
-  titleSize = '3.5rem',
-  subtitleSize = '1.25rem',
   buttonSpacing = '12px'
 }: HeroSectionProps) => {
   const buttonRefs = useRef<(HTMLAnchorElement | null)[]>([])
@@ -54,68 +52,45 @@ const HeroSection = ({
   // Get the current background image (uploaded or prop)
   const currentBackgroundImage = uploadedImageUrl || backgroundImage
   
-  // Use contain to show full image without cropping, or cover if no image
-  const backgroundSizeValue = currentBackgroundImage ? 'contain' : 'cover'
-  
+  // Dynamic styles that need to remain inline
   const heroStyle: React.CSSProperties = {
     background: currentBackgroundImage 
-      ? `${backgroundColor || '#1a1a1a'} url(${currentBackgroundImage})` 
-      : backgroundColor,
-    backgroundSize: backgroundSizeValue,
+      ? `url(${currentBackgroundImage})` 
+      : backgroundColor || '#1a1a1a',
+    backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
+    backgroundColor: currentBackgroundImage ? 'transparent' : (backgroundColor || '#1a1a1a'),
     color: textColor,
-    minHeight: currentBackgroundImage ? '600px' : '300px',
-    height: currentBackgroundImage ? 'auto' : (height || '500px'),
-    display: 'flex',
-    alignItems: 'center',
+    minHeight: currentBackgroundImage ? '500px' : '300px',
+    height: currentBackgroundImage ? (height || '500px') : (height || '500px'),
     justifyContent: alignment === 'left' ? 'flex-start' : alignment === 'right' ? 'flex-end' : 'center',
-    padding: 'clamp(40px, 8vw, 80px) clamp(20px, 4vw, 40px)',
-    margin: '0',
-    position: 'relative',
-    overflow: 'hidden',
-    width: '100%',
-    aspectRatio: currentBackgroundImage ? 'auto' : undefined
+    padding: 'clamp(40px, 8vw, 80px) clamp(20px, 4vw, 40px)'
   }
+  
+  // Debug: Log what backgroundImage prop we received and what style is being applied
+  useEffect(() => {
+    const bgString = typeof heroStyle.background === 'string' ? heroStyle.background : ''
+    console.log('🖼️ HeroSection render:', {
+      backgroundImageProp: backgroundImage ? backgroundImage.substring(0, 50) + '...' : 'EMPTY',
+      uploadedImageUrl: uploadedImageUrl ? uploadedImageUrl.substring(0, 50) + '...' : 'EMPTY',
+      currentBackgroundImage: currentBackgroundImage ? currentBackgroundImage.substring(0, 50) + '...' : 'EMPTY',
+      heroStyleBackground: bgString ? bgString.substring(0, 80) + '...' : '',
+      title,
+      subtitle
+    })
+  }, [backgroundImage, uploadedImageUrl, currentBackgroundImage, heroStyle.background, title, subtitle])
 
-  // Add responsive height via CSS custom properties and media queries
-  const heroClassName = 'w-full'
+  const heroClassName = 'w-full flex items-center m-0 relative overflow-hidden'
 
   const overlayStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: `rgba(0, 0, 0, ${overlayOpacity})`,
-    zIndex: 1
+    backgroundColor: `rgba(0, 0, 0, ${overlayOpacity})`
   }
 
   const contentStyle: React.CSSProperties = {
     textAlign: alignment,
     maxWidth: '800px',
-    zIndex: 2,
-    position: 'relative',
-    width: '100%',
     padding: '0 clamp(10px, 2vw, 20px)'
-  }
-
-  const titleStyle: React.CSSProperties = {
-    margin: '0 0 15px 0',
-    fontSize: 'clamp(1.75rem, 4vw, 3.5rem)',
-    fontWeight: 'bold',
-    lineHeight: '1.1',
-    color: '#FFFFFF',
-    textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
-  }
-
-  const subtitleStyle: React.CSSProperties = {
-    margin: '0 0 20px 0',
-    fontSize: 'clamp(0.875rem, 2vw, 1.25rem)',
-    opacity: 0.95,
-    color: '#FFFFFF',
-    textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
-    lineHeight: '1.4'
   }
 
   const getButtonPadding = (size: 'small' | 'medium' | 'large') => {
@@ -141,21 +116,13 @@ const HeroSection = ({
     color: button.textColor || 'white',
     padding: getButtonPadding(button.size || 'large'),
     border: (button.color || '#6938EF') === 'transparent' ? `2px solid ${button.textColor || 'white'}` : 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
     fontSize: getButtonFontSize(button.size || 'large'),
-    fontWeight: 'bold',
-    textDecoration: 'none',
-    display: 'inline-block',
-    transition: 'all 0.3s ease',
     boxShadow: (button.color || '#6938EF') === 'transparent' ? 'none' : '0 4px 12px rgba(0,0,0,0.3)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
     marginRight: buttonSpacing
   })
 
   const handleButtonHover = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.currentTarget.style.transform = 'translateY(-2px)'
+    e.currentTarget.classList.add('-translate-y-0.5')
     const isTransparent = e.currentTarget.style.backgroundColor === 'transparent'
     if (isTransparent) {
       e.currentTarget.style.backgroundColor = e.currentTarget.style.color
@@ -166,7 +133,7 @@ const HeroSection = ({
   }
 
   const handleButtonLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.currentTarget.style.transform = 'translateY(0)'
+    e.currentTarget.classList.remove('-translate-y-0.5')
     const isTransparent = e.currentTarget.style.backgroundColor === 'transparent'
     if (isTransparent) {
       e.currentTarget.style.backgroundColor = 'transparent'
@@ -191,15 +158,13 @@ const HeroSection = ({
       className={heroClassName}
       onClick={() => fileInputRef.current?.click()}
       onMouseEnter={(e) => {
-        e.currentTarget.style.cursor = 'pointer'
-        e.currentTarget.style.opacity = '0.95'
+        e.currentTarget.classList.add('cursor-pointer', 'opacity-95')
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.cursor = 'default'
-        e.currentTarget.style.opacity = '1'
+        e.currentTarget.classList.remove('cursor-pointer', 'opacity-95')
       }}
     >
-      {currentBackgroundImage && <div style={overlayStyle} />}
+      {currentBackgroundImage && <div style={overlayStyle} className="absolute inset-0 z-[1]" />}
       
       {/* Hidden file input */}
       <input
@@ -207,21 +172,24 @@ const HeroSection = ({
         type="file"
         accept="image/*"
         onChange={handleFileUpload}
-        style={{ display: 'none' }}
+        className="hidden"
       />
 
       <div 
         style={contentStyle}
+        className="z-[2] relative w-full"
         onClick={(e) => e.stopPropagation()}
         onMouseEnter={(e) => {
-          e.currentTarget.parentElement!.style.cursor = 'default'
+          e.currentTarget.parentElement!.classList.remove('cursor-pointer')
+          e.currentTarget.parentElement!.classList.add('cursor-default')
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.parentElement!.style.cursor = 'pointer'
+          e.currentTarget.parentElement!.classList.remove('cursor-default')
+          e.currentTarget.parentElement!.classList.add('cursor-pointer')
         }}
       >
         <h1 
-          style={titleStyle} 
+          className="m-0 mb-4 text-[clamp(1.75rem,4vw,3.5rem)] font-bold leading-tight text-white drop-shadow-[2px_2px_4px_rgba(0,0,0,0.5)]"
           data-puck-field="title"
           contentEditable
           suppressContentEditableWarning={true}
@@ -230,7 +198,7 @@ const HeroSection = ({
         </h1>
         {subtitle && (
           <p 
-            style={subtitleStyle} 
+            className="m-0 mb-5 text-[clamp(0.875rem,2vw,1.25rem)] opacity-95 text-white drop-shadow-[1px_1px_2px_rgba(0,0,0,0.5)] leading-snug"
             data-puck-field="subtitle"
             contentEditable
             suppressContentEditableWarning={true}
@@ -239,13 +207,13 @@ const HeroSection = ({
           </p>
         )}
         {buttons && buttons.length > 0 && (
-          <div style={{ 
-            marginTop: 'clamp(20px, 4vw, 30px)',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: buttonSpacing,
-            justifyContent: alignment === 'left' ? 'flex-start' : alignment === 'right' ? 'flex-end' : 'center'
-          }}>
+          <div 
+            className="mt-[clamp(20px,4vw,30px)] flex flex-wrap"
+            style={{ 
+              gap: buttonSpacing,
+              justifyContent: alignment === 'left' ? 'flex-start' : alignment === 'right' ? 'flex-end' : 'center'
+            }}
+          >
             {buttons.map((button, index) => (
               <a
                 key={index}
@@ -254,6 +222,7 @@ const HeroSection = ({
                 }}
                 href={button.link || '#'}
                 style={getButtonStyle(button)}
+                className="rounded-lg cursor-pointer font-bold no-underline inline-block transition-all duration-300 uppercase tracking-wider"
                 data-original-color={button.textColor}
                 data-puck-field={`buttons[${index}].text`}
                 contentEditable

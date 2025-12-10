@@ -77,92 +77,33 @@ const SpeakerCard = ({ photo, uploadedImage, name, designation }: SpeakerCardPro
     };
   }, [imagePreview]);
   
-  console.log('SpeakerCard props:', { photo, uploadedImage, name, designation });
-  console.log('Extracted values:', { photoValue, uploadedImageValue, nameValue, designationValue });
-  console.log('Stable photo URL ref:', stablePhotoUrlRef.current);
-  console.log('Final image source:', imageSrc);
-  console.log('imagePreview state:', imagePreview);
+  // Debug logging removed for cleaner console
   
   return (
-    <div style={{
-      borderRadius: '12px', 
-      border: '1px solid #e5e7eb', 
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)', 
-      backgroundColor: 'white',
-      overflow: 'hidden'
-    }}>
+    <div className="rounded-xl border border-gray-200 shadow-sm bg-white overflow-hidden">
       {/* Photo Section */}
-      <div style={{ 
-        width: '100%', 
-        height: '165px', 
-        overflow: 'hidden', 
-        borderRadius: '8px 8px 0 0',
-        position: 'relative', 
-        backgroundColor: '#f3f4f6',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
+      <div className="w-full h-[165px] overflow-hidden rounded-t-lg relative bg-gray-100 flex items-center justify-center">
         {imageSrc ? (
           <img 
             src={imageSrc} 
             alt={nameValue}
-            style={{ 
-              width: '100%', 
-              height: '100%', 
-              objectFit: 'cover',
-              objectPosition: 'center',
-              display: 'block'
-            }}
-            onLoad={() => console.log('✅ Image loaded successfully:', imageSrc)}
+            className="w-full h-full object-cover object-center block"
             onError={(e) => {
-              console.log('❌ Image failed to load:', imageSrc);
               e.currentTarget.style.display = 'none';
             }}
           />
         ) : (
-          <div style={{ color: '#6b7280', fontSize: '14px' }}>No image</div>
+          <div className="text-gray-500 text-sm">No image</div>
         )}
         {/* File upload input */}
         <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '12px',
-            opacity: 0,
-            transition: 'opacity 0.2s',
-            cursor: 'pointer',
-            borderRadius: '8px',
-            zIndex: 10
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = '1';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '0';
-          }}
+          className="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-xs opacity-0 transition-opacity duration-200 cursor-pointer rounded-lg z-10 hover:opacity-100"
         >
           <input
             type="file"
             accept="image/*"
             onChange={handleFileChange}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              opacity: 0,
-              cursor: 'pointer'
-            }}
+            className="absolute inset-0 opacity-0 cursor-pointer"
           />
           <span>Click to upload image</span>
         </div>
@@ -172,15 +113,7 @@ const SpeakerCard = ({ photo, uploadedImage, name, designation }: SpeakerCardPro
           contentEditable
           suppressContentEditableWarning={true}
           data-puck-field="uploadedImage"
-          style={{
-            position: 'absolute',
-            top: '-9999px',
-            left: '-9999px',
-            width: '1px',
-            height: '1px',
-            opacity: 0,
-            pointerEvents: 'none'
-          }}
+          className="absolute -top-[9999px] -left-[9999px] w-px h-px opacity-0 pointer-events-none"
         >
           {uploadedImageValue}
         </div>
@@ -190,42 +123,16 @@ const SpeakerCard = ({ photo, uploadedImage, name, designation }: SpeakerCardPro
           contentEditable
           suppressContentEditableWarning={true}
           data-puck-field="photo"
-          style={{
-            position: 'absolute',
-            top: '10px',
-            left: '10px',
-            right: '10px',
-            background: 'rgba(0,0,0,0.7)',
-            color: 'white',
-            fontSize: '10px',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            opacity: 0,
-            transition: 'opacity 0.2s',
-            cursor: 'pointer',
-            zIndex: 11
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = '1';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '0';
-          }}
+          className="absolute top-2.5 left-2.5 right-2.5 bg-black/70 text-white text-[10px] px-2 py-1 rounded opacity-0 transition-opacity duration-200 cursor-pointer z-[11] hover:opacity-100"
         >
           {photo}
         </div>
       </div>
       
       {/* Text Section */}
-      <div style={{ padding: '16px' }}>
+      <div className="p-4">
         <div 
-          style={{ 
-            fontWeight: '600', 
-            fontSize: '18px', 
-            display: 'block', 
-            marginBottom: '4px',
-            color: '#111827'
-          }}
+          className="font-semibold text-lg block mb-1 text-gray-900"
           contentEditable
           suppressContentEditableWarning={true}
           data-puck-field="name"
@@ -233,11 +140,7 @@ const SpeakerCard = ({ photo, uploadedImage, name, designation }: SpeakerCardPro
           {name}
         </div>
         <div 
-          style={{ 
-            color: '#6b7280', 
-            fontSize: '14px',
-            lineHeight: '1.4'
-          }}
+          className="text-gray-500 text-sm leading-snug"
           contentEditable
           suppressContentEditableWarning={true}
           data-puck-field="designation"

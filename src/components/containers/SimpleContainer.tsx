@@ -3,14 +3,14 @@ import { SimpleContainerProps } from '../../types'
 
 const SimpleContainer = ({ children, backgroundColor = '#f0f8ff', padding = '20px' }: SimpleContainerProps) => {
   return (
-    <div style={{
-      backgroundColor: backgroundColor,
-      padding: padding,
-      margin: '16px 0',
-      borderRadius: '8px',
-      border: '2px dashed #007bff',
-      minHeight: '100px'
-    }}>
+    <div 
+      style={{
+        backgroundColor: backgroundColor,
+        padding: padding,
+        border: '2px dashed #007bff'
+      }}
+      className="my-4 rounded-lg min-h-[100px]"
+    >
       {children}
     </div>
   )

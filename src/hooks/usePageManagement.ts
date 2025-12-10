@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Page } from '../types'
 import { logger } from '../utils/logger'
 import { API_ENDPOINTS, env } from '../config/env'
 import { isPageApiAvailable, safeFetch } from '../utils/apiHelpers'
+import { useEventForm } from '../contexts/EventFormContext'
 
 // Function to convert HeadingBlock to Heading for compatibility
 const convertHeadingBlock = (item: any) => {
@@ -58,19 +59,325 @@ const convertJsonToPagesList = (jsonData: any): Page[] => {
   })
 }
 
-const defaultPage1Data = {
-  content: [],
-  root: { props: { title: 'Page 1', pageTitle: 'Page 1' } },
-  zones: {}
+// Helper function to generate unique IDs
+const generateId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+// Helper function to format event date
+const formatEventDate = (startDate?: string): string => {
+  if (!startDate) return 'Jan 13, 2025'
+  try {
+    const date = new Date(startDate)
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  } catch {
+    return 'Jan 13, 2025'
+  }
+}
+
+// Default template data with HeroSection, AboutSection (TwoColumnContent equivalent), SpeakersSection, and PricingPlans
+const getDefaultTemplateData = (pageName: string = 'Page 1', eventData?: any) => {
+  const heroId = generateId('HeroSection')
+  const aboutId = generateId('AboutSection')
+  const speakersId = generateId('SpeakersSection')
+  const pricingId = generateId('PricingPlans')
+  
+  // Get banner image from localStorage or use default
+  const bannerUrl = localStorage.getItem('event-form-banner') || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'
+  
+  // Get event data values
+  const eventName = eventData?.eventName || 'Event Title'
+  const location = eventData?.location || 'Location'
+  const eventDate = formatEventDate(eventData?.startDate)
+  const subtitle = `${location} | ${eventDate}`
+  
+  return {
+    content: [
+      {
+        type: 'HeroSection',
+        props: {
+          id: heroId,
+          title: eventName,
+          subtitle: subtitle,
+          buttons: [
+            {
+              text: 'Register Now',
+              link: '#register',
+              color: '#6938EF',
+              textColor: 'white',
+              size: 'large'
+            }
+          ],
+          backgroundColor: '#1a1a1a',
+          textColor: 'white',
+          backgroundImage: bannerUrl,
+          height: '500px',
+          alignment: 'center',
+          overlayOpacity: 0.4,
+          titleSize: '3.5rem',
+          subtitleSize: '1.25rem',
+          buttonSpacing: '12px'
+        }
+      },
+      {
+        type: 'TwoColumnContent',
+        props: {
+          id: aboutId,
+          leftTitle: 'About the event',
+          leftContent: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+          rightTitle: 'Sponsor',
+          rightContent: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+          showRightIcon: true,
+          backgroundColor: '#ffffff',
+          textColor: '#000000',
+          titleColor: '#000000',
+          padding: '24px',
+          gap: '32px',
+          borderRadius: '8px',
+          borderColor: '#e3f2fd',
+          borderWidth: '1px'
+        }
+      },
+      {
+        type: 'SpeakersSection',
+        props: {
+          id: speakersId,
+          speakers: [
+            {
+              name: 'Speaker Name',
+              title: 'Speaker Title',
+              image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400'
+            },
+            {
+              name: 'Speaker Name',
+              title: 'Speaker Title',
+              image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400'
+            },
+            {
+              name: 'Speaker Name',
+              title: 'Speaker Title',
+              image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400'
+            }
+          ],
+          backgroundColor: '#ffffff',
+          padding: '0 2rem',
+          gap: '2rem'
+        }
+      },
+      {
+        type: 'PricingPlans',
+        props: {
+          id: pricingId,
+          plans: [
+            {
+              id: 'basic',
+              icon: '⚡',
+              title: 'Basic plan',
+              price: '$10',
+              billingNote: 'Billed annually.',
+              features: [
+                'Access to all basic features',
+                'Basic reporting and analytics',
+                'Up to 10 individual users',
+                '20 GB individual data',
+                'Basic chat and email support'
+              ],
+              buttonText: 'Get started'
+            },
+            {
+              id: 'business',
+              icon: '📊',
+              title: 'Business plan',
+              price: '$20',
+              billingNote: 'Billed annually.',
+              features: [
+                '200+ integrations',
+                'Advanced reporting and analytics',
+                'Up to 20 individual users',
+                '40 GB individual data',
+                'Priority chat and email support'
+              ],
+              buttonText: 'Get started'
+            },
+            {
+              id: 'enterprise',
+              icon: '🏢',
+              title: 'Enterprise plan',
+              price: '$40',
+              billingNote: 'Billed annually.',
+              features: [
+                'Advanced custom fields',
+                'Audit log and data history',
+                'Unlimited individual users',
+                'Unlimited individual data',
+                'Personalized + priority service'
+              ],
+              buttonText: 'Get started'
+            }
+          ],
+          backgroundColor: '#f3e8ff',
+          padding: '6rem 2rem'
+        }
+      }
+    ],
+    root: { props: { title: pageName, pageTitle: pageName } },
+    zones: {}
+  }
 }
 
 export const usePageManagement = () => {
+  const { eventData } = useEventForm()
+  const defaultPage1Data = getDefaultTemplateData('Page 1', eventData)
   const [currentData, setCurrentData] = useState<any>(defaultPage1Data)
   const [currentPage, setCurrentPage] = useState('page1')
   const [currentPageName, setCurrentPageName] = useState('Page 1')
   const [pages, setPages] = useState<Page[]>([])
   const [showPageManager, setShowPageManager] = useState(false)
   const [showPageNameDialog, setShowPageNameDialog] = useState(false)
+
+  // Function to update HeroSection with eventData and banner
+  // Use useCallback to avoid stale closures
+  const updateHeroSectionWithEventData = useCallback(() => {
+    // Always check for banner in localStorage, even if eventData is not available
+    const bannerUrl = localStorage.getItem('event-form-banner')
+    
+    console.log('🖼️ updateHeroSectionWithEventData - bannerUrl in storage:', bannerUrl ? (bannerUrl.startsWith('data:') ? 'data:image...' : bannerUrl.substring(0, 50) + '...') : 'NONE')
+    
+    setCurrentData((prevData: any) => {
+      if (!prevData?.content) return prevData
+      
+      // Check if we have a HeroSection that needs updating
+      const heroSection = prevData.content.find((item: any) => item.type === 'HeroSection')
+      if (!heroSection) return prevData
+      
+      console.log('🖼️ Current HeroSection backgroundImage:', heroSection.props.backgroundImage?.substring(0, 50) + '...')
+      
+      // ALWAYS prioritize banner from localStorage if it exists
+      // Use banner from localStorage if available, otherwise keep existing or use default
+      const currentBannerUrl = bannerUrl || heroSection.props.backgroundImage || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'
+      
+      console.log('🖼️ Will use bannerUrl:', currentBannerUrl?.substring(0, 50) + '...')
+      
+      // Get event data - use eventData if available, otherwise use existing props or defaults
+      const eventName = eventData?.eventName || heroSection.props.title || 'Event Title'
+      const location = eventData?.location || ''
+      const eventDate = formatEventDate(eventData?.startDate)
+      // Match WebsitePreviewPage format: "Location | Date" or just "Date" if no location
+      const subtitle = location ? `${location} | ${eventDate}` : (eventDate || 'Location | Date')
+
+      // Check if banner in localStorage is different from what's in the component
+      // Force update if there's a banner in localStorage but component has default image
+      const hasDefaultImage = heroSection.props.backgroundImage?.includes('unsplash.com/photo-1540575467063')
+      const shouldForceBannerUpdate = bannerUrl && (hasDefaultImage || heroSection.props.backgroundImage !== bannerUrl)
+
+      // Check if update is needed
+      const needsUpdate = 
+        heroSection.props.title !== eventName ||
+        heroSection.props.subtitle !== subtitle ||
+        heroSection.props.backgroundImage !== currentBannerUrl ||
+        shouldForceBannerUpdate
+
+      if (!needsUpdate) {
+        console.log('🖼️ No update needed - all values match')
+        return prevData
+      }
+
+      // Log what's being updated
+      if (shouldForceBannerUpdate) {
+        console.log('🖼️ FORCING banner update (banner in localStorage):', {
+          oldBanner: heroSection.props.backgroundImage?.substring(0, 50) + '...',
+          newBanner: currentBannerUrl?.substring(0, 50) + '...',
+          bannerInStorage: !!bannerUrl,
+          hasDefaultImage
+        })
+      } else {
+        console.log('🖼️ Updating HeroSection:', {
+          eventName,
+          subtitle,
+          bannerUrl: currentBannerUrl?.substring(0, 50) + '...',
+          oldBanner: heroSection.props.backgroundImage?.substring(0, 50) + '...'
+        })
+      }
+
+      // Update to ensure banner and content are current
+      const updatedContent = prevData.content.map((item: any) => {
+        if (item.type === 'HeroSection') {
+          const updatedProps = {
+            ...item.props,
+            title: eventName,
+            subtitle: subtitle,
+            backgroundImage: currentBannerUrl
+          }
+          
+          console.log('🖼️ Setting HeroSection props.backgroundImage to:', currentBannerUrl?.substring(0, 50) + '...')
+          
+          return {
+            ...item,
+            props: updatedProps
+          }
+        }
+        return item
+      })
+      
+      const updatedData = {
+        ...prevData,
+        content: updatedContent
+      }
+      
+      console.log('🖼️ Updated data - HeroSection backgroundImage:', 
+        updatedData.content.find((item: any) => item.type === 'HeroSection')?.props?.backgroundImage?.substring(0, 50) + '...')
+      
+      return updatedData
+    })
+  }, [eventData]) // Include eventData in dependencies
+
+  // Update currentData when eventData changes or on mount (for banner, title, etc.)
+  useEffect(() => {
+    // Always run on mount and when dependencies change
+    const bannerInStorage = localStorage.getItem('event-form-banner')
+    console.log('🖼️ useEffect triggered - Banner in storage:', !!bannerInStorage, 'EventData:', !!eventData)
+    updateHeroSectionWithEventData()
+  }, [eventData?.eventName, eventData?.location, eventData?.startDate, currentData?.content?.length, updateHeroSectionWithEventData]) // Trigger when eventData fields change or content changes
+
+  // Also run on initial mount to ensure banner is loaded
+  useEffect(() => {
+    // Small delay to ensure localStorage is accessible
+    const timer = setTimeout(() => {
+      const bannerInStorage = localStorage.getItem('event-form-banner')
+      console.log('🖼️ Initial mount check - Banner in storage:', !!bannerInStorage)
+      if (bannerInStorage) {
+        updateHeroSectionWithEventData()
+      }
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [updateHeroSectionWithEventData]) // Run once on mount
+
+  // Listen for localStorage changes (for banner updates)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'event-form-banner') {
+        updateHeroSectionWithEventData()
+      }
+    }
+
+    // Listen for storage events (from other tabs/windows)
+    window.addEventListener('storage', handleStorageChange)
+
+    // Also check periodically for localStorage changes (same tab)
+    // Use a ref to track the last banner URL to detect changes
+    let lastBannerUrl = localStorage.getItem('event-form-banner')
+    
+    const interval = setInterval(() => {
+      const currentBannerUrl = localStorage.getItem('event-form-banner')
+      if (currentBannerUrl !== lastBannerUrl) {
+        lastBannerUrl = currentBannerUrl
+        updateHeroSectionWithEventData()
+      }
+    }, 500) // Check every 500ms
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
+    }
+  }, []) // Empty deps - function uses setState functional form
 
   const getPageTitleFromData = (data: any): string | undefined => {
     if (!data || !data.root || !data.root.props) {
@@ -104,10 +411,115 @@ export const usePageManagement = () => {
     }
   }
 
+  // Helper function to check if data matches the expected template structure
+  const hasCorrectTemplateStructure = (data: any): boolean => {
+    if (!data || !data.content || !Array.isArray(data.content)) {
+      return false
+    }
+    
+    const contentTypes = data.content.map((c: any) => c.type)
+    const expectedTypes = ['HeroSection', 'TwoColumnContent', 'SpeakersSection', 'PricingPlans']
+    
+    // Check if we have at least the expected components
+    const hasHero = contentTypes.includes('HeroSection')
+    const hasTwoColumn = contentTypes.includes('TwoColumnContent')
+    const hasSpeakers = contentTypes.includes('SpeakersSection')
+    const hasPricing = contentTypes.includes('PricingPlans')
+    
+    // If we have all expected components, it's the correct template
+    if (hasHero && hasTwoColumn && hasSpeakers && hasPricing) {
+      return true
+    }
+    
+    // If we have unexpected components like HTMLContent or Heading, it's not the correct template
+    if (contentTypes.includes('HTMLContent') || contentTypes.includes('Heading')) {
+      return false
+    }
+    
+    // Otherwise, allow it (might be a custom page)
+    return true
+  }
+
+  // Helper function to clean duplicate components from data
+  const cleanDuplicateComponents = (data: any) => {
+    if (!data || !data.content || !Array.isArray(data.content)) {
+      return data
+    }
+    
+    // Track seen component IDs and positions to avoid duplicates
+    const seenIds = new Set<string>()
+    const cleanedContent: any[] = []
+    let duplicatesRemoved = 0
+    
+    data.content.forEach((item: any, index: number) => {
+      // Use ID if available, otherwise create a unique identifier
+      const itemId = item.props?.id || `${item.type}-${index}-${JSON.stringify(item.props).substring(0, 50)}`
+      
+      // For components without IDs, check if we've seen this exact component before
+      // by comparing type and a hash of the props
+      if (item.props?.id) {
+        // Component has an ID - use it for deduplication
+        if (!seenIds.has(itemId)) {
+          seenIds.add(itemId)
+          cleanedContent.push(item)
+        } else {
+          console.warn('⚠️ Removing duplicate component with ID:', item.type, itemId)
+          duplicatesRemoved++
+        }
+      } else {
+        // Component doesn't have an ID - check for exact duplicates by comparing props
+        // For PricingPlans specifically, also check if we already have one
+        if (item.type === 'PricingPlans') {
+          const hasPricingPlans = cleanedContent.some((existing: any) => existing.type === 'PricingPlans')
+          if (hasPricingPlans) {
+            console.warn('⚠️ Removing duplicate PricingPlans component (only one allowed)')
+            duplicatesRemoved++
+            return // Skip this duplicate
+          }
+        }
+        
+        const propsHash = JSON.stringify(item.props)
+        const existingIndex = cleanedContent.findIndex((existing: any) => 
+          existing.type === item.type && 
+          JSON.stringify(existing.props) === propsHash
+        )
+        
+        if (existingIndex === -1) {
+          // Not a duplicate, add it
+          cleanedContent.push(item)
+        } else {
+          console.warn('⚠️ Removing duplicate component without ID:', item.type, 'at index', index)
+          duplicatesRemoved++
+        }
+      }
+    })
+    
+    // Check for duplicates by type if no IDs
+    if (duplicatesRemoved > 0) {
+      console.log('🧹 Cleaned', duplicatesRemoved, 'duplicate components')
+      console.log('📊 Original types:', data.content.map((c: any) => c.type))
+      console.log('📊 Cleaned types:', cleanedContent.map((c: any) => c.type))
+      
+      // Count PricingPlans specifically
+      const pricingCount = cleanedContent.filter((c: any) => c.type === 'PricingPlans').length
+      if (pricingCount > 1) {
+        console.error('❌ ERROR: Still have', pricingCount, 'PricingPlans after cleaning!')
+      }
+    }
+    
+    return {
+      ...data,
+      content: cleanedContent
+    }
+  }
+
   const applyServerDataForPage = (pageId: string, serverData: any) => {
     if (!serverData) {
       return
     }
+
+    // Clean duplicates from server data before applying
+    const cleanedServerData = cleanDuplicateComponents(serverData)
 
     const cacheKey = `puck-page-${pageId}`
     const cachedData = getCachedPageData(pageId)
@@ -118,7 +530,7 @@ export const usePageManagement = () => {
 
     setCurrentData((prevData: any) => {
       const prevTitle = getPageTitleFromData(prevData)
-      const serverTitle = getPageTitleFromData(serverData)
+      const serverTitle = getPageTitleFromData(cleanedServerData)
 
       const fallbackTitle = pageId === 'page1'
         ? 'Page 1'
@@ -129,7 +541,7 @@ export const usePageManagement = () => {
       resolvedTitle = cachedTitle || prevTitle || serverTitle || fallbackTitle
 
       const mergedProps = {
-        ...(serverData?.root?.props || {})
+        ...(cleanedServerData?.root?.props || {})
       }
 
       if (resolvedTitle) {
@@ -140,9 +552,9 @@ export const usePageManagement = () => {
       }
 
       mergedDataForCache = {
-        ...serverData,
+        ...cleanedServerData,
         root: {
-          ...serverData?.root,
+          ...cleanedServerData?.root,
           props: mergedProps
         }
       }
@@ -393,30 +805,39 @@ export const usePageManagement = () => {
         try {
           initialData = JSON.parse(cachedData)
           logger.debug('loadPage: Found cached data in localStorage')
+          console.log('✅ Found cached data in localStorage for:', pageId)
+          
+          // Check if the cached data has the correct template structure
+          if (!hasCorrectTemplateStructure(initialData)) {
+            console.warn('⚠️ Cached data does not match expected template structure, replacing with default template')
+            initialData = getDefaultTemplateData(pageInArray.name, eventData)
+            // Save the corrected template to cache
+            localStorage.setItem(cachedDataKey, JSON.stringify(initialData))
+          }
         } catch (e) {
           logger.warn('loadPage: Failed to parse cached data:', e)
         }
       }
       
-      // If no cached data, use default empty data
+      // If no cached data, use default template data
       if (!initialData) {
-        initialData = {
-          content: [],
-          root: {
-            props: {
-              title: pageInArray.name,
-              pageTitle: pageInArray.name
-            }
-          },
-          zones: {}
-        }
+        initialData = getDefaultTemplateData(pageInArray.name, eventData)
+        logger.debug('loadPage: Using default template data for page:', pageInArray.name)
+        console.log('📄 Using default template data for:', pageInArray.name)
       }
       
+      // Clean any duplicates before setting
+      const cleanedInitialData = cleanDuplicateComponents(initialData)
+      
       // Switch immediately with cached/default data
-      setCurrentData(initialData)
-      setCurrentPage(pageId)
-      setCurrentPageName(pageInArray.name)
-      setShowPageManager(false)
+      console.log('📄 Setting currentData with template:', {
+        contentLength: cleanedInitialData?.content?.length || 0,
+        contentTypes: cleanedInitialData?.content?.map((c: any) => c.type) || []
+      })
+      setCurrentData(cleanedInitialData)
+        setCurrentPage(pageId)
+        setCurrentPageName(pageInArray.name)
+        setShowPageManager(false)
       
       // Try to load from server in background and update if successful
       fetch(API_ENDPOINTS.GET_PAGE(serverFilename))
@@ -439,114 +860,168 @@ export const usePageManagement = () => {
       return initialData
     }
     
-    // Page not in array, try to load from server with timeout
-    try {
-      logger.debug('Loading from server:', API_ENDPOINTS.GET_PAGE(serverFilename))
-      
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), 1000) // 1 second timeout
-      })
-      
-      // Race between fetch and timeout
-      const response = await Promise.race([
-        fetch(API_ENDPOINTS.GET_PAGE(serverFilename)),
-        timeoutPromise
-      ]) as Response
-      
-      logger.debug('Server response status:', response.status)
-      
-      if (response.ok) {
-        const result = await response.json()
-        logger.debug('Server response data:', result)
+    // Page not in array, try to load from localStorage first, then server
+    logger.debug('loadPage: Page not in array, checking localStorage first')
+    
+    // Check localStorage for cached data
+    const cachedDataKey = `puck-page-${pageId}`
+    const cachedData = localStorage.getItem(cachedDataKey)
+    
+    let initialData = null
+    if (cachedData) {
+      try {
+        initialData = JSON.parse(cachedData)
+        logger.debug('loadPage: Found cached data in localStorage for page not in array')
+        console.log('✅ Found cached data in localStorage for:', pageId)
         
-        if (result.success) {
-          applyServerDataForPage(pageId, result.data)
-          setCurrentPage(pageId)
-          
-          // Get page name from the loaded data
-          const pageTitle = getPageTitleFromData(result.data)
-          
-          if (pageTitle) {
-            // Page not in array, but we have a title - add it to the array
-            logger.debug('loadPage: Page not in array, adding it with title:', pageTitle)
-            setCurrentPageName(pageTitle)
-            
-            // Add the page to the pages array so it shows in the sidebar
-            setPages(prevPages => {
-              const pageExists = prevPages.some(p => p.id === pageId || p.filename === serverFilename)
-              if (!pageExists) {
-                const newPage: Page = {
-                  id: pageId,
-                  name: pageTitle,
-                  filename: serverFilename,
-                  lastModified: new Date().toISOString()
-                }
-                logger.debug('loadPage: Adding page to array:', newPage)
-                return [...prevPages, newPage]
-              }
-              return prevPages
-            })
-          } else {
-            // Fallback: try to extract name from pageId
-            const fallbackName = pageId.replace('page-data-', '').replace(/-/g, ' ')
-            logger.debug('loadPage: Using fallback name:', fallbackName)
-            setCurrentPageName(fallbackName)
-          }
-          
-          setShowPageManager(false)
-          return result.data
+        // Clean any duplicates before setting
+        const cleanedCachedData = cleanDuplicateComponents(initialData)
+        
+        // Switch immediately with cached data
+        console.log('📄 Setting currentData from localStorage:', {
+          contentLength: cleanedCachedData?.content?.length || 0,
+          contentTypes: cleanedCachedData?.content?.map((c: any) => c.type) || []
+        })
+        setCurrentData(cleanedCachedData)
+        setCurrentPage(pageId)
+        
+        // Get page name from the cached data
+        const pageTitle = getPageTitleFromData(cleanedCachedData)
+        if (pageTitle) {
+          setCurrentPageName(pageTitle)
         } else {
-          logger.error('Server returned error:', result.error)
-          // Fall through to fallback logic
+          setCurrentPageName(pageId)
         }
-      } else {
-        logger.warn('Server response not ok:', response.status, response.statusText)
-        // Fall through to fallback logic
+        setShowPageManager(false)
+      } catch (e) {
+        logger.warn('loadPage: Failed to parse cached data:', e)
       }
-    } catch (error) {
-      logger.error('Error loading page from server (will use fallback):', error)
-      // Fall through to fallback logic
     }
     
-    // Fallback: If server load failed, create default page
-    // (Note: pageInArray check was already handled above with early return)
-    {
-      // Page not in array and couldn't load from server
-      logger.warn('loadPage: Page not found in array and server load failed:', serverFilename)
-      // Try to create a default page based on the filename
-      const pageName = pageId === 'page1' ? 'Page 1' : pageId.replace('page-', '').replace(/-/g, ' ')
-      const defaultData = {
-        content: [],
-        root: {
-          props: {
-            title: pageName,
-            pageTitle: pageName
+    // If no cached data, try to load from server with timeout
+    if (!initialData) {
+      try {
+        logger.debug('Loading from server:', API_ENDPOINTS.GET_PAGE(serverFilename))
+        console.log('📡 Loading page from server:', serverFilename)
+        
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Request timeout')), 1000) // 1 second timeout
+        })
+        
+        // Race between fetch and timeout
+        const response = await Promise.race([
+          fetch(API_ENDPOINTS.GET_PAGE(serverFilename)),
+          timeoutPromise
+        ]) as Response
+        
+        logger.debug('Server response status:', response.status)
+        
+        if (response.ok) {
+          const result = await response.json()
+          logger.debug('Server response data:', result)
+          
+          if (result.success) {
+            // Check if server data has the correct template structure
+            if (!hasCorrectTemplateStructure(result.data)) {
+              console.warn('⚠️ Server data does not match expected template structure, replacing with default template')
+              const pageName = getPageTitleFromData(result.data) || pageId === 'welcome' ? 'Welcome' : pageId.replace('page-', '').replace(/-/g, ' ')
+              const defaultData = getDefaultTemplateData(pageName, eventData)
+              applyServerDataForPage(pageId, defaultData)
+            } else {
+              applyServerDataForPage(pageId, result.data)
+            }
+            setCurrentPage(pageId)
+            
+            // Get page name from the loaded data
+            const pageTitle = getPageTitleFromData(result.data)
+            
+            if (pageTitle) {
+              // Page not in array, but we have a title - add it to the array
+              logger.debug('loadPage: Page not in array, adding it with title:', pageTitle)
+              setCurrentPageName(pageTitle)
+              
+              // Add the page to the pages array so it shows in the sidebar
+              setPages(prevPages => {
+                const pageExists = prevPages.some(p => p.id === pageId || p.filename === serverFilename)
+                if (!pageExists) {
+                  const newPage: Page = {
+                    id: pageId,
+                    name: pageTitle,
+                    filename: serverFilename,
+                    lastModified: new Date().toISOString()
+                  }
+                  logger.debug('loadPage: Adding page to array:', newPage)
+                  return [...prevPages, newPage]
+                }
+                return prevPages
+              })
+            } else {
+              // Fallback: try to extract name from pageId
+              const fallbackName = pageId.replace('page-data-', '').replace(/-/g, ' ')
+              logger.debug('loadPage: Using fallback name:', fallbackName)
+              setCurrentPageName(fallbackName)
+            }
+            
+            setShowPageManager(false)
+            return result.data
+          } else {
+            logger.error('Server returned error:', result.error)
+            // Fall through to fallback logic
           }
-        },
-        zones: {}
-      }
-      setCurrentData(defaultData)
-      setCurrentPage(pageId)
-      setCurrentPageName(pageName)
-      setShowPageManager(false)
-      
-      // Add to pages array
-      setPages(prevPages => {
-        const pageExists = prevPages.some(p => p.id === pageId || p.filename === serverFilename)
-        if (!pageExists) {
-          const newPage: Page = {
-            id: pageId,
-            name: pageName,
-            filename: serverFilename,
-            lastModified: new Date().toISOString()
-          }
-          return [...prevPages, newPage]
+        } else {
+          logger.warn('Server response not ok:', response.status, response.statusText)
+          // Fall through to fallback logic
         }
-        return prevPages
-      })
+      } catch (error) {
+        logger.error('Error loading page from server (will use fallback):', error)
+        // Fall through to fallback logic
+      }
       
-      return defaultData
+      // Fallback: If server load failed, create default template page
+      if (!initialData) {
+        // Page not in array and couldn't load from server
+        logger.warn('loadPage: Page not found in array and server load failed:', serverFilename)
+        // Try to create a default template page based on the filename
+        const pageName = pageId === 'page1' ? 'Page 1' : pageId.replace('page-', '').replace(/-/g, ' ')
+        const defaultData = getDefaultTemplateData(pageName, eventData)
+        logger.debug('loadPage: Using default template data for fallback page:', pageName)
+        console.log('📄 Using default template data for fallback:', pageName)
+        console.log('📄 Template content:', defaultData.content.map((c: any) => c.type).join(', '))
+        
+        // Clean any duplicates before saving
+        const cleanedDefaultData = cleanDuplicateComponents(defaultData)
+        
+        // Save to localStorage so it persists
+        const cacheKey = `puck-page-${pageId}`
+        localStorage.setItem(cacheKey, JSON.stringify(cleanedDefaultData))
+        
+        console.log('📄 Setting currentData with cleaned template:', {
+          contentLength: cleanedDefaultData?.content?.length || 0,
+          contentTypes: cleanedDefaultData?.content?.map((c: any) => c.type) || []
+        })
+        setCurrentData(cleanedDefaultData)
+        setCurrentPage(pageId)
+        setCurrentPageName(pageName)
+        setShowPageManager(false)
+        
+        // Add to pages array
+        setPages(prevPages => {
+          const pageExists = prevPages.some(p => p.id === pageId || p.filename === serverFilename)
+          if (!pageExists) {
+            const newPage: Page = {
+              id: pageId,
+              name: pageName,
+              filename: serverFilename,
+              lastModified: new Date().toISOString()
+            }
+            return [...prevPages, newPage]
+          }
+          return prevPages
+        })
+        
+        return defaultData
+      }
     }
   }
 

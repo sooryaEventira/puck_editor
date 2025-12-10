@@ -20,14 +20,9 @@ const GridLayout: React.FC<GridLayoutProps> = ({
   return (
     <div
       style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${numberOfColumns}, 1fr)`,
-        gap: "16px",
-        padding: "16px",
-        backgroundColor: "#f0f0f0",
-        borderRadius: 8,
-        minHeight: "200px",
+        gridTemplateColumns: `repeat(${numberOfColumns}, 1fr)`
       }}
+      className="grid gap-4 p-4 bg-gray-100 rounded-lg min-h-[200px]"
     >
       {columns.map((Column, index) => (
         <Column key={index} />

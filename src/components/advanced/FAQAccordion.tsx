@@ -102,94 +102,30 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({
     })
   }
 
+  // Dynamic styles that need to remain inline
   const containerStyle: React.CSSProperties = {
     backgroundColor,
-    padding,
-    width: '100%',
-    minHeight: '400px'
-  }
-
-  const contentStyle: React.CSSProperties = {
-    maxWidth: '800px',
-    margin: '0 auto'
-  }
-
-  const headerStyle: React.CSSProperties = {
-    textAlign: 'center',
-    marginBottom: '3rem'
-  }
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
-    fontWeight: '600',
-    color: questionColor,
-    marginBottom: '1rem',
-    lineHeight: '1.2'
-  }
-
-
-  const faqContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: spacing
+    padding
   }
 
   const faqItemStyle: React.CSSProperties = {
-    border: `1px solid ${borderColor}`,
-    borderRadius: '8px',
-    overflow: 'hidden',
-    transition: 'all 0.3s ease',
-    backgroundColor: '#f8fafc'
+    border: `1px solid ${borderColor}`
   }
 
   const questionButtonStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '1.5rem',
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderBottom: 'none',
-    cursor: 'pointer',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    textAlign: 'left',
-    transition: 'all 0.3s ease',
-    fontSize: '1.125rem',
-    fontWeight: '600',
-    color: questionColor,
-    lineHeight: '1.4'
-  }
-
-  const questionTextStyle: React.CSSProperties = {
-    flex: 1,
-    marginRight: '1rem'
+    color: questionColor
   }
 
   const iconStyle: React.CSSProperties = {
-    fontSize: '1.25rem',
-    color: iconColor,
-    transition: 'transform 0.3s ease',
-    flexShrink: 0
-  }
-
-  const answerContainerStyle: React.CSSProperties = {
-    maxHeight: '0',
-    overflow: 'hidden',
-    transition: 'max-height 0.3s ease',
-    backgroundColor: 'transparent'
+    color: iconColor
   }
 
   const answerContentStyle: React.CSSProperties = {
-    padding: '0 1.5rem 1.5rem 1.5rem',
-    fontSize: '1rem',
-    color: answerColor,
-    lineHeight: '1.6',
-    backgroundColor: '#f8fafc'
+    color: answerColor
   }
 
   const handleQuestionHover = (e: React.MouseEvent<HTMLDivElement>, isEntering: boolean) => {
     const questionButton = e.currentTarget.querySelector('.faq-accordion-question') as HTMLButtonElement
-    const answerContainer = e.currentTarget.querySelector('.faq-accordion-answer-container') as HTMLDivElement
     const answerContent = e.currentTarget.querySelector('.faq-accordion-answer') as HTMLDivElement
     const isOpen = openItems.has(e.currentTarget.dataset.faqId || '')
     
@@ -201,8 +137,7 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({
         } else {
           questionButton.style.backgroundColor = hoverColor
         }
-        e.currentTarget.style.transform = 'translateY(-2px)'
-        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+        e.currentTarget.classList.add('-translate-y-0.5', 'shadow-lg')
       } else {
         if (isOpen) {
           questionButton.style.backgroundColor = '#ffffff'
@@ -210,8 +145,7 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({
         } else {
           questionButton.style.backgroundColor = 'transparent'
         }
-        e.currentTarget.style.transform = 'translateY(0)'
-        e.currentTarget.style.boxShadow = 'none'
+        e.currentTarget.classList.remove('-translate-y-0.5', 'shadow-lg')
       }
     }
   }
@@ -282,12 +216,12 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({
           }
         `}
       </style>
-      <section style={containerStyle} className="faq-accordion-container">
-        <div style={contentStyle} className="faq-accordion-content">
-          <div style={headerStyle} className="faq-accordion-header">
+      <section style={containerStyle} className="w-full min-h-[400px] faq-accordion-container">
+        <div className="max-w-[800px] mx-auto faq-accordion-content">
+          <div className="text-center mb-12 faq-accordion-header">
             <h2 
-              style={titleStyle}
-              className="faq-accordion-title"
+              style={{ color: questionColor }}
+              className="text-[clamp(1.75rem,4vw,2.5rem)] font-semibold mb-4 leading-tight faq-accordion-title"
               data-puck-field="title"
               contentEditable
               suppressContentEditableWarning={true}
@@ -296,46 +230,42 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({
             </h2>
           </div>
 
-          <div style={faqContainerStyle} className="faq-accordion-list">
+          <div className="flex flex-col faq-accordion-list" style={{ gap: spacing }}>
             {faqs.map((faq, index) => {
               const isOpen = openItems.has(faq.id)
-              const answerStyle = {
-                ...answerContainerStyle,
-                maxHeight: isOpen ? '200px' : '0'
-              }
 
                return (
                  <div 
                    key={faq.id} 
                    style={faqItemStyle} 
-                   className="faq-accordion-item"
+                   className="rounded-lg overflow-hidden transition-all duration-300 bg-gray-50 faq-accordion-item"
                    data-faq-id={faq.id}
                    onMouseEnter={(e) => handleQuestionHover(e, true)}
                    onMouseLeave={(e) => handleQuestionHover(e, false)}
                  >
                    <button
                      style={questionButtonStyle}
-                     className="faq-accordion-question"
+                     className="w-full p-6 bg-transparent border-none cursor-pointer flex justify-between items-center text-left transition-all duration-300 text-lg font-semibold leading-snug faq-accordion-question focus:outline-none focus:shadow-none"
                      onClick={() => toggleItem(faq.id)}
                      data-puck-field={`faqs[${index}].question`}
                      contentEditable
                      suppressContentEditableWarning={true}
                    >
-                    <span style={questionTextStyle}>{faq.question}</span>
+                    <span className="flex-1 mr-4">{faq.question}</span>
                     <span 
-                      style={{
-                        ...iconStyle,
-                        transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)'
-                      }}
+                      style={iconStyle}
+                      className={`text-xl transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-45' : 'rotate-0'}`}
                     >
                       +
                     </span>
                   </button>
                   
-                  <div style={answerStyle} className="faq-accordion-answer-container">
+                  <div 
+                    className={`overflow-hidden transition-all duration-300 bg-transparent faq-accordion-answer-container ${isOpen ? 'max-h-[200px]' : 'max-h-0'}`}
+                  >
                     <div 
                       style={answerContentStyle}
-                      className="faq-accordion-answer"
+                      className="px-6 pb-6 text-base leading-relaxed bg-gray-50 faq-accordion-answer"
                       data-puck-field={`faqs[${index}].answer`}
                       contentEditable
                       suppressContentEditableWarning={true}

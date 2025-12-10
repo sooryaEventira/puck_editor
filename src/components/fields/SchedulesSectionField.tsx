@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { usePuckData } from './EditorView'
+import { usePuckData } from '../shared/EditorView'
 import CustomButtonField from './CustomButtonField'
 
 interface SchedulesSectionFieldProps {

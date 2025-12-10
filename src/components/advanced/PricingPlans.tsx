@@ -67,120 +67,19 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
   backgroundColor = '#f3e8ff',
   padding = '6rem 2rem'
 }) => {
+  // Dynamic styles that need to remain inline
   const containerStyle: React.CSSProperties = {
     backgroundColor,
-    padding,
-    width: '100%',
-    minHeight: '600px'
-  }
-
-  const contentStyle: React.CSSProperties = {
-    maxWidth: '1200px',
-    margin: '0 auto'
-  }
-
-  const gridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '1.5rem',
-    alignItems: 'start'
-  }
-
-  const cardStyle: React.CSSProperties = {
-    backgroundColor: '#ffffff',
-    borderRadius: '16px',
-    padding: '1.5rem',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-    transition: 'all 0.3s ease',
-    cursor: 'pointer',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%'
-  }
-
-  const iconStyle: React.CSSProperties = {
-    width: '48px',
-    height: '48px',
-    backgroundColor: '#8b5cf6',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '24px',
-    marginBottom: '1.5rem',
-    alignSelf: 'center'
-  }
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: 'clamp(1.125rem, 3vw, 1.25rem)',
-    fontWeight: '600',
-    color: '#8b5cf6',
-    marginBottom: '1rem',
-    textAlign: 'center'
-  }
-
-  const priceStyle: React.CSSProperties = {
-    fontSize: 'clamp(2rem, 6vw, 3rem)',
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: '0.5rem',
-    textAlign: 'center',
-    lineHeight: '1'
-  }
-
-  const billingStyle: React.CSSProperties = {
-    fontSize: 'clamp(0.8rem, 2vw, 0.875rem)',
-    color: '#6b7280',
-    marginBottom: '1.5rem',
-    textAlign: 'center'
-  }
-
-  const featuresListStyle: React.CSSProperties = {
-    listStyle: 'none',
-    padding: 0,
-    margin: 0,
-    marginBottom: '1.5rem',
-    flex: 1
-  }
-
-  const featureItemStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: '0.75rem',
-    fontSize: 'clamp(0.8rem, 2vw, 0.875rem)',
-    color: '#374151'
-  }
-
-  const checkmarkStyle: React.CSSProperties = {
-    color: '#8b5cf6',
-    marginRight: '0.75rem',
-    fontSize: '16px',
-    fontWeight: 'bold'
-  }
-
-  const buttonStyle: React.CSSProperties = {
-    backgroundColor: '#8b5cf6',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '0.75rem 1.5rem',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    width: '100%',
-    textAlign: 'center',
-    textDecoration: 'none',
-    display: 'block'
+    padding
   }
 
   const handleCardHover = (e: React.MouseEvent<HTMLDivElement>, isEntering: boolean) => {
     if (isEntering) {
-      e.currentTarget.style.transform = 'translateY(-4px)'
-      e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+      e.currentTarget.classList.add('-translate-y-1', 'shadow-xl')
+      e.currentTarget.classList.remove('shadow-sm')
     } else {
-      e.currentTarget.style.transform = 'translateY(0)'
-      e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+      e.currentTarget.classList.remove('-translate-y-1', 'shadow-xl')
+      e.currentTarget.classList.add('shadow-sm')
     }
   }
 
@@ -270,24 +169,22 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
           }
         `}
       </style>
-      <section style={containerStyle} className="pricing-container">
-        <div style={contentStyle} className="pricing-content">
-          <div style={gridStyle} className="pricing-grid">
+      <section style={containerStyle} className="w-full min-h-[600px] pricing-container">
+        <div className="max-w-[1200px] mx-auto pricing-content">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start pricing-grid">
           {plans.map((plan, index) => (
             <div
               key={plan.id}
-              style={cardStyle}
-              className="pricing-card"
+              className="bg-white rounded-2xl p-6 shadow-sm transition-all duration-300 cursor-pointer flex flex-col h-full pricing-card"
               onMouseEnter={(e) => handleCardHover(e, true)}
               onMouseLeave={(e) => handleCardHover(e, false)}
             >
-              <div style={iconStyle} className="pricing-icon">
+              <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-2xl mb-6 self-center pricing-icon">
                 {plan.icon}
               </div>
               
               <h3 
-                style={titleStyle}
-                className="pricing-title"
+                className="text-[clamp(1.125rem,3vw,1.25rem)] font-semibold text-purple-500 mb-4 text-center pricing-title"
                 data-puck-field={`plans[${index}].title`}
                 contentEditable
                 suppressContentEditableWarning={true}
@@ -296,18 +193,16 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
               </h3>
               
               <div 
-                style={priceStyle}
-                className="pricing-price"
+                className="text-[clamp(2rem,6vw,3rem)] font-bold text-gray-800 mb-2 text-center leading-none pricing-price"
                 data-puck-field={`plans[${index}].price`}
                 contentEditable
                 suppressContentEditableWarning={true}
               >
-                {plan.price}<span style={{ fontSize: 'clamp(1rem, 3vw, 1.5rem)', fontWeight: '400' }}>/mth</span>
+                {plan.price}<span className="text-[clamp(1rem,3vw,1.5rem)] font-normal">/mth</span>
               </div>
               
               <p 
-                style={billingStyle}
-                className="pricing-billing"
+                className="text-[clamp(0.8rem,2vw,0.875rem)] text-gray-500 mb-6 text-center pricing-billing"
                 data-puck-field={`plans[${index}].billingNote`}
                 contentEditable
                 suppressContentEditableWarning={true}
@@ -315,10 +210,10 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
                 {plan.billingNote}
               </p>
               
-              <ul style={featuresListStyle} className="pricing-features">
+              <ul className="list-none p-0 m-0 mb-6 flex-1 pricing-features">
                 {plan.features.map((feature, featureIndex) => (
-                  <li key={featureIndex} style={featureItemStyle} className="pricing-feature">
-                    <span style={checkmarkStyle}>✓</span>
+                  <li key={featureIndex} className="flex items-center mb-3 text-[clamp(0.8rem,2vw,0.875rem)] text-gray-700 pricing-feature">
+                    <span className="text-purple-500 mr-3 text-base font-bold">✓</span>
                     <span 
                       data-puck-field={`plans[${index}].features[${featureIndex}]`}
                       contentEditable
@@ -332,8 +227,8 @@ const PricingPlans: React.FC<PricingPlansProps> = ({
               
               <a
                 href="#get-started"
-                style={buttonStyle}
-                className="pricing-button"
+                style={{ backgroundColor: '#8b5cf6' }}
+                className="text-white border-none rounded-lg py-3 px-6 text-base font-semibold cursor-pointer transition-all duration-300 w-full text-center no-underline block hover:bg-purple-600 pricing-button"
                 onMouseEnter={(e) => handleButtonHover(e, true)}
                 onMouseLeave={(e) => handleButtonHover(e, false)}
                 data-puck-field={`plans[${index}].buttonText`}

@@ -19,43 +19,11 @@ const AboutSection: React.FC<AboutSectionProps> = ({
   textColor = "#333333",
   padding = "3rem 2rem"
 }) => {
+  // Dynamic styles that need to remain inline
   const containerStyle: React.CSSProperties = {
     backgroundColor,
     color: textColor,
-    padding,
-    width: '100%',
-    minHeight: '250px'
-  }
-
-  const contentStyle: React.CSSProperties = {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '2rem',
-    alignItems: 'start'
-  }
-
-  const columnStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.5rem'
-  }
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: 'clamp(1.25rem, 3vw, 1.5rem)',
-    fontWeight: '600',
-    marginBottom: '1rem',
-    color: textColor,
-    lineHeight: '1.2',
-    letterSpacing: '-0.01em'
-  }
-
-  const textStyle: React.CSSProperties = {
-    fontSize: 'clamp(1rem, 2.5vw, 1.125rem)',
-    lineHeight: '1.7',
-    color: textColor,
-    opacity: 0.8
+    padding
   }
 
   return (
@@ -94,12 +62,12 @@ const AboutSection: React.FC<AboutSectionProps> = ({
           }
         `}
       </style>
-      <section style={containerStyle} className="about-section-container">
-        <div style={contentStyle} className="about-section-content">
-        <div style={columnStyle} className="about-section-column">
+      <section style={containerStyle} className="w-full min-h-[250px] about-section-container">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-start about-section-content">
+        <div className="flex flex-col gap-6 about-section-column">
           <h4 
-            style={titleStyle}
-            className="about-section-title"
+            style={{ color: textColor }}
+            className="text-[clamp(1.25rem,3vw,1.5rem)] font-semibold mb-4 leading-tight tracking-tight about-section-title"
             data-puck-field="leftTitle"
             contentEditable
             suppressContentEditableWarning={true}
@@ -108,8 +76,8 @@ const AboutSection: React.FC<AboutSectionProps> = ({
           </h4>
           
           <p 
-            style={textStyle}
-            className="about-section-text"
+            style={{ color: textColor, opacity: 0.8 }}
+            className="text-[clamp(1rem,2.5vw,1.125rem)] leading-relaxed about-section-text"
             data-puck-field="leftText"
             contentEditable
             suppressContentEditableWarning={true}
@@ -118,10 +86,10 @@ const AboutSection: React.FC<AboutSectionProps> = ({
           </p>
         </div>
         
-        <div style={columnStyle} className="about-section-column">
+        <div className="flex flex-col gap-6 about-section-column">
           <h2 
-            style={titleStyle}
-            className="about-section-title"
+            style={{ color: textColor }}
+            className="text-[clamp(1.25rem,3vw,1.5rem)] font-semibold mb-4 leading-tight tracking-tight about-section-title"
             data-puck-field="rightTitle"
             contentEditable
             suppressContentEditableWarning={true}
@@ -130,8 +98,8 @@ const AboutSection: React.FC<AboutSectionProps> = ({
           </h2>
           
           <p 
-            style={textStyle}
-            className="about-section-text"
+            style={{ color: textColor, opacity: 0.8 }}
+            className="text-[clamp(1rem,2.5vw,1.125rem)] leading-relaxed about-section-text"
             data-puck-field="rightText"
             contentEditable
             suppressContentEditableWarning={true}

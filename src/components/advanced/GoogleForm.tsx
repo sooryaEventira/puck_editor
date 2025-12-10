@@ -6,15 +6,7 @@ const GoogleForm: React.FC<GoogleFormProps> = ({ formUrl, height = 500, puck }) 
     return (
       <div 
         ref={puck?.dragRef}
-        style={{
-          padding: '20px',
-          border: '2px dashed #ff6b6b',
-          borderRadius: '8px',
-          backgroundColor: '#ffe0e0',
-          color: '#d63031',
-          textAlign: 'center',
-          margin: '10px 0'
-        }}
+        className="p-5 border-2 border-dashed border-red-400 rounded-lg bg-red-50 text-red-600 text-center my-2.5"
       >
         <strong>Google Form URL not provided</strong>
         <br />
@@ -26,12 +18,7 @@ const GoogleForm: React.FC<GoogleFormProps> = ({ formUrl, height = 500, puck }) 
   return (
     <div 
       ref={puck?.dragRef}
-      style={{
-        margin: '20px 0',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}
+      className="my-5 rounded-lg overflow-hidden shadow-md"
     >
       <iframe
         src={formUrl}
@@ -40,10 +27,7 @@ const GoogleForm: React.FC<GoogleFormProps> = ({ formUrl, height = 500, puck }) 
         frameBorder="0"
         marginHeight={0}
         marginWidth={0}
-        style={{
-          border: 'none',
-          borderRadius: '8px'
-        }}
+        className="border-none rounded-lg"
         title="Google Form"
       >
         Loading Google Form...

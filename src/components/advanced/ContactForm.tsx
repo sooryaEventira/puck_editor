@@ -52,169 +52,6 @@ const ContactForm: React.FC<ContactFormProps> = ({
 
   if (!isOpen) return null
 
-  const modalOverlayStyle: React.CSSProperties = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    padding: '16px'
-  }
-
-  const modalContentStyle: React.CSSProperties = {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    padding: '1.5rem',
-    maxWidth: '600px',
-    width: '100%',
-    maxHeight: '95vh',
-    overflowY: 'auto',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-    margin: '0 auto'
-  }
-
-  const headerStyle: React.CSSProperties = {
-    textAlign: 'center',
-    marginBottom: '2rem'
-  }
-
-  const contactLabelStyle: React.CSSProperties = {
-    fontSize: '0.875rem',
-    color: '#8b5cf6',
-    fontWeight: '600',
-    marginBottom: '0.5rem'
-  }
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: '0.5rem',
-    lineHeight: '1.1'
-  }
-
-  const subtitleStyle: React.CSSProperties = {
-    fontSize: '1rem',
-    color: '#6b7280',
-    lineHeight: '1.5'
-  }
-
-  const formStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.5rem'
-  }
-
-  const rowStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '1rem'
-  }
-
-  const fieldGroupStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem'
-  }
-
-  const labelStyle: React.CSSProperties = {
-    fontSize: '0.875rem',
-    fontWeight: '500',
-    color: '#374151'
-  }
-
-  const inputStyle: React.CSSProperties = {
-    padding: '0.75rem',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '1rem',
-    color: '#1f2937',
-    backgroundColor: '#ffffff',
-    transition: 'border-color 0.2s ease'
-  }
-
-  const textareaStyle: React.CSSProperties = {
-    ...inputStyle,
-    minHeight: '120px',
-    resize: 'vertical'
-  }
-
-  const phoneContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: '0.5rem',
-    flexWrap: 'wrap'
-  }
-
-  const countrySelectStyle: React.CSSProperties = {
-    ...inputStyle,
-    minWidth: '80px',
-    width: '80px',
-    padding: '0.75rem 0.5rem',
-    flexShrink: 0
-  }
-
-  const phoneInputStyle: React.CSSProperties = {
-    ...inputStyle,
-    flex: 1,
-    minWidth: '200px'
-  }
-
-  const checkboxContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '0.75rem'
-  }
-
-  const checkboxStyle: React.CSSProperties = {
-    width: '16px',
-    height: '16px',
-    marginTop: '2px'
-  }
-
-  const privacyTextStyle: React.CSSProperties = {
-    fontSize: '0.875rem',
-    color: '#6b7280',
-    lineHeight: '1.5'
-  }
-
-  const privacyLinkStyle: React.CSSProperties = {
-    color: '#8b5cf6',
-    textDecoration: 'underline',
-    cursor: 'pointer'
-  }
-
-  const buttonStyle: React.CSSProperties = {
-    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '0.875rem 1.5rem',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    width: '100%'
-  }
-
-  const closeButtonStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '0.75rem',
-    right: '0.75rem',
-    background: 'none',
-    border: 'none',
-    fontSize: '1.5rem',
-    cursor: 'pointer',
-    color: '#6b7280',
-    padding: '0.5rem',
-    borderRadius: '4px',
-    transition: 'color 0.2s ease',
-    zIndex: 10
-  }
 
   return (
     <>
@@ -258,32 +95,26 @@ const ContactForm: React.FC<ContactFormProps> = ({
           }
         `}
       </style>
-      <div style={modalOverlayStyle} onClick={handleOverlayClick} className="contact-form-modal">
-        <div style={modalContentStyle} className="contact-form-content">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4 contact-form-modal" onClick={handleOverlayClick}>
+        <div className="bg-white rounded-xl p-6 max-w-[600px] w-full max-h-[95vh] overflow-y-auto shadow-xl mx-auto relative contact-form-content">
         <button
-          style={closeButtonStyle}
+          className="absolute top-3 right-3 bg-none border-none text-2xl cursor-pointer text-gray-500 p-2 rounded transition-colors duration-200 z-10 hover:text-gray-700"
           onClick={onClose}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#374151'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = '#6b7280'
-          }}
         >
           ×
         </button>
         
-        <div style={headerStyle}>
-          <div style={contactLabelStyle}>Contact us</div>
-          <h2 style={titleStyle} className="contact-form-title">{title}</h2>
-          <p style={subtitleStyle} className="contact-form-subtitle">{subtitle}</p>
+        <div className="text-center mb-8">
+          <div className="text-sm text-purple-500 font-semibold mb-2">Contact us</div>
+          <h2 className="text-[clamp(1.75rem,4vw,2.5rem)] font-bold text-gray-800 mb-2 leading-tight contact-form-title">{title}</h2>
+          <p className="text-base text-gray-500 leading-relaxed contact-form-subtitle">{subtitle}</p>
         </div>
 
-        <form style={formStyle} onSubmit={handleSubmit}>
-          <div style={rowStyle} className="contact-form-row">
-            <div style={fieldGroupStyle}>
-              <label style={labelStyle}>
-                First name <span style={{ color: '#ef4444' }}>*</span>
+        <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 contact-form-row">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                First name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -291,13 +122,13 @@ const ContactForm: React.FC<ContactFormProps> = ({
                 value={formData.firstName}
                 onChange={handleInputChange}
                 placeholder="First name"
-                style={inputStyle}
+                className="px-3 py-3 border border-gray-300 rounded-md text-base text-gray-800 bg-white transition-colors duration-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
                 required
               />
             </div>
-            <div style={fieldGroupStyle}>
-              <label style={labelStyle}>
-                Last name <span style={{ color: '#ef4444' }}>*</span>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Last name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -305,15 +136,15 @@ const ContactForm: React.FC<ContactFormProps> = ({
                 value={formData.lastName}
                 onChange={handleInputChange}
                 placeholder="Last name"
-                style={inputStyle}
+                className="px-3 py-3 border border-gray-300 rounded-md text-base text-gray-800 bg-white transition-colors duration-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
                 required
               />
             </div>
           </div>
 
-          <div style={fieldGroupStyle}>
-            <label style={labelStyle}>
-              Email <span style={{ color: '#ef4444' }}>*</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">
+              Email <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -321,20 +152,19 @@ const ContactForm: React.FC<ContactFormProps> = ({
               value={formData.email}
               onChange={handleInputChange}
               placeholder="you@company.com"
-              style={inputStyle}
+              className="px-3 py-3 border border-gray-300 rounded-md text-base text-gray-800 bg-white transition-colors duration-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
               required
             />
           </div>
 
-          <div style={fieldGroupStyle}>
-            <label style={labelStyle}>Phone number</label>
-            <div style={phoneContainerStyle} className="contact-form-phone-container">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">Phone number</label>
+            <div className="flex gap-2 flex-wrap contact-form-phone-container">
               <select
                 name="country"
                 value={formData.country}
                 onChange={handleInputChange}
-                style={countrySelectStyle}
-                className="contact-form-country-select"
+                className="px-3 py-3 border border-gray-300 rounded-md text-base text-gray-800 bg-white transition-colors duration-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 min-w-[80px] w-20 flex-shrink-0 contact-form-country-select"
               >
                 <option value="US">US</option>
                 <option value="CA">CA</option>
@@ -349,51 +179,49 @@ const ContactForm: React.FC<ContactFormProps> = ({
                 value={formData.phone}
                 onChange={handleInputChange}
                 placeholder="+1 (555) 000-0000"
-                style={phoneInputStyle}
-                className="contact-form-phone-input"
+                className="px-3 py-3 border border-gray-300 rounded-md text-base text-gray-800 bg-white transition-colors duration-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 flex-1 min-w-[200px] contact-form-phone-input"
               />
             </div>
           </div>
 
-          <div style={fieldGroupStyle}>
-            <label style={labelStyle}>
-              Message <span style={{ color: '#ef4444' }}>*</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">
+              Message <span className="text-red-500">*</span>
             </label>
             <textarea
               name="message"
               value={formData.message}
               onChange={handleInputChange}
               placeholder="Leave us a message..."
-              style={textareaStyle}
+              className="px-3 py-3 border border-gray-300 rounded-md text-base text-gray-800 bg-white transition-colors duration-200 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 min-h-[120px] resize-y"
               required
             />
           </div>
 
-          <div style={checkboxContainerStyle} className="contact-form-checkbox-container">
+          <div className="flex items-start gap-3 contact-form-checkbox-container">
             <input
               type="checkbox"
               name="agreeToPrivacy"
               checked={formData.agreeToPrivacy}
               onChange={handleInputChange}
-              style={checkboxStyle}
+              className="w-4 h-4 mt-0.5"
               required
             />
-            <div style={privacyTextStyle}>
+            <div className="text-sm text-gray-500 leading-relaxed">
               {privacyText.split('privacy policy')[0]}
-              <span style={privacyLinkStyle}>privacy policy</span>
+              <span className="text-purple-500 underline cursor-pointer">privacy policy</span>
               {privacyText.split('privacy policy')[1]}
             </div>
           </div>
 
           <button
             type="submit"
-            style={buttonStyle}
+            style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }}
+            className="text-white border-none rounded-lg py-3.5 px-6 text-base font-semibold cursor-pointer transition-all duration-300 w-full hover:-translate-y-0.5 hover:shadow-lg"
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
               e.currentTarget.style.boxShadow = '0 10px 25px rgba(139, 92, 246, 0.3)'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
               e.currentTarget.style.boxShadow = 'none'
             }}
           >

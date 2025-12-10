@@ -49,34 +49,13 @@ const InputField: React.FC<InputFieldProps> = ({
 
   return (
     <div style={{ margin, width }}>
-      <label
-        style={{
-          display: 'block',
-          fontSize: '14px',
-          fontWeight: '500',
-          color: '#374151',
-          marginBottom: '6px'
-        }}
-      >
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">
         {label}
-        {required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+        {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      <div style={{ position: 'relative' }}>
+      <div className="relative">
         {icon && iconPosition === 'left' && (
-          <span
-            style={{
-              position: 'absolute',
-              left: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: '16px',
-              color: '#6b7280',
-              zIndex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-gray-500 z-[1] flex items-center justify-center">
             {icon}
           </span>
         )}
@@ -88,40 +67,21 @@ const InputField: React.FC<InputFieldProps> = ({
           disabled={disabled}
           onChange={handleChange}
           style={{
-            width: '100%',
             height,
             padding: icon && iconPosition === 'left' ? `10px 12px 10px 40px` : padding,
             border: `1px solid ${borderColor}`,
             borderRadius,
             fontSize,
             color,
-            backgroundColor: disabled ? '#f9fafb' : backgroundColor,
-            outline: 'none',
-            transition: 'border-color 0.2s ease',
-            boxSizing: 'border-box'
+            backgroundColor: disabled ? '#f9fafb' : backgroundColor
           }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = '#8b5cf6';
-          }}
+          className="w-full outline-none transition-colors duration-200 box-border focus:border-purple-500"
           onBlur={(e) => {
             e.currentTarget.style.borderColor = borderColor;
           }}
         />
         {icon && iconPosition === 'right' && (
-          <span
-            style={{
-              position: 'absolute',
-              right: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: '16px',
-              color: '#6b7280',
-              zIndex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base text-gray-500 z-[1] flex items-center justify-center">
             {icon}
           </span>
         )}

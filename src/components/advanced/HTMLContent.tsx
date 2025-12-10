@@ -41,17 +41,15 @@ const HTMLContent: React.FC<HTMLContentProps> = ({ htmlContent, id }) => {
     editableElements.forEach((element) => {
       element.setAttribute('contenteditable', 'true');
       element.setAttribute('data-puck-field', 'htmlContent');
-      element.style.outline = 'none';
-      element.style.cursor = 'text';
+      (element as HTMLElement).classList.add('outline-none', 'cursor-text');
       
       // Add hover effect
       element.addEventListener('mouseenter', () => {
-        element.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-        element.style.borderRadius = '4px';
+        (element as HTMLElement).classList.add('bg-blue-500/10', 'rounded');
       });
       
       element.addEventListener('mouseleave', () => {
-        element.style.backgroundColor = 'transparent';
+        (element as HTMLElement).classList.remove('bg-blue-500/10', 'rounded');
       });
       
       // Handle content changes
@@ -86,34 +84,21 @@ const HTMLContent: React.FC<HTMLContentProps> = ({ htmlContent, id }) => {
     editableElements.forEach((element) => {
       element.removeAttribute('contenteditable');
       element.removeAttribute('data-puck-field');
-      element.style.backgroundColor = 'transparent';
-      element.style.cursor = 'default';
+      (element as HTMLElement).classList.remove('outline-none', 'cursor-text', 'bg-blue-500/10', 'rounded');
     });
   };
 
   return (
     <div 
       id={id}
-      style={{
-        width: '100%',
-        minHeight: '100vh',
-        position: 'relative'
-      }}
+      className="w-full min-h-screen relative"
     >
       {/* Hidden field for Puck to track the content */}
       <div
         contentEditable
         suppressContentEditableWarning={true}
         data-puck-field="htmlContent"
-        style={{
-          position: 'absolute',
-          top: '-9999px',
-          left: '-9999px',
-          width: '1px',
-          height: '1px',
-          opacity: 0,
-          pointerEvents: 'none'
-        }}
+        className="absolute -top-[9999px] -left-[9999px] w-px h-px opacity-0 pointer-events-none"
       >
         {htmlContentValue}
       </div>
@@ -121,11 +106,7 @@ const HTMLContent: React.FC<HTMLContentProps> = ({ htmlContent, id }) => {
       <div
         ref={contentRef}
         dangerouslySetInnerHTML={{ __html: htmlContentValue }}
-        style={{
-          width: '100%',
-          minHeight: '100vh',
-          position: 'relative'
-        }}
+        className="w-full min-h-screen relative"
       />
     </div>
   );

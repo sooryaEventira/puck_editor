@@ -1,5 +1,5 @@
 export { default as App } from './App'
-export { default as Preview } from './Preview'
+export { default as Preview } from './shared/Preview'
 export * from './basic'
 export * from './containers'
 export * from './advanced'

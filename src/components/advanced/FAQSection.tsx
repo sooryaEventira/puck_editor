@@ -65,139 +65,20 @@ const FAQSection: React.FC<FAQSectionProps> = ({
   padding = '6rem 2rem'
 }) => {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
+  
+  // Dynamic styles that need to remain inline
   const containerStyle: React.CSSProperties = {
     backgroundColor,
-    padding,
-    width: '100%',
-    minHeight: '600px'
-  }
-
-  const contentStyle: React.CSSProperties = {
-    maxWidth: '1200px',
-    margin: '0 auto'
-  }
-
-  const headerStyle: React.CSSProperties = {
-    textAlign: 'center',
-    marginBottom: '4rem'
-  }
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: '1rem',
-    lineHeight: '1.1'
-  }
-
-  const subtitleStyle: React.CSSProperties = {
-    fontSize: 'clamp(1rem, 3vw, 1.25rem)',
-    color: '#6b7280',
-    lineHeight: '1.5'
-  }
-
-  const faqGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '1.5rem',
-    marginBottom: '3rem'
-  }
-
-  const faqItemStyle: React.CSSProperties = {
-    padding: '1.5rem',
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    transition: 'all 0.3s ease'
-  }
-
-  const iconStyle: React.CSSProperties = {
-    width: '48px',
-    height: '48px',
-    backgroundColor: '#f3e8ff',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '24px',
-    marginBottom: '1.5rem',
-    margin: '0 auto 1.5rem auto'
-  }
-
-  const questionStyle: React.CSSProperties = {
-    fontSize: 'clamp(1rem, 2.5vw, 1.125rem)',
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: '0.75rem',
-    lineHeight: '1.4'
-  }
-
-  const answerStyle: React.CSSProperties = {
-    fontSize: 'clamp(0.9rem, 2vw, 1rem)',
-    color: '#6b7280',
-    lineHeight: '1.6'
-  }
-
-  const ctaSectionStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '2rem',
-    padding: '2rem',
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    marginTop: '2rem'
-  }
-
-  const avatarsStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '-0.5rem'
-  }
-
-  const avatarStyle: React.CSSProperties = {
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
-    border: '2px solid #ffffff',
-    marginLeft: '-8px',
-    backgroundColor: '#e5e7eb',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#6b7280'
-  }
-
-  const ctaTextStyle: React.CSSProperties = {
-    fontSize: '1rem',
-    color: '#1f2937',
-    lineHeight: '1.5',
-    flex: 1
-  }
-
-  const buttonStyle: React.CSSProperties = {
-    backgroundColor: '#8b5cf6',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '0.75rem 1.5rem',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    textDecoration: 'none',
-    display: 'inline-block'
+    padding
   }
 
   const handleButtonHover = (e: React.MouseEvent<HTMLAnchorElement>, isEntering: boolean) => {
     if (isEntering) {
       e.currentTarget.style.backgroundColor = '#7c3aed'
-      e.currentTarget.style.transform = 'translateY(-2px)'
+      e.currentTarget.classList.add('-translate-y-0.5')
     } else {
       e.currentTarget.style.backgroundColor = '#8b5cf6'
-      e.currentTarget.style.transform = 'translateY(0)'
+      e.currentTarget.classList.remove('-translate-y-0.5')
     }
   }
 
@@ -208,11 +89,11 @@ const FAQSection: React.FC<FAQSectionProps> = ({
 
   const handleFaqHover = (e: React.MouseEvent<HTMLDivElement>, isEntering: boolean) => {
     if (isEntering) {
-      e.currentTarget.style.transform = 'translateY(-4px)'
-      e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.1)'
+      e.currentTarget.classList.add('-translate-y-1', 'shadow-lg')
+      e.currentTarget.classList.remove('shadow-sm')
     } else {
-      e.currentTarget.style.transform = 'translateY(0)'
-      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)'
+      e.currentTarget.classList.remove('-translate-y-1', 'shadow-lg')
+      e.currentTarget.classList.add('shadow-sm')
     }
   }
 
@@ -274,12 +155,11 @@ const FAQSection: React.FC<FAQSectionProps> = ({
           }
         `}
       </style>
-      <section style={containerStyle} className="faq-section-container">
-        <div style={contentStyle} className="faq-section-content">
-        <div style={headerStyle} className="faq-section-header">
+      <section style={containerStyle} className="w-full min-h-[600px] faq-section-container">
+        <div className="max-w-[1200px] mx-auto faq-section-content">
+        <div className="text-center mb-16 faq-section-header">
           <h2 
-            style={titleStyle}
-            className="faq-section-title"
+            className="text-[clamp(1.75rem,5vw,2.5rem)] font-bold text-gray-800 mb-4 leading-tight faq-section-title"
             data-puck-field="title"
             contentEditable
             suppressContentEditableWarning={true}
@@ -287,8 +167,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({
             {title}
           </h2>
           <p 
-            style={subtitleStyle}
-            className="faq-section-subtitle"
+            className="text-[clamp(1rem,3vw,1.25rem)] text-gray-500 leading-relaxed faq-section-subtitle"
             data-puck-field="subtitle"
             contentEditable
             suppressContentEditableWarning={true}
@@ -297,21 +176,19 @@ const FAQSection: React.FC<FAQSectionProps> = ({
           </p>
         </div>
 
-        <div style={faqGridStyle} className="faq-section-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 faq-section-grid">
           {faqs.map((faq, index) => (
             <div
               key={faq.id}
-              style={faqItemStyle}
-              className="faq-section-item"
+              className="p-6 bg-white rounded-xl shadow-sm transition-all duration-300 faq-section-item"
               onMouseEnter={(e) => handleFaqHover(e, true)}
               onMouseLeave={(e) => handleFaqHover(e, false)}
             >
-              <div style={iconStyle} className="faq-section-icon">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-2xl mb-6 mx-auto faq-section-icon">
                 {faq.icon}
               </div>
               <h3 
-                style={questionStyle}
-                className="faq-section-question"
+                className="text-[clamp(1rem,2.5vw,1.125rem)] font-semibold text-gray-800 mb-3 leading-snug faq-section-question"
                 data-puck-field={`faqs[${index}].question`}
                 contentEditable
                 suppressContentEditableWarning={true}
@@ -319,8 +196,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({
                 {faq.question}
               </h3>
               <p 
-                style={answerStyle}
-                className="faq-section-answer"
+                className="text-[clamp(0.9rem,2vw,1rem)] text-gray-500 leading-relaxed faq-section-answer"
                 data-puck-field={`faqs[${index}].answer`}
                 contentEditable
                 suppressContentEditableWarning={true}
@@ -331,14 +207,14 @@ const FAQSection: React.FC<FAQSectionProps> = ({
           ))}
         </div>
 
-        <div style={ctaSectionStyle} className="faq-section-cta">
-          <div style={avatarsStyle} className="faq-section-avatars">
-            <div style={avatarStyle}>A</div>
-            <div style={avatarStyle}>B</div>
-            <div style={avatarStyle}>C</div>
+        <div className="flex items-center gap-8 p-8 bg-white rounded-xl shadow-sm mt-8 flex-col md:flex-row md:text-left text-center faq-section-cta">
+          <div className="flex items-center -space-x-2 faq-section-avatars">
+            <div className="w-10 h-10 rounded-full border-2 border-white -ml-2 bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-500">A</div>
+            <div className="w-10 h-10 rounded-full border-2 border-white -ml-2 bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-500">B</div>
+            <div className="w-10 h-10 rounded-full border-2 border-white -ml-2 bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-500">C</div>
           </div>
           <p 
-            style={ctaTextStyle}
+            className="text-base text-gray-800 leading-relaxed flex-1"
             data-puck-field="ctaText"
             contentEditable
             suppressContentEditableWarning={true}
@@ -347,7 +223,8 @@ const FAQSection: React.FC<FAQSectionProps> = ({
           </p>
           <a
             href="#contact"
-            style={buttonStyle}
+            style={{ backgroundColor: '#8b5cf6' }}
+            className="text-white border-none rounded-lg py-3 px-6 text-base font-semibold cursor-pointer transition-all duration-300 no-underline inline-block hover:bg-purple-600"
             onClick={handleButtonClick}
             onMouseEnter={(e) => handleButtonHover(e, true)}
             onMouseLeave={(e) => handleButtonHover(e, false)}

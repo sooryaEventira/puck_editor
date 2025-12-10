@@ -6,9 +6,9 @@ const List = ({ items, type = 'ul', textColor }: ListProps) => {
   
   if (type === 'ol') {
     return (
-      <ol style={{ margin: '16px 0', paddingLeft: '20px' }}>
+      <ol className="my-4 pl-5">
         {listItems.map((item, index) => (
-          <li key={index} style={{ margin: '8px 0', color: textColor || '#555' }}>
+          <li key={index} style={{ color: textColor || '#555' }} className="my-2">
             {item.trim()}
           </li>
         ))}
@@ -17,9 +17,9 @@ const List = ({ items, type = 'ul', textColor }: ListProps) => {
   }
   
   return (
-    <ul style={{ margin: '16px 0', paddingLeft: '20px' }}>
+    <ul className="my-4 pl-5">
       {listItems.map((item, index) => (
-        <li key={index} style={{ margin: '8px 0', color: textColor || '#555' }}>
+        <li key={index} style={{ color: textColor || '#555' }} className="my-2">
           {item.trim()}
         </li>
       ))}

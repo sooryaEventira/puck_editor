@@ -24,23 +24,18 @@ const SpeakersSection: React.FC<SpeakersSectionProps> = ({
     <section 
       style={{ 
         backgroundColor,
-        padding,
-        width: '100%'
+        padding
       }}
+      className="w-full"
     >
 
       {/* Speakers Grid */}
       <div 
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: gap,
-          maxWidth: '1200px',
-          margin: '0 auto'
-        }}
+        style={{ gap }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-w-[1200px] mx-auto"
       >
         {speakers.map((speaker, index) => (
-          <div key={index} style={{ width: '100%' }}>
+          <div key={index} className="w-full">
             <SpeakerCard
               name={speaker.name}
               designation={speaker.title}
@@ -53,12 +48,7 @@ const SpeakersSection: React.FC<SpeakersSectionProps> = ({
 
       {/* Empty State */}
       {speakers.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '3rem',
-          color: '#6b7280',
-          fontSize: '1.125rem'
-        }}>
+        <div className="text-center py-12 text-gray-500 text-lg">
           No speakers added yet. Add speakers using the properties panel.
         </div>
       )}

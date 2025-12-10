@@ -130,21 +130,13 @@ const ProgressCircleStats: React.FC<ProgressCircleStatsProps> = ({
     
 
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '16px',
-        minWidth: '200px',
-        maxWidth: '200px',
-        backgroundColor: 'transparent'
-      }}>
+      <div className="flex flex-col items-center gap-4 min-w-[200px] max-w-[200px] bg-transparent">
         {/* SVG Circle */}
-        <div style={{ position: 'relative', width: '128px', height: '128px' }}>
+        <div className="relative w-32 h-32">
           <svg
             width="128"
             height="128"
-            style={{ transform: 'rotate(-90deg)' }}
+            className="-rotate-90"
           >
             {/* Background circle */}
             <circle
@@ -173,16 +165,7 @@ const ProgressCircleStats: React.FC<ProgressCircleStatsProps> = ({
           </svg>
           
           {/* Percentage text */}
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            fontSize: '20px',
-            fontWeight: 'bold',
-            color: '#111827',
-            textAlign: 'center'
-          }}>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xl font-bold text-gray-900 text-center">
             {animatedValues[index] || 0}%
           </div>
         </div>
@@ -192,15 +175,7 @@ const ProgressCircleStats: React.FC<ProgressCircleStatsProps> = ({
           contentEditable
           suppressContentEditableWarning={true}
           data-puck-field={`item${index + 1}Caption`}
-          style={{
-            fontSize: '14px',
-            color: '#374151',
-            textAlign: 'center',
-            lineHeight: '1.4',
-            cursor: 'text',
-            outline: 'none',
-            minHeight: '40px'
-          }}
+          className="text-sm text-gray-700 text-center leading-snug cursor-text outline-none min-h-[40px]"
         >
           {caption}
         </div>
@@ -211,31 +186,14 @@ const ProgressCircleStats: React.FC<ProgressCircleStatsProps> = ({
   // Ensure we have valid data
   if (!items || items.length === 0) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '48px 16px',
-        color: '#6b7280',
-        fontSize: '16px'
-      }}>
+      <div className="flex justify-center items-center py-12 px-4 text-gray-500 text-base">
         Loading progress circles...
       </div>
     );
   }
 
-
-
   return (
-    <div style={{
-      display: 'flex',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-      gap: '32px',
-      padding: '32px 16px',
-      maxWidth: '1200px',
-      margin: '0 auto'
-    }}>
+    <div className="flex flex-wrap justify-center gap-8 py-8 px-4 max-w-[1200px] mx-auto">
       {items.map((item, index) => (
         <CircleProgress
           key={index}

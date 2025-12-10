@@ -40,81 +40,51 @@ const TimeInputWithAMPM: React.FC<TimeInputWithAMPMProps> = ({
   return (
     <div style={{ margin, width }}>
       {label && (
-        <label
-          style={{
-            display: 'block',
-            fontSize: '14px',
-            fontWeight: '500',
-            color: '#374151',
-            marginBottom: '6px'
-          }}
-        >
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
           {label}
-          {required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+          {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <div
         style={{
-          width: '100%',
           height,
           border: `1px solid ${borderColor}`,
           borderRadius,
           fontSize,
           color,
-          backgroundColor: disabled ? '#f9fafb' : backgroundColor,
-          display: 'flex',
-          alignItems: 'center',
-          boxSizing: 'border-box',
-          cursor: disabled ? 'not-allowed' : 'text',
-          overflow: 'hidden'
+          backgroundColor: disabled ? '#f9fafb' : backgroundColor
         }}
+        className="w-full flex items-center box-border overflow-hidden disabled:cursor-not-allowed cursor-text"
       >
-             {/* Time Section */}
-             <div
+        {/* Time Section */}
+        <div
           style={{
-            flex: 1,
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             color,
-            fontSize,
-            fontWeight: '500'
+            fontSize
           }}
+          className="flex-1 h-full flex items-center justify-center font-medium"
         >
           {timeValue}
         </div>
 
-               {/* Vertical Separator Line */}
-               <div
+        {/* Vertical Separator Line */}
+        <div
           style={{
-            width: '1px',
-            height: '70%',
-            backgroundColor: borderColor,
-            flexShrink: 0
+            backgroundColor: borderColor
           }}
+          className="w-px h-[70%] flex-shrink-0"
         />
+        
         {/* AM/PM Section */}
         <div
           style={{
-            flex: '0 0 auto',
-            width: '50px',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            
             color,
-            fontSize,
-            fontWeight: '500'
+            fontSize
           }}
+          className="flex-none w-[50px] h-full flex items-center justify-center font-medium"
         >
           {ampmValue}
         </div>
-        
- 
-        
-   
       </div>
     </div>
   );

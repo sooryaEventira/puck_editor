@@ -2,16 +2,17 @@ import React from 'react'
 import { TextProps } from '../../types'
 
 const Text = ({ text, size = '16px', color = '#555', align = 'left', puck }: TextProps) => {
+  const alignClass = align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left'
+  
   return (
     <p 
       ref={puck?.dragRef}
       style={{ 
-        margin: '12px 0', 
-        lineHeight: '1.6', 
         color: color,
-        fontSize: size,
-        textAlign: align
-      }}>
+        fontSize: size
+      }}
+      className={`my-3 leading-relaxed ${alignClass}`}
+    >
       {text}
     </p>
   )

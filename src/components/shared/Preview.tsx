@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
-import { PageData } from "../types";
-import { config } from "../config/puckConfig";
+import { PageData } from "../../types";
+import { config } from "../../config/puckConfig";
 
 const cn = (...classes: Array<string | false | null | undefined>) =>
   classes.filter(Boolean).join(" ");
@@ -23,22 +23,12 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
     setLocalData(data);
   }, [data]);
 
-  // Debug logging to understand the data structure
-  console.log("Preview - Full data:", localData);
-  console.log("Preview - Zones:", localData.zones);
-  console.log("Preview - Content:", localData.content);
-  console.log("Preview - isInteractive:", isInteractive);
-  console.log("Preview - onDataChange:", !!onDataChange);
-
   // Handle drag start
   const handleDragStart = useCallback((e: React.DragEvent, item: any, sourceZone: string) => {
-    console.log('handleDragStart called:', { isInteractive, item, sourceZone });
     if (!isInteractive) {
-      console.log('Drag start blocked - not interactive');
       return;
     }
     
-    console.log('Drag start:', { item, sourceZone });
     setDraggedItem({ ...item, sourceZone, componentId: item.componentId });
     e.dataTransfer.effectAllowed = 'move';
   }, [isInteractive]);
@@ -58,28 +48,19 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
     
     e.preventDefault();
     
-    console.log('Drop:', { draggedItem, targetZone });
-    
     const newData = { ...localData };
     const componentId = draggedItem.componentId;
     const sourceZone = draggedItem.sourceZone;
     
     // Find the component
-    const componentIndex = newData.content.findIndex(item => item.props?.id === componentId);
+    const componentIndex = newData.content.findIndex((item: any) => item.props?.id === componentId);
     if (componentIndex === -1) {
-      console.log('Component not found:', componentId);
       return;
     }
     
     // Update zones
     const sourceZoneKey = `${componentId}:${sourceZone}`;
     const targetZoneKey = `${componentId}:${targetZone}`;
-    
-    console.log('Zone keys:', { sourceZoneKey, targetZoneKey });
-    console.log('Zone data:', { 
-      sourceZone: newData.zones[sourceZoneKey], 
-      targetZone: newData.zones[targetZoneKey] 
-    });
     
     if (newData.zones[sourceZoneKey] && newData.zones[targetZoneKey]) {
       // Find the item to move by matching the dragged item data
@@ -97,15 +78,9 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
         // Add to target zone
         newData.zones[targetZoneKey] = [...newData.zones[targetZoneKey], movedItem];
         
-        console.log('Updated zones:', newData.zones);
-        
         setLocalData(newData);
         onDataChange(newData);
-      } else {
-        console.log('Item not found in source zone');
       }
-    } else {
-      console.log('Zone data not found for keys:', { sourceZoneKey, targetZoneKey });
     }
     
     setDraggedItem(null);
@@ -120,7 +95,6 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
 
   // Handle column drag start
   const handleColumnDragStart = useCallback((e: React.DragEvent, componentId: string, columnIndex: number) => {
-    console.log('Column drag start:', { componentId, columnIndex });
     if (!isInteractive) return;
     
     setDraggedColumn({ componentId, columnIndex });
@@ -147,7 +121,6 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
     
     // Only allow dropping within the same GridContainer
     if (sourceComponentId !== targetComponentId) {
-      console.log('Cannot drop column across different GridContainers');
       setDraggedColumn(null);
       setDragOverColumn(null);
       return;
@@ -155,16 +128,10 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
     
     // Don't do anything if dropping on the same column
     if (sourceColumnIndex === targetColumnIndex) {
-      console.log('Dropping on same column, no change needed');
       setDraggedColumn(null);
       setDragOverColumn(null);
       return;
     }
-    
-    console.log('Column drop:', { 
-      source: { componentId: sourceComponentId, columnIndex: sourceColumnIndex },
-      target: { componentId: targetComponentId, columnIndex: targetColumnIndex }
-    });
     
     const newData = { ...localData };
     const sourceZoneKey = `${sourceComponentId}:column-${sourceColumnIndex}`;
@@ -179,15 +146,8 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
       newData.zones[sourceZoneKey] = targetContent;
       newData.zones[targetZoneKey] = sourceContent;
       
-      console.log('Swapped column contents:', {
-        sourceZone: newData.zones[sourceZoneKey],
-        targetZone: newData.zones[targetZoneKey]
-      });
-      
       setLocalData(newData);
       onDataChange(newData);
-    } else {
-      console.log('Zone data not found for column swap:', { sourceZoneKey, targetZoneKey });
     }
     
     setDraggedColumn(null);
@@ -199,22 +159,6 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
     setDraggedColumn(null);
     setDragOverColumn(null);
   }, []);
-
-  // Check if there are any GridLayout or GridContainer components
-  const gridComponents =
-    localData.content?.filter(
-      (item) => item.type === "GridLayout" || item.type === "GridContainer"
-    ) || [];
-  console.log("Preview - Grid components found:", gridComponents);
-
-  gridComponents.forEach((comp, index) => {
-    console.log(`Preview - Grid component ${index}:`, {
-      type: comp.type,
-      id: comp.props?.id,
-      hasZoneData: comp.props?.id && localData.zones && localData.zones[comp.props.id],
-      zoneData: comp.props?.id && localData.zones ? localData.zones[comp.props.id] : null,
-    });
-  });
 
   // Separate PdfViewer components from other components
   const pdfViewers = localData.content?.filter((item: any) => item.type === 'PdfViewer') || [];
@@ -277,14 +221,6 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
                 }
               }
 
-              console.log(
-                `Preview - Component ${item.type} (${componentId}):`,
-                {
-                  hasZoneContent: !!zoneContent,
-                  zoneContent: zoneContent,
-                  props: item.props,
-                }
-              );
 
               // Prepare props with zone content for components that use zones
               const componentProps = { ...item.props };
@@ -332,11 +268,6 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
                   });
                 }
 
-                console.log(
-                  `Preview - Zone items for ${item.type}:`,
-                  zoneItems
-                );
-                console.log(`Preview - Zone content structure:`, zoneContent);
 
                 // For components with zones (like GridContainer and GridLayout), pass zone content as props
                 if (
@@ -350,7 +281,6 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
                   
                   if (hasDirectColumnData) {
                     // Column data is already in props, use it directly
-                    console.log(`Preview - Using direct column data for ${item.type}`);
                   } else if (
                     typeof zoneContent === "object" &&
                     !Array.isArray(zoneContent)
@@ -374,14 +304,9 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
                       componentProps[zoneName].push(zoneItem);
                     });
                   }
-                  console.log(
-                    `Preview - ${item.type} props with zones:`,
-                    componentProps
-                  );
 
                   // For interactive mode, render custom GridContainer with drop zones
                   if (isInteractive && item.type === 'GridContainer') {
-                    console.log('Rendering interactive GridContainer:', { componentId, componentProps });
                       const columns = componentProps.columns || 2;
                       const gap = componentProps.gap || '16px';
                       const rowGap = componentProps.rowGap || '16px';
@@ -406,8 +331,6 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
                               const isColumnDragged =
                                 draggedColumn?.componentId === componentId &&
                                 draggedColumn?.columnIndex === colIndex;
-
-                              console.log(`Column ${colIndex} (${zoneName}):`, zoneItems);
 
                               const columnClassName = cn(
                                 "relative min-h-[50px] rounded border border-dashed border-slate-300 p-2 transition-all duration-200",
@@ -447,23 +370,19 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
 
                                   {zoneItems.length > 0 ? (
                                     zoneItems.map((zoneItem: any, itemIndex: number) => {
-                                      console.log("Rendering zone item:", zoneItem.type, zoneItem);
                                       const ZoneComponent = config.components[zoneItem.type as keyof typeof config.components]?.render;
                                       const zoneProps = { ...zoneItem.props };
 
                                       // Add puck object for nested components in interactive mode
                                       if (isInteractive) {
-                                        console.log("Adding puck to component:", zoneItem.type);
                                         zoneProps.puck = {
                                           dragRef: (element: HTMLElement | null) => {
-                                            console.log("dragRef called for element:", element);
                                             if (element) {
                                               element.draggable = true;
                                               element.style.cursor = "move";
                                               element.dataset.dragItem = JSON.stringify(zoneItem);
                                               element.dataset.sourceZone = zoneName;
                                               element.addEventListener("dragstart", (e) => {
-                                                console.log("dragstart event triggered");
                                                 handleDragStart(e as any, { ...zoneItem, componentId }, zoneName);
                                               });
                                               element.addEventListener("dragend", handleDragEnd);
@@ -480,7 +399,6 @@ const Preview: React.FC<PreviewProps> = ({ data, isInteractive = false, onDataCh
                                           className="cursor-move rounded border border-slate-300 bg-slate-100 p-2"
                                           draggable={true}
                                           onDragStart={(e) => {
-                                            console.log("Test drag start");
                                             handleDragStart(e, { ...zoneItem, componentId }, zoneName);
                                           }}
                                         >

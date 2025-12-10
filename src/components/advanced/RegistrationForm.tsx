@@ -109,15 +109,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
       <div 
         ref={puck?.dragRef}
-        style={{
-          maxWidth: '600px',
-          margin: '0 auto',
-          padding: '20px',
-          fontFamily: 'Arial, sans-serif',
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-        }}
+        className="max-w-[600px] mx-auto p-5 font-sans bg-white rounded-lg shadow-sm"
       >
         <Survey model={survey} />
       </div>

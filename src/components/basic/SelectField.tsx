@@ -50,42 +50,26 @@ const SelectField: React.FC<SelectFieldProps> = ({
 
   return (
     <div style={{ margin, width }}>
-      <label
-        style={{
-          display: 'block',
-          fontSize: '14px',
-          fontWeight: '500',
-          color: '#374151',
-          marginBottom: '6px'
-        }}
-      >
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">
         {label}
-        {required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+        {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      <div style={{ position: 'relative' }}>
+      <div className="relative">
         <select
           value={value}
           required={required}
           disabled={disabled}
           onChange={handleChange}
           style={{
-            width: '100%',
             height,
             padding: `10px 40px 10px 12px`,
             border: `1px solid ${borderColor}`,
             borderRadius,
             fontSize,
             color,
-            backgroundColor: disabled ? '#f9fafb' : backgroundColor,
-            outline: 'none',
-            transition: 'border-color 0.2s ease',
-            boxSizing: 'border-box',
-            appearance: 'none',
-            cursor: disabled ? 'not-allowed' : 'pointer'
+            backgroundColor: disabled ? '#f9fafb' : backgroundColor
           }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = '#8b5cf6';
-          }}
+          className="w-full outline-none transition-colors duration-200 box-border appearance-none focus:border-purple-500 disabled:cursor-not-allowed cursor-pointer"
           onBlur={(e) => {
             e.currentTarget.style.borderColor = borderColor;
           }}
@@ -101,17 +85,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
             </option>
           ))}
         </select>
-        <div
-          style={{
-            position: 'absolute',
-            right: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            pointerEvents: 'none',
-            color: '#6b7280',
-            fontSize: '12px'
-          }}
-        >
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 text-xs">
           ▼
         </div>
       </div>

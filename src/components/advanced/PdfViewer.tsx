@@ -51,25 +51,13 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
     return (
       <div 
         ref={puck?.dragRef}
-        style={{
-          padding: '40px 20px',
-          border: '2px dashed #d1d5db',
-          borderRadius: '8px',
-          backgroundColor: '#f9fafb',
-          color: '#6b7280',
-          textAlign: 'center',
-          margin: '10px 0',
-          minHeight: '200px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
+        className="py-10 px-5 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray-500 text-center my-2.5 min-h-[200px] flex items-center justify-center"
       >
         <div>
-          <strong style={{ display: 'block', marginBottom: '8px', fontSize: '16px' }}>
+          <strong className="block mb-2 text-base">
             No PDF selected
           </strong>
-          <small style={{ fontSize: '14px' }}>
+          <small className="text-sm">
             Please select a PDF from the property sidebar
           </small>
         </div>
@@ -113,24 +101,9 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
           ;(puck.dragRef as any)(node)
         }
       }}
+      className={`${isPreview ? 'fixed inset-0 z-[9999] w-screen h-screen m-0 rounded-none shadow-none border-0' : `relative w-full my-5 rounded-lg shadow-sm border border-gray-200`} p-0 bg-white overflow-hidden flex flex-col`}
       style={{
-        width: isPreview ? '100vw' : '100%',
-        height: isPreview ? '100vh' : `${height}px`,
-        margin: isPreview ? 0 : '20px 0',
-        padding: 0,
-        borderRadius: isPreview ? 0 : '8px',
-        boxShadow: isPreview ? 'none' : '0 2px 8px rgba(0,0,0,0.1)',
-        backgroundColor: '#ffffff',
-        border: isPreview ? 'none' : '1px solid #e5e7eb',
-        position: isPreview ? 'fixed' : 'relative',
-        top: isPreview ? 0 : 'auto',
-        left: isPreview ? 0 : 'auto',
-        right: isPreview ? 0 : 'auto',
-        bottom: isPreview ? 0 : 'auto',
-        zIndex: isPreview ? 9999 : 'auto',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column'
+        height: isPreview ? '100vh' : `${height}px`
       }}
     >
       {/* PDF Viewer */}
@@ -139,42 +112,19 @@ const PdfViewer: React.FC<PdfViewerProps> = ({
         width="100%"
         height="100%"
         frameBorder="0"
-        style={{
-          border: 'none',
-          borderRadius: isPreview ? 0 : '8px',
-          display: 'block',
-          flex: 1,
-          minHeight: 0
-        }}
+        className={`border-0 block flex-1 min-h-0 ${isPreview ? 'rounded-none' : 'rounded-lg'}`}
         title="PDF Viewer"
       >
-        <div style={{ 
-          padding: '40px 20px', 
-          textAlign: 'center',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
-          <p style={{ marginBottom: '12px', color: '#6b7280' }}>
+        <div className="py-10 px-5 text-center h-full flex flex-col items-center justify-center">
+          <div className="text-5xl mb-4">📄</div>
+          <p className="mb-3 text-gray-500">
             Your browser does not support PDFs.
           </p>
           <a 
             href={pdfUrlFinal} 
             target="_blank" 
             rel="noopener noreferrer" 
-            style={{ 
-              display: 'inline-block',
-              padding: '12px 24px',
-              backgroundColor: '#6366f1',
-              color: '#ffffff',
-              textDecoration: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: 500
-            }}
+            className="inline-block py-3 px-6 bg-indigo-500 text-white no-underline rounded-md text-sm font-medium hover:bg-indigo-600 transition-colors"
           >
             Open PDF in New Tab
           </a>

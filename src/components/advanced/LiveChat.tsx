@@ -125,151 +125,51 @@ const LiveChat: React.FC<LiveChatProps> = ({
     })
   }
 
-  // Container styles
+  // Dynamic styles that need to remain inline
   const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
     height: height,
-    backgroundColor: backgroundColor,
-    borderRadius: '12px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    overflow: 'hidden',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    margin: '16px 0'
+    backgroundColor: backgroundColor
   }
 
-  // Header styles
   const headerStyle: React.CSSProperties = {
     backgroundColor: headerColor,
-    color: headerTextColor,
-    padding: '16px 20px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
-  }
-
-  const headerTitleStyle: React.CSSProperties = {
-    fontSize: '18px',
-    fontWeight: '600',
-    margin: 0
-  }
-
-  const headerButtonsStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: '8px'
+    color: headerTextColor
   }
 
   const headerButtonStyle: React.CSSProperties = {
-    backgroundColor: 'transparent',
     color: headerTextColor,
-    border: `1px solid ${headerTextColor}`,
-    borderRadius: '6px',
-    padding: '6px 12px',
-    fontSize: '12px',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    fontWeight: '500'
+    border: `1px solid ${headerTextColor}`
   }
-
-  // Messages area styles
-  const messagesAreaStyle: React.CSSProperties = {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    backgroundColor: '#f9fafb'
-  }
-
-  // Message styles
-  const messageStyle = (sender: 'user' | 'agent'): React.CSSProperties => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: sender === 'user' ? 'flex-end' : 'flex-start',
-    maxWidth: '70%',
-    alignSelf: sender === 'user' ? 'flex-end' : 'flex-start'
-  })
 
   const messageBubbleStyle = (sender: 'user' | 'agent'): React.CSSProperties => ({
     backgroundColor: sender === 'user' ? messageUserBg : messageAgentBg,
-    color: sender === 'user' ? '#ffffff' : '#1f2937',
-    padding: '10px 14px',
-    borderRadius: sender === 'user' ? '12px 12px 0 12px' : '12px 12px 12px 0',
-    wordWrap: 'break-word',
-    fontSize: '14px',
-    lineHeight: '1.5'
+    color: sender === 'user' ? '#ffffff' : '#1f2937'
   })
 
-  const timestampStyle: React.CSSProperties = {
-    fontSize: '11px',
-    color: '#9ca3af',
-    marginTop: '4px',
-    padding: '0 4px'
-  }
-
-  // Input area styles
   const inputAreaStyle: React.CSSProperties = {
-    padding: '16px',
     backgroundColor: backgroundColor,
-    borderTop: `1px solid ${inputBorderColor}`,
-    position: 'relative'
-  }
-
-  const inputContainerStyle: React.CSSProperties = {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center'
+    borderTop: `1px solid ${inputBorderColor}`
   }
 
   const inputStyle: React.CSSProperties = {
-    flex: 1,
-    padding: '12px 48px 12px 14px',
-    border: `1px solid ${inputBorderColor}`,
-    borderRadius: '24px',
-    fontSize: '14px',
-    outline: 'none',
-    transition: 'border-color 0.2s',
-    backgroundColor: '#f9fafb'
+    border: `1px solid ${inputBorderColor}`
   }
 
   const sendIconButtonStyle: React.CSSProperties = {
-    position: 'absolute',
-    right: '8px',
     backgroundColor: buttonColor,
-    color: buttonTextColor,
-    border: 'none',
-    borderRadius: '50%',
-    width: '36px',
-    height: '36px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    padding: 0
-  }
-
-  const emptyStateStyle: React.CSSProperties = {
-    textAlign: 'center',
-    color: '#9ca3af',
-    fontSize: '14px',
-    padding: '40px 20px'
+    color: buttonTextColor
   }
 
   return (
-    <div style={containerStyle}>
+    <div style={containerStyle} className="flex flex-col rounded-xl shadow-md overflow-hidden font-sans my-4">
       {/* Header */}
-      <div style={headerStyle}>
-        <h3 style={headerTitleStyle}>{title}</h3>
-        <div style={headerButtonsStyle}>
+      <div style={headerStyle} className="px-5 py-4 flex justify-between items-center border-b border-black/10">
+        <h3 className="text-lg font-semibold m-0">{title}</h3>
+        <div className="flex gap-2">
           <button
             style={headerButtonStyle}
             onClick={handleAgentReply}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'
-            }}
+            className="bg-transparent rounded-md py-1.5 px-3 text-xs cursor-pointer transition-all duration-200 font-medium hover:bg-white/20"
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent'
             }}
@@ -279,9 +179,7 @@ const LiveChat: React.FC<LiveChatProps> = ({
           <button
             style={headerButtonStyle}
             onClick={handleClearChat}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'
-            }}
+            className="bg-transparent rounded-md py-1.5 px-3 text-xs cursor-pointer transition-all duration-200 font-medium hover:bg-white/20"
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent'
             }}
@@ -292,18 +190,21 @@ const LiveChat: React.FC<LiveChatProps> = ({
       </div>
 
       {/* Messages Area */}
-      <div style={messagesAreaStyle}>
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3 bg-gray-50">
         {messages.length === 0 ? (
-          <div style={emptyStateStyle}>
+          <div className="text-center text-gray-400 text-sm py-10 px-5">
             No messages yet. Start a conversation!
           </div>
         ) : (
           messages.map((message) => (
-            <div key={message.id} style={messageStyle(message.sender)}>
-              <div style={messageBubbleStyle(message.sender)}>
+            <div key={message.id} className={`flex flex-col max-w-[70%] ${message.sender === 'user' ? 'items-end self-end' : 'items-start self-start'}`}>
+              <div 
+                style={messageBubbleStyle(message.sender)}
+                className={`px-3.5 py-2.5 ${message.sender === 'user' ? 'rounded-t-xl rounded-br-none rounded-bl-xl' : 'rounded-t-xl rounded-bl-none rounded-br-xl'} break-words text-sm leading-relaxed`}
+              >
                 {message.text}
               </div>
-              <div style={timestampStyle}>
+              <div className="text-[11px] text-gray-400 mt-1 px-1">
                 {formatTime(message.timestamp)}
               </div>
             </div>
@@ -313,14 +214,15 @@ const LiveChat: React.FC<LiveChatProps> = ({
       </div>
 
       {/* Input Area */}
-      <form onSubmit={handleSendMessage} style={inputAreaStyle}>
-        <div style={inputContainerStyle}>
+      <form onSubmit={handleSendMessage} style={inputAreaStyle} className="p-4 relative">
+        <div className="relative flex items-center">
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={placeholderText}
             style={inputStyle}
+            className="flex-1 py-3 pr-12 pl-3.5 rounded-full text-sm outline-none transition-colors duration-200 bg-gray-50"
             onFocus={(e) => {
               e.currentTarget.style.borderColor = buttonColor
             }}
@@ -331,11 +233,8 @@ const LiveChat: React.FC<LiveChatProps> = ({
           <button
             type="submit"
             disabled={inputValue.trim() === ''}
-            style={{
-              ...sendIconButtonStyle,
-              opacity: inputValue.trim() === '' ? 0.4 : 1,
-              cursor: inputValue.trim() === '' ? 'not-allowed' : 'pointer'
-            }}
+            style={sendIconButtonStyle}
+            className={`absolute right-2 border-none rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all duration-200 p-0 ${inputValue.trim() === '' ? 'opacity-40 cursor-not-allowed' : 'opacity-100'}`}
             onMouseEnter={(e) => {
               if (inputValue.trim() !== '') {
                 e.currentTarget.style.transform = 'scale(1.1)'

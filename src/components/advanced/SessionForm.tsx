@@ -83,11 +83,9 @@ export const SessionForm: React.FC<SessionFormProps> = ({
       style={{
         backgroundColor,
         borderRadius,
-        padding,
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-        maxWidth: '1200px',
-        margin: '0 auto'
+        padding
       }}
+      className="shadow-md max-w-[1200px] mx-auto"
     >
       {/* Session Title */}
       <Heading
@@ -101,17 +99,10 @@ export const SessionForm: React.FC<SessionFormProps> = ({
       <Spacer height="32px" />
       
       {/* Form Fields Row */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '20px',
-          flexWrap: 'wrap',
-          alignItems: 'flex-end'
-        }}
-      >
+      <div className="flex gap-5 flex-wrap items-end">
         {/* Start Time Group */}
-        <div style={{ flex: '0 0 auto' }}>
-          <div style={{ marginBottom: '8px' }}>
+        <div className="flex-none">
+          <div className="mb-2">
             <Text text="Start time" size="14px" color="#374151" align="left" />
           </div>
           <TimeInputWithAMPM
@@ -123,8 +114,8 @@ export const SessionForm: React.FC<SessionFormProps> = ({
         </div>
         
         {/* End Time Group */}
-        <div style={{ flex: '0 0 auto' }}>
-          <div style={{ marginBottom: '8px' }}>
+        <div className="flex-none">
+          <div className="mb-2">
             <Text text="End Time" size="14px" color="#374151" align="left" />
           </div>
           <TimeInputWithAMPM
@@ -136,8 +127,8 @@ export const SessionForm: React.FC<SessionFormProps> = ({
         </div>
         
         {/* Location Group */}
-        <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
-          <div style={{ marginBottom: '8px' }}>
+        <div className="flex-1 min-w-[200px]">
+          <div className="mb-2">
             <Text text="Location" size="14px" color="#374151" align="left" />
           </div>
           <InputField
@@ -166,8 +157,8 @@ export const SessionForm: React.FC<SessionFormProps> = ({
         </div>
         
         {/* Event Type Group */}
-        <div style={{ flex: '0 0 220px' }}>
-          <div style={{ marginBottom: '8px' }}>
+        <div className="flex-none w-[220px]">
+          <div className="mb-2">
             <Text text="Event type" size="14px" color="#374151" align="left" />
           </div>
           <SelectField
@@ -184,20 +175,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({
       <Spacer height="48px" />
       
       {/* Call to Action Section */}
-      <div
-        style={{
-          backgroundColor: '#f9fafb',
-          border: '2px dashed #d1d5db',
-          borderRadius: '12px',
-          padding: '60px 40px',
-          textAlign: 'center',
-          minHeight: '200px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
+      <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl py-[60px] px-10 text-center min-h-[200px] flex flex-col items-center justify-center">
         <Text
           text={ctaText}
           size="18px"
@@ -219,13 +197,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({
         <>
           <Spacer height="32px" />
           
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '12px'
-            }}
-          >
+          <div className="flex justify-end gap-3">
             <Button
               text={cancelButtonText}
               variant="secondary"

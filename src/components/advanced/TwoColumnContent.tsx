@@ -31,83 +31,38 @@ const TwoColumnContent = ({
   borderColor = '#e3f2fd',
   borderWidth = '1px'
 }: TwoColumnContentProps) => {
+  // Dynamic styles that need to remain inline
   const containerStyle: React.CSSProperties = {
     backgroundColor,
     padding,
     borderRadius,
     border: `${borderWidth} solid ${borderColor}`,
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap,
-    margin: '16px 0',
-    maxWidth: '100%'
-  }
-
-  const sectionStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  }
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: '18px',
-    fontWeight: 'bold',
-    color: titleColor,
-    margin: '0',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  }
-
-  const contentStyle: React.CSSProperties = {
-    fontSize: '14px',
-    lineHeight: '1.6',
-    color: textColor,
-    margin: '0'
-  }
-
-  const iconStyle: React.CSSProperties = {
-    width: '20px',
-    height: '20px',
-    backgroundColor: '#2196f3',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0
-  }
-
-  const iconInnerStyle: React.CSSProperties = {
-    width: '12px',
-    height: '12px',
-    backgroundColor: 'white',
-    borderRadius: '2px',
-    position: 'relative'
+    gap
   }
 
   return (
-    <div style={containerStyle}>
+    <div style={containerStyle} className="grid grid-cols-1 md:grid-cols-2 my-4 max-w-full">
       {/* Left Section */}
-      <div style={sectionStyle}>
-        <h3 style={titleStyle}>
+      <div className="flex flex-col gap-3">
+        <h3 style={{ color: titleColor }} className="text-lg font-bold m-0 flex items-center gap-2">
           {leftTitle}
         </h3>
-        <p style={contentStyle}>
+        <p style={{ color: textColor }} className="text-sm leading-relaxed m-0">
           {leftContent}
         </p>
       </div>
 
       {/* Right Section */}
-      <div style={sectionStyle}>
-        <h3 style={titleStyle}>
+      <div className="flex flex-col gap-3">
+        <h3 style={{ color: titleColor }} className="text-lg font-bold m-0 flex items-center gap-2">
           {rightTitle}
           {showRightIcon && (
-            <div style={iconStyle}>
-              <div style={iconInnerStyle}></div>
+            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-3 h-3 bg-white rounded-sm relative"></div>
             </div>
           )}
         </h3>
-        <p style={contentStyle}>
+        <p style={{ color: textColor }} className="text-sm leading-relaxed m-0">
           {rightContent}
         </p>
       </div>

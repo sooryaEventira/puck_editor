@@ -3,10 +3,10 @@ import { SpacerProps } from '../../types'
 
 const Spacer = ({ height = '20px' }: SpacerProps) => {
   return (
-    <div style={{
-      height: height,
-      width: '100%'
-    }} />
+    <div 
+      style={{ height }}
+      className="w-full"
+    />
   )
 }
 

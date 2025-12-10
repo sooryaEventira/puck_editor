@@ -34,78 +34,20 @@ const Slider = ({
     setCurrentSlide(index)
   }
 
+  // Dynamic styles that need to remain inline
   const sliderStyle: React.CSSProperties = {
-    position: 'relative',
     height: height,
-    backgroundColor: backgroundColor,
-    margin: '16px 0',
-    borderRadius: '8px',
-    overflow: 'hidden',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
+    backgroundColor: backgroundColor
   }
 
   const slideStyle: React.CSSProperties = {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px',
-    textAlign: 'center',
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-    color: '#333',
     background: `linear-gradient(135deg, ${backgroundColor} 0%, #e9ecef 100%)`
-  }
-
-  const arrowStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '50%',
-    width: '40px',
-    height: '40px',
-    cursor: 'pointer',
-    fontSize: '18px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2
-  }
-
-  const dotsStyle: React.CSSProperties = {
-    position: 'absolute',
-    bottom: '20px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    gap: '8px',
-    zIndex: 2
-  }
-
-  const dotStyle: React.CSSProperties = {
-    width: '12px',
-    height: '12px',
-    borderRadius: '50%',
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s'
-  }
-
-  const activeDotStyle: React.CSSProperties = {
-    ...dotStyle,
-    backgroundColor: 'white'
   }
 
   if (slideList.length === 0) {
     return (
-      <div style={sliderStyle}>
-        <div style={slideStyle}>
+      <div style={sliderStyle} className="relative my-4 rounded-lg overflow-hidden flex items-center justify-center">
+        <div style={slideStyle} className="w-full h-full flex items-center justify-center p-10 text-center text-2xl font-bold text-gray-800">
           Add slide content (one per line)
         </div>
       </div>
@@ -113,9 +55,9 @@ const Slider = ({
   }
 
   return (
-    <div style={sliderStyle}>
+    <div style={sliderStyle} className="relative my-4 rounded-lg overflow-hidden flex items-center justify-center">
       {/* Current Slide */}
-      <div style={slideStyle}>
+      <div style={slideStyle} className="w-full h-full flex items-center justify-center p-10 text-center text-2xl font-bold text-gray-800">
         {slideList[currentSlide] || 'No slides available'}
       </div>
 
@@ -123,13 +65,13 @@ const Slider = ({
       {showArrows && slideList.length > 1 && (
         <>
           <button 
-            style={{ ...arrowStyle, left: '20px' }}
+            className="absolute top-1/2 -translate-y-1/2 left-5 bg-black/50 text-white border-none rounded-full w-10 h-10 cursor-pointer text-lg flex items-center justify-center z-[2] hover:bg-black/70 transition-colors"
             onClick={prevSlide}
           >
             ‹
           </button>
           <button 
-            style={{ ...arrowStyle, right: '20px' }}
+            className="absolute top-1/2 -translate-y-1/2 right-5 bg-black/50 text-white border-none rounded-full w-10 h-10 cursor-pointer text-lg flex items-center justify-center z-[2] hover:bg-black/70 transition-colors"
             onClick={nextSlide}
           >
             ›
@@ -139,11 +81,13 @@ const Slider = ({
 
       {/* Dots Navigation */}
       {showDots && slideList.length > 1 && (
-        <div style={dotsStyle}>
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-[2]">
           {slideList.map((_, index) => (
             <button
               key={index}
-              style={index === currentSlide ? activeDotStyle : dotStyle}
+              className={`w-3 h-3 rounded-full cursor-pointer transition-colors duration-300 ${
+                index === currentSlide ? 'bg-white' : 'bg-white/50'
+              }`}
               onClick={() => goToSlide(index)}
             />
           ))}
