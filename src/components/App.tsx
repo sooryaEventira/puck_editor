@@ -322,6 +322,12 @@ const App: React.FC = () => {
           .catch((error) => {
             logger.debug('Failed to load page from editor route:', error)
           })
+      } else if (path.startsWith('/event/hub')) {
+        // Navigate to Event Hub page
+        logger.debug('📍 Event Hub route detected, switching to events view')
+        if (currentViewRef.current !== 'events') {
+          setCurrentView('events')
+        }
       } else if (path.startsWith('/event/website/preview/') || path.startsWith('/event/website')) {
         // If navigating to preview or website management, switch to dashboard view
         // DashboardLayout will handle showing the correct page

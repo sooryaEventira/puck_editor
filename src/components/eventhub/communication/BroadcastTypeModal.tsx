@@ -34,7 +34,6 @@ const BroadcastTypeModal: React.FC<BroadcastTypeModalProps> = ({
       title="Select broadcast type"
       subtitle="Choose how to deliver your message to recipients."
       width={548}
-      height={195}
       maxWidth={548}
       borderRadius={16}
       showHeaderBorder={false}
@@ -45,25 +44,25 @@ const BroadcastTypeModal: React.FC<BroadcastTypeModalProps> = ({
         left: 24
       }}
     >
-      <div className="flex items-center justify-center gap-3 pb-6">
+      <div className="flex items-center justify-center gap-4 overflow-hidden">
         {/* Email Card */}
         <button
           type="button"
           onClick={() => handleSelect('email')}
-          className={`flex w-[240px] max-w-[240px] h-[84px] flex-col gap-3 rounded-xl border pt-4 pr-8 pb-4 pl-8 text-left transition-all ${
+          className={`flex w-[240px] max-w-[240px] h-[100px] flex-col gap-2 rounded-xl border pt-4 pr-6 pb-4 pl-6 text-left transition-all ${
             selectedType === 'email'
               ? 'border-primary bg-primary/5'
               : 'border-slate-200 bg-white hover:border-primary/40 hover:bg-slate-50'
           }`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1 flex-1">
               <span className="text-sm font-semibold text-slate-900">Email</span>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate-500 leading-relaxed">
                 Send via email to subscriber inboxes.
               </span>
             </div>
-            <div className="flex h-5 w-5 items-center justify-center">
+            <div className="flex h-5 w-5 items-center justify-center flex-shrink-0 mt-0.5">
               <input
                 type="radio"
                 name="broadcast-type"
@@ -79,22 +78,22 @@ const BroadcastTypeModal: React.FC<BroadcastTypeModalProps> = ({
         <button
           type="button"
           onClick={() => handleSelect('push-notification')}
-          className={`flex w-[240px] max-w-[240px] h-[84px] flex-col gap-3 rounded-xl border pt-4 pr-8 pb-4 pl-8 text-left transition-all ${
+          className={`flex w-[240px] max-w-[240px] h-[100px] flex-col gap-2 rounded-xl border pt-4 pr-6 pb-4 pl-6 text-left transition-all ${
             selectedType === 'push-notification'
               ? 'border-2 border-primary bg-primary/5'
               : 'border-slate-200 bg-white hover:border-primary/40 hover:bg-slate-50'
           }`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col gap-1 flex-1">
               <span className="text-sm font-semibold text-slate-900">
                 Push Notification
               </span>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate-500 leading-relaxed">
                 Send instant mobile/ browser notifications.
               </span>
             </div>
-            <div className="flex h-5 w-5 items-center justify-center">
+            <div className="flex h-5 w-5 items-center justify-center flex-shrink-0 mt-0.5">
               <input
                 type="radio"
                 name="broadcast-type"

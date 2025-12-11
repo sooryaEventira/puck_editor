@@ -32,7 +32,7 @@ export const useTableHeader = ({
   return useMemo(
     () => {
       const tableHeaderLeading = (
-        <div className="inline-flex items-center overflow-x-auto rounded-t-xl bg-white -mb-6 -ml-6 scrollbar-hide">
+        <div className="flex gap-6 border-b border-slate-200 -mb-6 -ml-6">
           {tabs.map((tab) => {
             const isActive = activeTabId === tab.id
 
@@ -41,10 +41,10 @@ export const useTableHeader = ({
                 key={tab.id}
                 type="button"
                 onClick={() => onTabChange(tab.id)}
-                className={`border px-4 py-2 text-sm font-semibold transition h-10 whitespace-nowrap ${
+                className={`pb-3 px-1 text-[15px] font-medium font-semibold transition-colors relative whitespace-nowrap ${
                   isActive
-                    ? 'border-primary bg-white text-primary '
-                    : 'border-transparent bg-slate-100 text-slate-500 hover:text-primary'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {tab.label}

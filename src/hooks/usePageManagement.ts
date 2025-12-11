@@ -246,15 +246,19 @@ export const usePageManagement = () => {
       
       // Check if we have a HeroSection that needs updating
       const heroSection = prevData.content.find((item: any) => item.type === 'HeroSection')
-      if (!heroSection) return prevData
+      if (!heroSection) {
+        console.log('🖼️ No HeroSection found in content')
+        return prevData
+      }
       
       console.log('🖼️ Current HeroSection backgroundImage:', heroSection.props.backgroundImage?.substring(0, 50) + '...')
       
       // ALWAYS prioritize banner from localStorage if it exists
-      // Use banner from localStorage if available, otherwise keep existing or use default
-      const currentBannerUrl = bannerUrl || heroSection.props.backgroundImage || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'
+      // If bannerUrl exists in localStorage, use it (even if it's different from current)
+      // Otherwise, keep existing backgroundImage (don't force default)
+      const currentBannerUrl = bannerUrl || heroSection.props.backgroundImage
       
-      console.log('🖼️ Will use bannerUrl:', currentBannerUrl?.substring(0, 50) + '...')
+      console.log('🖼️ Will use bannerUrl:', currentBannerUrl ? (currentBannerUrl.startsWith('data:') ? 'data:image...' : currentBannerUrl.substring(0, 50) + '...') : 'NONE')
       
       // Get event data - use eventData if available, otherwise use existing props or defaults
       const eventName = eventData?.eventName || heroSection.props.title || 'Event Title'
@@ -269,10 +273,11 @@ export const usePageManagement = () => {
       const shouldForceBannerUpdate = bannerUrl && (hasDefaultImage || heroSection.props.backgroundImage !== bannerUrl)
 
       // Check if update is needed
+      // Always update if bannerUrl exists in localStorage and is different from current
       const needsUpdate = 
         heroSection.props.title !== eventName ||
         heroSection.props.subtitle !== subtitle ||
-        heroSection.props.backgroundImage !== currentBannerUrl ||
+        (bannerUrl && heroSection.props.backgroundImage !== bannerUrl) ||
         shouldForceBannerUpdate
 
       if (!needsUpdate) {
@@ -281,10 +286,10 @@ export const usePageManagement = () => {
       }
 
       // Log what's being updated
-      if (shouldForceBannerUpdate) {
+      if (shouldForceBannerUpdate || (bannerUrl && heroSection.props.backgroundImage !== bannerUrl)) {
         console.log('🖼️ FORCING banner update (banner in localStorage):', {
           oldBanner: heroSection.props.backgroundImage?.substring(0, 50) + '...',
-          newBanner: currentBannerUrl?.substring(0, 50) + '...',
+          newBanner: currentBannerUrl ? (currentBannerUrl.startsWith('data:') ? 'data:image...' : currentBannerUrl.substring(0, 50) + '...') : 'NONE',
           bannerInStorage: !!bannerUrl,
           hasDefaultImage
         })
@@ -292,7 +297,7 @@ export const usePageManagement = () => {
         console.log('🖼️ Updating HeroSection:', {
           eventName,
           subtitle,
-          bannerUrl: currentBannerUrl?.substring(0, 50) + '...',
+          bannerUrl: currentBannerUrl ? (currentBannerUrl.startsWith('data:') ? 'data:image...' : currentBannerUrl.substring(0, 50) + '...') : 'NONE',
           oldBanner: heroSection.props.backgroundImage?.substring(0, 50) + '...'
         })
       }
@@ -307,7 +312,7 @@ export const usePageManagement = () => {
             backgroundImage: currentBannerUrl
           }
           
-          console.log('🖼️ Setting HeroSection props.backgroundImage to:', currentBannerUrl?.substring(0, 50) + '...')
+          console.log('🖼️ Setting HeroSection props.backgroundImage to:', currentBannerUrl ? (currentBannerUrl.startsWith('data:') ? 'data:image...' : currentBannerUrl.substring(0, 50) + '...') : 'NONE')
           
           return {
             ...item,
@@ -322,8 +327,9 @@ export const usePageManagement = () => {
         content: updatedContent
       }
       
+      const updatedHeroSection = updatedData.content.find((item: any) => item.type === 'HeroSection')
       console.log('🖼️ Updated data - HeroSection backgroundImage:', 
-        updatedData.content.find((item: any) => item.type === 'HeroSection')?.props?.backgroundImage?.substring(0, 50) + '...')
+        updatedHeroSection?.props?.backgroundImage ? (updatedHeroSection.props.backgroundImage.startsWith('data:') ? 'data:image...' : updatedHeroSection.props.backgroundImage.substring(0, 50) + '...') : 'NONE')
       
       return updatedData
     })
@@ -333,9 +339,9 @@ export const usePageManagement = () => {
   useEffect(() => {
     // Always run on mount and when dependencies change
     const bannerInStorage = localStorage.getItem('event-form-banner')
-    console.log('🖼️ useEffect triggered - Banner in storage:', !!bannerInStorage, 'EventData:', !!eventData)
+    console.log('🖼️ useEffect triggered - Banner in storage:', !!bannerInStorage, 'EventData:', !!eventData, 'CurrentPage:', currentPage)
     updateHeroSectionWithEventData()
-  }, [eventData?.eventName, eventData?.location, eventData?.startDate, currentData?.content?.length, updateHeroSectionWithEventData]) // Trigger when eventData fields change or content changes
+  }, [eventData?.eventName, eventData?.location, eventData?.startDate, currentData?.content?.length, currentPage, updateHeroSectionWithEventData]) // Trigger when eventData fields change, content changes, or page changes
 
   // Also run on initial mount to ensure banner is loaded
   useEffect(() => {
@@ -568,6 +574,11 @@ export const usePageManagement = () => {
       } catch (error) {
         logger.debug('applyServerDataForPage: Failed to cache merged data for', pageId, error)
       }
+      
+      // Update HeroSection with banner from localStorage after applying server data
+      setTimeout(() => {
+        updateHeroSectionWithEventData()
+      }, 0)
     }
 
     if (resolvedTitle && resolvedTitle !== currentPageName) {
@@ -829,6 +840,19 @@ export const usePageManagement = () => {
       // Clean any duplicates before setting
       const cleanedInitialData = cleanDuplicateComponents(initialData)
       
+      // Update HeroSection banner BEFORE setting data if banner exists in localStorage
+      const bannerUrl = localStorage.getItem('event-form-banner')
+      if (bannerUrl && cleanedInitialData?.content) {
+        const heroSection = cleanedInitialData.content.find((item: any) => item.type === 'HeroSection')
+        if (heroSection) {
+          const hasDefaultImage = heroSection.props.backgroundImage?.includes('unsplash.com/photo-1540575467063')
+          if (hasDefaultImage || heroSection.props.backgroundImage !== bannerUrl) {
+            console.log('🖼️ loadPage - Updating HeroSection banner before setting data')
+            heroSection.props.backgroundImage = bannerUrl
+          }
+        }
+      }
+      
       // Switch immediately with cached/default data
       console.log('📄 Setting currentData with template:', {
         contentLength: cleanedInitialData?.content?.length || 0,
@@ -838,6 +862,11 @@ export const usePageManagement = () => {
         setCurrentPage(pageId)
         setCurrentPageName(pageInArray.name)
         setShowPageManager(false)
+        
+        // Update HeroSection with banner from localStorage after setting data (as backup)
+        setTimeout(() => {
+          updateHeroSectionWithEventData()
+        }, 150)
       
       // Try to load from server in background and update if successful
       fetch(API_ENDPOINTS.GET_PAGE(serverFilename))
@@ -877,6 +906,19 @@ export const usePageManagement = () => {
         // Clean any duplicates before setting
         const cleanedCachedData = cleanDuplicateComponents(initialData)
         
+        // Update HeroSection banner BEFORE setting data if banner exists in localStorage
+        const bannerUrl = localStorage.getItem('event-form-banner')
+        if (bannerUrl && cleanedCachedData?.content) {
+          const heroSection = cleanedCachedData.content.find((item: any) => item.type === 'HeroSection')
+          if (heroSection) {
+            const hasDefaultImage = heroSection.props.backgroundImage?.includes('unsplash.com/photo-1540575467063')
+            if (hasDefaultImage || heroSection.props.backgroundImage !== bannerUrl) {
+              console.log('🖼️ loadPage (cached) - Updating HeroSection banner before setting data')
+              heroSection.props.backgroundImage = bannerUrl
+            }
+          }
+        }
+        
         // Switch immediately with cached data
         console.log('📄 Setting currentData from localStorage:', {
           contentLength: cleanedCachedData?.content?.length || 0,
@@ -893,6 +935,11 @@ export const usePageManagement = () => {
           setCurrentPageName(pageId)
         }
         setShowPageManager(false)
+        
+        // Update HeroSection with banner from localStorage after setting data (as backup)
+        setTimeout(() => {
+          updateHeroSectionWithEventData()
+        }, 150)
       } catch (e) {
         logger.warn('loadPage: Failed to parse cached data:', e)
       }
@@ -992,6 +1039,19 @@ export const usePageManagement = () => {
         // Clean any duplicates before saving
         const cleanedDefaultData = cleanDuplicateComponents(defaultData)
         
+        // Update HeroSection banner BEFORE setting data if banner exists in localStorage
+        const bannerUrl = localStorage.getItem('event-form-banner')
+        if (bannerUrl && cleanedDefaultData?.content) {
+          const heroSection = cleanedDefaultData.content.find((item: any) => item.type === 'HeroSection')
+          if (heroSection) {
+            const hasDefaultImage = heroSection.props.backgroundImage?.includes('unsplash.com/photo-1540575467063')
+            if (hasDefaultImage || heroSection.props.backgroundImage !== bannerUrl) {
+              console.log('🖼️ loadPage (fallback) - Updating HeroSection banner before setting data')
+              heroSection.props.backgroundImage = bannerUrl
+            }
+          }
+        }
+        
         // Save to localStorage so it persists
         const cacheKey = `puck-page-${pageId}`
         localStorage.setItem(cacheKey, JSON.stringify(cleanedDefaultData))
@@ -1004,6 +1064,11 @@ export const usePageManagement = () => {
         setCurrentPage(pageId)
         setCurrentPageName(pageName)
         setShowPageManager(false)
+        
+        // Update HeroSection with banner from localStorage after setting data (as backup)
+        setTimeout(() => {
+          updateHeroSectionWithEventData()
+        }, 150)
         
         // Add to pages array
         setPages(prevPages => {

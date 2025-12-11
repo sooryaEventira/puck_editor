@@ -263,9 +263,9 @@ const CommunicationsTable: React.FC<CommunicationsTableProps> = ({
   }, [activeTab])
 
   return (
-    <div className="space-y-8 px-4 pb-12 pt-28 md:px-10 lg:px-16">
+    <div className="space-y-8 px-4 pb-12 pt-8 md:px-10 lg:px-16">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-[26px] font-semibold text-primary-dark">Communication</h1>
+        <h1 className="text-[26px] font-bold text-primary-dark">Communication</h1>
         <div className="flex items-center gap-3">
           <button
             type="button"

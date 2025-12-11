@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react'
+import { useEventForm } from '../../../contexts/EventFormContext'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import { defaultCards, ContentCard } from '../EventHubContent'
@@ -25,15 +26,23 @@ interface ResourceManagementPageProps {
   onBackClick?: () => void
   userAvatarUrl?: string
   onCardClick?: (cardId: string) => void
+  hideNavbarAndSidebar?: boolean
 }
 
 const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
-  eventName,
-  isDraft,
+  eventName: propEventName,
+  isDraft: propIsDraft,
   onBackClick,
   userAvatarUrl,
-  onCardClick
+  onCardClick,
+  hideNavbarAndSidebar = false
 }) => {
+  // Get eventData from context to maintain consistency with EventHubPage navbar
+  const { eventData } = useEventForm()
+  
+  // Use eventData from context, fallback to props if not available
+  const eventName = eventData?.eventName || propEventName || 'Highly important conference of 2025'
+  const isDraft = propIsDraft !== undefined ? propIsDraft : true
   const [folders, setFolders] = useState<MediaFolder[]>([])
   const [files, setFiles] = useState<MediaFile[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -201,30 +210,34 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-white">
-      {/* Navbar */}
-      <EventHubNavbar
-        eventName={eventName}
-        isDraft={isDraft}
-        onBackClick={onBackClick}
-        onSearchClick={handleSearchClick}
-        onNotificationClick={handleNotificationClick}
-        onProfileClick={handleProfileClick}
-        userAvatarUrl={userAvatarUrl}
-      />
+      {!hideNavbarAndSidebar && (
+        <>
+          {/* Navbar */}
+          <EventHubNavbar
+            eventName={eventName}
+            isDraft={isDraft}
+            onBackClick={onBackClick}
+            onSearchClick={handleSearchClick}
+            onNotificationClick={handleNotificationClick}
+            onProfileClick={handleProfileClick}
+            userAvatarUrl={userAvatarUrl}
+          />
 
-      {/* Sidebar */}
-      <EventHubSidebar
-        items={sidebarItems}
-        activeItemId="resource-management"
-        onItemClick={handleSidebarItemClick}
-      />
+          {/* Sidebar */}
+          <EventHubSidebar
+            items={sidebarItems}
+            activeItemId="resource-management"
+            onItemClick={handleSidebarItemClick}
+          />
+        </>
+      )}
 
       {/* Main Content */}
-      <div className="md:pl-[250px]">
-        <div className="space-y-6 px-4 pb-12 pt-28 md:px-10 lg:px-16">
+      <div className={hideNavbarAndSidebar ? "" : "md:pl-[250px]"}>
+        <div className="space-y-6 px-4 pb-12 pt-8 md:px-10 lg:px-16">
           {/* Header */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-            <h1 className="text-[26px] font-semibold text-primary-dark">Resource Management</h1>
+            <h1 className="text-[26px] font-bold text-primary-dark">Resource Management</h1>
             <div className="flex items-center gap-3">
               <button
                 type="button"

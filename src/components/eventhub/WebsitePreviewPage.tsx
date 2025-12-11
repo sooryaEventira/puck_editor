@@ -7,7 +7,6 @@ import SpeakersSection from '../advanced/SpeakersSection'
 import PricingPlans from '../advanced/PricingPlans'
 import { Edit05, User01 } from '@untitled-ui/icons-react'
 import Input from '../ui/untitled/Input'
-import Select from '../ui/untitled/Select'
 import PageCreationModal, { type PageType } from '../page/PageCreationModal'
 
 interface WebsitePreviewPageProps {
@@ -28,7 +27,6 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     { id: 'welcome', name: 'Welcome' }
   ])
   const [currentPage, setCurrentPage] = useState(pageId || 'welcome')
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isPageModalOpen, setIsPageModalOpen] = useState(false)
   
   // Settings form state
@@ -127,10 +125,6 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     handleBack()
   }
 
-  const handleToggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed)
-  }
-
   // Format date for display
   const formatEventDate = () => {
     if (!eventData?.startDate) return 'Jan 13, 2025'
@@ -184,32 +178,7 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
           onAddPage={handleAddPage}
           onManagePages={handleManagePages}
           onBackClick={handleBack}
-          onToggleSidebar={handleToggleSidebar}
-          isSidebarCollapsed={isSidebarCollapsed}
         />
-        
-        {/* Toggle button when sidebar is collapsed */}
-        {isSidebarCollapsed && (
-          <button
-            onClick={handleToggleSidebar}
-            className="fixed left-0 top-20 z-40 flex h-8 w-8 items-center justify-center rounded-r-md border-r border-y border-slate-200 bg-white text-slate-500 shadow-md transition hover:bg-slate-100"
-            aria-label="Expand sidebar"
-          >
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <path d="M9 3v18" />
-              <path d="M15 12l3-3-3-3" />
-            </svg>
-          </button>
-        )}
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden bg-white p-8">

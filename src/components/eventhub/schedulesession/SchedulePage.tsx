@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { useEventForm } from '../../../contexts/EventFormContext'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import ScheduleContent from './ScheduleContent'
@@ -17,16 +18,24 @@ interface SchedulePageProps {
   userAvatarUrl?: string
   scheduleName?: string
   onCardClick?: (cardId: string) => void
+  hideNavbarAndSidebar?: boolean
 }
 
 const SchedulePage: React.FC<SchedulePageProps> = ({
-  eventName,
-  isDraft,
+  eventName: propEventName,
+  isDraft: propIsDraft,
   onBackClick,
   userAvatarUrl,
   scheduleName,
-  onCardClick
+  onCardClick,
+  hideNavbarAndSidebar = false
 }) => {
+  // Get eventData from context to maintain consistency with EventHubPage navbar
+  const { eventData } = useEventForm()
+  
+  // Use eventData from context, fallback to props if not available
+  const eventName = eventData?.eventName || propEventName || 'Highly important conference of 2025'
+  const isDraft = propIsDraft !== undefined ? propIsDraft : true
   const handleSearchClick = () => {
     console.log('Search clicked')
   }
@@ -83,7 +92,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   }
 
   const [savedSchedules, setSavedSchedules] = React.useState<SavedSchedule[]>([])
-  const [currentScheduleName, setCurrentScheduleName] = React.useState('Schedule 1')
+  const [currentScheduleName, setCurrentScheduleName] = React.useState(scheduleName || 'Schedule 1')
   const [isSessionSlideoutOpen, setIsSessionSlideoutOpen] = React.useState(false)
   const [isScheduleDetailsSlideoutOpen, setIsScheduleDetailsSlideoutOpen] = React.useState(false)
   const [activeScheduleId, setActiveScheduleId] = React.useState<string | null>(null)
@@ -253,26 +262,30 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
 
   return (
     <div  className="min-h-screen overflow-x-hidden bg-white">
-      {/* Navbar */}
-      <EventHubNavbar
-        eventName={eventName}
-        isDraft={isDraft}
-        onBackClick={onBackClick}
-        onSearchClick={handleSearchClick}
-        onNotificationClick={handleNotificationClick}
-        onProfileClick={handleProfileClick}
-        userAvatarUrl={userAvatarUrl}
-      />
+      {!hideNavbarAndSidebar && (
+        <>
+          {/* Navbar */}
+          <EventHubNavbar
+            eventName={eventName}
+            isDraft={isDraft}
+            onBackClick={onBackClick}
+            onSearchClick={handleSearchClick}
+            onNotificationClick={handleNotificationClick}
+            onProfileClick={handleProfileClick}
+            userAvatarUrl={userAvatarUrl}
+          />
 
-      {/* Sidebar */}
-      <EventHubSidebar
-        items={sidebarItems}
-        activeItemId="schedule-session"
-        onItemClick={handleSidebarItemClick}
-      />
+          {/* Sidebar */}
+          <EventHubSidebar
+            items={sidebarItems}
+            activeItemId="schedule-session"
+            onItemClick={handleSidebarItemClick}
+          />
+        </>
+      )}
 
       {/* Schedule Content */}
-      <div className="md:pl-[250px]">
+      <div className={hideNavbarAndSidebar ? "" : "md:pl-[250px]"}>
         {currentView === 'table' ? (
           <SavedSchedulesTable
             schedules={savedSchedules}
@@ -281,7 +294,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             onManageSession={handleManageSession}
             onEditSchedule={(scheduleId) => {
               const target = savedSchedules.find((item) => item.id === scheduleId)
-              if (!target) return
+              if (!target || !target.session) return
               setActiveScheduleId(scheduleId)
               setCurrentScheduleName(target.name)
               setActiveDraft({

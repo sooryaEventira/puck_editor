@@ -83,9 +83,9 @@ const EventHubContent: React.FC<EventHubContentProps> = ({
   onCardClick
 }) => {
   return (
-    <main className="mt-16 min-h-[calc(100vh-4rem)]  bg-white px-4 pb-10 pt-8 md:ml-[250px] md:px-8">
+    <main className="mt-16 min-h-[calc(100vh-4rem)] bg-white px-4 pb-10 pt-8 md:px-8">
       <h1 className="mb-8 text-3xl font-bold text-primary-dark md:text-[32px] ">{title}</h1>
-      <div className="mx-auto grid w-full max-w-[1400px] gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      {/* <div className="mx-auto grid w-full max-w-[1400px] gap-5 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => (
           <button
             key={card.id}
@@ -115,7 +115,7 @@ const EventHubContent: React.FC<EventHubContentProps> = ({
             </div>
           </button> 
         ))}
-      </div>
+      </div> */}
     </main>
   )
 }

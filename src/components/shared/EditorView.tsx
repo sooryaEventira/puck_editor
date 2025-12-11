@@ -9,6 +9,7 @@ import BlockTypeSelectionModal from '../page/BlockTypeSelectionModal'
 import TemplateSelectionModal from '../page/TemplateSelectionModal'
 import Preview from './Preview'
 import { NavigationProvider } from '../../contexts/NavigationContext'
+import { useEventForm } from '../../contexts/EventFormContext'
 import { Page } from '../../types'
 
 // Context to provide current data to custom fields
@@ -102,6 +103,94 @@ export const EditorView: React.FC<EditorViewProps> = ({
       }
     }
   }, [currentData, currentPage, currentPageName])
+
+  // Get eventData from context
+  const { eventData } = useEventForm()
+
+  // Helper function to format event date
+  const formatEventDate = (startDate?: string): string => {
+    if (!startDate) return 'Jan 13, 2025'
+    try {
+      const date = new Date(startDate)
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    } catch {
+      return 'Jan 13, 2025'
+    }
+  }
+
+  // Ensure banner, title, location, and date from eventData are applied when currentData changes
+  useEffect(() => {
+    // Add a small delay to ensure data is fully loaded
+    const timer = setTimeout(() => {
+      const bannerUrl = localStorage.getItem('event-form-banner')
+      if (!currentData?.content) {
+        console.log('🖼️ EditorView useEffect - No content')
+        return
+      }
+
+      const heroSection = currentData.content.find((item: any) => item.type === 'HeroSection')
+      if (!heroSection) {
+        console.log('🖼️ EditorView useEffect - No HeroSection found')
+        return
+      }
+
+      // Get event data values
+      const eventName = eventData?.eventName || heroSection.props.title || 'Event Title'
+      const location = eventData?.location || ''
+      const eventDate = formatEventDate(eventData?.startDate)
+      const subtitle = location ? `${location} | ${eventDate}` : (eventDate || 'Location | Date')
+
+      const currentBanner = heroSection.props.backgroundImage
+      const hasDefaultImage = currentBanner?.includes('unsplash.com/photo-1540575467063')
+      
+      // Check if any update is needed
+      const needsBannerUpdate = bannerUrl && (hasDefaultImage || currentBanner !== bannerUrl)
+      const needsTitleUpdate = heroSection.props.title !== eventName
+      const needsSubtitleUpdate = heroSection.props.subtitle !== subtitle
+      const needsUpdate = needsBannerUpdate || needsTitleUpdate || needsSubtitleUpdate
+
+      console.log('🖼️ EditorView useEffect - Checking updates:', {
+        hasBannerInStorage: !!bannerUrl,
+        currentBanner: currentBanner?.substring(0, 50) + '...',
+        hasDefaultImage,
+        needsBannerUpdate,
+        needsTitleUpdate,
+        needsSubtitleUpdate,
+        eventName,
+        subtitle,
+        currentTitle: heroSection.props.title,
+        currentSubtitle: heroSection.props.subtitle
+      })
+
+      if (needsUpdate) {
+        console.log('🖼️ EditorView useEffect - Updating HeroSection with eventData')
+        const updatedContent = currentData.content.map((item: any) => {
+          if (item.type === 'HeroSection') {
+            return {
+              ...item,
+              props: {
+                ...item.props,
+                ...(bannerUrl && (hasDefaultImage || item.props.backgroundImage !== bannerUrl) ? { backgroundImage: bannerUrl } : {}),
+                ...(needsTitleUpdate ? { title: eventName } : {}),
+                ...(needsSubtitleUpdate ? { subtitle: subtitle } : {})
+              }
+            }
+          }
+          return item
+        })
+
+        const updatedData = {
+          ...currentData,
+          content: updatedContent
+        }
+
+        // Update via onChange to ensure the parent state is updated
+        onChange(updatedData)
+      }
+    }, 100) // Small delay to ensure data is loaded
+
+    return () => clearTimeout(timer)
+  }, [currentData, currentPage, eventData, onChange])
 
   const handleBackButtonClick = () => {
     setShowCustomSidebar(prev => !prev)
@@ -469,14 +558,15 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   // Update the ref with the latest data (including zones)
                   latestDataRef.current = data
                   
-                  // Preserve banner image from localStorage if HeroSection is being updated
+                  // ALWAYS preserve banner image from localStorage if HeroSection exists
                   const bannerUrl = localStorage.getItem('event-form-banner')
                   if (bannerUrl && data?.content) {
                     const heroSection = data.content.find((item: any) => item.type === 'HeroSection')
-                    if (heroSection && heroSection.props.backgroundImage !== bannerUrl) {
-                      // If HeroSection exists but doesn't have the banner, update it
+                    if (heroSection) {
+                      // Always use banner from localStorage if it exists, regardless of current value
                       const hasDefaultImage = heroSection.props.backgroundImage?.includes('unsplash.com/photo-1540575467063')
-                      if (hasDefaultImage || !heroSection.props.backgroundImage) {
+                      if (bannerUrl && (hasDefaultImage || heroSection.props.backgroundImage !== bannerUrl)) {
+                        console.log('🖼️ EditorView onChange - Updating HeroSection backgroundImage from localStorage')
                         heroSection.props.backgroundImage = bannerUrl
                       }
                     }

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { useEventForm } from '../../../contexts/EventFormContext'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import CommunicationsTable from './CommunicationsTable'
@@ -16,15 +17,23 @@ interface CommunicationPageProps {
   onBackClick?: () => void
   userAvatarUrl?: string
   onCardClick?: (cardId: string) => void
+  hideNavbarAndSidebar?: boolean
 }
 
 const CommunicationPage: React.FC<CommunicationPageProps> = ({
-  eventName,
-  isDraft,
+  eventName: propEventName,
+  isDraft: propIsDraft,
   onBackClick,
   userAvatarUrl,
-  onCardClick
+  onCardClick,
+  hideNavbarAndSidebar = false
 }) => {
+  // Get eventData from context to maintain consistency with EventHubPage navbar
+  const { eventData } = useEventForm()
+  
+  // Use eventData from context, fallback to props if not available
+  const eventName = eventData?.eventName || propEventName || 'Highly important conference of 2025'
+  const isDraft = propIsDraft !== undefined ? propIsDraft : true
   const handleSearchClick = () => {
     console.log('Search clicked')
   }
@@ -217,27 +226,31 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white">
-      {/* Navbar */}
-      <EventHubNavbar
-        eventName={eventName}
-        isDraft={isDraft}
-        onBackClick={onBackClick}
-        onSearchClick={handleSearchClick}
-        onNotificationClick={handleNotificationClick}
-        onProfileClick={handleProfileClick}
-        userAvatarUrl={userAvatarUrl}
-      />
+    <div className={hideNavbarAndSidebar ? "" : "min-h-screen overflow-x-hidden bg-white"}>
+      {!hideNavbarAndSidebar && (
+        <>
+          {/* Navbar */}
+          <EventHubNavbar
+            eventName={eventName}
+            isDraft={isDraft}
+            onBackClick={onBackClick}
+            onSearchClick={handleSearchClick}
+            onNotificationClick={handleNotificationClick}
+            onProfileClick={handleProfileClick}
+            userAvatarUrl={userAvatarUrl}
+          />
 
-      {/* Sidebar */}
-      <EventHubSidebar
-        items={sidebarItems}
-        activeItemId="communications"
-        onItemClick={handleSidebarItemClick}
-      />
+          {/* Sidebar */}
+          <EventHubSidebar
+            items={sidebarItems}
+            activeItemId="communications"
+            onItemClick={handleSidebarItemClick}
+          />
+        </>
+      )}
 
       {/* Communication Content */}
-      <div className="md:pl-[250px]">
+      <div className={hideNavbarAndSidebar ? "" : "md:pl-[250px]"}>
         {showComposer ? (
           <BroadcastComposer
             onCancel={handleComposerCancel}

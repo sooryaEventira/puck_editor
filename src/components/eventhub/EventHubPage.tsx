@@ -1,7 +1,12 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
+import { useEventForm } from '../../contexts/EventFormContext'
 import EventHubNavbar from './EventHubNavbar'
 import EventHubSidebar from './EventHubSidebar'
-import { defaultCards, ContentCard } from './EventHubContent'
+import EventHubContent, { defaultCards, ContentCard } from './EventHubContent'
+import CommunicationPage from './communication/CommunicationPage'
+import ResourceManagementPage from './resourcemanagement/ResourceManagementPage'
+import SchedulePage from './schedulesession/SchedulePage'
+import EventWebsitePage from './EventWebsitePage'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 
 interface EventHubPageProps {
@@ -13,13 +18,33 @@ interface EventHubPageProps {
 }
 
 const EventHubPage: React.FC<EventHubPageProps> = ({
-  eventName,
-  isDraft,
+  eventName: propEventName,
+  isDraft: propIsDraft,
   onBackClick,
-  userAvatarUrl,
-  onCardClick
+  userAvatarUrl
 }) => {
+  // Get eventData from context to maintain consistency across all pages
+  const { eventData } = useEventForm()
+  
+  // Use eventData from context, fallback to props if not available
+  const eventName = eventData?.eventName || propEventName || 'Highly important conference of 2025'
+  const isDraft = propIsDraft !== undefined ? propIsDraft : true
   const [activeSection, setActiveSection] = useState('event-hub')
+
+  // Read section from URL only on initial mount
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const section = urlParams.get('section')
+    if (section) {
+      console.log('📍 Reading section from URL on mount:', section)
+      setActiveSection(section)
+    }
+  }, []) // Only run on mount
+
+  // Debug: Log when activeSection changes
+  React.useEffect(() => {
+    console.log('🔄 activeSection changed to:', activeSection)
+  }, [activeSection])
 
   const handleSearchClick = () => {
     console.log('Search clicked')
@@ -56,26 +81,106 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
     ]
   }, [])
 
-  const handleSidebarItemClick = (itemId: string) => {
-    console.log('Sidebar item clicked:', itemId)
-    setActiveSection(itemId)
+  const handleSidebarItemClick = useCallback((itemId: string) => {
+    console.log('📍 EventHubPage - Sidebar item clicked:', itemId)
     
-    // If clicking on event-hub parent, navigate to first card or do nothing
-    if (itemId === 'event-hub') {
-      // Optionally navigate to first card or keep current view
+    // Handle top-level menu items
+    if (itemId === 'event-hub' || itemId === 'event-website' || itemId === 'overview') {
+      console.log('📍 Setting activeSection to:', itemId)
+      setActiveSection(itemId)
+      // Update URL to reflect the change
+      const newUrl = itemId === 'event-hub' ? '/event/hub' : `/event/hub?section=${itemId}`
+      window.history.pushState({ section: itemId }, '', newUrl)
       return
     }
     
-    // Check if this is a card ID and trigger onCardClick
+    // Check if this is a card ID and set it as active section
     const isCardId = defaultCards.some((card) => card.id === itemId)
-    if (isCardId && onCardClick) {
-      onCardClick(itemId)
+    if (isCardId) {
+      console.log('📍 Card ID detected, setting active section to:', itemId)
+      setActiveSection(itemId)
+      // Update URL to reflect the change
+      window.history.pushState({ section: itemId }, '', `/event/hub?section=${itemId}`)
+    } else {
+      console.log('⚠️ Not a card ID, ignoring:', itemId)
+    }
+  }, [])
+
+  const renderContent = () => {
+    console.log('🎨 renderContent called with activeSection:', activeSection)
+    switch (activeSection) {
+      case 'communications':
+        return (
+          <CommunicationPage
+            eventName={eventName}
+            isDraft={isDraft}
+            onBackClick={onBackClick}
+            userAvatarUrl={userAvatarUrl}
+            hideNavbarAndSidebar={true}
+          />
+        )
+      case 'resource-management':
+        return (
+          <ResourceManagementPage
+            eventName={eventName}
+            isDraft={isDraft}
+            onBackClick={onBackClick}
+            userAvatarUrl={userAvatarUrl}
+            hideNavbarAndSidebar={true}
+          />
+        )
+      case 'schedule-session':
+        return (
+          <SchedulePage
+            eventName={eventName}
+            isDraft={isDraft}
+            onBackClick={onBackClick}
+            userAvatarUrl={userAvatarUrl}
+            scheduleName="Schedule 1"
+            hideNavbarAndSidebar={true}
+          />
+        )
+      case 'event-website':
+        return (
+          <EventWebsitePage
+            onBackClick={onBackClick}
+            userAvatarUrl={userAvatarUrl}
+            hideNavbarAndSidebar={true}
+          />
+        )
+      case 'attendee-management':
+      case 'analytics':
+      case 'website-settings':
+        // Placeholder for pages that haven't been implemented yet
+        return (
+          <div className="min-h-screen flex items-center justify-center p-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-slate-700 mb-4">
+                {defaultCards.find(card => card.id === activeSection)?.title || 'Coming Soon'}
+              </h2>
+              <p className="text-slate-500">
+                This feature is coming soon.
+              </p>
+            </div>
+          </div>
+        )
+      case 'event-hub':
+      default:
+        return (
+          <EventHubContent
+            title="Event Hub"
+            cards={defaultCards}
+            onCardClick={(cardId) => {
+              setActiveSection(cardId)
+            }}
+          />
+        )
     }
   }
 
   return (
     <div className="h-screen overflow-hidden bg-white">
-      {/* Navbar */}
+      {/* Navbar - Uses eventData from context for consistency */}
       <EventHubNavbar
         eventName={eventName}
         isDraft={isDraft}
@@ -92,6 +197,11 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
         activeItemId={activeSection}
         onItemClick={handleSidebarItemClick}
       />
+
+      {/* Content Area */}
+      <div key={activeSection} className="md:pl-[250px] pt-16 min-h-screen overflow-auto">
+        {renderContent()}
+      </div>
     </div>
   )
 }

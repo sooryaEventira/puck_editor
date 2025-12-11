@@ -63,10 +63,10 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
       const { session } = schedule
       const haystack = [
         schedule.name,
-        session.location,
-        session.sessionType,
-        session.title,
-        ...session.tags
+        session?.location,
+        session?.sessionType,
+        session?.title,
+        ...(session?.tags || [])
       ]
         .filter(Boolean)
         .join(' ')
@@ -180,10 +180,37 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
   const currentColumns = scheduleColumns
 
   const emptyState = (
-    <div className="flex min-h-[280px] items-center justify-center px-6 py-10 text-sm text-slate-500">
-      {schedules.length === 0
-        ? 'No schedules have been saved yet.'
-        : 'No schedules match your search.'}
+    <div className="flex min-h-[400px] flex-col items-center justify-center px-6 py-16">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+          <svg
+            className="h-8 w-8 text-slate-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+            />
+          </svg>
+        </div>
+        <div className="space-y-2">
+          <p className="text-base font-semibold text-slate-900">
+            {schedules.length === 0
+              ? 'No schedules have been saved yet'
+              : 'No schedules match your search'}
+          </p>
+          <p className="text-sm text-slate-500 max-w-sm">
+            {schedules.length === 0
+              ? 'Get started by creating your first schedule or uploading an existing one.'
+              : 'Try adjusting your search terms or filters to find what you\'re looking for.'}
+          </p>
+        </div>
+      </div>
     </div>
   )
 
@@ -217,9 +244,9 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
   }
 
   return (
-    <div className="space-y-8 px-4 pb-12 pt-28 md:px-10 lg:px-16">
+    <div className="space-y-8 px-4 pb-12 pt-8 md:px-10 lg:px-16">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-[26px] font-semibold text-primary-dark">Schedules</h1>
+        <h1 className="text-[26px] font-bold text-primary-dark">Schedules/Session</h1>
         <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
           <button
             type="button"
@@ -232,7 +259,7 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
           <button
             type="button"
             onClick={handleUploadClick}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-[#5A1684] transition"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition"
           >
             <Upload01 className="h-4 w-4" />
             Upload
@@ -250,11 +277,13 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
         sortDescriptor={sortDescriptors}
         onSortChange={handleSortChange}
         footer={
-          <TablePagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
+          filteredSchedules.length > 0 ? (
+            <TablePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          ) : undefined
         }
       />
 

@@ -60,7 +60,7 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
   }
 
   return (
-    <main className="relative mt-16 w-full bg-white px-4 pb-10 pt-8 md:px-8">
+    <main className="relative w-full bg-white px-4 pb-10 pt-8 md:px-8">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
           {onBack && (

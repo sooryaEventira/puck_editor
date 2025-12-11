@@ -27,23 +27,27 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
 }) => {
   const [isMobileOpen, setIsMobileOpen] = React.useState(false)
   const [expandedItems, setExpandedItems] = React.useState<string[]>([])
+  
+  // Normalize activeItemId - use default if undefined or empty
+  const normalizedActiveItemId = activeItemId || 'event-hub'
 
-  // Keep parent items expanded if any of their sub-items are active
+  // Keep parent items expanded if they are active or if any of their sub-items are active
+  // Also clear expanded items that are no longer relevant
   React.useEffect(() => {
+    const newExpandedItems: string[] = []
+    
     items.forEach((item) => {
       if (item.subItems && item.subItems.length > 0) {
-        const hasActiveSubItem = item.subItems.some((subItem) => subItem.id === activeItemId)
-        if (hasActiveSubItem) {
-          setExpandedItems((prev) => {
-            if (!prev.includes(item.id)) {
-              return [...prev, item.id]
-            }
-            return prev
-          })
+        const isParentActive = item.id === normalizedActiveItemId
+        const hasActiveSubItem = item.subItems.some((subItem) => subItem.id === normalizedActiveItemId)
+        if (isParentActive || hasActiveSubItem) {
+          newExpandedItems.push(item.id)
         }
       }
     })
-  }, [activeItemId, items])
+    
+    setExpandedItems(newExpandedItems)
+  }, [normalizedActiveItemId, items])
 
   const handleItemClick = (itemId: string, hasSubItems: boolean) => {
     if (hasSubItems) {
@@ -105,10 +109,15 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
       >
         <div className="py-5">
           {items.map((item) => {
-            const isActive = item.id === activeItemId
+            // Check if this item itself is active
+            const isActive = item.id === normalizedActiveItemId
+            // Check if any of this item's sub-items are active
+            const isActiveSubItem = item.subItems?.some((subItem) => subItem.id === normalizedActiveItemId)
+            // Only highlight if this item is active OR it has an active sub-item
+            const shouldHighlight = isActive || isActiveSubItem
+            
             const hasSubs = hasSubItems(item)
             const isItemExpanded = isExpanded(item.id)
-            const isActiveSubItem = item.subItems?.some((subItem) => subItem.id === activeItemId)
 
             return (
               <div key={item.id}>
@@ -116,7 +125,7 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
                   type="button"
                   onClick={() => handleItemClick(item.id, hasSubs)}
                   className={`group flex w-full transform items-center gap-3 border-l-4 px-6 py-3.5 text-left transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-                    isActive || isActiveSubItem
+                    shouldHighlight
                       ? 'border-l-primary bg-slate-100 shadow-md translate-x-[2px] font-semibold text-slate-700'
                       : 'border-l-transparent text-slate-600 hover:border-l-slate-300 hover:bg-slate-100 hover:text-slate-700 hover:translate-x-[2px] hover:shadow-md'
                   }`}
@@ -145,7 +154,7 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
                 {hasSubs && isItemExpanded && (
                   <div className="bg-slate-50/50">
                     {item.subItems!.map((subItem) => {
-                      const isSubActive = subItem.id === activeItemId
+                      const isSubActive = subItem.id === normalizedActiveItemId
                       return (
                         <button
                           key={subItem.id}
