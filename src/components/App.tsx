@@ -212,11 +212,20 @@ const App: React.FC = () => {
       }
       
       // Complete setup and authenticate user
+      // Set authentication state first
       setIsAuthenticated(true)
       localStorage.setItem('isAuthenticated', 'true')
+      
+      // Hide eventspace setup page
       setShowEventspaceSetup(false)
+      
       // Navigate to dashboard
       setCurrentView('dashboard')
+      
+      // Show success message
+      showToast.success('Organization created successfully!')
+      
+      logger.debug('✅ Organization created, navigating to dashboard')
     } catch (error) {
       // Error is already handled in authService with toast
       // Set local error state for UI display

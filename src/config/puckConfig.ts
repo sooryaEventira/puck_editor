@@ -7,8 +7,11 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import {
-  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer
+  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer, RegistrationCTA, Sponsors, ContactFooter
 } from '../components/advanced'
+import RegistrationCTA from '../components/advanced/RegistrationCTA'
+import Sponsors from '../components/advanced/Sponsors'
+import ContactFooter from '../components/advanced/ContactFooter'
 import TwoColumnContent from '../components/advanced/TwoColumnContent'
 import FeedbackForm from '../components/advanced/FeedbackForm'
 import ImageSimple from '../components/advanced/ImageSimple'
@@ -102,12 +105,12 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
+      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "RegistrationCTA", "Sponsors", "ContactFooter", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["HeroSection", "HeroVideo", "SchedulePage", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm"]
+          components: ["HeroSection", "HeroVideo", "SchedulePage", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "RegistrationCTA", "Sponsors", "ContactFooter", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm"]
         },
         media: {
           title: "Media",
@@ -1115,6 +1118,20 @@ export const config = {
     SpeakersSection: {
       label: "👥 Speakers Section",
       fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Section Title',
+          placeholder: 'Speakers',
+          contentEditable: true
+        },
+        showTitle: {
+          type: 'radio' as const,
+          label: 'Show Title',
+          options: [
+            { label: 'Yes', value: true },
+            { label: 'No', value: false }
+          ]
+        },
         speakers: {
           type: 'array' as const,
           label: 'Speakers',
@@ -1142,15 +1159,27 @@ export const config = {
         padding: {
           type: 'text' as const,
           label: 'Padding',
-          placeholder: '4rem 2rem'
+          placeholder: '0 2rem'
         },
         gap: {
           type: 'text' as const,
           label: 'Gap Between Cards',
           placeholder: '2rem'
+        },
+        containerMaxWidth: {
+          type: 'text' as const,
+          label: 'Container Max Width',
+          placeholder: 'max-w-7xl'
+        },
+        containerPadding: {
+          type: 'text' as const,
+          label: 'Container Padding',
+          placeholder: 'px-4 sm:px-6 lg:px-8 py-8'
         }
       },
       defaultProps: {
+        title: 'Speakers',
+        showTitle: true,
         speakers: [
           {
             name: 'Dr. Jane Doe',
@@ -1170,7 +1199,9 @@ export const config = {
         ],
         backgroundColor: '#ffffff',
         padding: '0 2rem',
-        gap: '2rem'
+        gap: '2rem',
+        containerMaxWidth: 'max-w-7xl',
+        containerPadding: 'px-4 sm:px-6 lg:px-8 py-8'
       },
       render: SpeakersSection
     },
@@ -1651,136 +1682,392 @@ export const config = {
            },
           render: FAQSection
         },
-        FAQAccordion: {
-          label: "🔽 FAQ Accordion",
-          fields: {
+    FAQAccordion: {
+      label: "🔽 FAQ Accordion",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Title',
+          placeholder: 'Frequently Asked Questions',
+          contentEditable: true
+        },
+        description: {
+          type: 'textarea' as const,
+          label: 'Description',
+          placeholder: 'Everything you need to know about the product and billing...',
+          contentEditable: true
+        },
+        faqs: {
+          type: 'array' as const,
+          label: 'FAQ Items',
+          arrayFields: {
+            question: {
+              type: 'text' as const,
+              label: 'Question',
+              placeholder: 'What is this service about?',
+              contentEditable: true
+            },
+            answer: {
+              type: 'textarea' as const,
+              label: 'Answer',
+              placeholder: 'This service provides comprehensive solutions...',
+              contentEditable: true
+            }
+          }
+        },
+        allowMultiple: {
+          type: 'radio' as const,
+          label: 'Allow Multiple Open',
+          options: [
+            { label: 'Single (close others)', value: false },
+            { label: 'Multiple (keep others open)', value: true }
+          ]
+        },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color',
+          placeholder: '#ffffff'
+        },
+        textColor: {
+          type: 'text' as const,
+          label: 'Text Color',
+          placeholder: '#333333'
+        },
+        questionColor: {
+          type: 'text' as const,
+          label: 'Question Color',
+          placeholder: '#1f2937'
+        },
+        answerColor: {
+          type: 'text' as const,
+          label: 'Answer Color',
+          placeholder: '#6b7280'
+        },
+        borderColor: {
+          type: 'text' as const,
+          label: 'Border Color',
+          placeholder: '#e5e7eb'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '3rem 2rem'
+        },
+        spacing: {
+          type: 'text' as const,
+          label: 'Spacing Between Items',
+          placeholder: '1rem'
+        },
+        iconColor: {
+          type: 'text' as const,
+          label: 'Icon Color',
+          placeholder: '#8b5cf6'
+        },
+        hoverColor: {
+          type: 'text' as const,
+          label: 'Hover Background Color',
+          placeholder: '#f8fafc'
+        },
+        containerMaxWidth: {
+          type: 'text' as const,
+          label: 'Container Max Width',
+          placeholder: 'max-w-7xl'
+        },
+        containerPadding: {
+          type: 'text' as const,
+          label: 'Container Padding',
+          placeholder: 'px-4 sm:px-6 lg:px-8 py-8'
+        }
+      },
+      defaultProps: {
+        title: 'Frequently Asked Questions',
+        description: "Everything you need to know about the product and billing. Can't find the answer you're looking for? Please chat to our friendly team.",
+        faqs: [
+          {
+            id: '1',
+            question: 'What is this service about?',
+            answer: 'This service provides comprehensive solutions for your business needs. We offer a wide range of features and support to help you achieve your goals.'
+          },
+          {
+            id: '2',
+            question: 'How do I get started?',
+            answer: 'Getting started is easy! Simply sign up for an account, complete the onboarding process, and you\'ll be ready to use all our features within minutes.'
+          },
+          {
+            id: '3',
+            question: 'Is there a free trial available?',
+            answer: 'Yes, we offer a 30-day free trial for all new users. No credit card required to start your trial period.'
+          },
+          {
+            id: '4',
+            question: 'What kind of support do you provide?',
+            answer: 'We provide 24/7 customer support through email, chat, and phone. Our support team is always ready to help you with any questions or issues.'
+          },
+          {
+            id: '5',
+            question: 'Can I cancel my subscription anytime?',
+            answer: 'Absolutely! You can cancel your subscription at any time from your account settings. There are no cancellation fees or long-term contracts.'
+          }
+        ],
+        allowMultiple: false,
+        backgroundColor: '#ffffff',
+        textColor: '#333333',
+        questionColor: '#1f2937',
+        answerColor: '#6b7280',
+        borderColor: '#e5e7eb',
+        padding: '3rem 2rem',
+        spacing: '1rem',
+        iconColor: '#8b5cf6',
+        hoverColor: '#f8fafc',
+        containerMaxWidth: 'max-w-7xl',
+        containerPadding: 'px-4 sm:px-6 lg:px-8 py-8'
+      },
+      render: FAQAccordion
+        },
+    RegistrationCTA: {
+      label: "📢 Registration CTA",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Title',
+          placeholder: 'Register now to enjoy exclusive benefits!',
+          contentEditable: true
+        },
+        subtitle: {
+          type: 'text' as const,
+          label: 'Subtitle',
+          placeholder: "Don't miss out on this opportunity, join us today!",
+          contentEditable: true
+        },
+        buttonText: {
+          type: 'text' as const,
+          label: 'Button Text',
+          placeholder: 'Register Now',
+          contentEditable: true
+        },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color',
+          placeholder: '#6938EF'
+        },
+        textColor: {
+          type: 'text' as const,
+          label: 'Text Color',
+          placeholder: '#ffffff'
+        },
+        buttonColor: {
+          type: 'text' as const,
+          label: 'Button Color',
+          placeholder: '#6938EF'
+        },
+        buttonBorderColor: {
+          type: 'text' as const,
+          label: 'Button Border Color',
+          placeholder: '#8b5cf6'
+        }
+      },
+      defaultProps: {
+        title: "Register now to enjoy exclusive benefits!",
+        subtitle: "Don't miss out on this opportunity, join us today!",
+        buttonText: "Register Now",
+        backgroundColor: "#6938EF",
+        textColor: "#ffffff",
+        buttonColor: "#6938EF",
+        buttonBorderColor: "#8b5cf6"
+      },
+      render: RegistrationCTA
+    },
+    Sponsors: {
+      label: "🏢 Sponsors",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Title',
+          placeholder: 'Our Sponsors',
+          contentEditable: true
+        },
+        sponsors: {
+          type: 'array' as const,
+          label: 'Sponsors',
+          arrayFields: {
+            id: {
+              type: 'text' as const,
+              label: 'ID',
+              placeholder: 'sponsor-1'
+            },
+            name: {
+              type: 'text' as const,
+              label: 'Name',
+              placeholder: 'Sponsor Name',
+              contentEditable: true
+            },
+            logoUrl: {
+              type: 'text' as const,
+              label: 'Logo URL',
+              placeholder: 'https://example.com/logo.png'
+            }
+          }
+        },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color',
+          placeholder: '#ffffff'
+        },
+        textColor: {
+          type: 'text' as const,
+          label: 'Text Color',
+          placeholder: '#1f2937'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '3rem 2rem'
+        }
+      },
+      defaultProps: {
+        title: "Our Sponsors",
+        sponsors: [
+          { id: '1', name: 'Sponsor 1', logoUrl: '' },
+          { id: '2', name: 'Sponsor 2', logoUrl: '' },
+          { id: '3', name: 'Sponsor 3', logoUrl: '' },
+          { id: '4', name: 'Sponsor 4', logoUrl: '' }
+        ],
+        backgroundColor: "#ffffff",
+        textColor: "#1f2937",
+        padding: "3rem 2rem"
+      },
+      render: Sponsors
+    },
+    ContactFooter: {
+      label: "📞 Contact Footer",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Title',
+          placeholder: 'Contact Us',
+          contentEditable: true
+        },
+        items: {
+          type: 'array' as const,
+          label: 'Contact Items',
+          arrayFields: {
+            id: {
+              type: 'text' as const,
+              label: 'ID',
+              placeholder: 'item-1'
+            },
+            type: {
+              type: 'select' as const,
+              label: 'Type',
+              options: [
+                { label: 'Email', value: 'email' },
+                { label: 'Office', value: 'office' },
+                { label: 'Phone', value: 'phone' }
+              ]
+            },
             title: {
               type: 'text' as const,
               label: 'Title',
-              placeholder: 'Frequently Asked Questions',
+              placeholder: 'Email',
               contentEditable: true
             },
-            subtitle: {
+            description: {
               type: 'text' as const,
-              label: 'Subtitle',
-              placeholder: 'Find answers to common questions below',
+              label: 'Description',
+              placeholder: 'Our friendly team is here to help.',
               contentEditable: true
             },
-            faqs: {
-              type: 'array' as const,
-              label: 'FAQ Items',
-              arrayFields: {
-                question: {
-                  type: 'text' as const,
-                  label: 'Question',
-                  placeholder: 'What is this service about?',
-                  contentEditable: true
-                },
-                answer: {
-                  type: 'textarea' as const,
-                  label: 'Answer',
-                  placeholder: 'This service provides comprehensive solutions...',
-                  contentEditable: true
-                }
-              }
-            },
-            allowMultiple: {
-              type: 'radio' as const,
-              label: 'Allow Multiple Open',
-              options: [
-                { label: 'Single (close others)', value: false },
-                { label: 'Multiple (keep others open)', value: true }
-              ]
-            },
-            backgroundColor: {
+            actionText: {
               type: 'text' as const,
-              label: 'Background Color',
-              placeholder: '#ffffff'
+              label: 'Action Text',
+              placeholder: 'Send us an email',
+              contentEditable: true
             },
-            textColor: {
+            actionEmail: {
               type: 'text' as const,
-              label: 'Text Color',
-              placeholder: '#333333'
+              label: 'Action Email',
+              placeholder: 'contact@example.com'
             },
-            questionColor: {
+            actionUrl: {
               type: 'text' as const,
-              label: 'Question Color',
-              placeholder: '#1f2937'
+              label: 'Action URL',
+              placeholder: '#'
             },
-            answerColor: {
+            actionPhone: {
               type: 'text' as const,
-              label: 'Answer Color',
-              placeholder: '#6b7280'
-            },
-            borderColor: {
-              type: 'text' as const,
-              label: 'Border Color',
-              placeholder: '#e5e7eb'
-            },
-            padding: {
-              type: 'text' as const,
-              label: 'Padding',
-              placeholder: '3rem 2rem'
-            },
-            spacing: {
-              type: 'text' as const,
-              label: 'Spacing Between Items',
-              placeholder: '1rem'
-            },
-            iconColor: {
-              type: 'text' as const,
-              label: 'Icon Color',
-              placeholder: '#8b5cf6'
-            },
-            hoverColor: {
-              type: 'text' as const,
-              label: 'Hover Background Color',
-              placeholder: '#f8fafc'
+              label: 'Action Phone',
+              placeholder: '+1 (555) 000-0000'
             }
-          },
-          defaultProps: {
-            title: 'Frequently Asked Questions',
-            subtitle: 'Find answers to common questions below',
-            faqs: [
-              {
-                id: '1',
-                question: 'What is this service about?',
-                answer: 'This service provides comprehensive solutions for your business needs. We offer a wide range of features and support to help you achieve your goals.'
-              },
-              {
-                id: '2',
-                question: 'How do I get started?',
-                answer: 'Getting started is easy! Simply sign up for an account, complete the onboarding process, and you\'ll be ready to use all our features within minutes.'
-              },
-              {
-                id: '3',
-                question: 'Is there a free trial available?',
-                answer: 'Yes, we offer a 30-day free trial for all new users. No credit card required to start your trial period.'
-              },
-              {
-                id: '4',
-                question: 'What kind of support do you provide?',
-                answer: 'We provide 24/7 customer support through email, chat, and phone. Our support team is always ready to help you with any questions or issues.'
-              },
-              {
-                id: '5',
-                question: 'Can I cancel my subscription anytime?',
-                answer: 'Absolutely! You can cancel your subscription at any time from your account settings. There are no cancellation fees or long-term contracts.'
-              }
-            ],
-            allowMultiple: false,
-            backgroundColor: '#ffffff',
-            textColor: '#333333',
-            questionColor: '#1f2937',
-            answerColor: '#6b7280',
-            borderColor: '#e5e7eb',
-            padding: '3rem 2rem',
-            spacing: '1rem',
-            iconColor: '#8b5cf6',
-            hoverColor: '#f8fafc'
-          },
-          render: FAQAccordion
+          }
         },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color',
+          placeholder: '#ffffff'
+        },
+        textColor: {
+          type: 'text' as const,
+          label: 'Text Color',
+          placeholder: '#1f2937'
+        },
+        iconColor: {
+          type: 'text' as const,
+          label: 'Icon Color',
+          placeholder: '#6938EF'
+        },
+        buttonColor: {
+          type: 'text' as const,
+          label: 'Button Color',
+          placeholder: '#6938EF'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '3rem 2rem'
+        },
+        copyrightText: {
+          type: 'text' as const,
+          label: 'Copyright Text',
+          placeholder: 'Copyright © 2024',
+          contentEditable: true
+        }
+      },
+      defaultProps: {
+        items: [
+          {
+            id: '1',
+            type: 'email',
+            title: 'Email',
+            description: "Our friendly team is here to help.",
+            actionText: 'Send us an email',
+            actionEmail: 'contact@example.com'
+          },
+          {
+            id: '2',
+            type: 'office',
+            title: 'Office',
+            description: 'Come and say hello at our office HQ.',
+            actionText: 'View on map',
+            actionUrl: '#'
+          },
+          {
+            id: '3',
+            type: 'phone',
+            title: 'Phone',
+            description: 'Mon-Fri from 8am to 5pm.',
+            actionText: 'Call us now',
+            actionPhone: '+1 (555) 000-0000'
+          }
+        ],
+        backgroundColor: "#ffffff",
+        textColor: "#1f2937",
+        iconColor: "#6938EF",
+        buttonColor: "#6938EF",
+        padding: "3rem 2rem",
+        copyrightText: "Copyright © 2024"
+      },
+      render: ContactFooter
+    },
     FeedbackForm: {
       label: "📝 Feedback Form",
       fields: {

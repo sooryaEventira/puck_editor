@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useEventForm } from '../../contexts/EventFormContext'
-import TwoColumnContent from '../advanced/TwoColumnContent'
+import HeroSection from '../advanced/HeroSection'
+import AboutSection from '../advanced/AboutSection'
 import SpeakersSection from '../advanced/SpeakersSection'
-import PricingPlans from '../advanced/PricingPlans'
+import RegistrationCTA from '../advanced/RegistrationCTA'
+import Sponsors from '../advanced/Sponsors'
+import FAQAccordion from '../advanced/FAQAccordion'
+import ContactFooter from '../advanced/ContactFooter'
 
 const TemplateSelectionPage: React.FC = () => {
   const { eventData } = useEventForm()
@@ -92,68 +96,73 @@ const TemplateSelectionPage: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="pt-20 pb-24 w-full overflow-x-hidden">
-        {/* Banner Section - Fixed Dimensions */}
-        <div className="w-full relative px-4 sm:px-6 lg:px-8">
-          {bannerUrl ? (
-            <img
-              src={bannerUrl}
-              alt="Event banner"
-              className="w-full h-[500px] object-cover rounded-[12px]"
-              onError={(e) => {
-                // Fallback if image fails to load
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600'
-              }}
-            />
-          ) : (
-            <img
-              src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600"
-              alt="Default banner"
-              className="w-full h-[500px] object-cover rounded-[12px]"
-            />
-          )}
-          
-          {/* Overlay Content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-10 px-4">
-            {/* Title and Subtitle */}
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center px-4 drop-shadow-lg">
-              {eventData?.eventName || 'HIC 2025'}
-            </h1>
-            <p className="text-lg md:text-xl mb-6 text-center px-4 drop-shadow-md">
-              {eventData?.location || 'New York, NY'} | {formatEventDate()}
-            </p>
-            
-            {/* Register Button */}
-            <button className="px-8 py-3 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-semibold rounded-lg transition-colors shadow-lg">
-              Register Now
-            </button>
-          </div>
-          
-          {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-black/40 rounded-[12px] z-0" />
+      <main className="pt-20 pb-24 w-full overflow-x-hidden bg-white">
+        {/* Hero Section */}
+        <div className="w-full">
+          <HeroSection
+            title={eventData?.eventName || 'HIC 2025'}
+            subtitle={`${eventData?.location || 'New York, NY'} | ${formatEventDate()}`}
+            buttons={[
+              {
+                text: 'Register Now',
+                link: '#register',
+                color: '#6938EF',
+                textColor: 'white',
+                size: 'large'
+              }
+            ]}
+            backgroundColor="#1a1a1a"
+            textColor="#FFFFFF"
+            backgroundImage={bannerUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'}
+            height="500px"
+            alignment="center"
+            overlayOpacity={0.4}
+          />
         </div>
 
-        {/* Two Column Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <TwoColumnContent
-            leftTitle="About the event"
-            leftContent="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
-            rightTitle="Sponsor"
-            rightContent="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
-            showRightIcon={true}
+        {/* About Section */}
+        <div className="w-full">
+          <AboutSection
+            leftTitle="About Event"
+            leftText="We are dedicated to providing innovative solutions that help our clients achieve their goals and drive success in their respective industries."
           />
         </div>
 
         {/* Speakers Section */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-slate-900">Speakers</h2>
-          </div>
-          <SpeakersSection speakers={defaultSpeakers} />
+        <div className="w-full">
+          <SpeakersSection 
+            speakers={defaultSpeakers}
+            title="Speakers"
+            showTitle={true}
+            containerMaxWidth="max-w-7xl"
+            containerPadding="px-4 sm:px-6 lg:px-8 py-8"
+          />
         </div>
 
-        {/* Pricing Plans */}
-        <PricingPlans />
+        {/* Registration CTA */}
+        <div className="w-full">
+          <RegistrationCTA />
+        </div>
+
+        {/* Sponsors Section */}
+        <div className="w-full">
+          <Sponsors />
+        </div>
+
+        {/* FAQ Accordion */}
+        <div className="w-full">
+          <FAQAccordion
+            title="Frequently Asked Questions"
+            description="Everything you need to know about the product and billing. Can't find the answer you're looking for? Please chat to our friendly team"
+            containerMaxWidth="max-w-7xl"
+            containerPadding="px-4 sm:px-6 lg:px-8 py-8"
+          />
+        </div>
+
+        {/* Contact Footer */}
+        <div className="w-full">
+          <ContactFooter />
+        </div>
       </main>
 
       {/* Footer with Previous and Next buttons */}

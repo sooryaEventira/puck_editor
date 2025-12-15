@@ -84,108 +84,15 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
     }
   }
 
-  // Sample data - in a real app, this would come from an API or state management
-  const [communications] = React.useState<Communication[]>([
-    {
-      id: '1',
-      title: 'Attendee Invitation',
-      userGroups: [{ id: '1', name: 'Attendees', variant: 'primary' }],
-      status: 'sent',
-      type: 'email',
-      recipients: { sent: 120, total: 122 }
-    },
-    {
-      id: '2',
-      title: 'Permissions',
-      userGroups: [
-        { id: '2', name: 'Speakers', variant: 'primary' },
-        { id: '3', name: 'Group 2', variant: 'secondary' }
-      ],
-      status: 'sent',
-      type: 'notification',
-      recipients: { sent: 120, total: 122 }
-    },
-    {
-      id: '3',
-      title: 'Register reminder 1',
-      userGroups: [
-        { id: '1', name: 'Speakers', variant: 'primary' },
-        { id: '2', name: 'Attendees', variant: 'primary' },
-        { id: '3', name: 'Sponsors', variant: 'primary' }
-      ],
-      status: 'scheduled',
-      type: 'email',
-      recipients: { sent: 120, total: 122 },
-      scheduledDate: '2025-10-24T08:00:00'
-    },
-    {
-      id: '4',
-      title: 'Register reminder 2',
-      userGroups: [
-        { id: '1', name: 'Attendees', variant: 'primary' },
-        { id: '2', name: 'not', variant: 'secondary' },
-        { id: '3', name: 'Loggedin', variant: 'secondary' }
-      ],
-      status: 'draft',
-      type: 'email',
-      recipients: { sent: 120, total: 122 }
-    },
-    {
-      id: '5',
-      title: 'Complete profile',
-      userGroups: [
-        { id: '1', name: 'Attendees', variant: 'primary' },
-        { id: '2', name: 'not', variant: 'secondary' },
-        { id: '3', name: 'LoggedIn', variant: 'secondary' }
-      ],
-      status: 'scheduled',
-      type: 'notification',
-      recipients: { sent: 120, total: 122 },
-      scheduledDate: '2025-10-25T10:00:00'
-    },
-    {
-      id: '6',
-      title: 'Session reminder',
-      userGroups: [
-        { id: '1', name: 'Attendees', variant: 'primary' },
-        { id: '2', name: 'Speakers', variant: 'primary' },
-        { id: '3', name: 'Session 1', variant: 'secondary' }
-      ],
-      status: 'draft',
-      type: 'notification',
-      recipients: { sent: 120, total: 122 }
-    },
-    {
-      id: '7',
-      title: 'Changes update',
-      userGroups: [{ id: '1', name: 'All', variant: 'secondary' }],
-      status: 'sent',
-      type: 'notification',
-      recipients: { sent: 120, total: 122 }
-    },
-    {
-      id: '8',
-      title: 'Template test',
-      userGroups: [{ id: '1', name: 'User 2', variant: 'primary' }],
-      status: 'draft',
-      type: 'email',
-      recipients: { sent: 120, total: 122 }
-    }
-  ])
+  const [communications, setCommunications] = React.useState<Communication[]>([])
 
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = React.useState(false)
   const [isCreateMacroModalOpen, setIsCreateMacroModalOpen] = React.useState(false)
   const [showComposer, setShowComposer] = React.useState(false)
   const [selectedBroadcastType, setSelectedBroadcastType] = React.useState<BroadcastType | null>(null)
+  const [currentDraftId, setCurrentDraftId] = React.useState<string | null>(null)
 
-  // Sample macro data - in a real app, this would come from props or API
-  const [macros] = React.useState<Macro[]>([
-    { id: '1', macro: '{{firstname}}', column: 'Firstname' },
-    { id: '2', macro: '{{lastname}}', column: 'Lastname' },
-    { id: '3', macro: '{{firstname_sponsors}}', column: 'Firstname' },
-    { id: '4', macro: '{{eventname}}', column: 'Eventname' },
-    { id: '5', macro: '{{lastname_sponsor}}', column: 'Lastname' }
-  ])
+  const [macros, setMacros] = React.useState<Macro[]>([])
 
   const handleCreateBroadcast = () => {
     setIsBroadcastModalOpen(true)
@@ -196,8 +103,12 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
   }
 
   const handleCreateMacroConfirm = (data: { name: string; source: string }) => {
-    console.log('Creating macro:', data)
-    // TODO: Implement create macro functionality
+    const newMacro: Macro = {
+      id: Date.now().toString(),
+      macro: `{{${data.name.toLowerCase()}}}`,
+      column: data.name
+    }
+    setMacros((prev) => [...prev, newMacro])
     setIsCreateMacroModalOpen(false)
   }
 
@@ -205,19 +116,44 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
     setSelectedBroadcastType(type)
     setIsBroadcastModalOpen(false)
     setShowComposer(true)
+    setCurrentDraftId(null) // Reset draft ID when creating new
   }
 
   const handleComposerCancel = () => {
     setShowComposer(false)
     setSelectedBroadcastType(null)
+    setCurrentDraftId(null)
   }
 
   const handleComposerSave = (data: { subject: string; message: string; templateType?: string }) => {
-    console.log('Saving broadcast:', { ...data, type: selectedBroadcastType })
-    // TODO: Implement save functionality
+    if (currentDraftId) {
+      // Update existing draft
+      setCommunications((prev) =>
+        prev.map((comm) =>
+          comm.id === currentDraftId
+            ? {
+                ...comm,
+                title: data.subject,
+                // Keep other fields as is
+              }
+            : comm
+        )
+      )
+    } else {
+      // Create new draft
+      const newId = Date.now().toString()
+      const newCommunication: Communication = {
+        id: newId,
+        title: data.subject,
+        userGroups: [], // Will be set when user selects groups
+        status: 'draft',
+        type: selectedBroadcastType === 'email' ? 'email' : 'notification',
+        recipients: { sent: 0, total: 0 }
+      }
+      setCommunications((prev) => [...prev, newCommunication])
+      setCurrentDraftId(newId)
+    }
     // Don't close the composer here, let it switch to view mode
-    // setShowComposer(false)
-    // setSelectedBroadcastType(null)
   }
 
   const handleEditCommunication = (communicationId: string) => {
@@ -256,10 +192,35 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
             onCancel={handleComposerCancel}
             onSave={handleComposerSave}
             onSend={(data) => {
-                console.log('Sending broadcast:', data)
-                // TODO: Implement send functionality
+                if (currentDraftId) {
+                  // Update existing draft to sent status
+                  setCommunications((prev) =>
+                    prev.map((comm) =>
+                      comm.id === currentDraftId
+                        ? {
+                            ...comm,
+                            title: data.subject,
+                            status: 'sent',
+                            // Update recipients if needed
+                          }
+                        : comm
+                    )
+                  )
+                } else {
+                  // Create new sent communication
+                  const newCommunication: Communication = {
+                    id: Date.now().toString(),
+                    title: data.subject,
+                    userGroups: [],
+                    status: 'sent',
+                    type: selectedBroadcastType === 'email' ? 'email' : 'notification',
+                    recipients: { sent: 0, total: 0 }
+                  }
+                  setCommunications((prev) => [...prev, newCommunication])
+                }
                 setShowComposer(false)
                 setSelectedBroadcastType(null)
+                setCurrentDraftId(null)
             }}
             macros={macros}
             templateType="late-message"
@@ -268,9 +229,17 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
         ) : (
           <CommunicationsTable
             communications={communications}
+            macros={macros}
             onCreateBroadcast={handleCreateBroadcast}
             onCreateMacro={handleCreateMacro}
             onEditCommunication={handleEditCommunication}
+            onEditMacro={(macroId) => {
+              console.log('Edit macro:', macroId)
+              // TODO: Implement edit macro functionality
+            }}
+            onDeleteMacro={(macroId) => {
+              setMacros((prev) => prev.filter((m) => m.id !== macroId))
+            }}
           />
         )}
       </div>

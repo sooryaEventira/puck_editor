@@ -9,6 +9,7 @@ interface FAQItem {
 interface FAQAccordionProps {
   title?: string
   subtitle?: string
+  description?: string
   faqs?: FAQItem[]
   allowMultiple?: boolean
   backgroundColor?: string
@@ -20,11 +21,13 @@ interface FAQAccordionProps {
   spacing?: string
   iconColor?: string
   hoverColor?: string
+  containerMaxWidth?: string
+  containerPadding?: string
 }
 
 const FAQAccordion: React.FC<FAQAccordionProps> = ({
   title = "Frequently Asked Questions",
-
+  description,
   faqs = [
     {
       id: '1',
@@ -61,7 +64,9 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({
   padding = '3rem 2rem',
   spacing = '1rem',
   iconColor = '#8b5cf6',
-  hoverColor = '#f8fafc'
+  hoverColor = '#f8fafc',
+  containerMaxWidth = 'max-w-7xl',
+  containerPadding = 'px-4 sm:px-6 lg:px-8 py-8'
 }) => {
   const [openItems, setOpenItems] = useState<Set<string>>(new Set())
 
@@ -216,18 +221,30 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({
           }
         `}
       </style>
-      <section style={containerStyle} className="w-full min-h-[400px] faq-accordion-container">
-        <div className="max-w-[800px] mx-auto faq-accordion-content">
+      <div className={`${containerMaxWidth} mx-auto ${containerPadding}`}>
+        <section style={containerStyle} className="w-full min-h-[400px] faq-accordion-container">
+          <div className="max-w-[800px] mx-auto faq-accordion-content">
           <div className="text-center mb-12 faq-accordion-header">
             <h2 
               style={{ color: questionColor }}
-              className="text-[clamp(1.75rem,4vw,2.5rem)] font-semibold mb-4 leading-tight faq-accordion-title"
+              className="text-[24px] font-bold mb-4 leading-tight faq-accordion-title"
               data-puck-field="title"
               contentEditable
               suppressContentEditableWarning={true}
             >
               {title}
             </h2>
+            {description && (
+              <p 
+                style={{ color: answerColor }}
+                className="text-base leading-relaxed opacity-80 max-w-2xl mx-auto"
+                data-puck-field="description"
+                contentEditable
+                suppressContentEditableWarning={true}
+              >
+                {description}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col faq-accordion-list" style={{ gap: spacing }}>
@@ -245,7 +262,7 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({
                  >
                    <button
                      style={questionButtonStyle}
-                     className="w-full p-6 bg-transparent border-none cursor-pointer flex justify-between items-center text-left transition-all duration-300 text-lg font-semibold leading-snug faq-accordion-question focus:outline-none focus:shadow-none"
+                     className="w-full p-4 bg-transparent border-none cursor-pointer flex justify-between items-center text-left transition-all duration-300 text-lg font-semibold leading-snug faq-accordion-question focus:outline-none focus:shadow-none"
                      onClick={() => toggleItem(faq.id)}
                      data-puck-field={`faqs[${index}].question`}
                      contentEditable
@@ -279,6 +296,7 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({
           </div>
         </div>
       </section>
+      </div>
     </>
   )
 }

@@ -73,12 +73,15 @@ const formatEventDate = (startDate?: string): string => {
   }
 }
 
-// Default template data with HeroSection, AboutSection (TwoColumnContent equivalent), SpeakersSection, and PricingPlans
+// Default template data with HeroSection, AboutSection, SpeakersSection, Sponsors, RegistrationCTA, and ContactFooter
 const getDefaultTemplateData = (pageName: string = 'Page 1', eventData?: any) => {
   const heroId = generateId('HeroSection')
   const aboutId = generateId('AboutSection')
   const speakersId = generateId('SpeakersSection')
-  const pricingId = generateId('PricingPlans')
+  const registrationCTAId = generateId('RegistrationCTA')
+  const sponsorsId = generateId('Sponsors')
+  const faqId = generateId('FAQAccordion')
+  const contactFooterId = generateId('ContactFooter')
   
   // Get banner image from localStorage or use default
   const bannerUrl = localStorage.getItem('event-form-banner') || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'
@@ -118,28 +121,22 @@ const getDefaultTemplateData = (pageName: string = 'Page 1', eventData?: any) =>
         }
       },
       {
-        type: 'TwoColumnContent',
+        type: 'AboutSection',
         props: {
           id: aboutId,
-          leftTitle: 'About the event',
-          leftContent: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-          rightTitle: 'Sponsor',
-          rightContent: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-          showRightIcon: true,
+          leftTitle: 'About Event',
+          leftText: 'We are dedicated to providing innovative solutions that help our clients achieve their goals and drive success in their respective industries.',
           backgroundColor: '#ffffff',
-          textColor: '#000000',
-          titleColor: '#000000',
-          padding: '24px',
-          gap: '32px',
-          borderRadius: '8px',
-          borderColor: '#e3f2fd',
-          borderWidth: '1px'
+          textColor: '#333333',
+          padding: '3rem 2rem'
         }
       },
       {
         type: 'SpeakersSection',
         props: {
           id: speakersId,
+          title: 'Speakers',
+          showTitle: true,
           speakers: [
             {
               name: 'Speaker Name',
@@ -159,62 +156,113 @@ const getDefaultTemplateData = (pageName: string = 'Page 1', eventData?: any) =>
           ],
           backgroundColor: '#ffffff',
           padding: '0 2rem',
-          gap: '2rem'
+          gap: '2rem',
+          containerMaxWidth: 'max-w-7xl',
+          containerPadding: 'px-4 sm:px-6 lg:px-8 py-8'
         }
       },
       {
-        type: 'PricingPlans',
+        type: 'RegistrationCTA',
         props: {
-          id: pricingId,
-          plans: [
+          id: registrationCTAId,
+          title: "Register now to enjoy exclusive benefits!",
+          subtitle: "Don't miss out on this opportunity, join us today!",
+          buttonText: "Register Now",
+          backgroundColor: "#6938EF",
+          textColor: "#ffffff",
+          buttonColor: "#6938EF",
+          buttonBorderColor: "#8b5cf6"
+        }
+      },
+      {
+        type: 'Sponsors',
+        props: {
+          id: sponsorsId,
+          title: "Sponsors",
+          sponsors: [
+            { id: '1', name: 'Sponsor 1', logoUrl: '' },
+            { id: '2', name: 'Sponsor 2', logoUrl: '' },
+            { id: '3', name: 'Sponsor 3', logoUrl: '' },
+            { id: '4', name: 'Sponsor 4', logoUrl: '' }
+          ],
+          backgroundColor: "#ffffff",
+          textColor: "#1f2937",
+          padding: "3rem 2rem"
+        }
+      },
+      {
+        type: 'FAQAccordion',
+        props: {
+          id: faqId,
+          title: "Frequently Asked Questions",
+          description: "Everything you need to know about the product and billing. Can't find the answer you're looking for? Please chat to our friendly team",
+          faqs: [
             {
-              id: 'basic',
-              icon: '⚡',
-              title: 'Basic plan',
-              price: '$10',
-              billingNote: 'Billed annually.',
-              features: [
-                'Access to all basic features',
-                'Basic reporting and analytics',
-                'Up to 10 individual users',
-                '20 GB individual data',
-                'Basic chat and email support'
-              ],
-              buttonText: 'Get started'
+              id: '1',
+              question: 'What is this service about?',
+              answer: 'This service provides comprehensive solutions for your business needs.'
             },
             {
-              id: 'business',
-              icon: '📊',
-              title: 'Business plan',
-              price: '$20',
-              billingNote: 'Billed annually.',
-              features: [
-                '200+ integrations',
-                'Advanced reporting and analytics',
-                'Up to 20 individual users',
-                '40 GB individual data',
-                'Priority chat and email support'
-              ],
-              buttonText: 'Get started'
+              id: '2',
+              question: 'How do I get started?',
+              answer: 'Simply sign up and follow the onboarding process to get started.'
             },
             {
-              id: 'enterprise',
-              icon: '🏢',
-              title: 'Enterprise plan',
-              price: '$40',
-              billingNote: 'Billed annually.',
-              features: [
-                'Advanced custom fields',
-                'Audit log and data history',
-                'Unlimited individual users',
-                'Unlimited individual data',
-                'Personalized + priority service'
-              ],
-              buttonText: 'Get started'
+              id: '3',
+              question: 'What are the pricing options?',
+              answer: 'We offer flexible pricing plans to suit different needs and budgets.'
             }
           ],
-          backgroundColor: '#f3e8ff',
-          padding: '6rem 2rem'
+          allowMultiple: false,
+          backgroundColor: '#ffffff',
+          textColor: '#333333',
+          questionColor: '#1f2937',
+          answerColor: '#6b7280',
+          borderColor: '#e5e7eb',
+          padding: '3rem 2rem',
+          spacing: '1rem',
+          iconColor: '#8b5cf6',
+          hoverColor: '#f8fafc',
+          containerMaxWidth: 'max-w-7xl',
+          containerPadding: 'px-4 sm:px-6 lg:px-8 py-8'
+        }
+      },
+      {
+        type: 'ContactFooter',
+        props: {
+          id: contactFooterId,
+          items: [
+            {
+              id: '1',
+              type: 'email',
+              title: 'Email',
+              description: "Our friendly team is here to help.",
+              actionText: 'Send us an email',
+              actionEmail: 'contact@example.com'
+            },
+            {
+              id: '2',
+              type: 'office',
+              title: 'Office',
+              description: 'Come and say hello at our office HQ.',
+              actionText: 'View on map',
+              actionUrl: '#'
+            },
+            {
+              id: '3',
+              type: 'phone',
+              title: 'Phone',
+              description: 'Mon-Fri from 8am to 5pm.',
+              actionText: 'Call us now',
+              actionPhone: '+1 (555) 000-0000'
+            }
+          ],
+          backgroundColor: "#ffffff",
+          textColor: "#1f2937",
+          iconColor: "#6938EF",
+          buttonColor: "#6938EF",
+          padding: "3rem 2rem",
+          copyrightText: "Copyright © 2024"
         }
       }
     ],
@@ -424,21 +472,25 @@ export const usePageManagement = () => {
     }
     
     const contentTypes = data.content.map((c: any) => c.type)
-    const expectedTypes = ['HeroSection', 'TwoColumnContent', 'SpeakersSection', 'PricingPlans']
+    // New template structure: HeroSection, AboutSection, SpeakersSection, RegistrationCTA, Sponsors, FAQAccordion, ContactFooter
+    const expectedTypes = ['HeroSection', 'AboutSection', 'SpeakersSection', 'RegistrationCTA', 'Sponsors', 'FAQAccordion', 'ContactFooter']
     
     // Check if we have at least the expected components
     const hasHero = contentTypes.includes('HeroSection')
-    const hasTwoColumn = contentTypes.includes('TwoColumnContent')
+    const hasAbout = contentTypes.includes('AboutSection')
     const hasSpeakers = contentTypes.includes('SpeakersSection')
-    const hasPricing = contentTypes.includes('PricingPlans')
+    const hasRegistrationCTA = contentTypes.includes('RegistrationCTA')
+    const hasSponsors = contentTypes.includes('Sponsors')
+    const hasFAQ = contentTypes.includes('FAQAccordion')
+    const hasContactFooter = contentTypes.includes('ContactFooter')
     
     // If we have all expected components, it's the correct template
-    if (hasHero && hasTwoColumn && hasSpeakers && hasPricing) {
+    if (hasHero && hasAbout && hasSpeakers && hasRegistrationCTA && hasSponsors && hasFAQ && hasContactFooter) {
       return true
     }
     
-    // If we have unexpected components like HTMLContent or Heading, it's not the correct template
-    if (contentTypes.includes('HTMLContent') || contentTypes.includes('Heading')) {
+    // If we have old template components (TwoColumnContent, PricingPlans) or unexpected components, it's not the correct template
+    if (contentTypes.includes('TwoColumnContent') || contentTypes.includes('PricingPlans') || contentTypes.includes('HTMLContent') || contentTypes.includes('Heading')) {
       return false
     }
     
@@ -821,12 +873,19 @@ export const usePageManagement = () => {
           // Check if the cached data has the correct template structure
           if (!hasCorrectTemplateStructure(initialData)) {
             console.warn('⚠️ Cached data does not match expected template structure, replacing with default template')
+            console.log('📋 Old template components:', initialData?.content?.map((c: any) => c.type) || [])
+            // Clear the old cached data
+            localStorage.removeItem(cachedDataKey)
+            // Use new default template
             initialData = getDefaultTemplateData(pageInArray.name, eventData)
             // Save the corrected template to cache
             localStorage.setItem(cachedDataKey, JSON.stringify(initialData))
+            console.log('✅ Replaced with new template components:', initialData?.content?.map((c: any) => c.type) || [])
           }
         } catch (e) {
           logger.warn('loadPage: Failed to parse cached data:', e)
+          // If parsing fails, clear the corrupted cache
+          localStorage.removeItem(cachedDataKey)
         }
       }
       

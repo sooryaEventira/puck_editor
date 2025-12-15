@@ -16,6 +16,7 @@ interface TableHeaderProps {
   onFilterClick?: () => void
   showFilter?: boolean
   filterLabel?: string
+  customActions?: React.ReactNode
 }
 
 export const useTableHeader = ({
@@ -27,7 +28,8 @@ export const useTableHeader = ({
   onSearchChange,
   onFilterClick,
   showFilter = true,
-  filterLabel = 'Filter'
+  filterLabel = 'Filter',
+  customActions
 }: TableHeaderProps) => {
   return useMemo(
     () => {
@@ -74,6 +76,7 @@ export const useTableHeader = ({
               <SearchLg className="h-4 w-4 " strokeWidth={2} />
             </button>
           </div>
+          {customActions}
           {showFilter && (
             <button
               type="button"
@@ -94,7 +97,7 @@ export const useTableHeader = ({
         actions: tableHeaderActions
       }
     },
-    [tabs, activeTabId, searchQuery, searchPlaceholder, onTabChange, onSearchChange, onFilterClick, showFilter, filterLabel]
+    [tabs, activeTabId, searchQuery, searchPlaceholder, onTabChange, onSearchChange, onFilterClick, showFilter, filterLabel, customActions]
   )
 }
 

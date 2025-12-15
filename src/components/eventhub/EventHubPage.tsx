@@ -7,6 +7,7 @@ import CommunicationPage from './communication/CommunicationPage'
 import ResourceManagementPage from './resourcemanagement/ResourceManagementPage'
 import SchedulePage from './schedulesession/SchedulePage'
 import EventWebsitePage from './EventWebsitePage'
+import AttendeeManagementPage from './attendeemanagement/AttendeeManagementPage'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 
 interface EventHubPageProps {
@@ -149,6 +150,15 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
           />
         )
       case 'attendee-management':
+        return (
+          <AttendeeManagementPage
+            eventName={eventName}
+            isDraft={isDraft}
+            onBackClick={onBackClick}
+            userAvatarUrl={userAvatarUrl}
+            hideNavbarAndSidebar={true}
+          />
+        )
       case 'analytics':
       case 'website-settings':
         // Placeholder for pages that haven't been implemented yet

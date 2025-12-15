@@ -12,6 +12,7 @@ interface EventHubSidebarProps {
   items?: SidebarItem[]
   activeItemId?: string
   onItemClick?: (itemId: string) => void
+  isModalOpen?: boolean
 }
 
 const defaultItems: SidebarItem[] = [
@@ -23,7 +24,8 @@ const defaultItems: SidebarItem[] = [
 const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
   items = defaultItems,
   activeItemId = 'event-hub',
-  onItemClick
+  onItemClick,
+  isModalOpen = false
 }) => {
   const [isMobileOpen, setIsMobileOpen] = React.useState(false)
   const [expandedItems, setExpandedItems] = React.useState<string[]>([])
@@ -103,8 +105,10 @@ const EventHubSidebar: React.FC<EventHubSidebarProps> = ({
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-[999] h-screen w-[250px] border-r border-slate-200 bg-white shadow-md pt-20 transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed left-0 top-0 z-[999] h-screen w-[250px] border-r border-slate-200 bg-white shadow-md pt-20 transition-all duration-300 md:translate-x-0 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } ${
+          isModalOpen ? 'backdrop-blur-sm bg-white/80' : ''
         }`}
       >
         <div className="py-5">

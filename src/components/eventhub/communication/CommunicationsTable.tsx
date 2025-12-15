@@ -11,6 +11,7 @@ import { useMacroTableColumns } from './MacroTableColumns'
 
 interface CommunicationsTableProps {
   communications: Communication[]
+  macros?: Macro[]
   onCreateBroadcast: () => void
   onEditCommunication?: (communicationId: string) => void
   onCreateMacro?: () => void
@@ -20,20 +21,13 @@ interface CommunicationsTableProps {
 
 const CommunicationsTable: React.FC<CommunicationsTableProps> = ({
   communications,
+  macros = [],
   onCreateBroadcast,
   onEditCommunication,
   onCreateMacro,
   onEditMacro,
   onDeleteMacro
 }) => {
-  // Sample macro data - in a real app, this would come from props or API
-  const [macros] = useState<Macro[]>([
-    { id: '1', macro: '{{firstname}}', column: 'Firstname' },
-    { id: '2', macro: '{{lastname}}', column: 'Lastname' },
-    { id: '3', macro: '{{firstname_sponsors}}', column: 'Firstname' },
-    { id: '4', macro: '{{eventname}}', column: 'Eventname' },
-    { id: '5', macro: '{{lastname_sponsor}}', column: 'Lastname' }
-  ])
 
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<TableTab>('list')
@@ -263,9 +257,9 @@ const CommunicationsTable: React.FC<CommunicationsTableProps> = ({
   }, [activeTab])
 
   return (
-    <div className="space-y-8 px-4 pb-12 pt-8 md:px-10 lg:px-16">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-[26px] font-bold text-primary-dark">Communication</h1>
+    <div className="space-y-8 px-4 pb-12 pt-8 md:px-10 lg:px-16 ">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ">
+        <h1 className="text-[26px] font-bold text-primary-dark ">Communication</h1>
         <div className="flex items-center gap-3">
           <button
             type="button"

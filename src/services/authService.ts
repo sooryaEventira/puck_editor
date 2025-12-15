@@ -483,8 +483,18 @@ export const createOrganization = async (name: string): Promise<OrganizationData
         throw new Error(errorText)
       }
       
+      // Ensure status is 'success'
+      if (apiResponse.status !== 'success') {
+        const errorMessage = `Unexpected response status: ${apiResponse.status}. Expected 'success'.`
+        console.error('Unexpected response status:', apiResponse.status)
+        showToast.error('Server error: Unexpected response status.')
+        throw new Error(errorMessage)
+      }
+      
       // Extract organization data from the wrapped response
-      const responseData = apiResponse.data
+      // Response structure: { message: "", errors: [], data: { uuid, name }, status: "success" }
+      // Note: Sometimes the response may have nested data: { data: { data: { uuid, name } } }
+      let responseData: any = apiResponse.data
       
       // Check if data field is an empty string (backend issue)
       if (typeof responseData === 'string' && responseData === '') {
@@ -502,6 +512,12 @@ export const createOrganization = async (name: string): Promise<OrganizationData
         console.error('Full API response:', JSON.stringify(apiResponse, null, 2))
         showToast.error('Server error: Invalid organization data format.')
         throw new Error(errorMessage)
+      }
+      
+      // Handle nested data structure: if responseData has a 'data' property with uuid, use that instead
+      if (responseData.data && typeof responseData.data === 'object' && responseData.data.uuid) {
+        console.log('Detected nested data structure, extracting from responseData.data')
+        responseData = responseData.data
       }
       
       // Validate required fields (uuid and name)

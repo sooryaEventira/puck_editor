@@ -45,6 +45,7 @@ export interface DividerLineTableProps<TData> {
   sortDescriptor?: DividerLineTableSortDescriptor
   onSortChange?: (descriptor: DividerLineTableSortDescriptor) => void
   initialSortDescriptor?: DividerLineTableSortDescriptor
+  onRowClick?: (item: TData, index: number) => void
 }
 
 interface SortIconProps {
@@ -144,7 +145,8 @@ export function DividerLineTable<TData>({
   size = 'md',
   sortDescriptor: controlledSortDescriptor,
   onSortChange,
-  initialSortDescriptor
+  initialSortDescriptor,
+  onRowClick
 }: DividerLineTableProps<TData>) {
   const isControlled = typeof controlledSortDescriptor !== 'undefined'
   const [internalSort, setInternalSort] = useState<DividerLineTableSortDescriptor | undefined>(
@@ -215,16 +217,22 @@ export function DividerLineTable<TData>({
         </TableCardHeader>
       )}
 
-      <TableCardBody className={twMerge('border border-slate-200', bodyClassName)}>
-        <Table>
+      <TableCardBody className={twMerge(
+        sortedData.length === 0 ? '' : 'border border-slate-200',
+        bodyClassName
+      )}>
+        <Table className={sortedData.length === 0 ? 'border-collapse' : ''}>
           <TableHeader>
             <TableRow>
-              {columns.map((column) => (
+              {columns.map((column, index) => (
                 <TableHead
                   key={column.id}
                   scope="col"
                   className={twMerge(
                     'px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold uppercase tracking-wide text-primary border-b border-slate-200',
+                    sortedData.length === 0 && index === 0 ? 'border-l border-slate-200 rounded-tl-lg' : '',
+                    sortedData.length === 0 && index === columns.length - 1 ? 'border-r border-slate-200 rounded-tr-lg' : '',
+                    sortedData.length === 0 ? 'border-t border-slate-200' : '',
                     column.align === 'right' ? 'text-right' : column.align === 'center' ? 'text-center' : '',
                     column.headerClassName
                   )}
@@ -235,12 +243,12 @@ export function DividerLineTable<TData>({
               ))}
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody className={sortedData.length === 0 ? 'divide-y-0' : ''}>
             {sortedData.length === 0 ? (
-              <TableRow>
+              <TableRow className="border-0">
                 <TableCell
                   colSpan={columns.length}
-                  className="px-6 py-10"
+                  className="px-6 py-10 border-0"
                 >
                   {emptyState ?? (
                     <div className="flex min-h-[200px] items-center justify-center text-sm text-slate-500">
@@ -251,7 +259,18 @@ export function DividerLineTable<TData>({
               </TableRow>
             ) : (
               sortedData.map((item, index) => (
-                <TableRow key={getRowKey(item, index)}>
+                <TableRow 
+                  key={getRowKey(item, index)}
+                  onClick={(e) => {
+                    // Don't trigger row click if clicking on interactive elements
+                    const target = e.target as HTMLElement
+                    if (target.closest('button, input, a, [role="button"]')) {
+                      return
+                    }
+                    onRowClick?.(item, index)
+                  }}
+                  className={onRowClick ? 'cursor-pointer' : ''}
+                >
                   {columns.map((column) => (
                     <TableCell
                       key={column.id}

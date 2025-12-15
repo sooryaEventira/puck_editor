@@ -52,20 +52,21 @@ const HeroSection = ({
   // Get the current background image (uploaded or prop)
   const currentBackgroundImage = uploadedImageUrl || backgroundImage
   
-  // Dynamic styles that need to remain inline
+  // Container style - fixed height, full width
   const heroStyle: React.CSSProperties = {
-    background: currentBackgroundImage 
-      ? `url(${currentBackgroundImage})` 
-      : backgroundColor || '#1a1a1a',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat',
-    backgroundColor: currentBackgroundImage ? 'transparent' : (backgroundColor || '#1a1a1a'),
+    backgroundColor: currentBackgroundImage ? '#ffffff' : (backgroundColor || '#1a1a1a'),
     color: textColor,
     minHeight: currentBackgroundImage ? '500px' : '300px',
     height: currentBackgroundImage ? (height || '500px') : (height || '500px'),
     justifyContent: alignment === 'left' ? 'flex-start' : alignment === 'right' ? 'flex-end' : 'center',
-    padding: 'clamp(40px, 8vw, 80px) clamp(20px, 4vw, 40px)'
+    padding: 'clamp(40px, 8vw, 80px) clamp(20px, 4vw, 40px)',
+    width: '100%',
+    maxWidth: '100%',
+    display: 'flex',
+    position: 'relative',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+    margin: 0
   }
   
   // Debug: Log what backgroundImage prop we received and what style is being applied
@@ -81,7 +82,7 @@ const HeroSection = ({
     })
   }, [backgroundImage, uploadedImageUrl, currentBackgroundImage, heroStyle.background, title, subtitle])
 
-  const heroClassName = 'w-full flex items-center m-0 relative overflow-hidden'
+  const heroClassName = 'w-full flex items-center m-0 relative overflow-hidden block'
 
   const overlayStyle: React.CSSProperties = {
     backgroundColor: `rgba(0, 0, 0, ${overlayOpacity})`
@@ -164,6 +165,31 @@ const HeroSection = ({
         e.currentTarget.classList.remove('cursor-pointer', 'opacity-95')
       }}
     >
+      {/* Banner Image - using img tag with object-fit: cover to fill width and height */}
+      {currentBackgroundImage && (
+        <img
+          src={currentBackgroundImage}
+          alt="Hero banner"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover' as const,
+            objectPosition: 'center center',
+            zIndex: 0,
+            display: 'block',
+            margin: 0,
+            padding: 0
+          }}
+          onError={(e) => {
+            console.error('Error loading banner image')
+            e.currentTarget.style.display = 'none'
+          }}
+        />
+      )}
+      {/* Overlay for text readability */}
       {currentBackgroundImage && <div style={overlayStyle} className="absolute inset-0 z-[1]" />}
       
       {/* Hidden file input */}

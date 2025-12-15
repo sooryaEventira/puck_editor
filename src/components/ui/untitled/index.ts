@@ -44,3 +44,6 @@ export type { SocialButtonProps, SocialProvider } from './SocialButton'
 export { default as ProgressSteps } from './ProgressSteps'
 export type { ProgressStep, ProgressStepsProps } from './ProgressSteps'
 
+export { default as Slideout } from './Slideout'
+export type { SlideoutProps } from './Slideout'
+

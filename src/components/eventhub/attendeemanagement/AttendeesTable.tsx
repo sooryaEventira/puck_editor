@@ -1,0 +1,514 @@
+import React, { useMemo, useState, useCallback } from 'react'
+import {
+  DividerLineTable,
+  type DividerLineTableSortDescriptor
+} from '../../ui/untitled'
+import { Attendee, AttendeeTab, Group, CustomField } from './attendeeTypes'
+import type { AttendeeTableRowData, GroupTableRowData, CustomFieldTableRowData } from './attendeeTypes'
+import { TablePagination, useTableHeader } from '../../ui'
+import { useAttendeeTableColumns } from './AttendeeTableColumns'
+import { useGroupTableColumns } from './GroupTableColumns'
+import { useCustomFieldTableColumns } from './CustomFieldTableColumns'
+import { Download01, Grid01 } from '@untitled-ui/icons-react'
+
+interface AttendeesTableProps {
+  attendees: Attendee[]
+  groups?: Group[]
+  customFields?: CustomField[]
+  activeTab: AttendeeTab
+  onTabChange: (tab: AttendeeTab) => void
+  onUpload?: () => void
+  onCreateProfile?: () => void
+  onCreateGroup?: () => void
+  onCreateField?: () => void
+  onEditAttendee?: (attendeeId: string) => void
+  onDeleteAttendee?: (attendeeId: string) => void
+  onEditGroup?: (groupId: string) => void
+  onDeleteGroup?: (groupId: string) => void
+  onEditCustomField?: (customFieldId: string) => void
+  onDeleteCustomField?: (customFieldId: string) => void
+  onDownload?: () => void
+  onGridView?: () => void
+  onFilter?: () => void
+}
+
+const AttendeesTable: React.FC<AttendeesTableProps> = ({
+  attendees,
+  groups = [],
+  customFields = [],
+  activeTab,
+  onTabChange,
+  onUpload,
+  onCreateProfile,
+  onCreateGroup,
+  onCreateField,
+  onEditAttendee,
+  onDeleteAttendee,
+  onEditGroup,
+  onDeleteGroup,
+  onEditCustomField,
+  onDeleteCustomField,
+  onDownload,
+  onGridView,
+  onFilter
+}) => {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<Set<string>>(new Set())
+  const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set())
+  const [selectedCustomFieldIds, setSelectedCustomFieldIds] = useState<Set<string>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+  const [sortDescriptor, setSortDescriptor] = useState<DividerLineTableSortDescriptor | undefined>({
+    column: 'name',
+    direction: 'ascending'
+  })
+
+  // Filter data based on active tab
+  const filteredAttendees = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return attendees
+
+    return attendees.filter((attendee) => {
+      const haystack = [
+        attendee.name,
+        attendee.email,
+        attendee.status,
+        attendee.inviteCode,
+        ...attendee.groups.map((g) => g.name)
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      return haystack.includes(query)
+    })
+  }, [searchQuery, attendees])
+
+  const filteredGroups = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return groups
+
+    return groups.filter((group) => {
+      return group.name.toLowerCase().includes(query)
+    })
+  }, [searchQuery, groups])
+
+  const filteredCustomFields = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return customFields
+
+    return customFields.filter((field) => {
+      return field.fieldName.toLowerCase().includes(query)
+    })
+  }, [searchQuery, customFields])
+
+  // Get visible IDs based on active tab
+  const visibleAttendeeIds = useMemo(
+    () => filteredAttendees.map((attendee) => attendee.id),
+    [filteredAttendees]
+  )
+
+  const visibleGroupIds = useMemo(
+    () => filteredGroups.map((group) => group.id),
+    [filteredGroups]
+  )
+
+  const visibleCustomFieldIds = useMemo(
+    () => filteredCustomFields.map((field) => field.id),
+    [filteredCustomFields]
+  )
+
+  // Paginate data based on active tab
+  const paginatedAttendees = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return filteredAttendees.slice(startIndex, endIndex)
+  }, [filteredAttendees, currentPage])
+
+  const paginatedGroups = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return filteredGroups.slice(startIndex, endIndex)
+  }, [filteredGroups, currentPage])
+
+  const paginatedCustomFields = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return filteredCustomFields.slice(startIndex, endIndex)
+  }, [filteredCustomFields, currentPage])
+
+  // Calculate total pages based on active tab
+  const totalPages = useMemo(() => {
+    const totalItems = activeTab === 'user' 
+      ? filteredAttendees.length 
+      : activeTab === 'groups'
+      ? filteredGroups.length
+      : filteredCustomFields.length
+    return Math.ceil(totalItems / itemsPerPage)
+  }, [activeTab, filteredAttendees.length, filteredGroups.length, filteredCustomFields.length])
+
+  // Selection logic for attendees
+  const allVisibleAttendeesSelected = useMemo(() => {
+    return (
+      visibleAttendeeIds.length > 0 &&
+      visibleAttendeeIds.every((id) => selectedAttendeeIds.has(id))
+    )
+  }, [visibleAttendeeIds, selectedAttendeeIds])
+
+  const partiallyAttendeesSelected = useMemo(() => {
+    return (
+      !allVisibleAttendeesSelected &&
+      visibleAttendeeIds.some((id) => selectedAttendeeIds.has(id))
+    )
+  }, [allVisibleAttendeesSelected, visibleAttendeeIds, selectedAttendeeIds])
+
+  // Selection logic for groups
+  const allVisibleGroupsSelected = useMemo(() => {
+    return (
+      visibleGroupIds.length > 0 &&
+      visibleGroupIds.every((id) => selectedGroupIds.has(id))
+    )
+  }, [visibleGroupIds, selectedGroupIds])
+
+  const partiallyGroupsSelected = useMemo(() => {
+    return (
+      !allVisibleGroupsSelected &&
+      visibleGroupIds.some((id) => selectedGroupIds.has(id))
+    )
+  }, [allVisibleGroupsSelected, visibleGroupIds, selectedGroupIds])
+
+  // Selection logic for custom fields
+  const allVisibleCustomFieldsSelected = useMemo(() => {
+    return (
+      visibleCustomFieldIds.length > 0 &&
+      visibleCustomFieldIds.every((id) => selectedCustomFieldIds.has(id))
+    )
+  }, [visibleCustomFieldIds, selectedCustomFieldIds])
+
+  const partiallyCustomFieldsSelected = useMemo(() => {
+    return (
+      !allVisibleCustomFieldsSelected &&
+      visibleCustomFieldIds.some((id) => selectedCustomFieldIds.has(id))
+    )
+  }, [allVisibleCustomFieldsSelected, visibleCustomFieldIds, selectedCustomFieldIds])
+
+  // Toggle handlers
+  const handleToggleAllAttendees = useCallback(
+    (checked: boolean) => {
+      setSelectedAttendeeIds((previous) => {
+        const next = new Set(previous)
+        visibleAttendeeIds.forEach((id) => {
+          if (checked) {
+            next.add(id)
+          } else {
+            next.delete(id)
+          }
+        })
+        return next
+      })
+    },
+    [visibleAttendeeIds]
+  )
+
+  const handleToggleAttendee = useCallback((id: string, checked: boolean) => {
+    setSelectedAttendeeIds((previous) => {
+      const next = new Set(previous)
+      if (checked) {
+        next.add(id)
+      } else {
+        next.delete(id)
+      }
+      return next
+    })
+  }, [])
+
+  const handleToggleAllGroups = useCallback(
+    (checked: boolean) => {
+      setSelectedGroupIds((previous) => {
+        const next = new Set(previous)
+        visibleGroupIds.forEach((id) => {
+          if (checked) {
+            next.add(id)
+          } else {
+            next.delete(id)
+          }
+        })
+        return next
+      })
+    },
+    [visibleGroupIds]
+  )
+
+  const handleToggleGroup = useCallback((id: string, checked: boolean) => {
+    setSelectedGroupIds((previous) => {
+      const next = new Set(previous)
+      if (checked) {
+        next.add(id)
+      } else {
+        next.delete(id)
+      }
+      return next
+    })
+  }, [])
+
+  const handleToggleAllCustomFields = useCallback(
+    (checked: boolean) => {
+      setSelectedCustomFieldIds((previous) => {
+        const next = new Set(previous)
+        visibleCustomFieldIds.forEach((id) => {
+          if (checked) {
+            next.add(id)
+          } else {
+            next.delete(id)
+          }
+        })
+        return next
+      })
+    },
+    [visibleCustomFieldIds]
+  )
+
+  const handleToggleCustomField = useCallback((id: string, checked: boolean) => {
+    setSelectedCustomFieldIds((previous) => {
+      const next = new Set(previous)
+      if (checked) {
+        next.add(id)
+      } else {
+        next.delete(id)
+      }
+      return next
+    })
+  }, [])
+
+  // Table rows and columns based on active tab
+  const attendeeTableRows = useMemo<AttendeeTableRowData[]>(() => {
+    return paginatedAttendees.map((attendee, index) => ({ attendee, index }))
+  }, [paginatedAttendees])
+
+  const groupTableRows = useMemo<GroupTableRowData[]>(() => {
+    return paginatedGroups.map((group, index) => ({ group, index }))
+  }, [paginatedGroups])
+
+  const customFieldTableRows = useMemo<CustomFieldTableRowData[]>(() => {
+    return paginatedCustomFields.map((field, index) => ({ customField: field, index }))
+  }, [paginatedCustomFields])
+
+  const attendeeColumns = useAttendeeTableColumns({
+    allVisibleSelected: allVisibleAttendeesSelected,
+    partiallySelected: partiallyAttendeesSelected,
+    selectedAttendeeIds,
+    onToggleAllVisible: handleToggleAllAttendees,
+    onToggleRow: handleToggleAttendee,
+    onEditAttendee,
+    onDeleteAttendee
+  })
+
+  const groupColumns = useGroupTableColumns({
+    allVisibleSelected: allVisibleGroupsSelected,
+    partiallySelected: partiallyGroupsSelected,
+    selectedGroupIds,
+    onToggleAllVisible: handleToggleAllGroups,
+    onToggleRow: handleToggleGroup,
+    onEditGroup,
+    onDeleteGroup
+  })
+
+  const customFieldColumns = useCustomFieldTableColumns({
+    allVisibleSelected: allVisibleCustomFieldsSelected,
+    partiallySelected: partiallyCustomFieldsSelected,
+    selectedCustomFieldIds,
+    onToggleAllVisible: handleToggleAllCustomFields,
+    onToggleRow: handleToggleCustomField,
+    onEditCustomField,
+    onDeleteCustomField
+  })
+
+  // Empty states
+  const attendeeEmptyState = (
+    <div className="flex min-h-[280px] items-center justify-center px-6 py-10 text-sm text-slate-500">
+      {attendees.length === 0
+        ? 'No attendees have been added yet!'
+        : 'No attendees match your search.'}
+    </div>
+  )
+
+  const groupEmptyState = (
+    <div className="flex min-h-[280px] items-center justify-center px-6 py-10 text-sm text-slate-500">
+      {groups.length === 0
+        ? 'No groups have been created yet!'
+        : 'No groups match your search.'}
+    </div>
+  )
+
+  const customFieldEmptyState = (
+    <div className="flex min-h-[280px] items-center justify-center px-6 py-10 text-sm text-slate-500">
+      {customFields.length === 0
+        ? 'No custom fields have been created yet!'
+        : 'No custom fields match your search.'}
+    </div>
+  )
+
+  // Get search placeholder and button text based on active tab
+  const searchPlaceholder = useMemo(() => {
+    switch (activeTab) {
+      case 'groups':
+        return 'Search group'
+      case 'custom-schedule':
+        return 'Search personal schedule'
+      default:
+        return 'Search attendees'
+    }
+  }, [activeTab])
+
+  const buttonText = useMemo(() => {
+    switch (activeTab) {
+      case 'groups':
+        return '+ New group'
+      case 'custom-schedule':
+        return '+ New field'
+      default:
+        return '+ New profile'
+    }
+  }, [activeTab])
+
+  const handleCreateButton = useMemo(() => {
+    switch (activeTab) {
+      case 'groups':
+        return onCreateGroup
+      case 'custom-schedule':
+        return onCreateField
+      default:
+        return onCreateProfile
+    }
+  }, [activeTab, onCreateGroup, onCreateField, onCreateProfile])
+
+  const tableHeader = useTableHeader({
+    tabs: [
+      { id: 'user', label: 'User' },
+      { id: 'groups', label: 'Groups' },
+      { id: 'custom-schedule', label: 'Custom schedule' }
+    ],
+    activeTabId: activeTab,
+    searchQuery,
+    searchPlaceholder,
+    onTabChange: (tabId) => onTabChange(tabId as AttendeeTab),
+    onSearchChange: setSearchQuery,
+    showFilter: true,
+    onFilterClick: onFilter || (() => {}),
+    filterLabel: `Filter ${activeTab === 'groups' ? 'groups' : activeTab === 'custom-schedule' ? 'custom fields' : 'attendees'}`,
+    customActions: activeTab === 'user' ? (
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onDownload}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition hover:border-primary/40 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          aria-label="Download"
+        >
+          <Download01 className="h-4 w-4" strokeWidth={2} />
+        </button>
+        <button
+          type="button"
+          onClick={onGridView}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition hover:border-primary/40 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          aria-label="Grid view"
+        >
+          <Grid01 className="h-4 w-4" strokeWidth={2} />
+        </button>
+      </div>
+    ) : undefined
+  })
+
+  const handleSortChange = useCallback(
+    (descriptor: DividerLineTableSortDescriptor) => {
+      setSortDescriptor(descriptor)
+    },
+    []
+  )
+
+  // Reset page when switching tabs or search changes
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [activeTab, searchQuery])
+
+  // Get table data, columns, and empty state based on active tab
+  const getTableData = () => {
+    switch (activeTab) {
+      case 'groups':
+        return {
+          data: groupTableRows,
+          columns: groupColumns,
+          emptyState: groupEmptyState,
+          getRowKey: (row: GroupTableRowData) => row.group?.id || ''
+        }
+      case 'custom-schedule':
+        return {
+          data: customFieldTableRows,
+          columns: customFieldColumns,
+          emptyState: customFieldEmptyState,
+          getRowKey: (row: CustomFieldTableRowData) => row.customField?.id || ''
+        }
+      default:
+        return {
+          data: attendeeTableRows,
+          columns: attendeeColumns,
+          emptyState: attendeeEmptyState,
+          getRowKey: (row: AttendeeTableRowData) => row.attendee?.id || ''
+        }
+    }
+  }
+
+  const tableData = getTableData()
+
+  return (
+    <div className="space-y-8 px-4 pb-12 pt-8 md:px-10 lg:px-16">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-[26px] font-bold text-primary-dark">Attendee Management</h1>
+        <div className="flex items-center gap-3">
+          {activeTab === 'user' && (
+            <button
+              type="button"
+              onClick={onUpload}
+              className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              Upload
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleCreateButton}
+            className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold text-white border border-slate-200 bg-primary shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            {buttonText}
+          </button>
+        </div>
+      </div>
+
+      <DividerLineTable
+        headerLeading={tableHeader.leading}
+        headerActions={tableHeader.actions}
+        data={tableData.data}
+        columns={tableData.columns}
+        getRowKey={tableData.getRowKey}
+        emptyState={tableData.emptyState}
+        sortDescriptor={sortDescriptor}
+        onSortChange={handleSortChange}
+        onRowClick={activeTab === 'user' ? (row) => {
+          const attendeeRow = row as AttendeeTableRowData
+          if (attendeeRow.attendee) {
+            onEditAttendee?.(attendeeRow.attendee.id)
+          }
+        } : undefined}
+        footer={
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        }
+      />
+    </div>
+  )
+}
+
+export default AttendeesTable
+

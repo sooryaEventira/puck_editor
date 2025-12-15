@@ -39,7 +39,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
   type = 'email'
 }) => {
   const [activeTab, setActiveTab] = useState<'late-message' | 'settings'>('late-message')
-  const [subject, setSubject] = useState(initialSubject || 'Your session is running late!')
+  const [subject, setSubject] = useState(initialSubject || 'Title of your message')
   const [message, setMessage] = useState(initialMessage)
   const [isEditing, setIsEditing] = useState(true)
   const [selectedMacro, setSelectedMacro] = useState<string>('')
@@ -122,6 +122,45 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
     // Get current selection
     const selection = window.getSelection()
     
+    // For foreColor command, if no selection, we need to handle it differently
+    if (command === 'foreColor' && (!selection || selection.rangeCount === 0 || selection.toString().length === 0)) {
+      // If no text is selected, create a span at cursor position or wrap next typed text
+      // For now, we'll apply it to the current position and it will affect next typed text
+      const range = document.createRange()
+      const sel = window.getSelection()
+      
+      if (sel && editorRef.current) {
+        // Try to find cursor position
+        if (sel.anchorNode) {
+          const node = sel.anchorNode.nodeType === Node.TEXT_NODE 
+            ? sel.anchorNode 
+            : editorRef.current
+        
+          if (node) {
+            const offset = sel.anchorOffset || 0
+            try {
+              range.setStart(node, Math.min(offset, node.textContent?.length || 0))
+              range.setEnd(node, Math.min(offset, node.textContent?.length || 0))
+              sel.removeAllRanges()
+              sel.addRange(range)
+            } catch (e) {
+              // Fallback: select end of editor
+              range.selectNodeContents(editorRef.current)
+              range.collapse(false)
+              sel.removeAllRanges()
+              sel.addRange(range)
+            }
+          }
+        } else {
+          // No anchor node, select end of editor
+          range.selectNodeContents(editorRef.current)
+          range.collapse(false)
+          sel.removeAllRanges()
+          sel.addRange(range)
+        }
+      }
+    }
+    
     // For alignment commands, if no selection, select the current paragraph/line
     if ((command === 'justifyLeft' || command === 'justifyCenter' || command === 'justifyRight' || command === 'justifyFull') && 
         (!selection || selection.rangeCount === 0 || selection.toString().length === 0)) {
@@ -162,6 +201,8 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
         setTimeout(() => {
           updateFormatState()
         }, 10)
+      } else {
+        console.warn(`Command ${command} failed to execute`)
       }
     } catch (error) {
       console.error('Format command failed:', error)
@@ -170,10 +211,29 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
 
   const updateFormatState = () => {
     if (editorRef.current) {
-      // Don't force focus here as it might interfere with selection
-      setIsBold(document.queryCommandState('bold'))
-      setIsItalic(document.queryCommandState('italic'))
-      setIsUnderline(document.queryCommandState('underline'))
+      // Ensure editor is focused before checking command state
+      const wasFocused = document.activeElement === editorRef.current
+      if (!wasFocused) {
+        editorRef.current.focus()
+      }
+      
+      try {
+        setIsBold(document.queryCommandState('bold'))
+        setIsItalic(document.queryCommandState('italic'))
+        setIsUnderline(document.queryCommandState('underline'))
+      } catch (error) {
+        console.error('Error updating format state:', error)
+      }
+      
+      // If editor wasn't focused, don't change focus (selection might be lost)
+      // But we need to restore selection if there was one
+      if (!wasFocused) {
+        // Try to restore selection
+        const selection = window.getSelection()
+        if (selection && selection.rangeCount > 0) {
+          // Selection should be preserved, but if not, we'll let the user continue
+        }
+      }
     }
   }
 
@@ -181,27 +241,33 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
     // Small delay to ensure selection is complete
     setTimeout(() => {
       const selection = window.getSelection()
+      const editor = editorRef.current
+      if (!editor) return
+      
+      // Always update format state when selection changes (even if empty)
+      // This ensures buttons reflect the format at cursor position
+      updateFormatState()
+      
       if (selection && selection.toString().length > 0) {
         const anchorNode = selection.anchorNode
         const focusNode = selection.focusNode
         
         // Check if selection is within the editor
-        if (editorRef.current && (
-          editorRef.current.contains(anchorNode) || 
-          editorRef.current.contains(focusNode) ||
-          anchorNode === editorRef.current ||
-          focusNode === editorRef.current
+        if (editor && (
+          editor.contains(anchorNode) || 
+          editor.contains(focusNode) ||
+          anchorNode === editor ||
+          focusNode === editor
         )) {
           const range = selection.getRangeAt(0)
           const rect = range.getBoundingClientRect()
-          const editorRect = editorRef.current.getBoundingClientRect()
+          const editorRect = editor.getBoundingClientRect()
           
           setToolbarPosition({
             top: rect.top - editorRect.top - 40,
             left: rect.left - editorRect.left + rect.width / 2
           })
           setShowContextualToolbar(true)
-          updateFormatState()
         } else {
           // Only hide if we're not interacting with the toolbar
           // This check is handled by the click outside listener mostly, 
@@ -255,8 +321,78 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
 
   const handleColorSelect = (color: string) => {
     setSelectedColor(color)
-    handleFormat('foreColor', color)
-    setShowColorPicker(false)
+    
+    if (!editorRef.current) {
+      setShowColorPicker(false)
+      return
+    }
+
+    // Restore focus to editor
+    editorRef.current.focus()
+    
+    // Small delay to ensure focus is restored
+    setTimeout(() => {
+      const selection = window.getSelection()
+      if (!selection || selection.rangeCount === 0) {
+        setShowColorPicker(false)
+        return
+      }
+
+      const range = selection.getRangeAt(0)
+      
+      // Check if selection is within the editor
+      if (!editorRef.current?.contains(range.commonAncestorContainer)) {
+        setShowColorPicker(false)
+        return
+      }
+
+      try {
+        // If there's selected text, wrap it in a span with color
+        if (range.toString().trim().length > 0) {
+          // Create a span element with the color
+          const span = document.createElement('span')
+          span.style.color = color
+          
+          // Extract the selected content and wrap it
+          const contents = range.extractContents()
+          span.appendChild(contents)
+          range.insertNode(span)
+          
+          // Select the newly inserted span
+          const newRange = document.createRange()
+          newRange.selectNodeContents(span)
+          selection.removeAllRanges()
+          selection.addRange(newRange)
+        } else {
+          // No text selected - insert a zero-width space wrapped in span for future text
+          const span = document.createElement('span')
+          span.style.color = color
+          span.innerHTML = '\u200B' // Zero-width space
+          range.insertNode(span)
+          
+          // Move cursor after the span
+          range.setStartAfter(span)
+          range.collapse(true)
+          selection.removeAllRanges()
+          selection.addRange(range)
+        }
+
+        // Update message content
+        if (editorRef.current) {
+          setMessage(editorRef.current.innerHTML)
+        }
+      } catch (error) {
+        console.error('Error applying color:', error)
+        // Fallback to execCommand
+        try {
+          handleFormat('foreColor', color)
+        } catch (e) {
+          console.error('Fallback execCommand also failed:', e)
+        }
+      }
+      
+      setShowColorPicker(false)
+    }, 10)
   }
 
   const handleSave = () => {
@@ -274,7 +410,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
   }
 
   return (
-    <div className="space-y-6 px-4 pb-12 pt-28 md:px-10 lg:px-16 -mt-8">
+    <div className="space-y-6 px-4 pb-12 pt-28 md:px-10 lg:px-16 -mt-24">
       <style>{`
         .broadcast-editor-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
         .broadcast-editor-content ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
@@ -307,14 +443,14 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
       {/* Tabs and Content Container */}
       <div className="rounded-xl  bg-white overflow-hidden ">
         {/* Tabs */}
-        <div className="inline-flex items-center border-slate-200 bg-white ">
+        <div className="flex gap-6 border-b border-slate-200 ">
           <button
             type="button"
             onClick={() => setActiveTab('late-message')}
-            className={`px-4 py-2 text-sm font-semibold transition h-10 border border-slate-200 ${
+            className={`pb-3 px-1 text-[15px] font-medium font-semibold transition-colors relative whitespace-nowrap ${
               activeTab === 'late-message'
-                ? 'bg-primary text-white'
-                : 'bg-white text-slate-500 hover:text-primary'
+                ? 'text-primary border-b-2 border-primary'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Late Message
@@ -322,10 +458,10 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2 text-sm font-semibold transition h-10 border border-slate-200 rounded-tr-xl ${
+            className={`pb-3 px-1 text-[15px] font-medium font-semibold transition-colors relative whitespace-nowrap ${
               activeTab === 'settings'
-                ? 'bg-primary text-white'
-                : 'bg-white text-slate-500 hover:text-primary'
+                ? 'text-primary border-b-2 border-primary'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Settings
@@ -342,11 +478,11 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                 <div 
                   className={`group relative flex flex-col w-full rounded-md border ${
                     type === 'email' && subject.length > 60 ? 'border-orange-300' : 'border-slate-300'
-                  } bg-slate-50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all`}
+                  } bg-slate-50 transition-all`}
                   onClick={() => document.getElementById('subject')?.focus()}
                 >
                   <div className="flex items-center px-3 pt-2.5">
-                    <label htmlFor="subject" className="text-sm font-semibold text-slate-900 mr-2 cursor-text shrink-0">
+                    <label htmlFor="subject" className="text-sm font-semibold text-slate-700 mr-2 cursor-text shrink-0">
                       {type === 'push-notification' ? 'Title:' : 'Subject:'}
                     </label>
                     <input
@@ -359,7 +495,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                           setSubject(e.target.value)
                         }
                       }}
-                      className="flex-1 bg-transparent border-none p-0 text-sm text-slate-900 focus:ring-0 placeholder-slate-400"
+                      className="flex-1 bg-transparent border-none p-0 text-sm text-slate-900 focus:ring-0 focus:outline-none placeholder-slate-400"
                     />
                   </div>
                   
@@ -414,7 +550,6 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                   <select
                     className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     defaultValue="Inter"
-                    onMouseDown={(e) => e.preventDefault()}
                   >
                     <option value="Inter">T Inter</option>
                     <option value="Arial">Arial</option>
@@ -428,7 +563,11 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                   <button
                     type="button"
                     onMouseDown={(e) => handleToolbarAction(e, 'bold')}
-                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    className={`flex h-8 w-8 items-center justify-center rounded transition ${
+                      isBold 
+                        ? 'bg-slate-200 text-slate-900' 
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
                     title="Bold"
                   >
                     <Bold01 className="h-4 w-4" />
@@ -436,7 +575,11 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                   <button
                     type="button"
                     onMouseDown={(e) => handleToolbarAction(e, 'italic')}
-                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    className={`flex h-8 w-8 items-center justify-center rounded transition ${
+                      isItalic 
+                        ? 'bg-slate-200 text-slate-900' 
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
                     title="Italic"
                   >
                     <Italic01 className="h-4 w-4" />
@@ -444,7 +587,11 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                   <button
                     type="button"
                     onMouseDown={(e) => handleToolbarAction(e, 'underline')}
-                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    className={`flex h-8 w-8 items-center justify-center rounded transition ${
+                      isUnderline 
+                        ? 'bg-slate-200 text-slate-900' 
+                        : 'text-slate-600 hover:bg-slate-100'
+                    }`}
                     title="Underline"
                   >
                     <Underline01 className="h-4 w-4" />
@@ -457,8 +604,20 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                     <button
                       ref={colorPickerButtonRef}
                       type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => setShowColorPicker(!showColorPicker)}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        // Save current selection before opening color picker
+                        if (editorRef.current) {
+                          editorRef.current.focus()
+                        }
+                      }}
+                      onClick={() => {
+                        // Ensure editor has focus before opening color picker
+                        if (editorRef.current) {
+                          editorRef.current.focus()
+                        }
+                        setShowColorPicker(!showColorPicker)
+                      }}
                       className="flex h-8 w-8 items-center justify-center rounded hover:bg-slate-100"
                       title="Text Color"
                     >
@@ -473,6 +632,12 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                               type="button"
                               onMouseDown={(e) => {
                                 e.preventDefault()
+                                e.stopPropagation()
+                                handleColorSelect(color)
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
                                 handleColorSelect(color)
                               }}
                               className={`h-8 w-8 rounded border-2 transition ${
@@ -490,6 +655,12 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                               type="button"
                               onMouseDown={(e) => {
                                 e.preventDefault()
+                                e.stopPropagation()
+                                handleColorSelect(color)
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
                                 handleColorSelect(color)
                               }}
                               className={`h-8 w-8 rounded border-2 transition ${
@@ -511,7 +682,19 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                             type="text"
                             value={selectedColor}
                             onChange={(e) => setSelectedColor(e.target.value)}
-                            onBlur={() => handleColorSelect(selectedColor)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                handleColorSelect(selectedColor)
+                              }
+                            }}
+                            onBlur={() => {
+                              // Validate color format before applying
+                              const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
+                              if (colorRegex.test(selectedColor)) {
+                                handleColorSelect(selectedColor)
+                              }
+                            }}
                             className="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-xs text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                             placeholder="#7F56D9"
                           />
@@ -590,6 +773,11 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                     onInput={(e) => {
                       const html = e.currentTarget.innerHTML
                       setMessage(html)
+                      // Update format state after input to reflect current formatting
+                      setTimeout(() => updateFormatState(), 10)
+                    }}
+                    onKeyUp={() => {
+                      // Update format state on key up to catch cursor movements
                       updateFormatState()
                     }}
                     onBlur={() => {
@@ -600,7 +788,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                       // Update format state when editor gains focus
                       updateFormatState()
                     }}
-                    className="broadcast-editor-content min-h-[500px] w-full -mt-2 rounded-md border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="broadcast-editor-content min-h-[400px] w-full -mt-2 rounded-md border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5' }}
                     data-placeholder=""
                     suppressContentEditableWarning

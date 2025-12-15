@@ -107,9 +107,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onAttachFile
               <div className="w-full text-base font-semibold leading-6 text-[#181D27]" style={{ fontFamily: 'Inter' }}>
                 Upload and attach files
               </div>
-              <div className="w-full text-sm font-normal leading-5 text-[#535862]" style={{ fontFamily: 'Inter' }}>
-                Upload and attach files to this project.
-              </div>
+
             </div>
           </div>
 

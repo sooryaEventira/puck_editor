@@ -21,5 +21,8 @@ export { default as LiveChat } from './LiveChat'
 export { default as ApiTestComponent } from './ApiTestComponent'
 export { default as SessionForm } from './SessionForm'
 export { default as PdfViewer } from './PdfViewer'
+export { default as RegistrationCTA } from './RegistrationCTA'
+export { default as Sponsors } from './Sponsors'
+export { default as ContactFooter } from './ContactFooter'
 
 

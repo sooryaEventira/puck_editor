@@ -82,12 +82,19 @@ const SpeakerCard = ({ photo, uploadedImage, name, designation }: SpeakerCardPro
   return (
     <div className="rounded-xl border border-gray-200 shadow-sm bg-white overflow-hidden">
       {/* Photo Section */}
-      <div className="w-full h-[165px] overflow-hidden rounded-t-lg relative bg-gray-100 flex items-center justify-center">
+      <div className="w-full h-[220px] overflow-hidden rounded-t-lg relative bg-gray-100 flex items-center justify-center">
         {imageSrc ? (
           <img 
             src={imageSrc} 
             alt={nameValue}
-            className="w-full h-full object-cover object-center block"
+            className="w-full h-full block"
+            style={{
+              objectFit: 'contain' as const,
+              objectPosition: 'center center',
+              width: '100%',
+              height: '250px',
+              display: 'block'
+            }}
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}
