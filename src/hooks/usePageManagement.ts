@@ -847,6 +847,33 @@ export const usePageManagement = () => {
     const pageId = filename.replace('.json', '')
     const serverFilename = filename.endsWith('.json') ? filename : `${filename}.json`
     
+    // Check if we're creating from scratch and loading page1
+    const isCreateFromScratch = localStorage.getItem('create-from-scratch') === 'true'
+    const emptyPage1DataStr = localStorage.getItem('create-from-scratch-page1')
+    const isPage1 = pageId === 'page1' || filename === 'page1.json' || filename === 'page1'
+    
+    if (isCreateFromScratch && isPage1 && emptyPage1DataStr) {
+      try {
+        const emptyPage1Data = JSON.parse(emptyPage1DataStr)
+        logger.debug('loadPage: Loading empty Page1 from create-from-scratch')
+        console.log('📄 Loading empty Page1 from create-from-scratch')
+        
+        setCurrentData(emptyPage1Data)
+        setCurrentPage('page1')
+        setCurrentPageName('Page 1')
+        setShowPageManager(false)
+        
+        // Clear the flags after using them
+        localStorage.removeItem('create-from-scratch')
+        localStorage.removeItem('create-from-scratch-page1')
+        
+        return
+      } catch (error) {
+        logger.error('loadPage: Error parsing empty page1 data:', error)
+        // Fall through to normal loading
+      }
+    }
+    
     // First, try to find the page in the pages array
     const pageInArray = pages.find(p => 
       p.filename === serverFilename || 
@@ -1431,8 +1458,62 @@ export const usePageManagement = () => {
 
   useEffect(() => {
     const initializePage = async () => {
+      // Check if we're creating from scratch
+      const isCreateFromScratch = localStorage.getItem('create-from-scratch') === 'true'
+      const emptyPage1DataStr = localStorage.getItem('create-from-scratch-page1')
+      
       // Load pages from server first
       await loadPages()
+      
+      // If creating from scratch, use empty Page1 data
+      if (isCreateFromScratch && emptyPage1DataStr) {
+        try {
+          const emptyPage1Data = JSON.parse(emptyPage1DataStr)
+          setCurrentData(emptyPage1Data)
+          setCurrentPage('page1')
+          setCurrentPageName('Page 1')
+          
+          // Add page1 to pages array immediately so it shows in sidebar
+          setPages(prevPages => {
+            const pageExists = prevPages.some(p => p.id === 'page1' || p.filename === 'page1.json')
+            if (!pageExists) {
+              return [...prevPages, {
+                id: 'page1',
+                name: 'Page 1',
+                filename: 'page1.json',
+                lastModified: new Date().toISOString()
+              }]
+            }
+            return prevPages
+          })
+          
+          // Save empty page1 to server
+          try {
+            await fetch(API_ENDPOINTS.SAVE_PAGE, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                data: emptyPage1Data,
+                filename: 'page1.json'
+              })
+            })
+            await loadPages()
+          } catch (error) {
+            logger.error('Error saving empty page1:', error)
+          }
+          
+          // Clear the flags after using them
+          localStorage.removeItem('create-from-scratch')
+          localStorage.removeItem('create-from-scratch-page1')
+          
+          return
+        } catch (error) {
+          logger.error('Error parsing empty page1 data:', error)
+          // Fall through to normal initialization
+        }
+      }
       
       // Try to load page1 if it exists, otherwise create it
       try {

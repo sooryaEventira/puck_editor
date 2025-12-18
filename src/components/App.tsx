@@ -1,18 +1,35 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react'
 
 import { usePageManagement } from '../hooks/usePageManagement'
 import { usePublish } from '../hooks/usePublish'
 import { useAppHandlers } from '../hooks/useAppHandlers'
 import { PageManager, PageNameDialog, PageCreationModal } from './page'
-import { EventHubPage, EventHubNavbar, SchedulePage, CommunicationPage, ResourceManagementPage } from './eventhub'
-import EditorView from './shared/EditorView'
-import { LoginPage, RegistrationPage, EmailVerificationPage, CreatePasswordPage, EventspaceSetupPage } from '../pages'
-import { DashboardLayout } from './dashboard'
+import { EventHubNavbar } from './eventhub'
 import { EventFormProvider, useEventForm } from '../contexts/EventFormContext'
 import { logger } from '../utils/logger'
 import { setupPuckStyling } from '../utils/puckStyling'
 import { showToast } from '../utils/toast'
 import { verifyRegistrationOtp, createPassword, createOrganization } from '../services/authService'
+
+// Lazy load heavy components for code splitting
+const EventHubPage = lazy(() => import('./eventhub').then(module => ({ default: module.EventHubPage })))
+const SchedulePage = lazy(() => import('./eventhub/schedulesession/SchedulePage'))
+const CommunicationPage = lazy(() => import('./eventhub/communication/CommunicationPage'))
+const ResourceManagementPage = lazy(() => import('./eventhub/resourcemanagement/ResourceManagementPage'))
+const EditorView = lazy(() => import('./shared/EditorView'))
+const LoginPage = lazy(() => import('../pages').then(module => ({ default: module.LoginPage })))
+const RegistrationPage = lazy(() => import('../pages').then(module => ({ default: module.RegistrationPage })))
+const EmailVerificationPage = lazy(() => import('../pages').then(module => ({ default: module.EmailVerificationPage })))
+const CreatePasswordPage = lazy(() => import('../pages').then(module => ({ default: module.CreatePasswordPage })))
+const EventspaceSetupPage = lazy(() => import('../pages').then(module => ({ default: module.EventspaceSetupPage })))
+const DashboardLayout = lazy(() => import('./dashboard').then(module => ({ default: module.DashboardLayout })))
+
+// Loading component
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+  </div>
+)
 
 const App: React.FC = () => {
   // Check if user is authenticated (check localStorage on mount)
@@ -314,7 +331,9 @@ const App: React.FC = () => {
       
       if (path.startsWith('/event/website/editor/')) {
         // Extract pageId from path: /event/website/editor/:pageId
-        const pageIdMatch = path.match(/\/event\/website\/editor\/(.+)/)
+        // Remove query params if present
+        const pathWithoutQuery = path.split('?')[0]
+        const pageIdMatch = pathWithoutQuery.match(/\/event\/website\/editor\/(.+)/)
         const pageId = pageIdMatch ? pageIdMatch[1] : 'welcome'
         
         logger.debug('📍 Editor route detected:', pageId)
@@ -384,59 +403,69 @@ const App: React.FC = () => {
   if (!isAuthenticated) {
     if (showEventspaceSetup) {
       return (
-        <EventspaceSetupPage
-          onSubmit={handleEventspaceSetup}
-          isLoading={isCreatingOrganization}
-          error={organizationCreationError}
-          onNameChange={() => setOrganizationCreationError(null)}
-        />
+        <Suspense fallback={<LoadingFallback />}>
+          <EventspaceSetupPage
+            onSubmit={handleEventspaceSetup}
+            isLoading={isCreatingOrganization}
+            error={organizationCreationError}
+            onNameChange={() => setOrganizationCreationError(null)}
+          />
+        </Suspense>
       )
     }
     
     if (showCreatePassword) {
       return (
-        <CreatePasswordPage
-          onSubmit={handlePasswordCreation}
-          isLoading={isCreatingPassword}
-          error={passwordCreationError}
-          onPasswordChange={() => setPasswordCreationError(null)}
-        />
+        <Suspense fallback={<LoadingFallback />}>
+          <CreatePasswordPage
+            onSubmit={handlePasswordCreation}
+            isLoading={isCreatingPassword}
+            error={passwordCreationError}
+            onPasswordChange={() => setPasswordCreationError(null)}
+          />
+        </Suspense>
       )
     }
     
     if (showEmailVerification) {
       return (
-        <EmailVerificationPage
-          email={registrationEmail}
-          onVerify={handleEmailVerification}
-          onResendCode={handleResendCode}
-          isLoading={isVerifyingOtp}
-          error={otpVerificationError}
-          onCodeChange={() => setOtpVerificationError(null)}
-        />
+        <Suspense fallback={<LoadingFallback />}>
+          <EmailVerificationPage
+            email={registrationEmail}
+            onVerify={handleEmailVerification}
+            onResendCode={handleResendCode}
+            isLoading={isVerifyingOtp}
+            error={otpVerificationError}
+            onCodeChange={() => setOtpVerificationError(null)}
+          />
+        </Suspense>
       )
     }
     
     if (showRegistration) {
       return (
-        <RegistrationPage
-          onSubmit={handleRegistration}
-          onTermsClick={() => {}}
-          onAlreadyHaveAccount={() => setShowRegistration(false)}
-          onClose={() => setShowRegistration(false)}
-        />
+        <Suspense fallback={<LoadingFallback />}>
+          <RegistrationPage
+            onSubmit={handleRegistration}
+            onTermsClick={() => {}}
+            onAlreadyHaveAccount={() => setShowRegistration(false)}
+            onClose={() => setShowRegistration(false)}
+          />
+        </Suspense>
       )
     }
     
     return (
-      <LoginPage
-        onSubmit={handleLogin}
-        onGoogleSignIn={handleGoogleSignIn}
-        onMicrosoftSignIn={handleMicrosoftSignIn}
-        onMagicLinkSignIn={handleMagicLinkSignIn}
-        onForgotPassword={() => {}}
-        onNavigateToRegistration={() => setShowRegistration(true)}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <LoginPage
+          onSubmit={handleLogin}
+          onGoogleSignIn={handleGoogleSignIn}
+          onMicrosoftSignIn={handleMicrosoftSignIn}
+          onMagicLinkSignIn={handleMagicLinkSignIn}
+          onForgotPassword={() => {}}
+          onNavigateToRegistration={() => setShowRegistration(true)}
+        />
+      </Suspense>
     )
   }
 
@@ -447,26 +476,28 @@ const App: React.FC = () => {
     
     return (
       <EventFormProvider>
-        <DashboardLayout
-          organizationName={organizationName}
-          title="Web Submit Events"
-          userAvatarUrl=""
-          userEmail={userEmail}
-          onSidebarItemClick={(itemId) => {
-            // Handle navigation to different sections
-            if (itemId === 'events') {
-              setCurrentView('events')
-            }
-            // Add other navigation handlers as needed
-          }}
-          onSearchClick={() => {}}
-          onNotificationClick={() => {}}
-          onProfileClick={handleProfileClick}
-          onLogout={handleLogout}
-          onNewEventClick={() => {}}
-          onEditEvent={(_eventId) => {}}
-          onSortEvents={(_column) => {}}
-        />
+        <Suspense fallback={<LoadingFallback />}>
+          <DashboardLayout
+            organizationName={organizationName}
+            title="Web Submit Events"
+            userAvatarUrl=""
+            userEmail={userEmail}
+            onSidebarItemClick={(itemId) => {
+              // Handle navigation to different sections
+              if (itemId === 'events') {
+                setCurrentView('events')
+              }
+              // Add other navigation handlers as needed
+            }}
+            onSearchClick={() => {}}
+            onNotificationClick={() => {}}
+            onProfileClick={handleProfileClick}
+            onLogout={handleLogout}
+            onNewEventClick={() => {}}
+            onEditEvent={(_eventId) => {}}
+            onSortEvents={(_column) => {}}
+          />
+        </Suspense>
       </EventFormProvider>
     )
   }
@@ -476,13 +507,15 @@ const App: React.FC = () => {
     logger.debug('📍 Rendering Event Hub Page');
     
     return (
-      <EventHubPage
-        eventName="Highly important conference of 2025"
-        isDraft={true}
-        onBackClick={handleBackToEditor}
-        userAvatarUrl="" // Add user avatar URL here if available
-        onCardClick={handleEventHubCardClick}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <EventHubPage
+          eventName="Highly important conference of 2025"
+          isDraft={true}
+          onBackClick={handleBackToEditor}
+          userAvatarUrl="" // Add user avatar URL here if available
+          onCardClick={handleEventHubCardClick}
+        />
+      </Suspense>
     )
   }
 
@@ -491,14 +524,16 @@ const App: React.FC = () => {
     logger.debug('📍 Rendering Schedule Page');
     
     return (
-      <SchedulePage
-        eventName="Highly important conference of 2025"
-        isDraft={true}
-        onBackClick={handleBackToEventHub}
-        userAvatarUrl=""
-        scheduleName="Schedule 1"
-        onCardClick={handleEventHubCardClick}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <SchedulePage
+          eventName="Highly important conference of 2025"
+          isDraft={true}
+          onBackClick={handleBackToEventHub}
+          userAvatarUrl=""
+          scheduleName="Schedule 1"
+          onCardClick={handleEventHubCardClick}
+        />
+      </Suspense>
     )
   }
 
@@ -507,13 +542,15 @@ const App: React.FC = () => {
     logger.debug('📍 Rendering Communication Page');
     
     return (
-      <CommunicationPage
-        eventName="Highly important conference of 2025"
-        isDraft={true}
-        onBackClick={handleBackToEventHub}
-        userAvatarUrl=""
-        onCardClick={handleEventHubCardClick}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <CommunicationPage
+          eventName="Highly important conference of 2025"
+          isDraft={true}
+          onBackClick={handleBackToEventHub}
+          userAvatarUrl=""
+          onCardClick={handleEventHubCardClick}
+        />
+      </Suspense>
     )
   }
 
@@ -522,13 +559,15 @@ const App: React.FC = () => {
     logger.debug('📍 Rendering Resource Management Page');
     
     return (
-      <ResourceManagementPage
-        eventName="Highly important conference of 2025"
-        isDraft={true}
-        onBackClick={handleBackToEventHub}
-        userAvatarUrl=""
-        onCardClick={handleEventHubCardClick}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <ResourceManagementPage
+          eventName="Highly important conference of 2025"
+          isDraft={true}
+          onBackClick={handleBackToEventHub}
+          userAvatarUrl=""
+          onCardClick={handleEventHubCardClick}
+        />
+      </Suspense>
     )
   }
 
@@ -639,7 +678,8 @@ const EditorViewWithNavbar: React.FC<{
       />
 
       {/* Main Content - Editor View */}
-      <EditorView
+      <Suspense fallback={<LoadingFallback />}>
+        <EditorView
         currentData={props.currentData}
         currentPage={props.currentPage}
         currentPageName={props.currentPageName}
@@ -662,6 +702,7 @@ const EditorViewWithNavbar: React.FC<{
         onCreatePageFromTemplate={props.createPageFromTemplate}
         onCreateNewPage={props.createNewPage}
       />
+      </Suspense>
     </div>
   )
 }

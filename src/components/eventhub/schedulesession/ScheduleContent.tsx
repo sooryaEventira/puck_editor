@@ -3,12 +3,13 @@ import { Upload01, Plus, ArrowNarrowLeft } from '@untitled-ui/icons-react'
 import WeekDateSelector from './WeekDateSelector'
 import UploadModal from './UploadModal'
 import ScheduleGrid from './ScheduleGrid'
+import SessionCreationModal from './SessionCreationModal'
 import { SavedSession } from './sessionTypes'
 
 interface ScheduleContentProps {
   scheduleName?: string
   onUpload?: () => void
-  onAddSession?: (parentSessionId?: string) => void
+  onAddSession?: (parentSessionId?: string, creationType?: 'template' | 'scratch') => void
   onBack?: () => void
   sessions?: SavedSession[]
   onDateChange?: (date: Date) => void
@@ -23,6 +24,7 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
   onDateChange
 }) => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const [isSessionCreationModalOpen, setIsSessionCreationModalOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const date = new Date()
     date.setHours(0, 0, 0, 0)
@@ -105,7 +107,7 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
         <div>
           <button
             type="button"
-            onClick={() => onAddSession?.()}
+            onClick={() => setIsSessionCreationModalOpen(true)}
             className="inline-flex items-center justify-center gap-1 overflow-hidden rounded-lg bg-[#6938EF] px-3 py-1.5 text-white shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] "
             style={{ fontFamily: 'Inter' }}
           >
@@ -134,6 +136,18 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
         isOpen={isUploadModalOpen}
         onClose={handleCloseModal}
         onAttachFiles={handleAttachFiles}
+      />
+
+      {/* Session Creation Modal */}
+      <SessionCreationModal
+        isOpen={isSessionCreationModalOpen}
+        onClose={() => setIsSessionCreationModalOpen(false)}
+        onSelect={(type) => {
+          setIsSessionCreationModalOpen(false)
+          // Call onAddSession with the selected type
+          // If template is selected, it will open the SessionSlideout
+          onAddSession?.(undefined, type)
+        }}
       />
     </main>
   )

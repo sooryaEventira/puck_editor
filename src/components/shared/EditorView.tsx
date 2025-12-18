@@ -61,10 +61,33 @@ export const EditorView: React.FC<EditorViewProps> = ({
 }) => {
   // Initially show default COMPONENTS sidebar, canvas, and property sidebar with Page 1
   // Custom sidebar only appears after "Create from scratch" is selected
-  const [showCustomSidebar, setShowCustomSidebar] = useState(false)
+  const [showCustomSidebar, setShowCustomSidebar] = useState(() => {
+    // Check if we're creating from scratch
+    return localStorage.getItem('create-from-scratch') === 'true'
+  })
   const [showPageCreationModal, setShowPageCreationModal] = useState(false)
   const [showBlockTypeModal, setShowBlockTypeModal] = useState(false)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
+  
+  // Detect editor mode from URL query params (blank or template)
+  const getEditorMode = (): 'blank' | 'template' => {
+    if (typeof window === 'undefined') return 'template'
+    const urlParams = new URLSearchParams(window.location.search)
+    const mode = urlParams.get('mode')
+    return mode === 'blank' ? 'blank' : 'template'
+  }
+  
+  const [editorMode, setEditorMode] = useState<'blank' | 'template'>(getEditorMode())
+  
+  // Update editor mode when URL changes
+  useEffect(() => {
+    const updateMode = () => {
+      setEditorMode(getEditorMode())
+    }
+    updateMode()
+    window.addEventListener('popstate', updateMode)
+    return () => window.removeEventListener('popstate', updateMode)
+  }, [])
   
   // Use a ref to store the latest data from Puck (including zones)
   // This ensures we always publish the most up-to-date data
@@ -226,6 +249,12 @@ export const EditorView: React.FC<EditorViewProps> = ({
     window.location.href = previewUrl
   }
 
+  const handleBackToTemplateSelection = () => {
+    // Navigate to template selection page
+    window.history.pushState({}, '', '/event/create/template')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }
+
   const handlePageCreationSelect = (pageType: PageType) => {
     // Handle different page types
     switch (pageType) {
@@ -335,15 +364,34 @@ export const EditorView: React.FC<EditorViewProps> = ({
       ) : (
         <NavigationProvider onNavigateToEditor={onNavigateToEditor} onAddComponent={onAddComponent}>
           {showCustomSidebar && (() => {
-            // Filter out Page 1 from the pages array
-            const pagesForSidebar = pages
-              .filter(page => page.id !== 'page1')
+            // Filter pages based on editor mode
+            // When mode is 'template', exclude Page1
+            // When mode is 'blank', include Page1
+            let pagesForSidebar = pages
+              .filter(page => {
+                // If mode is 'template', exclude Page1
+                if (editorMode === 'template') {
+                  return page.id !== 'page1' && page.name !== 'Page 1'
+                }
+                // If mode is 'blank', include all pages (including Page1)
+                return true
+              })
               .map(page => ({ id: page.id, name: page.name }))
             
-            // Ensure current page is included if not already in the list (but not if it's page1)
+            // Ensure current page is included if not already in the list
             const currentPageExists = pagesForSidebar.some(p => p.id === currentPage || p.name === currentPageName)
-            if (!currentPageExists && currentPage && currentPage !== 'page1' && currentPageName) {
-              pagesForSidebar.push({ id: currentPage, name: currentPageName })
+            if (!currentPageExists && currentPage && currentPageName) {
+              // Only add current page if it's not Page1 when mode is 'template'
+              if (editorMode === 'template' && (currentPage === 'page1' || currentPageName === 'Page 1')) {
+                // Don't add Page1 when mode is template
+              } else {
+                pagesForSidebar.push({ id: currentPage, name: currentPageName })
+              }
+            }
+            
+            // Ensure Page1 is in the list if we're on page1 AND mode is 'blank'
+            if (editorMode === 'blank' && currentPage === 'page1' && !pagesForSidebar.some(p => p.id === 'page1')) {
+              pagesForSidebar.unshift({ id: 'page1', name: currentPageName || 'Page 1' })
             }
             
             return (
@@ -373,9 +421,10 @@ export const EditorView: React.FC<EditorViewProps> = ({
                       // Error loading page - silently fail
                     }
                   }}
-                  onAddPage={() => setShowPageCreationModal(true)}
+                  onAddPage={editorMode === 'blank' ? () => setShowPageCreationModal(true) : undefined}
                   onManagePages={onManagePages}
-                  onBackClick={handleNavigateToPreview}
+                  onBackClick={handleBackToTemplateSelection}
+                  editorMode={editorMode}
                 />
               </div>
             )

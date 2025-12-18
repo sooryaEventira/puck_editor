@@ -22,7 +22,7 @@ const Slideout: React.FC<SlideoutProps> = ({
   footer,
   topOffset = 64,
   panelWidthRatio = 0.4,
-  maxWidth = '600px',
+  maxWidth,
   side = 'right',
   width
 }) => {
@@ -111,14 +111,34 @@ const Slideout: React.FC<SlideoutProps> = ({
     bottom: 0
   }
 
+  // Calculate responsive width
+  // Prioritize responsive Tailwind classes, only use inline styles when width is explicitly provided
   const panelStyle: React.CSSProperties = {
     height: `calc(100vh - ${topOffset}px)`,
-    width: width
-      ? typeof width === 'number'
-        ? `${width}px`
-        : width
-      : `${Math.min(Math.max(panelWidthRatio, 0.3), 1) * 100}%`,
-    maxWidth: typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth
+    ...(width && {
+      width: typeof width === 'number' ? `${width}px` : width
+    }),
+    // Only apply maxWidth if explicitly provided (no default maxWidth)
+    ...(maxWidth && {
+      maxWidth: typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth
+    })
+    // Note: We don't set width in inline styles when using responsive classes
+    // This allows Tailwind responsive classes to take precedence
+  }
+
+  // Get responsive width classes - always use these unless width prop is explicitly provided
+  // Use wider responsive widths for better usability
+  const getResponsiveWidthClasses = () => {
+    if (width) return '' // Use inline style when width is explicitly provided
+    
+    // Responsive width classes - slightly reduced widths
+    // Mobile (< 640px): full width
+    // Tablet (640px+): 90% width
+    // Desktop (768px+): 85% width
+    // Large (1024px+): 75% width  
+    // XL (1280px+): 65% width
+    // Wide (1440px+): 55% width
+    return 'w-full sm:w-[80%] md:w-[85%] lg:w-[75%] xl:w-[65%] 2xl:w-[55%]'
   }
 
   return (
@@ -137,7 +157,7 @@ const Slideout: React.FC<SlideoutProps> = ({
       <aside
         ref={slideoutRef}
         tabIndex={-1}
-        className={`absolute ${side === 'right' ? 'right-0' : 'left-0'} top-0 flex transform flex-col bg-white shadow-2xl transition-transform duration-300 ${
+        className={`absolute ${side === 'right' ? 'right-0' : 'left-0'} top-0 flex transform flex-col bg-white shadow-2xl transition-transform duration-300 ${getResponsiveWidthClasses()} ${
           isOpen
             ? 'translate-x-0'
             : side === 'right'

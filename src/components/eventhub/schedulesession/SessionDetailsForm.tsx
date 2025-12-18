@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Eye, Pencil01, ChevronDown } from '@untitled-ui/icons-react'
+import React from 'react'
+import { Eye, Pencil01 } from '@untitled-ui/icons-react'
 import { Input, Select } from '../../ui/untitled'
 import { SessionDraft } from './sessionTypes'
 
@@ -22,8 +22,6 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
   availableTags = [],
   availableLocations = []
 }) => {
-  const [isTagsDropdownOpen, setIsTagsDropdownOpen] = useState(false)
-  const tagsDropdownRef = useRef<HTMLDivElement>(null)
 
   // Tag and location option mappings (same as ScheduleDetailsSlideout)
   const tagOptionsMap: Record<string, string> = {
@@ -49,32 +47,6 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
     label: locationOptionsMap[value] || value
   }))
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (tagsDropdownRef.current && !tagsDropdownRef.current.contains(event.target as Node)) {
-        setIsTagsDropdownOpen(false)
-      }
-    }
-
-    if (isTagsDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isTagsDropdownOpen])
-
-  const handleTagToggle = (tagValue: string) => {
-    const currentTags = draft.tags || []
-    const isSelected = currentTags.includes(tagValue)
-    
-    if (isSelected) {
-      onFieldChange('tags', currentTags.filter((tag) => tag !== tagValue))
-    } else {
-      onFieldChange('tags', [...currentTags, tagValue])
-    }
-  }
 
 
   const addSectionButtonClassName =
@@ -96,9 +68,9 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col gap-1">
-        <p className="text-md font-semibold text-slate-600">SESSION TITLE</p>
+        <p className="text-sm font-semibold text-slate-600">SESSION TITLE</p>
         <Input
           placeholder="Enter session title"
           value={draft.title || ''}
@@ -112,7 +84,7 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
 
         {/* Location Select */}
         {availableLocations.length > 0 ? (
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <Select
               label="Location"
               value={draft.location}
@@ -125,15 +97,17 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
             />
           </div>
         ) : (
-          <Input
-            label="Location"
-            placeholder="Select location"
-            value={draft.location}
-            onChange={(event) => onFieldChange('location', event.target.value)}
-          />
+          <div className="flex-1 min-w-0">
+            <Input
+              label="Location"
+              placeholder="Select location"
+              value={draft.location}
+              onChange={(event) => onFieldChange('location', event.target.value)}
+            />
+          </div>
         )}
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <Select
             label="Session type"
             value={draft.sessionType}
@@ -149,57 +123,31 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
 
         {/* Tags Dropdown */}
         {availableTags.length > 0 ? (
-          <div className="flex flex-1 flex-col gap-1 relative" ref={tagsDropdownRef}>
-            <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Tags</span>
-            <button
-              type="button"
-              onClick={() => setIsTagsDropdownOpen(!isTagsDropdownOpen)}
-              className="h-10 w-full flex items-center justify-between rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <span className={`truncate ${draft.tags.length > 0 ? 'text-slate-900' : 'text-slate-400'}`}>
-                {draft.tags.length > 0 
-                  ? draft.tags
-                      .map(tagValue => {
-                        const tag = tagOptions.find(opt => opt.value === tagValue)
-                        return tag ? tag.label : tagValue
-                      })
-                      .join(', ')
-                  : 'Select tags'}
-              </span>
-              <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform flex-shrink-0 ml-2 ${isTagsDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-            
-            {isTagsDropdownOpen && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-auto top-full">
-                {tagOptions.map((option) => {
-                  const isSelected = draft.tags.includes(option.value)
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => handleTagToggle(option.value)}
-                      className={`w-full text-left px-3 py-2 hover:bg-slate-50 cursor-pointer text-sm transition-colors ${
-                        isSelected ? 'bg-primary/10 text-primary font-medium' : 'text-slate-700'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+          <div className="flex-1 min-w-0">
+            <Select
+              label="Tags"
+              value={draft.tags.length > 0 ? draft.tags[0] : ''}
+              onChange={(event) => onFieldChange('tags', event.target.value ? [event.target.value] : [])}
+              options={[
+                { value: '', label: 'Select tags' },
+                ...tagOptions
+              ]}
+              className="h-10"
+            />
           </div>
         ) : (
-          <Input
-            label="Tags"
-            placeholder="Select tags"
-            value={tagsInput}
-            onChange={(event) => onTagsInputChange(event.target.value)}
-          />
+          <div className="flex-1 min-w-0">
+            <Input
+              label="Tags"
+              placeholder="Select tags"
+              value={tagsInput}
+              onChange={(event) => onTagsInputChange(event.target.value)}
+            />
+          </div>
         )}
       </div>
 
-      <div className="px-6 text-center">
+      <div className="text-center">
         {draft.sections.length === 0 ? (
           <>
             <p className="text-base font-medium text-slate-600">Click to add a section!</p>
@@ -213,8 +161,8 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
             </button>
           </>
         ) : (
-          <div className="space-y-2 text-left ">
-            <div className="flex items-center justify-between  px-2 py-3 margin-left-auto">
+          <div className="space-y-3 text-left">
+            <div className="flex items-center justify-start">
               <button
                 type="button"
                 onClick={onAddSectionClick}

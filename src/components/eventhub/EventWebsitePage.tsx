@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useEventForm } from '../../contexts/EventFormContext'
 import EventHubNavbar from './EventHubNavbar'
 import EventHubSidebar from './EventHubSidebar'
 import { defaultCards, ContentCard } from './EventHubContent'
+import PageCreationModal, { type PageType } from '../page/PageCreationModal'
+import { API_ENDPOINTS } from '../../config/env'
 import { 
   InfoCircle, 
   CodeBrowser, 
@@ -33,9 +35,76 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
 }) => {
   const { eventData } = useEventForm()
   const [activeSubItem, setActiveSubItem] = useState('website-pages')
-  const [pages] = useState<Page[]>([
+  const [pages, setPages] = useState<Page[]>([
     { id: 'welcome', name: 'Welcome' }
   ])
+  const [showPageCreationModal, setShowPageCreationModal] = useState(false)
+
+  // Load pages from API on mount
+  useEffect(() => {
+    loadPages()
+  }, [])
+
+  const loadPages = async () => {
+    try {
+      const apiUrl = API_ENDPOINTS.GET_PAGES || '/api/pages'
+      const response = await fetch(apiUrl)
+      
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.pages) {
+          // Convert API pages to Page format
+          const loadedPages: Page[] = result.pages.map((page: any) => {
+            // Try to get page name from filename or load page data
+            let pageName = page.filename.replace('.json', '')
+            const pageId = page.filename.replace('.json', '')
+            
+            // Try to load page data to get the actual pageTitle
+            fetch(API_ENDPOINTS.GET_PAGE(page.filename) || `/api/pages/${page.filename}`)
+              .then(pageResponse => {
+                if (pageResponse.ok) {
+                  return pageResponse.json()
+                }
+                return null
+              })
+              .then(pageResult => {
+                if (pageResult?.success && pageResult.data?.root?.props) {
+                  const pageTitle = pageResult.data.root.props.pageTitle || pageResult.data.root.props.title
+                  if (pageTitle) {
+                    setPages(prevPages => {
+                      const existingPage = prevPages.find(p => p.id === pageId)
+                      if (existingPage && existingPage.name !== pageTitle) {
+                        return prevPages.map(p => p.id === pageId ? { ...p, name: pageTitle } : p)
+                      }
+                      return prevPages
+                    })
+                  }
+                }
+              })
+              .catch(() => {
+                // Ignore errors, use filename-based name
+              })
+            
+            return {
+              id: pageId,
+              name: pageName
+            }
+          })
+          
+          // Ensure Welcome page is always included
+          const welcomeExists = loadedPages.some(p => p.id === 'welcome' || p.name === 'Welcome')
+          if (!welcomeExists) {
+            loadedPages.unshift({ id: 'welcome', name: 'Welcome' })
+          }
+          
+          setPages(loadedPages)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading pages:', error)
+      // Keep default Welcome page on error
+    }
+  }
 
   const handleSearchClick = () => {
     console.log('Search clicked')
@@ -108,8 +177,179 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   }
 
   const handleNewPage = () => {
-    console.log('New page clicked')
-    // TODO: Implement new page functionality
+    setShowPageCreationModal(true)
+  }
+
+  const handlePageTypeSelect = async (pageType: PageType) => {
+    console.log('Selected page type:', pageType)
+    setShowPageCreationModal(false)
+    
+    // Handle schedule page creation
+    if (pageType === 'schedule') {
+      await createSchedulePage()
+    } else {
+      // TODO: Implement other page types
+      console.log('Page type not yet implemented:', pageType)
+    }
+  }
+
+  const createSchedulePage = async () => {
+    try {
+      // Generate page ID and name
+      const pageName = 'Schedule'
+      const sanitizedName = pageName.toLowerCase().replace(/[^a-z0-9]/g, '-')
+      const pageId = `page-${sanitizedName}-${Date.now()}`
+      
+      // Create schedule page template with SchedulePage component
+      // Include default events matching the schedule interface shown in the image
+      const schedulePageData = {
+        content: [
+          {
+            type: 'SchedulePage',
+            props: {
+              title: 'Schedule',
+              events: [
+                {
+                  id: "1",
+                  title: "Welcome presentation",
+                  startTime: "08:00 AM",
+                  endTime: "09:00 AM",
+                  location: "Room A",
+                  type: "In-Person",
+                  description: "Welcome presentation for all attendees",
+                  participants: "",
+                  tags: "",
+                  attachments: 1,
+                  isCompleted: false,
+                  isExpanded: false,
+                  parentSessionId: undefined
+                },
+                {
+                  id: "2",
+                  title: "Poster presentation",
+                  startTime: "08:00 AM",
+                  endTime: "09:00 AM",
+                  location: "Room B",
+                  type: "In-Person",
+                  description: "Poster presentation session",
+                  participants: "",
+                  tags: "",
+                  attachments: 5,
+                  isCompleted: false,
+                  isExpanded: false,
+                  parentSessionId: undefined
+                },
+                {
+                  id: "3",
+                  title: "Welcome Note",
+                  startTime: "09:10 AM",
+                  endTime: "10:10 AM",
+                  location: "Drawing Room",
+                  type: "Virtual",
+                  description: "Welcome note from the chairman",
+                  participants: "Chairman: Speaker 1, Others: Speaker 2, +2 more",
+                  tags: "Poster",
+                  attachments: 12,
+                  isCompleted: false,
+                  isExpanded: false,
+                  parentSessionId: undefined
+                },
+                {
+                  id: "4",
+                  title: "Special topic",
+                  startTime: "09:15 AM",
+                  endTime: "09:30 AM",
+                  location: "Drawing Room",
+                  type: "Virtual",
+                  description: "Special topic discussion",
+                  participants: "Speakers: Speaker 1, Speaker 2",
+                  tags: "",
+                  attachments: 8,
+                  isCompleted: false,
+                  isExpanded: false,
+                  parentSessionId: undefined
+                },
+                {
+                  id: "5",
+                  title: "Tea break",
+                  startTime: "10:10 AM",
+                  endTime: "10:30 AM",
+                  location: "Cafeteria",
+                  type: "In-Person",
+                  description: "Tea break for networking",
+                  participants: "",
+                  tags: "break",
+                  attachments: 0,
+                  isCompleted: false,
+                  isExpanded: false,
+                  parentSessionId: undefined
+                },
+                {
+                  id: "6",
+                  title: "Workshop",
+                  startTime: "10:30 AM",
+                  endTime: "11:30 AM",
+                  location: "Room B",
+                  type: "In-Person",
+                  description: "Interactive workshop session",
+                  participants: "",
+                  tags: "workshop",
+                  attachments: 0,
+                  isCompleted: false,
+                  isExpanded: false,
+                  parentSessionId: undefined
+                }
+              ]
+            },
+            id: `schedule-page-${Date.now()}`
+          }
+        ],
+        root: {
+          props: {
+            title: pageName,
+            pageTitle: pageName,
+            pageType: 'schedule'
+          }
+        },
+        zones: {}
+      }
+      
+      // Save page to server
+      const apiUrl = API_ENDPOINTS.SAVE_PAGE || '/api/save-page'
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: schedulePageData,
+          filename: `${pageId}.json`
+        })
+      })
+      
+      if (response.ok) {
+        // Add the new schedule page to the pages list
+        setPages(prevPages => {
+          // Check if page already exists
+          const pageExists = prevPages.some(p => p.id === pageId || p.name === pageName)
+          if (!pageExists) {
+            return [...prevPages, { id: pageId, name: pageName }]
+          }
+          return prevPages
+        })
+        
+        // Reload pages to ensure we have the latest list
+        await loadPages()
+        
+        // Navigate to editor with the new schedule page
+        window.history.pushState({}, '', `/event/website/editor/${pageId}`)
+        window.dispatchEvent(new PopStateEvent('popstate'))
+      } else {
+        console.error('Failed to save schedule page')
+      }
+    } catch (error) {
+      console.error('Error creating schedule page:', error)
+    }
   }
 
   const handlePageAction = (pageId: string, action: string) => {
@@ -254,6 +494,12 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
           )}
         </div>
 
+        {/* Page Creation Modal */}
+        <PageCreationModal
+          isVisible={showPageCreationModal}
+          onClose={() => setShowPageCreationModal(false)}
+          onSelect={handlePageTypeSelect}
+        />
       </div>
     )
   }
@@ -400,6 +646,13 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
           </div>
         )}
       </div>
+
+      {/* Page Creation Modal */}
+      <PageCreationModal
+        isVisible={showPageCreationModal}
+        onClose={() => setShowPageCreationModal(false)}
+        onSelect={handlePageTypeSelect}
+      />
     </div>
   )
 }

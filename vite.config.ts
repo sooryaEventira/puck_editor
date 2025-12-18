@@ -23,5 +23,51 @@ export default defineConfig({
         }
       }
     }
+  },
+  build: {
+    // Increase chunk size warning limit to 1000kb (from default 500kb)
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        // Manual chunk splitting for better code splitting
+        manualChunks: {
+          // Vendor chunks
+          'react-vendor': ['react', 'react-dom'],
+          'puck-vendor': ['@measured/puck'],
+          'icons-vendor': ['@untitled-ui/icons-react'],
+          'survey-vendor': ['survey-core', 'survey-react-ui'],
+        },
+        // Optimize chunk file names
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: (assetInfo) => {
+          // Optimize asset file names
+          const name = assetInfo.name || ''
+          if (name.indexOf('.png') > -1 || name.indexOf('.jpg') > -1 || name.indexOf('.jpeg') > -1) {
+            return 'assets/images/[name]-[hash][extname]'
+          }
+          if (name.indexOf('.css') > -1) {
+            return 'assets/css/[name]-[hash][extname]'
+          }
+          return 'assets/[name]-[hash][extname]'
+        }
+      }
+    },
+    // Enable minification
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.log in production
+        drop_debugger: true
+      }
+    },
+    // Optimize asset handling
+    assetsInlineLimit: 4096, // Inline assets smaller than 4kb
+    // Source maps for production (optional - set to false for smaller builds)
+    sourcemap: false
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom', '@measured/puck']
   }
 })

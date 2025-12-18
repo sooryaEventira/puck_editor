@@ -4,6 +4,7 @@ import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import ScheduleContent from './ScheduleContent'
 import SessionSlideout from './SessionSlideout'
+import TemplateSessionSlideout from './TemplateSessionSlideout'
 import ScheduleDetailsSlideout from './ScheduleDetailsSlideout'
 import SavedSchedulesTable from './SavedSchedulesTable'
 import { SavedSchedule, SavedSession, SessionDraft } from './sessionTypes'
@@ -94,6 +95,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   const [savedSchedules, setSavedSchedules] = React.useState<SavedSchedule[]>([])
   const [currentScheduleName, setCurrentScheduleName] = React.useState(scheduleName || 'Schedule 1')
   const [isSessionSlideoutOpen, setIsSessionSlideoutOpen] = React.useState(false)
+  const [isTemplateSessionSlideoutOpen, setIsTemplateSessionSlideoutOpen] = React.useState(false)
   const [isScheduleDetailsSlideoutOpen, setIsScheduleDetailsSlideoutOpen] = React.useState(false)
   const [activeScheduleId, setActiveScheduleId] = React.useState<string | null>(null)
   const [activeDraft, setActiveDraft] = React.useState<SessionDraft | null>(null)
@@ -108,33 +110,40 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   })
   const [parentSessionId, setParentSessionId] = React.useState<string | undefined>(undefined)
 
-  const handleAddSessionClick = (parentId?: string) => {
-    // Get the current schedule to access its tags and locations
-    const currentSchedule = activeScheduleId 
-      ? savedSchedules.find((item) => item.id === activeScheduleId)
-      : null
+  const handleAddSessionClick = (parentId?: string, creationType?: 'template' | 'scratch') => {
+    // Collect all tags and locations from all schedules (same as ScheduleDetailsSlideout)
+    const allTags = new Set<string>()
+    const allLocations = new Set<string>()
     
-    // Set available tags and locations from the current schedule
-    if (currentSchedule) {
-      setAvailableTags(currentSchedule.availableTags || [])
-      setAvailableLocations(currentSchedule.availableLocations || [])
-    } else {
-      setAvailableTags([])
-      setAvailableLocations([])
-    }
+    savedSchedules.forEach(schedule => {
+      if (schedule.availableTags) {
+        schedule.availableTags.forEach(tag => allTags.add(tag))
+      }
+      if (schedule.availableLocations) {
+        schedule.availableLocations.forEach(location => allLocations.add(location))
+      }
+    })
+    
+    // Set available tags and locations from all schedules
+    setAvailableTags(Array.from(allTags))
+    setAvailableLocations(Array.from(allLocations))
     
     // Store parent session ID for parallel sessions
     setParentSessionId(parentId)
     
-    // Don't clear activeScheduleId - we want to add to the current schedule
-    // setActiveScheduleId(null)
-    setActiveDraft({
-      ...defaultSessionDraft,
-      tags: [...defaultSessionDraft.tags],
-      sections: [...defaultSessionDraft.sections]
-    })
-    setStartInEditMode(true)
-    setIsSessionSlideoutOpen(true)
+    if (creationType === 'template') {
+      // Open TemplateSessionSlideout for "Template"
+      setIsTemplateSessionSlideoutOpen(true)
+    } else if (creationType === 'scratch') {
+      // Open SessionSlideout for "Create from scratch"
+      setActiveDraft({
+        ...defaultSessionDraft,
+        tags: [...defaultSessionDraft.tags],
+        sections: [...defaultSessionDraft.sections]
+      })
+      setStartInEditMode(true)
+      setIsSessionSlideoutOpen(true)
+    }
   }
 
   const handleCloseSlideout = () => {
@@ -330,9 +339,23 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         initialDraft={activeDraft}
         startInEditMode={startInEditMode}
         topOffset={64}
-        panelWidthRatio={0.8}
+        panelWidthRatio={0.5}
         availableTags={availableTags}
         availableLocations={availableLocations}
+      />
+
+      <TemplateSessionSlideout
+        isOpen={isTemplateSessionSlideoutOpen}
+        onClose={() => setIsTemplateSessionSlideoutOpen(false)}
+        onSave={(data) => {
+          // Convert template data to SessionDraft format if needed
+          console.log('Template session data:', data)
+          setIsTemplateSessionSlideoutOpen(false)
+        }}
+        availableTags={availableTags}
+        availableLocations={availableLocations}
+        topOffset={64}
+        panelWidthRatio={0.8}
       />
 
       <ScheduleDetailsSlideout
@@ -341,6 +364,24 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         onSave={handleSaveScheduleDetails}
         topOffset={64}
         panelWidthRatio={0.5}
+        availableTags={useMemo(() => {
+          const allTags = new Set<string>()
+          savedSchedules.forEach(schedule => {
+            if (schedule.availableTags) {
+              schedule.availableTags.forEach(tag => allTags.add(tag))
+            }
+          })
+          return Array.from(allTags)
+        }, [savedSchedules])}
+        availableLocations={useMemo(() => {
+          const allLocations = new Set<string>()
+          savedSchedules.forEach(schedule => {
+            if (schedule.availableLocations) {
+              schedule.availableLocations.forEach(location => allLocations.add(location))
+            }
+          })
+          return Array.from(allLocations)
+        }, [savedSchedules])}
       />
     </div>
   )

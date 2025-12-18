@@ -50,8 +50,27 @@ const TemplateSelectionPage: React.FC = () => {
   }
 
   const handleCreateFromScratch = () => {
-    // TODO: Handle create from scratch
-    console.log('Create from scratch - to be implemented')
+    // Create empty Page1 data structure
+    const emptyPage1Data = {
+      content: [],
+      root: {
+        props: {
+          title: 'Page 1',
+          pageTitle: 'Page 1'
+        }
+      },
+      zones: {}
+    }
+    
+    // Store empty Page1 data in localStorage
+    localStorage.setItem('create-from-scratch-page1', JSON.stringify(emptyPage1Data))
+    
+    // Set flag to indicate we're creating from scratch (this will trigger custom sidebar)
+    localStorage.setItem('create-from-scratch', 'true')
+    
+    // Navigate to editor with Page1 and mode=blank query param
+    window.history.pushState({}, '', '/event/website/editor/page1?mode=blank')
+    window.dispatchEvent(new PopStateEvent('popstate'))
   }
 
   // Format date for display

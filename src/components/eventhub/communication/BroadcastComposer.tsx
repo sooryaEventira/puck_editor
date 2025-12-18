@@ -39,7 +39,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
   type = 'email'
 }) => {
   const [activeTab, setActiveTab] = useState<'late-message' | 'settings'>('late-message')
-  const [subject, setSubject] = useState(initialSubject || 'Title of your message')
+  const [subject, setSubject] = useState(initialSubject || '')
   const [message, setMessage] = useState(initialMessage)
   const [isEditing, setIsEditing] = useState(true)
   const [selectedMacro, setSelectedMacro] = useState<string>('')
@@ -60,7 +60,9 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
   ])
 
   const colorPickerButtonRef = useRef<HTMLButtonElement>(null)
+  const colorPickerPopupRef = useRef<HTMLDivElement>(null)
   const contextualToolbarRef = useRef<HTMLDivElement>(null)
+  const savedSelectionRef = useRef<Range | null>(null)
 
   const editorRef = useRef<HTMLDivElement>(null)
 
@@ -298,10 +300,16 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showColorPicker && colorPickerButtonRef.current && !colorPickerButtonRef.current.contains(event.target as Node)) {
-        const colorPicker = document.querySelector('.color-picker-popup')
-        if (colorPicker && !colorPicker.contains(event.target as Node)) {
+      if (showColorPicker) {
+        const target = event.target as Node
+        if (
+          colorPickerButtonRef.current && 
+          !colorPickerButtonRef.current.contains(target) &&
+          colorPickerPopupRef.current &&
+          !colorPickerPopupRef.current.contains(target)
+        ) {
           setShowColorPicker(false)
+          savedSelectionRef.current = null
         }
       }
       
@@ -319,80 +327,330 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
     }
   }, [showColorPicker, showContextualToolbar])
 
-  const handleColorSelect = (color: string) => {
+  const handleColorSelect = (color: string, e?: React.MouseEvent) => {
+    console.log('🎨 handleColorSelect called with color:', color)
+    
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
     setSelectedColor(color)
+    setShowColorPicker(false)
     
     if (!editorRef.current) {
-      setShowColorPicker(false)
+      console.warn('⚠️ No editor ref')
+      savedSelectionRef.current = null
       return
     }
 
-    // Restore focus to editor
-    editorRef.current.focus()
-    
-    // Small delay to ensure focus is restored
-    setTimeout(() => {
-      const selection = window.getSelection()
-      if (!selection || selection.rangeCount === 0) {
-        setShowColorPicker(false)
+    console.log('✅ Editor ref exists, savedSelection:', savedSelectionRef.current ? 'exists' : 'null')
+
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      console.log('🔄 requestAnimationFrame callback executing')
+      const editor = editorRef.current
+      if (!editor) {
+        savedSelectionRef.current = null
         return
       }
 
-      const range = selection.getRangeAt(0)
+      // Restore focus to editor
+      editor.focus()
       
-      // Check if selection is within the editor
-      if (!editorRef.current?.contains(range.commonAncestorContainer)) {
-        setShowColorPicker(false)
+      const selection = window.getSelection()
+      let range: Range | null = null
+      
+      // Try to restore saved selection first
+      if (savedSelectionRef.current) {
+        try {
+          // Check if the saved range is still valid
+          const testRange = savedSelectionRef.current.cloneRange()
+          if (editor.contains(testRange.commonAncestorContainer)) {
+            range = testRange
+          } else {
+            savedSelectionRef.current = null
+          }
+        } catch (error) {
+          savedSelectionRef.current = null
+        }
+      }
+      
+      // If no saved selection, try to get current selection
+      if (!range && selection && selection.rangeCount > 0) {
+        const currentRange = selection.getRangeAt(0)
+        if (currentRange && editor.contains(currentRange.commonAncestorContainer)) {
+          range = currentRange
+        }
+      }
+      
+      // If still no range, create one at cursor position
+      if (!range) {
+        range = document.createRange()
+        const sel = window.getSelection()
+        
+        if (sel && sel.anchorNode && editor.contains(sel.anchorNode)) {
+          try {
+            if (sel.anchorNode.nodeType === Node.TEXT_NODE) {
+              const offset = Math.min(sel.anchorOffset || 0, sel.anchorNode.textContent?.length || 0)
+              range.setStart(sel.anchorNode, offset)
+              range.setEnd(sel.anchorNode, offset)
+            } else {
+              // Find nearest text node
+              const walker = document.createTreeWalker(
+                editor,
+                NodeFilter.SHOW_TEXT,
+                null
+              )
+              let textNode = walker.nextNode()
+              if (textNode) {
+                range.setStart(textNode, 0)
+                range.setEnd(textNode, 0)
+              } else {
+                range.selectNodeContents(editor)
+                range.collapse(false)
+              }
+            }
+          } catch (error) {
+            range.selectNodeContents(editor)
+            range.collapse(false)
+          }
+        } else {
+          range.selectNodeContents(editor)
+          range.collapse(false)
+        }
+      }
+      
+      // Verify range is valid
+      if (!range || !editor.contains(range.commonAncestorContainer)) {
+        savedSelectionRef.current = null
         return
       }
 
+      // Set the selection
+      if (selection) {
+        selection.removeAllRanges()
+        selection.addRange(range)
+      }
+
+      // Apply color using manual DOM manipulation (more reliable than execCommand)
+      console.log('🎨 Attempting to apply color:', color, 'to range:', range.toString() || '(empty)')
+      
       try {
-        // If there's selected text, wrap it in a span with color
-        if (range.toString().trim().length > 0) {
-          // Create a span element with the color
+        const selectedText = range.toString()
+        console.log('Selected text:', selectedText || '(empty)')
+        
+        if (selectedText.trim().length > 0) {
+          console.log('📝 Wrapping selected text in span')
+          // There's selected text - wrap it in a span
           const span = document.createElement('span')
           span.style.color = color
+          span.style.setProperty('color', color, 'important') // Use !important to override any CSS
           
-          // Extract the selected content and wrap it
+          // Extract and wrap the contents
           const contents = range.extractContents()
-          span.appendChild(contents)
+          
+          // Handle DocumentFragment
+          if (contents.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+            while (contents.firstChild) {
+              span.appendChild(contents.firstChild)
+            }
+          } else if (contents) {
+            span.appendChild(contents)
+          }
+          
           range.insertNode(span)
+          
+          // Verify the span was inserted correctly
+          console.log('🔍 Span created:', span.outerHTML)
+          console.log('🔍 Span style:', span.style.color)
+          
+          // Add data attributes to identify and preserve this span's color
+          span.setAttribute('data-color-applied', color)
+          span.setAttribute('data-preserve-color', 'true') // Prevent forcePurpleText from changing it
+          
+          // Protect the span's color from being changed
+          const expectedRgb = `rgb(${parseInt(color.slice(1, 3), 16)}, ${parseInt(color.slice(3, 5), 16)}, ${parseInt(color.slice(5, 7), 16)})`
+          
+          const protectColor = () => {
+            const currentColor = span.style.color || window.getComputedStyle(span).color
+            // Check if color was changed to black or something else
+            if (currentColor === 'rgb(0, 0, 0)' || (currentColor !== expectedRgb && currentColor !== color && currentColor !== `rgb(${parseInt(color.slice(1, 3), 16)},${parseInt(color.slice(3, 5), 16)},${parseInt(color.slice(5, 7), 16)})`)) {
+              console.log('🛡️ Protecting span color from:', currentColor, 'to:', color)
+              // Force the color with !important
+              span.style.setProperty('color', color, 'important')
+              // Also set it directly as a fallback
+              span.style.color = color
+            }
+          }
+          
+          // Set up a MutationObserver to protect the color continuously
+          const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              if (mutation.type === 'attributes' && (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
+                protectColor()
+              }
+            })
+            // Also check on any child changes
+            protectColor()
+          })
+          
+          observer.observe(span, {
+            attributes: true,
+            attributeFilter: ['style', 'class'],
+            childList: true,
+            subtree: true
+          })
+          
+          // Also observe the editor for changes that might affect our span
+          const editorObserver = new MutationObserver(() => {
+            if (editor.contains(span)) {
+              protectColor()
+            }
+          })
+          
+          editorObserver.observe(editor, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style', 'class']
+          })
+          
+          // Protect immediately and at intervals
+          protectColor()
+          const protectionInterval = setInterval(() => {
+            if (editor.contains(span)) {
+              protectColor()
+            } else {
+              clearInterval(protectionInterval)
+              observer.disconnect()
+              editorObserver.disconnect()
+            }
+          }, 100)
+          
+          // Also protect on input events
+          const inputHandler = () => {
+            if (editor.contains(span)) {
+              protectColor()
+            }
+          }
+          editor.addEventListener('input', inputHandler)
           
           // Select the newly inserted span
           const newRange = document.createRange()
           newRange.selectNodeContents(span)
-          selection.removeAllRanges()
-          selection.addRange(newRange)
-        } else {
-          // No text selected - insert a zero-width space wrapped in span for future text
-          const span = document.createElement('span')
-          span.style.color = color
-          span.innerHTML = '\u200B' // Zero-width space
-          range.insertNode(span)
+          if (selection) {
+            selection.removeAllRanges()
+            selection.addRange(newRange)
+          }
           
-          // Move cursor after the span
-          range.setStartAfter(span)
-          range.collapse(true)
-          selection.removeAllRanges()
-          selection.addRange(range)
-        }
-
-        // Update message content
-        if (editorRef.current) {
-          setMessage(editorRef.current.innerHTML)
+          // Verify the span is in the DOM
+          const spanInDOM = editor.contains(span)
+          console.log('🔍 Span in DOM:', spanInDOM)
+          console.log('🔍 Span computed color:', window.getComputedStyle(span).color)
+          
+          // Update message content after a brief delay to allow any normalization to happen first
+          setTimeout(() => {
+            // Protect color one more time before updating
+            protectColor()
+            
+            // Check the HTML
+            const updatedHTML = editor.innerHTML
+            console.log('🔍 Updated HTML after delay:', updatedHTML.substring(0, 200))
+            
+            // Verify span color is still correct
+            const finalColor = window.getComputedStyle(span).color
+            console.log('🔍 Final span color:', finalColor)
+            
+            // Update message content
+            setMessage(editor.innerHTML)
+            console.log('✅ Color applied to selected text')
+            
+            // Don't clean up observers - keep them running to protect the color
+            // They'll be cleaned up when the component unmounts or span is removed
+          }, 100)
+        } else {
+          console.log('📍 No text selected, applying to cursor position')
+          // No text selected - check if we're in a text node
+          const container = range.commonAncestorContainer
+          
+          if (container.nodeType === Node.TEXT_NODE && container.textContent) {
+            // We're in a text node - split it and insert colored span
+            const textNode = container as Text
+            const offset = range.startOffset
+            const text = textNode.textContent || ''
+            
+            // Split the text node at the cursor
+            const beforeText = text.substring(0, offset)
+            const afterText = text.substring(offset)
+            
+            // Create new text nodes
+            const beforeNode = document.createTextNode(beforeText)
+            const afterNode = document.createTextNode(afterText)
+            
+            // Create span for future text
+            const span = document.createElement('span')
+            span.style.color = color
+            span.textContent = '\u200B' // Zero-width space
+            
+            // Replace the text node with: beforeNode, span, afterNode
+            const parent = textNode.parentNode
+            if (parent) {
+              if (beforeText) {
+                parent.insertBefore(beforeNode, textNode)
+              }
+              parent.insertBefore(span, textNode)
+              if (afterText) {
+                parent.insertBefore(afterNode, textNode)
+              }
+              parent.removeChild(textNode)
+              
+              // Move cursor after the span
+              const newRange = document.createRange()
+              newRange.setStartAfter(span)
+              newRange.collapse(true)
+              if (selection) {
+                selection.removeAllRanges()
+                selection.addRange(newRange)
+              }
+            }
+          } else {
+            // Not in a text node - insert span at cursor
+            const span = document.createElement('span')
+            span.style.color = color
+            span.textContent = '\u200B' // Zero-width space
+            
+            range.insertNode(span)
+            
+            // Move cursor after the span
+            const newRange = document.createRange()
+            newRange.setStartAfter(span)
+            newRange.collapse(true)
+            if (selection) {
+              selection.removeAllRanges()
+              selection.addRange(newRange)
+            }
+          }
+          
+          // Update message content
+          setMessage(editor.innerHTML)
+          console.log('✅ Color applied to cursor position')
         }
       } catch (error) {
-        console.error('Error applying color:', error)
-        // Fallback to execCommand
+        console.error('❌ Error applying color:', error)
+        // Last resort: try execCommand
         try {
-          handleFormat('foreColor', color)
+          document.execCommand('foreColor', false, color)
+          setMessage(editor.innerHTML)
+          console.log('✅ Color applied with execCommand fallback')
         } catch (e) {
-          console.error('Fallback execCommand also failed:', e)
+          console.error('❌ execCommand also failed:', e)
         }
       }
       
-      setShowColorPicker(false)
-    }, 10)
+      savedSelectionRef.current = null
+      console.log('🏁 handleColorSelect completed')
+    })
   }
 
   const handleSave = () => {
@@ -410,7 +668,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
   }
 
   return (
-    <div className="space-y-6 px-4 pb-12 pt-28 md:px-10 lg:px-16 -mt-24">
+    <div className="space-y-6 px-4 pb-12 pt-28 md:px-10 lg:px-16 -mt-24 min-h-screen flex flex-col">
       <style>{`
         .broadcast-editor-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
         .broadcast-editor-content ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
@@ -418,6 +676,14 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
         .broadcast-editor-content i, .broadcast-editor-content em { font-style: italic; }
         .broadcast-editor-content u { text-decoration: underline; }
         .broadcast-editor-content p { margin-bottom: 0.5em; }
+        .composer-container { max-height: calc(100vh - 200px); }
+        @media (max-height: 1080px) {
+          .composer-container { max-height: calc(100vh - 300px); }
+        }
+        .composer-editor { min-height: 400px; max-height: none; }
+        @media (max-height: 1080px) {
+          .composer-editor { min-height: 200px; max-height: 250px; }
+        }
       `}</style>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ">
         <h1 className="text-[26px] font-semibold  text-primary-dark mb-4 ">Communication</h1>
@@ -441,9 +707,9 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
         </div>
       </div>
       {/* Tabs and Content Container */}
-      <div className="rounded-xl  bg-white overflow-hidden ">
+      <div className="rounded-xl bg-white overflow-hidden flex flex-col composer-container">
         {/* Tabs */}
-        <div className="flex gap-6 border-b border-slate-200 ">
+        <div className="flex gap-6 border-b border-slate-200 flex-shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('late-message')}
@@ -469,9 +735,9 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
         </div>
 
         {/* Content Area */}
-        <div className="p-6 border border-slate-200">
+        <div className="p-6 border border-slate-200 flex-1 flex flex-col overflow-y-auto min-h-0">
         {activeTab === 'late-message' ? (
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 flex flex-col min-h-0">
             {isEditing ? (
               <>
                 {/* Subject Line */}
@@ -488,6 +754,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                     <input
                       id="subject"
                       type="text"
+                      placeholder="Title of your message"
                       value={subject}
                       onChange={(e) => {
                         const limit = type === 'push-notification' ? 50 : 120
@@ -609,12 +876,56 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                         // Save current selection before opening color picker
                         if (editorRef.current) {
                           editorRef.current.focus()
+                          const selection = window.getSelection()
+                          if (selection && selection.rangeCount > 0) {
+                            const range = selection.getRangeAt(0)
+                            // Only save if selection is within editor
+                            if (editorRef.current.contains(range.commonAncestorContainer)) {
+                              savedSelectionRef.current = range.cloneRange()
+                            }
+                          }
                         }
                       }}
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
                         // Ensure editor has focus before opening color picker
                         if (editorRef.current) {
                           editorRef.current.focus()
+                          // Save selection again on click (in case it changed)
+                          const selection = window.getSelection()
+                          if (selection && selection.rangeCount > 0) {
+                            const range = selection.getRangeAt(0)
+                            if (editorRef.current.contains(range.commonAncestorContainer)) {
+                              savedSelectionRef.current = range.cloneRange()
+                            }
+                          } else if (!savedSelectionRef.current) {
+                            // If no selection, create one at cursor position
+                            const range = document.createRange()
+                            const sel = window.getSelection()
+                            if (sel && sel.anchorNode && editorRef.current.contains(sel.anchorNode)) {
+                              try {
+                                const node = sel.anchorNode.nodeType === Node.TEXT_NODE 
+                                  ? sel.anchorNode 
+                                  : editorRef.current
+                                const offset = sel.anchorOffset || 0
+                                const textLength = node.textContent?.length || 0
+                                range.setStart(node, Math.min(offset, textLength))
+                                range.setEnd(node, Math.min(offset, textLength))
+                                savedSelectionRef.current = range
+                              } catch (error) {
+                                // Fallback: select end of editor
+                                range.selectNodeContents(editorRef.current)
+                                range.collapse(false)
+                                savedSelectionRef.current = range
+                              }
+                            } else {
+                              // No anchor node in editor, create selection at end
+                              range.selectNodeContents(editorRef.current)
+                              range.collapse(false)
+                              savedSelectionRef.current = range
+                            }
+                          }
                         }
                         setShowColorPicker(!showColorPicker)
                       }}
@@ -624,7 +935,14 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                       <div className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: selectedColor }} />
                     </button>
                     {showColorPicker && (
-                      <div className="color-picker-popup absolute left-0 top-full z-50 mt-1 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+                      <div 
+                        ref={colorPickerPopupRef}
+                        className="color-picker-popup absolute left-0 top-full z-50 mt-1 rounded-lg border border-slate-200 bg-white p-3 shadow-lg"
+                        onMouseDown={(e) => {
+                          // Prevent losing selection when clicking inside popup
+                          e.preventDefault()
+                        }}
+                      >
                         <div className="grid grid-cols-7 gap-2">
                           {colors[0].map((color, idx) => (
                             <button
@@ -633,12 +951,14 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                               onMouseDown={(e) => {
                                 e.preventDefault()
                                 e.stopPropagation()
-                                handleColorSelect(color)
+                                console.log('🖱️ Color button mousedown:', color)
+                                handleColorSelect(color, e)
                               }}
                               onClick={(e) => {
                                 e.preventDefault()
                                 e.stopPropagation()
-                                handleColorSelect(color)
+                                console.log('🖱️ Color button click:', color)
+                                handleColorSelect(color, e)
                               }}
                               className={`h-8 w-8 rounded border-2 transition ${
                                 selectedColor === color ? 'border-primary ring-2 ring-primary/20' : 'border-slate-300'
@@ -656,12 +976,14 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                               onMouseDown={(e) => {
                                 e.preventDefault()
                                 e.stopPropagation()
-                                handleColorSelect(color)
+                                console.log('🖱️ Color button mousedown:', color)
+                                handleColorSelect(color, e)
                               }}
                               onClick={(e) => {
                                 e.preventDefault()
                                 e.stopPropagation()
-                                handleColorSelect(color)
+                                console.log('🖱️ Color button click:', color)
+                                handleColorSelect(color, e)
                               }}
                               className={`h-8 w-8 rounded border-2 transition ${
                                 selectedColor === color ? 'border-primary ring-2 ring-primary/20' : 'border-slate-300'
@@ -685,7 +1007,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 e.preventDefault()
-                                handleColorSelect(selectedColor)
+                                handleColorSelect(selectedColor, e as any)
                               }
                             }}
                             onBlur={() => {
@@ -788,7 +1110,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                       // Update format state when editor gains focus
                       updateFormatState()
                     }}
-                    className="broadcast-editor-content min-h-[400px] w-full -mt-2 rounded-md border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="broadcast-editor-content composer-editor w-full -mt-2 rounded-md border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 overflow-y-auto"
                     style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5' }}
                     data-placeholder=""
                     suppressContentEditableWarning
@@ -867,7 +1189,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="mt-6 flex justify-end gap-3 border-t border-slate-200 pt-6">
+                <div className="mt-auto pt-6 flex justify-end gap-3 border-t border-slate-200">
                   <button
                     type="button"
                     onClick={onCancel}

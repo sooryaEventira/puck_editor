@@ -248,22 +248,23 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-[26px] font-bold text-primary-dark">Schedules/Session</h1>
         <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
-          <button
-            type="button"
-            onClick={onCreateSchedule}
-            className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-black border border-slate-200 shadow-sm bg-white transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            <Plus className="h-4 w-4 text-slate-500" /> 
-            <span className="whitespace-nowrap">Create schedule</span>
-          </button>
-          <button
+        <button
             type="button"
             onClick={handleUploadClick}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-white border border-slate-200 shadow-sm px-4 py-2 text-sm font-medium text-black hover:bg-slate-50 transition"
           >
             <Upload01 className="h-4 w-4" />
             Upload
           </button>
+          <button
+            type="button"
+            onClick={onCreateSchedule}
+            className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white border border-slate-200 shadow-sm bg-primary transition hover:bg-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <Plus className="h-4 w-4 text-white" /> 
+            <span className="whitespace-nowrap">Create schedule</span>
+          </button>
+
         </div>
       </div>
 
