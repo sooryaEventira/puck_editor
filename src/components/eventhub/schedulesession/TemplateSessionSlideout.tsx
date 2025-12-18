@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import Slideout from '../../ui/untitled/Slideout'
 import Input from '../../ui/untitled/Input'
 import Select from '../../ui/untitled/Select'
+import Button from '../../ui/untitled/Button'
 import { XClose, Plus, ChevronDown, ChevronUp, Upload01 } from '@untitled-ui/icons-react'
 
 interface TemplateSessionData {
@@ -81,20 +82,22 @@ const TemplateSessionSlideout: React.FC<TemplateSessionSlideoutProps> = ({
 
   const footerContent = (
     <>
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="md"
         onClick={onClose}
-        className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/60"
       >
         Cancel
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        variant="primary"
+        size="md"
         onClick={handleSave}
-        className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         Save
-      </button>
+      </Button>
     </>
   )
 
@@ -221,14 +224,16 @@ const TemplateSessionSlideout: React.FC<TemplateSessionSlideoutProps> = ({
                 </div>
               ))}
             </div>
-            <button
+            <Button
               type="button"
+              variant="tertiary"
+              size="sm"
               onClick={handleAddSpeaker}
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+              iconLeading={<Plus className="h-4 w-4" />}
+              className="text-primary hover:text-primary/80"
             >
-              <Plus className="h-4 w-4" />
-              <span>Add user</span>
-            </button>
+              Add user
+            </Button>
           </div>
 
           {/* Divider */}
@@ -277,13 +282,15 @@ const TemplateSessionSlideout: React.FC<TemplateSessionSlideoutProps> = ({
               rows={4}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
             />
-            <button
+            <Button
               type="button"
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              variant="primary"
+              size="md"
+              className="w-full"
+              iconLeading={<Upload01 className="h-4 w-4" />}
             >
-              <Upload01 className="h-4 w-4" />
-              <span>Upload doc</span>
-            </button>
+              Upload doc
+            </Button>
           </div>
 
           {/* Divider */}

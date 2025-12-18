@@ -1,0 +1,194 @@
+{
+  "data": {
+    "content": [
+      {
+        "type": "ScheduleContent",
+        "props": {
+          "scheduleName": "Conference Schedule 2025",
+          "selectedDate": "2025-01-15T00:00:00.000Z",
+          "sessions": [
+            {
+              "id": "session-001",
+              "title": "Welcome & Opening Keynote",
+              "startTime": "09:00",
+              "startPeriod": "AM",
+              "endTime": "10:00",
+              "endPeriod": "AM",
+              "location": "Main Hall",
+              "sessionType": "keynote",
+              "tags": ["welcome", "opening", "keynote"],
+              "sections": [
+                {
+                  "id": "section-001",
+                  "type": "text",
+                  "title": "Description",
+                  "description": "Opening keynote address by the conference chair"
+                }
+              ],
+              "date": "2025-01-15T00:00:00.000Z",
+              "parentId": null
+            },
+            {
+              "id": "session-002",
+              "title": "Poster Presentation Session",
+              "startTime": "10:00",
+              "startPeriod": "AM",
+              "endTime": "11:30",
+              "endPeriod": "AM",
+              "location": "Exhibition Hall",
+              "sessionType": "workshop",
+              "tags": ["poster", "presentation"],
+              "sections": [
+                {
+                  "id": "section-002",
+                  "type": "text",
+                  "title": "Description",
+                  "description": "Poster presentations from various research groups"
+                }
+              ],
+              "date": "2025-01-15T00:00:00.000Z",
+              "parentId": null
+            },
+            {
+              "id": "session-003",
+              "title": "Parallel Session A - AI & Machine Learning",
+              "startTime": "10:00",
+              "startPeriod": "AM",
+              "endTime": "11:30",
+              "endPeriod": "AM",
+              "location": "Room A",
+              "sessionType": "keynote",
+              "tags": ["ai", "ml", "parallel"],
+              "sections": [
+                {
+                  "id": "section-003",
+                  "type": "text",
+                  "title": "Description",
+                  "description": "Deep dive into AI and Machine Learning trends"
+                }
+              ],
+              "date": "2025-01-15T00:00:00.000Z",
+              "parentId": "session-002"
+            },
+            {
+              "id": "session-004",
+              "title": "Parallel Session B - Data Science Workshop",
+              "startTime": "10:00",
+              "startPeriod": "AM",
+              "endTime": "11:30",
+              "endPeriod": "AM",
+              "location": "Room B",
+              "sessionType": "workshop",
+              "tags": ["data-science", "workshop", "parallel"],
+              "sections": [
+                {
+                  "id": "section-004",
+                  "type": "text",
+                  "title": "Description",
+                  "description": "Hands-on workshop on data science techniques"
+                }
+              ],
+              "date": "2025-01-15T00:00:00.000Z",
+              "parentId": "session-002"
+            },
+            {
+              "id": "session-005",
+              "title": "Lunch Break",
+              "startTime": "12:00",
+              "startPeriod": "PM",
+              "endTime": "01:00",
+              "endPeriod": "PM",
+              "location": "Cafeteria",
+              "sessionType": "workshop",
+              "tags": ["break", "lunch"],
+              "sections": [
+                {
+                  "id": "section-005",
+                  "type": "text",
+                  "title": "Description",
+                  "description": "Networking lunch for all attendees"
+                }
+              ],
+              "date": "2025-01-15T00:00:00.000Z",
+              "parentId": null
+            },
+            {
+              "id": "session-006",
+              "title": "Panel Discussion: Future of Technology",
+              "startTime": "02:00",
+              "startPeriod": "PM",
+              "endTime": "03:30",
+              "endPeriod": "PM",
+              "location": "Main Hall",
+              "sessionType": "keynote",
+              "tags": ["panel", "discussion", "technology"],
+              "sections": [
+                {
+                  "id": "section-006",
+                  "type": "text",
+                  "title": "Description",
+                  "description": "Expert panel discussing emerging technologies"
+                }
+              ],
+              "date": "2025-01-15T00:00:00.000Z",
+              "parentId": null
+            },
+            {
+              "id": "session-007",
+              "title": "Parallel Session C - Cloud Computing",
+              "startTime": "02:00",
+              "startPeriod": "PM",
+              "endTime": "03:30",
+              "endPeriod": "PM",
+              "location": "Room C",
+              "sessionType": "keynote",
+              "tags": ["cloud", "computing", "parallel"],
+              "sections": [
+                {
+                  "id": "section-007",
+                  "type": "text",
+                  "title": "Description",
+                  "description": "Exploring cloud computing architectures"
+                }
+              ],
+              "date": "2025-01-15T00:00:00.000Z",
+              "parentId": "session-006"
+            },
+            {
+              "id": "session-008",
+              "title": "Parallel Session D - Cybersecurity",
+              "startTime": "02:00",
+              "startPeriod": "PM",
+              "endTime": "03:30",
+              "endPeriod": "PM",
+              "location": "Room D",
+              "sessionType": "workshop",
+              "tags": ["cybersecurity", "parallel"],
+              "sections": [
+                {
+                  "id": "section-008",
+                  "type": "text",
+                  "title": "Description",
+                  "description": "Best practices in cybersecurity"
+                }
+              ],
+              "date": "2025-01-15T00:00:00.000Z",
+              "parentId": "session-006"
+            }
+          ]
+        },
+        "id": "schedule-content-schedule-1234567890"
+      }
+    ],
+    "root": {
+      "props": {
+        "title": "Conference Schedule 2025",
+        "pageTitle": "Conference Schedule 2025",
+        "pageType": "schedule"
+      }
+    },
+    "zones": {}
+  },
+  "filename": "schedule-schedule-1234567890.json"
+}
+

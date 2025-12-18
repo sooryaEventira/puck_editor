@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, Pencil01 } from '@untitled-ui/icons-react'
+import Button from '../../ui/untitled/Button'
 
 interface WeekDateSelectorProps {
   initialDate?: Date
@@ -525,23 +526,25 @@ const WeekDateSelector: React.FC<WeekDateSelectorProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="md"
                 onClick={handleCancel}
-                className="px-3.5 py-2.5 bg-white border border-[#D5D7DA] rounded-lg text-sm font-semibold text-[#414651] shadow-sm hover:bg-slate-50 transition focus:outline-none"
                 style={{ fontFamily: 'Inter', lineHeight: '20px' }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="primary"
+                size="md"
                 onClick={handleApply}
                 disabled={!tempStartDate || !tempEndDate}
-                className="px-3.5 py-2.5 bg-[#6938EF] rounded-lg text-sm font-semibold text-white shadow-sm hover:bg-[#5a2dd4] transition focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 border-2 border-white"
                 style={{ fontFamily: 'Inter', lineHeight: '20px' }}
               >
                 Apply
-              </button>
+              </Button>
             </div>
           </div>
         </div>

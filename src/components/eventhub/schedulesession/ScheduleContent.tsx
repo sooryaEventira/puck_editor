@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Upload01, Plus, ArrowNarrowLeft } from '@untitled-ui/icons-react'
+import { Button } from '../../ui/untitled'
 import WeekDateSelector from './WeekDateSelector'
 import UploadModal from './UploadModal'
 import ScheduleGrid from './ScheduleGrid'
@@ -11,8 +12,9 @@ interface ScheduleContentProps {
   onUpload?: () => void
   onAddSession?: (parentSessionId?: string, creationType?: 'template' | 'scratch') => void
   onBack?: () => void
-  sessions?: SavedSession[]
+  sessions?: SavedSession[] | any[] // Allow any[] for Puck compatibility
   onDateChange?: (date: Date) => void
+  selectedDate?: Date | string // Allow string for Puck (ISO string)
 }
 
 const ScheduleContent: React.FC<ScheduleContentProps> = ({
@@ -21,23 +23,51 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
   onAddSession,
   onBack,
   sessions = [],
-  onDateChange
+  onDateChange,
+  selectedDate: propSelectedDate
 }) => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [isSessionCreationModalOpen, setIsSessionCreationModalOpen] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+  
+  // Handle date from props (can be Date or ISO string from Puck)
+  const getInitialDate = (): Date => {
+    if (propSelectedDate) {
+      if (propSelectedDate instanceof Date) {
+        const date = new Date(propSelectedDate)
+        date.setHours(0, 0, 0, 0)
+        return date
+      } else if (typeof propSelectedDate === 'string') {
+        const date = new Date(propSelectedDate)
+        date.setHours(0, 0, 0, 0)
+        return date
+      }
+    }
     const date = new Date()
     date.setHours(0, 0, 0, 0)
     return date
-  })
+  }
+  
+  const [selectedDate, setSelectedDate] = useState<Date>(getInitialDate)
 
   useEffect(() => {
-    // Initialize date when component mounts
-    const initialDate = new Date()
-    initialDate.setHours(0, 0, 0, 0)
+    // Initialize date when component mounts or prop changes
+    const initialDate = getInitialDate()
     setSelectedDate(initialDate)
     onDateChange?.(initialDate)
-  }, [])
+  }, [propSelectedDate])
+  
+  // Normalize sessions - convert date strings to Date objects if needed
+  const normalizedSessions = useMemo(() => {
+    return (sessions || []).map((session: any) => {
+      if (session.date && typeof session.date === 'string') {
+        return {
+          ...session,
+          date: new Date(session.date)
+        }
+      }
+      return session
+    })
+  }, [sessions])
 
   const handleDateChange = (date: Date) => {
     const normalizedDate = new Date(date)
@@ -66,33 +96,31 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
           {onBack && (
-            <button
+            <Button
               type="button"
+              variant="tertiary"
+              size="sm"
               onClick={onBack}
-              className="flex items-center justify-center rounded-md p-2 text-slate-600 transition hover:bg-slate-100 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="p-2"
+              iconLeading={<ArrowNarrowLeft className="h-5 w-5" />}
               aria-label="Back to schedule list"
-            >
-              <ArrowNarrowLeft className="h-5 w-5" />
-            </button>
+            />
           )}
           <h1 className="font-manrope text-[26px] font-semibold leading-10 text-primary-dark md:text-[32px] md:leading-10">
             {scheduleName}
           </h1>
         </div>
-        <button
+        <Button
           type="button"
           data-schedule-upload="true"
+          variant="primary"
+          size="md"
           onClick={handleUploadClick}
-          className="inline-flex items-center justify-center gap-1 overflow-hidden rounded-lg bg-[#6938EF] px-[14px] py-[6px] text-white transition-colors hover:bg-[#5a2dd4]"
+          iconLeading={<Upload01 className="h-4 w-4" />}
           style={{ fontFamily: 'Inter' }}
         >
-          <div className="relative h-5 w-5 overflow-hidden">
-            <Upload01 className="absolute left-[2.5px] top-[2.5px] h-[15px] w-[15px] text-white" strokeWidth={1.67} />
-          </div>
-          <div className="flex items-center justify-center px-0.5">
-            <span className="text-sm font-semibold leading-5 text-white">Upload</span>
-          </div>
-        </button>
+          Upload
+        </Button>
       </div>
 
       <div className="mt-6 flex min-h-[22rem] flex-col gap-6 overflow-hidden rounded border border-slate-200 bg-white px-4 py-6 shadow-sm md:min-h-[819px] md:px-8">
@@ -105,22 +133,21 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
         />
 
         <div>
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="md"
             onClick={() => setIsSessionCreationModalOpen(true)}
-            className="inline-flex items-center justify-center gap-1 overflow-hidden rounded-lg bg-[#6938EF] px-3 py-1.5 text-white shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] "
+            iconLeading={<Plus className="h-4 w-4" />}
             style={{ fontFamily: 'Inter' }}
           >
-            <div className="flex items-center justify-center px-0.5">
-              <Plus className="h-4 w-4 text-white" strokeWidth={1} />
-              <span className="text-sm font-semibold leading-5 text-white"> Add session</span>
-            </div>
-          </button>
+            Add session
+          </Button>
         </div>
 
-        {sessions && sessions.length > 0 ? (
+        {normalizedSessions && normalizedSessions.length > 0 ? (
           <ScheduleGrid 
-            sessions={sessions} 
+            sessions={normalizedSessions} 
             selectedDate={selectedDate} 
             onAddParallelSession={(parentId) => onAddSession?.(parentId)} 
           />

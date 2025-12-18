@@ -47,3 +47,7 @@ export type { ProgressStep, ProgressStepsProps } from './ProgressSteps'
 export { default as Slideout } from './Slideout'
 export type { SlideoutProps } from './Slideout'
 
+export { default as Button } from './Button'
+export type { ButtonProps } from './Button'
+export { buttonVariants } from './Button'
+

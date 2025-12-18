@@ -9,6 +9,7 @@ import {
 import {
   HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer, RegistrationCTA, Sponsors, ContactFooter
 } from '../components/advanced'
+import ScheduleContent from '../components/eventhub/schedulesession/ScheduleContent'
 import RegistrationCTA from '../components/advanced/RegistrationCTA'
 import Sponsors from '../components/advanced/Sponsors'
 import ContactFooter from '../components/advanced/ContactFooter'
@@ -2685,6 +2686,90 @@ export const config = {
         // Note: onNavigateToEditor and onAddComponent come from NavigationContext
         // They are not passed as props here, the component gets them from useNavigation()
         return React.createElement(SchedulePage as any, props);
+      }
+    },
+    ScheduleContent: {
+      label: "📅 Schedule Content (with WeekDateSelector)",
+      fields: {
+        scheduleName: {
+          type: 'text' as const,
+          label: 'Schedule Name',
+          placeholder: 'Schedule 1'
+        },
+        selectedDate: {
+          type: 'text' as const,
+          label: 'Selected Date (ISO string)',
+          placeholder: '2025-01-15T00:00:00.000Z'
+        },
+        sessions: {
+          type: 'array' as const,
+          label: 'Sessions',
+          arrayFields: {
+            id: { type: 'text' as const, label: 'ID' },
+            title: { type: 'text' as const, label: 'Title' },
+            startTime: { type: 'text' as const, label: 'Start Time' },
+            startPeriod: { 
+              type: 'select' as const, 
+              label: 'Start Period',
+              options: [
+                { label: 'AM', value: 'AM' },
+                { label: 'PM', value: 'PM' }
+              ]
+            },
+            endTime: { type: 'text' as const, label: 'End Time' },
+            endPeriod: { 
+              type: 'select' as const, 
+              label: 'End Period',
+              options: [
+                { label: 'AM', value: 'AM' },
+                { label: 'PM', value: 'PM' }
+              ]
+            },
+            location: { type: 'text' as const, label: 'Location' },
+            sessionType: { type: 'text' as const, label: 'Session Type' },
+            tags: {
+              type: 'array' as const,
+              label: 'Tags',
+              arrayFields: {
+                value: { type: 'text' as const, label: 'Tag' }
+              }
+            },
+            sections: {
+              type: 'array' as const,
+              label: 'Sections',
+              arrayFields: {
+                id: { type: 'text' as const, label: 'ID' },
+                type: { type: 'text' as const, label: 'Type' },
+                title: { type: 'text' as const, label: 'Title' },
+                description: { type: 'textarea' as const, label: 'Description' }
+              }
+            },
+            date: { type: 'text' as const, label: 'Date (ISO string)' },
+            parentId: { type: 'text' as const, label: 'Parent ID (for parallel sessions)' }
+          }
+        }
+      },
+      defaultProps: {
+        scheduleName: 'Schedule 1',
+        selectedDate: new Date().toISOString(),
+        sessions: []
+      },
+      render: (props: any) => {
+        // Convert date string back to Date object for ScheduleContent
+        const processedProps = {
+          ...props,
+          selectedDate: props.selectedDate ? new Date(props.selectedDate) : new Date(),
+          sessions: (props.sessions || []).map((session: any) => ({
+            ...session,
+            date: session.date ? new Date(session.date) : new Date(),
+            tags: Array.isArray(session.tags) 
+              ? session.tags.map((tag: any) => typeof tag === 'string' ? tag : tag.value || tag)
+              : []
+          }))
+        }
+        // Note: Callbacks (onAddSession, onUpload, onBack) are optional and won't be available in Puck editor
+        // ScheduleContent handles this gracefully with optional chaining
+        return React.createElement(ScheduleContent, processedProps);
       }
     },
     LiveChat: {

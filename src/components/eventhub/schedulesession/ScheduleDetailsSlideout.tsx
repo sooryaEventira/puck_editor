@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react'
 import { MultiValue, ActionMeta } from 'react-select'
 import Slideout from '../../ui/untitled/Slideout'
 import Input from '../../ui/untitled/Input'
+import Button from '../../ui/untitled/Button'
 import CreatableMultiSelect, { CreatableMultiSelectOption } from '../../ui/untitled/CreatableMultiSelect'
 
 interface ScheduleDetails {
@@ -166,21 +167,23 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
 
   const footerContent = (
     <>
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="md"
         onClick={onClose}
-        className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/60"
       >
         Cancel
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        variant="primary"
+        size="md"
         onClick={handleSave}
         disabled={!details.title.trim()}
-        className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Create schedule
-      </button>
+      </Button>
     </>
   )
 

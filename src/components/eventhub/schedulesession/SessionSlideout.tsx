@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import Slideout from '../../ui/untitled/Slideout'
+import Button from '../../ui/untitled/Button'
 import SessionDetailsForm from './SessionDetailsForm'
 import SectionPickerModal from './SectionPickerModal'
 import SessionSummaryView from './SessionSummaryView'
@@ -157,29 +158,32 @@ const SessionSlideout: React.FC<SessionSlideoutProps> = ({
     <>
       {isEditing ? (
         <>
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="md"
             onClick={onClose}
-            className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/60"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="primary"
+            size="md"
             onClick={handleSave}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             Save
-          </button>
+          </Button>
         </>
       ) : (
-        <button
+        <Button
           type="button"
+          variant="primary"
+          size="md"
           onClick={handleBeginEdit}
-          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           Edit
-        </button>
+        </Button>
       )}
     </>
   )

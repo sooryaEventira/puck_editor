@@ -3,7 +3,8 @@ import { Plus, Pencil01, Trash03, Upload01 } from '@untitled-ui/icons-react'
 import {
   DividerLineTable,
   type DividerLineTableColumn,
-  type DividerLineTableSortDescriptor
+  type DividerLineTableSortDescriptor,
+  Button
 } from '../../ui/untitled'
 import { SavedSchedule } from './sessionTypes'
 import { useTableHeader, TablePagination } from '../../ui'
@@ -134,13 +135,14 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
         align: 'center',
         render: ({ schedule }) => (
           <div className="flex items-center justify-center">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => onManageSession?.(schedule.id)}
-              className="px-1.5 py-1 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-300 rounded-md shadow-md hover:bg-slate-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               Manage session
-            </button>
+            </Button>
           </div>
         )
       },
@@ -248,23 +250,24 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-[26px] font-bold text-primary-dark">Schedules/Session</h1>
         <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
-        <button
+          <Button
             type="button"
+            variant="secondary"
+            size="md"
             onClick={handleUploadClick}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-white border border-slate-200 shadow-sm px-4 py-2 text-sm font-medium text-black hover:bg-slate-50 transition"
+            iconLeading={<Upload01 className="h-4 w-4" />}
           >
-            <Upload01 className="h-4 w-4" />
             Upload
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="primary"
+            size="md"
             onClick={onCreateSchedule}
-            className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white border border-slate-200 shadow-sm bg-primary transition hover:bg-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            iconLeading={<Plus className="h-4 w-4" />}
           >
-            <Plus className="h-4 w-4 text-white" /> 
             <span className="whitespace-nowrap">Create schedule</span>
-          </button>
-
+          </Button>
         </div>
       </div>
 

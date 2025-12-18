@@ -8,6 +8,7 @@ import ResourceManagementPage from './resourcemanagement/ResourceManagementPage'
 import SchedulePage from './schedulesession/SchedulePage'
 import EventWebsitePage from './EventWebsitePage'
 import AttendeeManagementPage from './attendeemanagement/AttendeeManagementPage'
+import WebsiteSettingsPage from './websitesettings/WebsiteSettingsPage'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 
 interface EventHubPageProps {
@@ -160,7 +161,6 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
           />
         )
       case 'analytics':
-      case 'website-settings':
         // Placeholder for pages that haven't been implemented yet
         return (
           <div className="min-h-screen flex items-center justify-center p-8">
@@ -173,6 +173,12 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
               </p>
             </div>
           </div>
+        )
+      case 'website-settings':
+        return (
+          <WebsiteSettingsPage
+            hideNavbarAndSidebar={true}
+          />
         )
       case 'event-hub':
       default:
@@ -209,7 +215,7 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
       />
 
       {/* Content Area */}
-      <div key={activeSection} className="md:pl-[250px] pt-16 min-h-screen overflow-auto">
+      <div key={activeSection} className="md:pl-[250px] pt-16 h-[calc(100vh-64px)] overflow-y-auto">
         {renderContent()}
       </div>
     </div>

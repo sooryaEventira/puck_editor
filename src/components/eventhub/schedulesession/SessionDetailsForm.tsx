@@ -1,6 +1,6 @@
 import React from 'react'
 import { Eye, Pencil01 } from '@untitled-ui/icons-react'
-import { Input, Select } from '../../ui/untitled'
+import { Input, Select, Button } from '../../ui/untitled'
 import { SessionDraft } from './sessionTypes'
 
 interface SessionDetailsFormProps {
@@ -49,8 +49,6 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
 
 
 
-  const addSectionButtonClassName =
-    'inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
 
   const renderTimeField = (
     label: string,
@@ -151,26 +149,31 @@ const SessionDetailsForm: React.FC<SessionDetailsFormProps> = ({
         {draft.sections.length === 0 ? (
           <>
             <p className="text-base font-medium text-slate-600">Click to add a section!</p>
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="md"
               onClick={onAddSectionClick}
-              className={`mt-4 ${addSectionButtonClassName}`}
+              className="mt-4"
+              iconLeading={<span>+</span>}
               aria-label="Add a section"
             >
-              + Add section
-            </button>
+              Add section
+            </Button>
           </>
         ) : (
           <div className="space-y-3 text-left">
             <div className="flex items-center justify-start">
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="md"
                 onClick={onAddSectionClick}
-                className={addSectionButtonClassName}
+                iconLeading={<span>+</span>}
                 aria-label="Add another section"
               >
-                + Add section
-              </button>
+                Add section
+              </Button>
             </div>
             <ul className="space-y-3">
               {draft.sections.map((section) => (

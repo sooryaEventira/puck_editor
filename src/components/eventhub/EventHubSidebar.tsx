@@ -1,5 +1,6 @@
 import React from 'react'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
+import Button from '../ui/untitled/Button'
 
 interface SidebarItem {
   id: string

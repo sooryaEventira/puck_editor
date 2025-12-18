@@ -5,6 +5,7 @@ import EventHubSidebar from './EventHubSidebar'
 import { defaultCards, ContentCard } from './EventHubContent'
 import PageCreationModal, { type PageType } from '../page/PageCreationModal'
 import { API_ENDPOINTS } from '../../config/env'
+import Button from '../ui/untitled/Button'
 import { 
   InfoCircle, 
   CodeBrowser, 
@@ -13,7 +14,8 @@ import {
   Eye,
   Link03,
   Edit05,
-  Trash01
+  Trash01,
+  Plus
 } from '@untitled-ui/icons-react'
 
 interface EventWebsitePageProps {
@@ -377,54 +379,59 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-[26px] font-bold text-primary-dark">Event Website</h1>
             <div className="flex items-center gap-3">
-              <button
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={handlePreview}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors"
+                iconLeading={<Eye className="h-4 w-4" />}
               >
-                <Eye className="h-4 w-4" />
                 Preview
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={handlePublishWebsite}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors"
+                iconLeading={<Globe01 className="h-4 w-4" />}
               >
-                <Globe01 className="h-4 w-4" />
                 Publish Website
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
                 onClick={handleNewPage}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#6938EF] hover:bg-[#5925DC] transition-colors"
+                iconLeading={<Plus className="h-4 w-4" />}
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
                 New page
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* Tabs */}
           <div className="flex gap-6 mb-6 border-b border-slate-200">
-            <button
+            <Button
+              variant="tertiary"
+              size="sm"
               onClick={() => setActiveSubItem('website-pages')}
-              className={`pb-3 px-1 text-sm font-medium transition-colors relative ${
+              className={`pb-3 px-1 h-auto rounded-none border-b-2 transition-colors relative ${
                 activeSubItem === 'website-pages'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'text-primary border-b-primary'
+                  : 'text-slate-600 hover:text-slate-900 border-b-transparent'
               }`}
             >
               Website pages
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="tertiary"
+              size="sm"
               onClick={() => setActiveSubItem('website-header')}
-              className={`pb-3 px-1 text-sm font-medium transition-colors relative ${
+              className={`pb-3 px-1 h-auto rounded-none border-b-2 transition-colors relative ${
                 activeSubItem === 'website-header'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'text-primary border-b-primary'
+                  : 'text-slate-600 hover:text-slate-900 border-b-transparent'
               }`}
             >
               Website header
-            </button>
+            </Button>
           </div>
 
           {/* Content based on active tab */}
@@ -444,41 +451,46 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                     </span>
                     {!page.isDisabled && (
                       <div className="flex items-center gap-4">
-                        <button
+                        <Button
+                          variant="tertiary"
+                          size="sm"
                           onClick={() => handlePageAction(page.id, 'duplicate')}
-                          className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                          className="p-2 text-slate-400 hover:text-slate-600"
                           aria-label="Duplicate"
-                        >
-                          <Copy01 className="h-4 w-4" />
-                        </button>
-                        <button
+                          iconLeading={<Copy01 className="h-4 w-4" />}
+                        />
+                        <Button
+                          variant="tertiary"
+                          size="sm"
                           onClick={() => handlePageAction(page.id, 'view')}
-                          className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                          className="p-2 text-slate-400 hover:text-slate-600"
                           aria-label="View"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button
+                          iconLeading={<Eye className="h-4 w-4" />}
+                        />
+                        <Button
+                          variant="tertiary"
+                          size="sm"
                           onClick={() => handlePageAction(page.id, 'link')}
-                          className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                          className="p-2 text-slate-400 hover:text-slate-600"
                           aria-label="Copy link"
-                        >
-                          <Link03 className="h-4 w-4" />
-                        </button>
-                        <button
+                          iconLeading={<Link03 className="h-4 w-4" />}
+                        />
+                        <Button
+                          variant="tertiary"
+                          size="sm"
                           onClick={() => handlePageAction(page.id, 'edit')}
-                          className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                          className="p-2 text-slate-400 hover:text-slate-600"
                           aria-label="Edit"
-                        >
-                          <Edit05 className="h-4 w-4" />
-                        </button>
-                        <button
+                          iconLeading={<Edit05 className="h-4 w-4" />}
+                        />
+                        <Button
+                          variant="tertiary"
+                          size="sm"
                           onClick={() => handlePageAction(page.id, 'delete')}
-                          className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                          className="p-2 text-slate-400 hover:text-red-600"
                           aria-label="Delete"
-                        >
-                          <Trash01 className="h-4 w-4" />
-                        </button>
+                          iconLeading={<Trash01 className="h-4 w-4" />}
+                        />
                       </div>
                     )}
                   </div>
@@ -530,54 +542,59 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-primary">Event Website</h1>
           <div className="flex items-center gap-3">
-            <button
+            <Button
+              variant="secondary"
+              size="md"
               onClick={handlePreview}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors"
+              iconLeading={<Eye className="h-4 w-4" />}
             >
-              <Eye className="h-4 w-4" />
               Preview
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
               onClick={handlePublishWebsite}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors"
+              iconLeading={<Globe01 className="h-4 w-4" />}
             >
-              <Globe01 className="h-4 w-4" />
               Publish Website
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
               onClick={handleNewPage}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#6938EF] hover:bg-[#5925DC] transition-colors"
+              iconLeading={<Plus className="h-4 w-4" />}
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
               New page
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Tabs */}
         <div className="flex gap-6 mb-6 border-b border-slate-200">
-          <button
+          <Button
+            variant="tertiary"
+            size="sm"
             onClick={() => setActiveSubItem('website-pages')}
-            className={`pb-3 px-1 text-sm font-medium transition-colors relative ${
+            className={`pb-3 px-1 h-auto rounded-none border-b-2 transition-colors relative ${
               activeSubItem === 'website-pages'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'text-primary border-b-primary'
+                : 'text-slate-600 hover:text-slate-900 border-b-transparent'
             }`}
           >
             Website pages
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="tertiary"
+            size="sm"
             onClick={() => setActiveSubItem('website-header')}
-            className={`pb-3 px-1 text-sm font-medium transition-colors relative ${
+            className={`pb-3 px-1 h-auto rounded-none border-b-2 transition-colors relative ${
               activeSubItem === 'website-header'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'text-primary border-b-primary'
+                : 'text-slate-600 hover:text-slate-900 border-b-transparent'
             }`}
           >
             Website header
-          </button>
+          </Button>
         </div>
 
         {/* Content based on active tab */}
@@ -597,41 +614,46 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                   </span>
                   {!page.isDisabled && (
                     <div className="flex items-center gap-4">
-                      <button
+                      <Button
+                        variant="tertiary"
+                        size="sm"
                         onClick={() => handlePageAction(page.id, 'duplicate')}
-                        className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-600"
                         aria-label="Duplicate"
-                      >
-                        <Copy01 className="h-4 w-4" />
-                      </button>
-                      <button
+                        iconLeading={<Copy01 className="h-4 w-4" />}
+                      />
+                      <Button
+                        variant="tertiary"
+                        size="sm"
                         onClick={() => handlePageAction(page.id, 'view')}
-                        className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-600"
                         aria-label="View"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
+                        iconLeading={<Eye className="h-4 w-4" />}
+                      />
+                      <Button
+                        variant="tertiary"
+                        size="sm"
                         onClick={() => handlePageAction(page.id, 'link')}
-                        className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-600"
                         aria-label="Copy link"
-                      >
-                        <Link03 className="h-4 w-4" />
-                      </button>
-                      <button
+                        iconLeading={<Link03 className="h-4 w-4" />}
+                      />
+                      <Button
+                        variant="tertiary"
+                        size="sm"
                         onClick={() => handlePageAction(page.id, 'edit')}
-                        className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-600"
                         aria-label="Edit"
-                      >
-                        <Edit05 className="h-4 w-4" />
-                      </button>
-                      <button
+                        iconLeading={<Edit05 className="h-4 w-4" />}
+                      />
+                      <Button
+                        variant="tertiary"
+                        size="sm"
                         onClick={() => handlePageAction(page.id, 'delete')}
-                        className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                        className="p-2 text-slate-400 hover:text-red-600"
                         aria-label="Delete"
-                      >
-                        <Trash01 className="h-4 w-4" />
-                      </button>
+                        iconLeading={<Trash01 className="h-4 w-4" />}
+                      />
                     </div>
                   )}
                 </div>

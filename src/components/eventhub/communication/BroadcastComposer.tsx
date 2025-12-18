@@ -14,6 +14,7 @@ import {
   XClose,
   AlertCircle
 } from '@untitled-ui/icons-react'
+import Button from '../../ui/untitled/Button'
 import type { Macro } from './communicationTypes'
 import BroadcastPreviewModal from './BroadcastPreviewModal'
 import { ScheduleBroadcastModal } from './ScheduleBroadcastModal'
@@ -688,50 +689,56 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ">
         <h1 className="text-[26px] font-semibold  text-primary-dark mb-4 ">Communication</h1>
         <div className="flex items-center gap-3">
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="md"
             onClick={() => setShowPreviewModal(true)}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            iconTrailing={<Send01 className="h-4 w-4" />}
           >
-            <span>Send</span>
-            <Send01 className="h-4 w-4" />
-          </button>
-          <button
+            Send
+          </Button>
+          <Button
             type="button"
+            variant="secondary"
+            size="md"
             onClick={() => setShowScheduleModal(true)}
-            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            iconTrailing={<Calendar className="h-4 w-4" />}
           >
-            <span>Schedule</span>
-            <Calendar className="h-4 w-4" />
-          </button>
+            Schedule
+          </Button>
         </div>
       </div>
       {/* Tabs and Content Container */}
       <div className="rounded-xl bg-white overflow-hidden flex flex-col composer-container">
         {/* Tabs */}
         <div className="flex gap-6 border-b border-slate-200 flex-shrink-0">
-          <button
+          <Button
             type="button"
+            variant="tertiary"
+            size="sm"
             onClick={() => setActiveTab('late-message')}
-            className={`pb-3 px-1 text-[15px] font-medium font-semibold transition-colors relative whitespace-nowrap ${
+            className={`pb-3 px-1 h-auto rounded-none border-b-2 transition-colors relative whitespace-nowrap ${
               activeTab === 'late-message'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'text-primary border-b-primary'
+                : 'text-slate-600 hover:text-slate-900 border-b-transparent'
             }`}
           >
             Late Message
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="tertiary"
+            size="sm"
             onClick={() => setActiveTab('settings')}
-            className={`pb-3 px-1 text-[15px] font-medium font-semibold transition-colors relative whitespace-nowrap ${
+            className={`pb-3 px-1 h-auto rounded-none border-b-2 transition-colors relative whitespace-nowrap ${
               activeTab === 'settings'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'text-primary border-b-primary'
+                : 'text-slate-600 hover:text-slate-900 border-b-transparent'
             }`}
           >
             Settings
-          </button>
+          </Button>
         </div>
 
         {/* Content Area */}
@@ -793,8 +800,10 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                 {/* Formatting Toolbar */}
                 <div className="flex flex-wrap items-center gap-1.5  border-slate-200 pb-3">
                   {/* Insert Macro Dropdown */}
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="sm"
                     onMouseDown={(e) => {
                         e.preventDefault()
                         // Toggle dropdown - in real implementation, this would show a dropdown menu
@@ -804,14 +813,14 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                             handleInsertMacro()
                         }
                     }}
-                    className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm hover:bg-slate-50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    iconTrailing={
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    }
                   >
-                    <span>{'{ }'}</span>
-                    <span>Insert</span>
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                    {'{ }'} Insert
+                  </Button>
 
                   {/* Font Selection */}
                   <select
@@ -827,42 +836,33 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                   <div className="h-5 w-px bg-slate-300" />
 
                   {/* Text Formatting */}
-                  <button
+                  <Button
                     type="button"
+                    variant="tertiary"
+                    size="sm"
                     onMouseDown={(e) => handleToolbarAction(e, 'bold')}
-                    className={`flex h-8 w-8 items-center justify-center rounded transition ${
-                      isBold 
-                        ? 'bg-slate-200 text-slate-900' 
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
+                    className={`h-8 w-8 p-0 ${isBold ? 'bg-slate-200 text-slate-900' : ''}`}
                     title="Bold"
-                  >
-                    <Bold01 className="h-4 w-4" />
-                  </button>
-                  <button
+                    iconLeading={<Bold01 className="h-4 w-4" />}
+                  />
+                  <Button
                     type="button"
+                    variant="tertiary"
+                    size="sm"
                     onMouseDown={(e) => handleToolbarAction(e, 'italic')}
-                    className={`flex h-8 w-8 items-center justify-center rounded transition ${
-                      isItalic 
-                        ? 'bg-slate-200 text-slate-900' 
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
+                    className={`h-8 w-8 p-0 ${isItalic ? 'bg-slate-200 text-slate-900' : ''}`}
                     title="Italic"
-                  >
-                    <Italic01 className="h-4 w-4" />
-                  </button>
-                  <button
+                    iconLeading={<Italic01 className="h-4 w-4" />}
+                  />
+                  <Button
                     type="button"
+                    variant="tertiary"
+                    size="sm"
                     onMouseDown={(e) => handleToolbarAction(e, 'underline')}
-                    className={`flex h-8 w-8 items-center justify-center rounded transition ${
-                      isUnderline 
-                        ? 'bg-slate-200 text-slate-900' 
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
+                    className={`h-8 w-8 p-0 ${isUnderline ? 'bg-slate-200 text-slate-900' : ''}`}
                     title="Underline"
-                  >
-                    <Underline01 className="h-4 w-4" />
-                  </button>
+                    iconLeading={<Underline01 className="h-4 w-4" />}
+                  />
 
                   <div className="h-5 w-px bg-slate-300" />
 
@@ -1028,63 +1028,67 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                   <div className="h-5 w-px bg-slate-300" />
 
                   {/* Alignment */}
-                  <button
+                  <Button
                     type="button"
+                    variant="tertiary"
+                    size="sm"
                     onMouseDown={(e) => handleToolbarAction(e, 'justifyLeft')}
-                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    className="h-8 w-8 p-0"
                     title="Align Left"
-                  >
-                    <AlignLeft className="h-4 w-4" />
-                  </button>
-                  <button
+                    iconLeading={<AlignLeft className="h-4 w-4" />}
+                  />
+                  <Button
                     type="button"
+                    variant="tertiary"
+                    size="sm"
                     onMouseDown={(e) => handleToolbarAction(e, 'justifyCenter')}
-                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    className="h-8 w-8 p-0"
                     title="Align Center"
-                  >
-                    <AlignCenter className="h-4 w-4" />
-                  </button>
+                    iconLeading={<AlignCenter className="h-4 w-4" />}
+                  />
                   <div className="h-5 w-px bg-slate-300" />
 
                   {/* Lists */}
-                  <button
+                  <Button
                     type="button"
+                    variant="tertiary"
+                    size="sm"
                     onMouseDown={(e) => handleToolbarAction(e, 'insertUnorderedList')}
-                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    className="h-8 w-8 p-0"
                     title="Bullet List"
-                  >
-
-                    <List className="h-4 w-4"/>
-                  </button>
+                    iconLeading={<List className="h-4 w-4"/>}
+                  />
 
 
                   <div className="h-5 w-px bg-slate-300" />
 
                   {/* Link (Attachment) and Image */}
-                  <button
+                  <Button
                     type="button"
+                    variant="tertiary"
+                    size="sm"
                     onMouseDown={(e) => {
                         e.preventDefault()
                         const url = prompt('Enter URL:')
                         if (url) handleFormat('createLink', url)
                     }}
-                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    className="h-8 w-8 p-0"
                     title="Insert Link"
-                  >
-                    <Attachment01 className="h-4 w-4" />
-                  </button>
-                  <button
+                    iconLeading={<Attachment01 className="h-4 w-4" />}
+                  />
+                  <Button
                     type="button"
+                    variant="tertiary"
+                    size="sm"
                     onMouseDown={(e) => {
                         e.preventDefault()
                         const url = prompt('Enter image URL:')
                         if (url) handleFormat('insertImage', url)
                     }}
-                    className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                    className="h-8 w-8 p-0"
                     title="Insert Image"
-                  >
-                    <Image01 className="h-4 w-4" />
-                  </button>
+                    iconLeading={<Image01 className="h-4 w-4" />}
+                  />
                 </div>
 
                 {/* Message Body */}
@@ -1128,82 +1132,84 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                       }}
                       onMouseDown={(e) => e.preventDefault()} // Prevent focus loss when clicking toolbar background
                     >
-                      <button
+                      <Button
                         type="button"
+                        variant="tertiary"
+                        size="sm"
                         onMouseDown={(e) => handleToolbarAction(e, 'bold')}
-                        className={`flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700 ${
-                          isBold ? 'bg-slate-700' : ''
-                        }`}
+                        className={`h-7 w-7 p-0 bg-slate-900 text-white hover:bg-slate-700 ${isBold ? 'bg-slate-700' : ''}`}
                         title="Bold"
-                      >
-                        <Bold01 className="h-3.5 w-3.5" />
-                      </button>
-                      <button
+                        iconLeading={<Bold01 className="h-3.5 w-3.5" />}
+                      />
+                      <Button
                         type="button"
+                        variant="tertiary"
+                        size="sm"
                         onMouseDown={(e) => handleToolbarAction(e, 'italic')}
-                        className={`flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700 ${
-                          isItalic ? 'bg-slate-700' : ''
-                        }`}
+                        className={`h-7 w-7 p-0 bg-slate-900 text-white hover:bg-slate-700 ${isItalic ? 'bg-slate-700' : ''}`}
                         title="Italic"
-                      >
-                        <Italic01 className="h-3.5 w-3.5" />
-                      </button>
-                      <button
+                        iconLeading={<Italic01 className="h-3.5 w-3.5" />}
+                      />
+                      <Button
                         type="button"
+                        variant="tertiary"
+                        size="sm"
                         onMouseDown={(e) => handleToolbarAction(e, 'underline')}
-                        className={`flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700 ${
-                          isUnderline ? 'bg-slate-700' : ''
-                        }`}
+                        className={`h-7 w-7 p-0 bg-slate-900 text-white hover:bg-slate-700 ${isUnderline ? 'bg-slate-700' : ''}`}
                         title="Underline"
-                      >
-                        <Underline01 className="h-3.5 w-3.5" />
-                      </button>
+                        iconLeading={<Underline01 className="h-3.5 w-3.5" />}
+                      />
                       <div className="h-5 w-px bg-slate-600" />
-                      <button
+                      <Button
                         type="button"
+                        variant="tertiary"
+                        size="sm"
                         onMouseDown={(e) => handleToolbarAction(e, 'justifyLeft')}
-                        className="flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700"
+                        className="h-7 w-7 p-0 bg-slate-900 text-white hover:bg-slate-700"
                         title="Align Left"
-                      >
-                        <AlignLeft className="h-3.5 w-3.5" />
-                      </button>
-                      <button
+                        iconLeading={<AlignLeft className="h-3.5 w-3.5" />}
+                      />
+                      <Button
                         type="button"
+                        variant="tertiary"
+                        size="sm"
                         onMouseDown={(e) => handleToolbarAction(e, 'justifyCenter')}
-                        className="flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700"
+                        className="h-7 w-7 p-0 bg-slate-900 text-white hover:bg-slate-700"
                         title="Align Center"
-                      >
-                        <AlignCenter className="h-3.5 w-3.5" />
-                      </button>
+                        iconLeading={<AlignCenter className="h-3.5 w-3.5" />}
+                      />
                       <div className="h-5 w-px bg-slate-600" />
-                      <button
+                      <Button
                         type="button"
+                        variant="tertiary"
+                        size="sm"
                         onMouseDown={(e) => handleToolbarAction(e, 'insertUnorderedList')}
-                        className="flex h-7 w-7 items-center justify-center rounded text-white transition hover:bg-slate-700"
+                        className="h-7 w-7 p-0 bg-slate-900 text-white hover:bg-slate-700"
                         title="Bullet List"
-                      >
-                        <List className="h-3.5 w-3.5" />
-                      </button>
+                        iconLeading={<List className="h-3.5 w-3.5" />}
+                      />
                     </div>
                   )}
                 </div>
 
                 {/* Action Buttons */}
                 <div className="mt-auto pt-6 flex justify-end gap-3 border-t border-slate-200">
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="md"
                     onClick={onCancel}
-                    className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="md"
                     onClick={handleSave}
-                    className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     Save changes
-                  </button>
+                  </Button>
                 </div>
               </>
             ) : (
@@ -1227,13 +1233,14 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                   dangerouslySetInnerHTML={{ __html: message }}
                 />
                 <div className="flex justify-end pt-4">
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="md"
                     onClick={() => setIsEditing(true)}
-                    className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     Edit
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -1242,14 +1249,15 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
           <div className="space-y-6 h-[calc(100vh-200px)] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <h2 className="text-base font-semibold text-slate-900">Recipients</h2>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setFilters([...filters, { id: Date.now().toString(), field: 'Group', operator: 'is', value: '' }])}
-                className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                iconLeading={<Plus className="h-4 w-4" />}
               >
-                <Plus className="h-4 w-4" />
-                <span>New filter</span>
-              </button>
+                New filter
+              </Button>
             </div>
 
             <div className="space-y-4">
@@ -1315,16 +1323,17 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                       <option value="VIP">VIP</option>
                     </select>
 
-                    <button
+                    <Button
                       type="button"
+                      variant="tertiary"
+                      size="sm"
                       onClick={() => {
                         const newFilters = filters.filter(f => f.id !== filter.id)
                         setFilters(newFilters)
                       }}
-                      className="self-end sm:self-auto rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                    >
-                      <XClose className="h-4 w-4" />
-                    </button>
+                      className="self-end sm:self-auto p-1 text-slate-400 hover:text-slate-600"
+                      iconLeading={<XClose className="h-4 w-4" />}
+                    />
                   </div>
                 ))}
               </div>

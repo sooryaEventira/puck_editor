@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { Upload01, Download01 } from '@untitled-ui/icons-react'
+import Button from '../../ui/untitled/Button'
 
 interface UploadModalProps {
   isOpen: boolean
@@ -142,6 +143,53 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onAttachFile
         {/* Modal Content */}
         <div className="flex w-full flex-col items-start justify-start gap-5 px-6">
           <div className="flex w-full flex-col items-start justify-start gap-4 self-stretch">
+            {/* Template Download Section - Moved to top */}
+            <div className="flex w-full flex-col items-start justify-start gap-3 self-stretch">
+              <div className="relative flex w-full items-start justify-start gap-1 overflow-hidden rounded-xl border border-[#E9EAEB] bg-white p-4 outline outline-1 outline-[#E9EAEB] outline-offset-[-1px]">
+                <div className="flex flex-1 items-start justify-start gap-3">
+                  {/* XLSX Icon */}
+                  <div className="relative h-10 w-10 flex-shrink-0">
+                    <div className="absolute left-1 top-0 h-10 w-8">
+                      <div className="absolute left-0 top-0 h-10 w-8 bg-[#079455]" />
+                      <div className="absolute left-5 top-0 h-3 w-3 bg-white opacity-30" />
+                    </div>
+                    <div className="absolute left-1 top-[23px] w-8 text-center text-[9px] font-bold leading-none text-white" style={{ fontFamily: 'Inter' }}>
+                      XLSX
+                    </div>
+                  </div>
+
+                  {/* Template Info */}
+                  <div className="flex flex-1 flex-col items-start justify-start gap-1">
+                    <div className="flex w-full flex-col items-start justify-start gap-0.5 self-stretch">
+                      <div className="w-full text-base font-semibold leading-6 text-[#181D27]" style={{ fontFamily: 'Inter' }}>
+                        Schedule template
+                      </div>
+                      <div className="inline-flex w-full items-center justify-start gap-2 self-stretch">
+                        <span className="text-sm font-normal leading-5 text-[#535862]" style={{ fontFamily: 'Inter' }}>
+                          Download template
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Download Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    // TODO: Implement template download
+                    console.log('Download template')
+                  }}
+                  className="absolute right-2 top-2 flex items-center justify-center overflow-hidden rounded-md p-1.5 hover:bg-slate-100 transition-colors"
+                >
+                  <div className="relative h-4 w-4 overflow-hidden">
+                    <Download01 className="absolute left-0.5 top-0.5 h-3 w-3 text-[#A4A7AE]" strokeWidth={1.5} />
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* File Upload Area */}
             <div
               onDragEnter={handleDragEnter}
@@ -149,18 +197,17 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onAttachFile
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={handleClickUpload}
-              className={`flex w-full cursor-pointer flex-col items-center justify-start gap-1 self-stretch rounded-xl border-2 border-dashed bg-white px-6 py-4 outline outline-2 outline-offset-[-2px] transition-colors ${
+              className={`flex w-full cursor-pointer flex-col items-center justify-start gap-1 self-stretch rounded-xl border-2 border-dashed bg-white px-6 py-8 outline outline-2 outline-offset-[-2px] transition-colors ${
                 isDragging
                   ? 'border-[#7A5AF8] outline-[#7A5AF8] bg-purple-50'
                   : 'border-[#7A5AF8] outline-[#7A5AF8] hover:bg-slate-50'
               }`}
             >
               <div className="flex w-full flex-col items-center justify-start gap-3 self-stretch pointer-events-none">
-                {/* Upload Icon */}
-                <div className="relative h-10 w-10 overflow-hidden rounded-lg border border-[#D5D7DA] bg-white shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] outline outline-1 outline-[#D5D7DA] outline-offset-[-1px]">
-                  <div className="absolute left-2.5 top-2.5 h-5 w-5 overflow-hidden">
-                    <Upload01 className="absolute left-[1.67px] top-[2.5px] h-[15px] w-[16.67px] text-[#414651]" strokeWidth={1.67} />
-                  </div>
+                {/* Upload Icon - Circular with arrow up */}
+                <div className="relative h-12 w-12 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full bg-white border-2 border-[#7A5AF8]" />
+                  <Upload01 className="relative h-6 w-6 text-[#7A5AF8]" strokeWidth={2} />
                 </div>
 
                 {/* Upload Text */}
@@ -170,7 +217,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onAttachFile
                       Click to upload
                     </span>
                     <span className="text-sm font-normal leading-5 text-[#535862]" style={{ fontFamily: 'Inter' }}>
-                      or drag and drop
+                      {' '}or drag and drop
                     </span>
                   </div>
                   <div className="w-full text-center text-xs font-normal leading-[18px] text-[#535862]" style={{ fontFamily: 'Inter' }}>
@@ -190,45 +237,13 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onAttachFile
               className="hidden"
             />
 
-            {/* Template Download Section */}
-            <div className="flex w-full flex-col items-start justify-start gap-3 self-stretch">
-              <div className="relative flex w-full items-start justify-start gap-1 overflow-hidden rounded-xl border border-[#E9EAEB] bg-white p-4 outline outline-1 outline-[#E9EAEB] outline-offset-[-1px]">
-                <div className="flex flex-1 items-start justify-start gap-3">
-                  {/* XLSX Icon */}
-                  <div className="relative h-10 w-10">
-                    <div className="absolute left-1 top-0 h-10 w-8">
-                      <div className="absolute left-0 top-0 h-10 w-8 bg-[#079455]" />
-                      <div className="absolute left-5 top-0 h-3 w-3 bg-white opacity-30" />
-                    </div>
-                    <div className="absolute left-1 top-[23px] w-8 text-center text-[9px] font-bold leading-none text-white" style={{ fontFamily: 'Inter' }}>
-                      XLSX
-                    </div>
-                  </div>
-
-                  {/* Template Info */}
-                  <div className="flex flex-1 flex-col items-start justify-start gap-1">
-                    <div className="flex w-full flex-col items-start justify-start gap-0.5 self-stretch">
-                      <div className="w-full text-sm font-medium leading-5 text-[#414651]" style={{ fontFamily: 'Inter' }}>
-                        Template
-                      </div>
-                      <div className="inline-flex w-full items-center justify-start gap-2 self-stretch">
-                        <span className="text-sm font-normal leading-5 text-[#535862]" style={{ fontFamily: 'Inter' }}>
-                          Download template
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Download Button */}
-                <button
-                  type="button"
-                  className="absolute right-2 top-2 flex items-center justify-center overflow-hidden rounded-md p-1.5"
-                >
-                  <div className="relative h-4 w-4 overflow-hidden">
-                    <Download01 className="absolute left-0.5 top-0.5 h-3 w-3 text-[#A4A7AE]" strokeWidth={1.5} />
-                  </div>
-                </button>
+            {/* Instructions */}
+            <div className="flex w-full flex-col items-start justify-start gap-2 self-stretch">
+              <div className="text-sm font-normal leading-5 text-[#535862]" style={{ fontFamily: 'Inter' }}>
+                Step 1: Download template
+              </div>
+              <div className="text-sm font-normal leading-5 text-[#535862]" style={{ fontFamily: 'Inter' }}>
+                Step 2: Upload schedule
               </div>
             </div>
           </div>
@@ -238,30 +253,28 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onAttachFile
         <div className="flex w-full flex-col items-start justify-start pt-8">
           <div className="inline-flex w-full items-start justify-start gap-3 self-stretch px-6 pb-6">
             {/* Cancel Button */}
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="lg"
               onClick={onClose}
-              className="flex flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-lg border border-[#D5D7DA] bg-white px-4 py-2.5 shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] outline outline-1 outline-[#D5D7DA] outline-offset-[-1px]"
+              className="flex-1"
+              style={{ fontFamily: 'Inter' }}
             >
-              <div className="flex items-center justify-center px-0.5">
-                <span className="text-base font-semibold leading-6 text-[#414651]" style={{ fontFamily: 'Inter' }}>
-                  Cancel
-                </span>
-              </div>
-            </button>
+              Cancel
+            </Button>
 
             {/* Attach Files Button */}
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="lg"
               onClick={handleAttachFiles}
-              className="flex flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-lg bg-[#6938EF] px-4 py-2.5 shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] outline outline-2 outline-white outline-offset-[-2px]"
+              className="flex-1"
+              style={{ fontFamily: 'Inter' }}
             >
-              <div className="flex items-center justify-center px-0.5">
-                <span className="text-base font-semibold leading-6 text-white" style={{ fontFamily: 'Inter' }}>
-                  Attach files
-                </span>
-              </div>
-            </button>
+              Attach files
+            </Button>
           </div>
         </div>
       </div>

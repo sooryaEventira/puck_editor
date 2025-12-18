@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { HelpCircle } from '@untitled-ui/icons-react'
 import { Modal } from '../../ui'
+import Button from '../../ui/untitled/Button'
 
 interface NewTagModalProps {
   isOpen: boolean
@@ -78,21 +79,23 @@ const NewTagModal: React.FC<NewTagModalProps> = ({ isOpen, onClose, onSave, type
         <span>Need help?</span>
       </a>
       <div className="flex items-center gap-3">
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="md"
           onClick={handleClose}
-          className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="primary"
+          size="md"
           onClick={handleSave}
           disabled={!name.trim() || !selectedColor}
-          className="rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Save
-        </button>
+        </Button>
       </div>
     </div>
   )
