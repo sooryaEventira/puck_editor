@@ -3,10 +3,12 @@ import { Puck } from '@measured/puck'
 import '@measured/puck/puck.css'
 
 import { config } from '../../config/puckConfig'
-import { PageSidebar } from '../page'
+import { PageSidebar, NewPageCreationModal } from '../page'
 import PageCreationModal, { type PageType } from '../page/PageCreationModal'
 import BlockTypeSelectionModal from '../page/BlockTypeSelectionModal'
 import TemplateSelectionModal from '../page/TemplateSelectionModal'
+import HtmlCodeModal from '../page/HtmlCodeModal'
+import type { PageCreationType } from '../page/NewPageCreationModal'
 import Preview from './Preview'
 import { NavigationProvider } from '../../contexts/NavigationContext'
 import { useEventForm } from '../../contexts/EventFormContext'
@@ -66,6 +68,8 @@ export const EditorView: React.FC<EditorViewProps> = ({
     return localStorage.getItem('create-from-scratch') === 'true'
   })
   const [showPageCreationModal, setShowPageCreationModal] = useState(false)
+  const [showNewPageCreationModal, setShowNewPageCreationModal] = useState(false)
+  const [showHtmlCodeModal, setShowHtmlCodeModal] = useState(false)
   const [showBlockTypeModal, setShowBlockTypeModal] = useState(false)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   
@@ -295,10 +299,143 @@ export const EditorView: React.FC<EditorViewProps> = ({
     setShowTemplateModal(false)
     
     if (onCreatePageFromTemplate) {
-      await onCreatePageFromTemplate(templateType)
+      const result = await onCreatePageFromTemplate(templateType)
+      
+      // Ensure the template data is set correctly after page creation
+      if (result && result.newPageData) {
+        // Use requestAnimationFrame to ensure state updates are complete
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (onDataChange) {
+              onDataChange(result.newPageData)
+            }
+            if (onChange) {
+              onChange(result.newPageData)
+            }
+          })
+        })
+      }
     }
     
     setShowCustomSidebar(true)
+  }
+
+  const handleNewPageCreationSelect = (pageType: PageCreationType) => {
+    // Close the NewPageCreationModal first
+    setShowNewPageCreationModal(false)
+    
+    switch (pageType) {
+      case 'scratch':
+        // Create from scratch - load empty editor
+        setShowCustomSidebar(false)
+        if (onCreateNewPage) {
+          onCreateNewPage()
+        }
+        break
+      case 'html':
+        // Open HTML code input modal
+        setShowHtmlCodeModal(true)
+        break
+      case 'template':
+        // Open template selection modal
+        setShowTemplateModal(true)
+        break
+      default:
+        break
+    }
+  }
+
+  const handleHtmlCodeConvert = (htmlCode: string) => {
+    // Convert HTML code to Puck template format using HTMLContent component
+    try {
+      // Clean and validate HTML code
+      const cleanedHtml = htmlCode.trim()
+      
+      if (!cleanedHtml) {
+        console.error('HTML code is empty')
+        alert('Please provide HTML code to convert.')
+        return
+      }
+
+      console.log('🔄 Converting HTML code, length:', cleanedHtml.length)
+
+      // Create the converted data with HTMLContent component
+      // This replaces ALL content with just the HTML (no default template)
+      const convertedData = {
+        root: {
+          props: {
+            id: 'root',
+            title: 'HTML Page',
+            pageTitle: 'HTML Page'
+          }
+        },
+        content: [
+          {
+            type: 'HTMLContent',
+            props: {
+              htmlContent: cleanedHtml,
+              id: 'html-content-' + Date.now()
+            }
+          }
+        ],
+        zones: {}
+      }
+
+      console.log('📦 Converted data structure:', convertedData)
+
+      // Check if we're on page1 - if so, replace page1's content directly (removes default template)
+      // Otherwise, create a new page
+      const isPage1 = currentPage === 'page1' || currentPage === 'page1.json'
+      
+      if (isPage1) {
+        // Replace page1's content directly (removes default template)
+        console.log('📝 Replacing page1 content with HTML (removing default template)')
+        if (onDataChange) {
+          onDataChange(convertedData)
+        }
+        if (onChange) {
+          onChange(convertedData)
+        }
+        console.log('✅ HTML code converted and replaced page1 content')
+      } else if (onCreateNewPage) {
+        // Create a new page (Page 2, 3, etc.) with HTML content
+        onCreateNewPage()
+        
+        // Wait for the page creation to complete, then set the HTML content
+        setTimeout(() => {
+          console.log('⏰ Setting HTML content after page creation')
+          
+          // Set the converted data using onDataChange (this updates the state)
+          if (onDataChange) {
+            console.log('📝 Calling onDataChange with converted data')
+            onDataChange(convertedData)
+          }
+
+          // Also update via onChange to ensure Puck receives the update immediately
+          if (onChange) {
+            console.log('📝 Calling onChange with converted data')
+            onChange(convertedData)
+          }
+
+          console.log('✅ HTML code converted successfully and loaded into editor')
+        }, 500) // Longer delay to ensure page creation completes
+      } else {
+        // Fallback: just set the data directly
+        if (onDataChange) {
+          onDataChange(convertedData)
+        }
+        if (onChange) {
+          onChange(convertedData)
+        }
+        console.log('✅ HTML code converted successfully and loaded into editor')
+      }
+
+      // Hide custom sidebar to show the default Puck sidebar
+      setShowCustomSidebar(false)
+    } catch (error) {
+      console.error('❌ Error converting HTML code:', error)
+      alert('Failed to convert HTML code. Please try again.')
+    }
   }
 
   useEffect(() => {
@@ -421,7 +558,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
                       // Error loading page - silently fail
                     }
                   }}
-                  onAddPage={editorMode === 'blank' ? () => setShowPageCreationModal(true) : undefined}
+                  onAddPage={editorMode === 'blank' ? () => setShowNewPageCreationModal(true) : undefined}
                   onManagePages={onManagePages}
                   onBackClick={handleBackToTemplateSelection}
                   editorMode={editorMode}
@@ -650,6 +787,18 @@ export const EditorView: React.FC<EditorViewProps> = ({
           setShowPageCreationModal(false)
         }}
         onSelect={handlePageCreationSelect}
+      />
+
+      <NewPageCreationModal
+        isVisible={showNewPageCreationModal}
+        onClose={() => setShowNewPageCreationModal(false)}
+        onSelect={handleNewPageCreationSelect}
+      />
+
+      <HtmlCodeModal
+        isVisible={showHtmlCodeModal}
+        onClose={() => setShowHtmlCodeModal(false)}
+        onConvert={handleHtmlCodeConvert}
       />
 
       <BlockTypeSelectionModal

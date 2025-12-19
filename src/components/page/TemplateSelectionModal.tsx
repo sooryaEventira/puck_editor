@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import clsx from 'clsx'
-import { HelpCircle } from '@untitled-ui/icons-react'
+import { HelpCircle, XClose } from '@untitled-ui/icons-react'
 import { Modal } from '../ui'
 
 interface TemplateSelectionModalProps {
@@ -10,13 +10,6 @@ interface TemplateSelectionModalProps {
 }
 
 type TemplateType = 'schedule' | 'sponsor' | 'floor-plan' | 'lists'
-
-const templateNames: Record<TemplateType, string> = {
-  schedule: 'Schedule',
-  sponsor: 'Sponsor',
-  'floor-plan': 'Floor plan',
-  lists: 'Lists'
-}
 
 const templates: { id: TemplateType; title: string; description: string }[] = [
   { id: 'schedule', title: 'Schedule', description: 'Program schedule.' },
@@ -43,7 +36,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   }
 
   const footer = (
-    <div className="flex w-full items-center justify-between px-6 pb-6 pt-4">
+    <div className="flex w-full items-center justify-between px-6 pb-4 ">
       <button
         type="button"
         className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-500 transition hover:bg-slate-100"
@@ -82,10 +75,26 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
       height={330}
       maxWidth={560}
       borderRadius={16}
-      padding={{ top: 24, right: 16, bottom: 24, left: 16 }}
+      padding={{ top: 10, right: 16, bottom: 10, left: 16 }}
       footer={footer}
       zIndex={10001}
       contentStyle={{ padding: 0 }}
+      customHeader={
+        <div className="flex w-full items-start justify-between px-6 pt-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Select a page</h2>
+            <p className="text-sm text-slate-500 mt-0.5">Select from below templates.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 -mt-1 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <XClose className="h-5 w-5" />
+          </button>
+        </div>
+      }
+      showCloseButton={false}
     >
       <div className="grid place-items-center gap-4 px-6 py-5 sm:grid-cols-2">
         {templates.map((template) => {

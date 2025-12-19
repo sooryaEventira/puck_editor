@@ -1363,8 +1363,94 @@ export const usePageManagement = () => {
     const sanitizedName = pageName.toLowerCase().replace(/[^a-z0-9]/g, '-')
     const pageId = `page-${sanitizedName}-${Date.now()}`
     
+    // Create template-specific content based on template type
+    let templateContent: any[] = []
+    
+    switch (templateType) {
+      case 'schedule':
+        templateContent = [
+          {
+            type: 'SchedulePage',
+            props: {
+              id: generateId('SchedulePage'),
+              title: 'Schedule',
+              events: [
+                {
+                  id: "1",
+                  title: "Welcome presentation",
+                  startTime: "08:00 AM",
+                  endTime: "09:00 AM",
+                  location: "Room A",
+                  type: "In-Person",
+                  description: "Welcome presentation for all attendees",
+                  participants: "",
+                  tags: "",
+                  attachments: 1,
+                  isCompleted: false,
+                  isExpanded: false,
+                  parentSessionId: undefined
+                }
+              ],
+              initialDate: new Date().toISOString().split('T')[0]
+            }
+          }
+        ]
+        break
+      case 'sponsor':
+        templateContent = [
+          {
+            type: 'Sponsors',
+            props: {
+              id: generateId('Sponsors'),
+              title: "Sponsors",
+              sponsors: [
+                { id: '1', name: 'Sponsor 1', logoUrl: '' },
+                { id: '2', name: 'Sponsor 2', logoUrl: '' },
+                { id: '3', name: 'Sponsor 3', logoUrl: '' },
+                { id: '4', name: 'Sponsor 4', logoUrl: '' }
+              ],
+              backgroundColor: "#ffffff",
+              textColor: "#1f2937",
+              padding: "3rem 2rem"
+            }
+          }
+        ]
+        break
+      case 'floor-plan':
+        templateContent = [
+          {
+            type: 'PdfViewer',
+            props: {
+              id: generateId('PdfViewer'),
+              pdfUrl: '',
+              height: 600
+            }
+          }
+        ]
+        break
+      case 'lists':
+        templateContent = [
+          {
+            type: 'List',
+            props: {
+              id: generateId('List'),
+              items: [
+                { id: '1', text: 'List item 1' },
+                { id: '2', text: 'List item 2' },
+                { id: '3', text: 'List item 3' }
+              ],
+              listType: 'unordered',
+              spacing: 'normal'
+            }
+          }
+        ]
+        break
+      default:
+        templateContent = []
+    }
+    
     const newPageData = {
-      content: [],
+      content: templateContent,
       root: {
         props: {
           title: pageName,
