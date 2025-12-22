@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useCallback } from 'react'
 import {
   DividerLineTable,
-  type DividerLineTableSortDescriptor
+  type DividerLineTableSortDescriptor,
+  Button
 } from '../../ui/untitled'
 import { Attendee, AttendeeTab, Group, CustomField } from './attendeeTypes'
 import type { AttendeeTableRowData, GroupTableRowData, CustomFieldTableRowData } from './attendeeTypes'
@@ -9,7 +10,7 @@ import { TablePagination, useTableHeader } from '../../ui'
 import { useAttendeeTableColumns } from './AttendeeTableColumns'
 import { useGroupTableColumns } from './GroupTableColumns'
 import { useCustomFieldTableColumns } from './CustomFieldTableColumns'
-import { Download01, Grid01 } from '@untitled-ui/icons-react'
+import { Download01, Grid01, Upload01 } from '@untitled-ui/icons-react'
 
 interface AttendeesTableProps {
   attendees: Attendee[]
@@ -465,13 +466,15 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
         <h1 className="text-[26px] font-bold text-primary-dark">Attendee Management</h1>
         <div className="flex items-center gap-3">
           {activeTab === 'user' && (
-            <button
+            <Button
               type="button"
               onClick={onUpload}
+              iconLeading={<Upload01 className="h-4 w-4" />}
               className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
+             
               Upload
-            </button>
+            </Button>
           )}
           <button
             type="button"

@@ -242,7 +242,7 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
               <button
                 type="button"
                 onClick={handleUploadClick}
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-[#5A1684] transition"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 hover:bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition"
               >
                 <Upload01 className="h-4 w-4" />
                 Upload media
@@ -250,7 +250,7 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
               <button
                 type="button"
                 onClick={handleCreateFolder}
-                className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-black border border-slate-200 shadow-sm bg-white transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm bg-primary transition hover:bg-prmary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <Plus className="h-4 w-4" />
                 New folder
