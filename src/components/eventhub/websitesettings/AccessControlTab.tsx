@@ -53,7 +53,7 @@ const AccessControlTab: React.FC = () => {
             <span className={`text-sm font-medium px-4 py-2 rounded-lg transition ${
               visibility === 'private'
                 ? ' text-primary '
-                : 'text-slate-700 '
+                : 'text-slate-700'
             }`}>
               Private
             </span>
