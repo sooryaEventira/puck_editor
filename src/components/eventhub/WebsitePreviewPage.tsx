@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useEventForm } from '../../contexts/EventFormContext'
+import { useWebsitePages } from '../../contexts/WebsitePagesContext'
+import { NavigationProvider } from '../../contexts/NavigationContext'
 import EventHubNavbar from './EventHubNavbar'
 import PageSidebar from '../page/PageSidebar'
 import HeroSection from '../advanced/HeroSection'
@@ -9,6 +11,7 @@ import RegistrationCTA from '../advanced/RegistrationCTA'
 import Sponsors from '../advanced/Sponsors'
 import FAQAccordion from '../advanced/FAQAccordion'
 import ContactFooter from '../advanced/ContactFooter'
+import SchedulePage from '../advanced/SchedulePage'
 import { Edit05, User01 } from '@untitled-ui/icons-react'
 import Input from '../ui/untitled/Input'
 import PageCreationModal, { type PageType } from '../page/PageCreationModal'
@@ -25,12 +28,17 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   userAvatarUrl
 }) => {
   const { eventData } = useEventForm()
+  const { pages: websitePages } = useWebsitePages()
   const [bannerUrl, setBannerUrl] = useState<string>('')
   const [activeTab, setActiveTab] = useState<'preview' | 'settings'>('preview')
-  const [pages] = useState([
-    { id: 'welcome', name: 'Welcome' }
-  ])
-  const [currentPage, setCurrentPage] = useState(pageId || 'welcome')
+  
+  // Convert WebsitePage format to PageSidebar format
+  const pages = websitePages.map(page => ({
+    id: page.id,
+    name: page.name
+  }))
+  
+  const [currentPage, setCurrentPage] = useState(pageId || (pages.length > 0 ? pages[0].id : 'welcome'))
   const [isPageModalOpen, setIsPageModalOpen] = useState(false)
   
   // Settings form state
@@ -75,12 +83,14 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     }
   }, [eventData])
 
-  // Update current page when pageId changes
+  // Update current page when pageId changes or when pages are loaded
   useEffect(() => {
     if (pageId) {
       setCurrentPage(pageId)
+    } else if (pages.length > 0 && !currentPage) {
+      setCurrentPage(pages[0].id)
     }
-  }, [pageId])
+  }, [pageId, pages])
 
   const handleSearchClick = () => {
     console.log('Search clicked')
@@ -103,11 +113,12 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     }
   }
 
-  const handleEdit = () => {
+  // Memoize handleEdit to prevent re-renders
+  const handleEdit = useCallback(() => {
     // Navigate to editor for this page
     window.history.pushState({}, '', `/event/website/editor/${currentPage}`)
     window.dispatchEvent(new PopStateEvent('popstate'))
-  }
+  }, [currentPage])
 
   const handlePageSelect = (pageId: string) => {
     setCurrentPage(pageId)
@@ -176,8 +187,98 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     }
   }, [activeTab])
 
-  // Get current page name for PageSidebar
-  const currentPageName = pages.find(p => p.id === currentPage)?.name || 'Welcome'
+  // Get current page data
+  const currentPageData = websitePages.find(p => p.id === currentPage)
+  const currentPageName = currentPageData?.name || 'Welcome'
+  const pageType = currentPageData?.type
+  const pageComponent = currentPageData?.component
+
+  // Render default template components
+  const defaultTemplateJSX = useMemo(() => (
+    <div className="w-full bg-white">
+      {/* Hero Section */}
+      <div className="w-full">
+        <HeroSection
+          title={eventData?.eventName || 'HIC 2025'}
+          subtitle={`${eventData?.location || 'New York, NY'} | ${formatEventDate()}`}
+          buttons={[
+            {
+              text: 'Register Now',
+              link: '#register',
+              color: '#6938EF',
+              textColor: 'white',
+              size: 'large'
+            }
+          ]}
+          backgroundColor="#1a1a1a"
+          textColor="#FFFFFF"
+          backgroundImage={bannerUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'}
+          height="500px"
+          alignment="center"
+          overlayOpacity={0.4}
+        />
+      </div>
+
+      {/* About Section */}
+      <div className="w-full">
+        <AboutSection
+          leftTitle="About Event"
+          leftText="We are dedicated to providing innovative solutions that help our clients achieve their goals and drive success in their respective industries."
+        />
+      </div>
+
+      {/* Speakers Section */}
+      <div className="w-full">
+        <SpeakersSection 
+          speakers={defaultSpeakers}
+          title="Speakers"
+          showTitle={true}
+          containerMaxWidth="max-w-7xl"
+          containerPadding="px-4 sm:px-6 lg:px-8 py-8"
+        />
+      </div>
+
+      {/* Registration CTA */}
+      <div className="w-full">
+        <RegistrationCTA />
+      </div>
+
+      {/* Sponsors Section */}
+      <div className="w-full">
+        <Sponsors />
+      </div>
+
+      {/* FAQ Accordion */}
+      <div className="w-full">
+        <FAQAccordion
+          title="Frequently Asked Questions"
+          description="Everything you need to know about the product and billing. Can't find the answer you're looking for? Please chat to our friendly team"
+          containerMaxWidth="max-w-7xl"
+          containerPadding="px-4 sm:px-6 lg:px-8 py-8"
+        />
+      </div>
+
+      {/* Contact Footer */}
+      <div className="w-full">
+        <ContactFooter />
+      </div>
+    </div>
+  ), [eventData, bannerUrl, defaultSpeakers])
+
+  // Dynamic component renderer based on page type
+  const renderPageComponent = useMemo(() => {
+    // If page type is 'schedule' and component is 'SchedulePage', render SchedulePage
+    if (pageType === 'schedule' && pageComponent === 'SchedulePage') {
+      return (
+        <NavigationProvider onNavigateToEditor={handleEdit}>
+          <SchedulePage key={currentPage} />
+        </NavigationProvider>
+      )
+    }
+    
+    // Default: render template components
+    return defaultTemplateJSX
+  }, [pageType, pageComponent, currentPage, handleEdit, defaultTemplateJSX])
 
   return (
     <div className="h-screen overflow-hidden bg-white flex flex-col">
@@ -257,75 +358,7 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
           {/* Content based on active tab */}
           <div className="flex-1 overflow-y-auto">
             {activeTab === 'preview' && (
-              <div className="w-full bg-white">
-                {/* Template Components: HeroSection, AboutSection, SpeakersSection, RegistrationCTA, Sponsors, FAQAccordion, ContactFooter */}
-                {/* Hero Section */}
-                <div className="w-full">
-                  <HeroSection
-                    title={eventData?.eventName || 'HIC 2025'}
-                    subtitle={`${eventData?.location || 'New York, NY'} | ${formatEventDate()}`}
-                    buttons={[
-                      {
-                        text: 'Register Now',
-                        link: '#register',
-                        color: '#6938EF',
-                        textColor: 'white',
-                        size: 'large'
-                      }
-                    ]}
-                    backgroundColor="#1a1a1a"
-                    textColor="#FFFFFF"
-                    backgroundImage={bannerUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'}
-                    height="500px"
-                    alignment="center"
-                    overlayOpacity={0.4}
-                  />
-                </div>
-
-                {/* About Section */}
-                <div className="w-full">
-                  <AboutSection
-                    leftTitle="About Event"
-                    leftText="We are dedicated to providing innovative solutions that help our clients achieve their goals and drive success in their respective industries."
-                  />
-                </div>
-
-                {/* Speakers Section */}
-                <div className="w-full">
-                  <SpeakersSection 
-                    speakers={defaultSpeakers}
-                    title="Speakers"
-                    showTitle={true}
-                    containerMaxWidth="max-w-7xl"
-                    containerPadding="px-4 sm:px-6 lg:px-8 py-8"
-                  />
-                </div>
-
-                {/* Registration CTA */}
-                <div className="w-full">
-                  <RegistrationCTA />
-                </div>
-
-                {/* Sponsors Section */}
-                <div className="w-full">
-                  <Sponsors />
-                </div>
-
-                {/* FAQ Accordion */}
-                <div className="w-full">
-                  <FAQAccordion
-                    title="Frequently Asked Questions"
-                    description="Everything you need to know about the product and billing. Can't find the answer you're looking for? Please chat to our friendly team"
-                    containerMaxWidth="max-w-7xl"
-                    containerPadding="px-4 sm:px-6 lg:px-8 py-8"
-                  />
-                </div>
-
-                {/* Contact Footer */}
-                <div className="w-full">
-                  <ContactFooter />
-                </div>
-              </div>
+              renderPageComponent
             )}
 
             {activeTab === 'settings' && (

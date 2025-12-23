@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useEventForm } from '../../contexts/EventFormContext'
+import { useWebsitePages } from '../../contexts/WebsitePagesContext'
 import EventHubNavbar from './EventHubNavbar'
 import EventHubSidebar from './EventHubSidebar'
 import { defaultCards, ContentCard } from './EventHubContent'
@@ -12,7 +13,6 @@ import {
   Globe01,
   Copy01,
   Eye,
-  Link03,
   Edit05,
   Trash01,
   Plus
@@ -24,89 +24,32 @@ interface EventWebsitePageProps {
   hideNavbarAndSidebar?: boolean
 }
 
-interface Page {
-  id: string
-  name: string
-  isDisabled?: boolean
-}
-
 const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   onBackClick,
   userAvatarUrl,
   hideNavbarAndSidebar = false
 }) => {
   const { eventData } = useEventForm()
+  const { pages, addPage, deletePage, duplicatePage, initializePages } = useWebsitePages()
   const [activeSubItem, setActiveSubItem] = useState('website-pages')
-  const [pages, setPages] = useState<Page[]>([
-    { id: 'welcome', name: 'Welcome' }
-  ])
   const [showPageCreationModal, setShowPageCreationModal] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ id: string; name: string } | null>(null)
 
-  // Load pages from API on mount
+  // Initialize pages based on template selection on mount
   useEffect(() => {
-    loadPages()
-  }, [])
+    // Check if pages are already initialized
+    if (pages.length > 0) return
 
-  const loadPages = async () => {
-    try {
-      const apiUrl = API_ENDPOINTS.GET_PAGES || '/api/pages'
-      const response = await fetch(apiUrl)
-      
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.pages) {
-          // Convert API pages to Page format
-          const loadedPages: Page[] = result.pages.map((page: any) => {
-            // Try to get page name from filename or load page data
-            let pageName = page.filename.replace('.json', '')
-            const pageId = page.filename.replace('.json', '')
-            
-            // Try to load page data to get the actual pageTitle
-            fetch(API_ENDPOINTS.GET_PAGE(page.filename) || `/api/pages/${page.filename}`)
-              .then(pageResponse => {
-                if (pageResponse.ok) {
-                  return pageResponse.json()
-                }
-                return null
-              })
-              .then(pageResult => {
-                if (pageResult?.success && pageResult.data?.root?.props) {
-                  const pageTitle = pageResult.data.root.props.pageTitle || pageResult.data.root.props.title
-                  if (pageTitle) {
-                    setPages(prevPages => {
-                      const existingPage = prevPages.find(p => p.id === pageId)
-                      if (existingPage && existingPage.name !== pageTitle) {
-                        return prevPages.map(p => p.id === pageId ? { ...p, name: pageTitle } : p)
-                      }
-                      return prevPages
-                    })
-                  }
-                }
-              })
-              .catch(() => {
-                // Ignore errors, use filename-based name
-              })
-            
-            return {
-              id: pageId,
-              name: pageName
-            }
-          })
-          
-          // Ensure Welcome page is always included
-          const welcomeExists = loadedPages.some(p => p.id === 'welcome' || p.name === 'Welcome')
-          if (!welcomeExists) {
-            loadedPages.unshift({ id: 'welcome', name: 'Welcome' })
-          }
-          
-          setPages(loadedPages)
-        }
-      }
-    } catch (error) {
-      console.error('Error loading pages:', error)
-      // Keep default Welcome page on error
+    // Check if we're creating from scratch
+    const isFromScratch = localStorage.getItem('create-from-scratch') === 'true'
+    
+    if (isFromScratch) {
+      initializePages('scratch')
+    } else {
+      // Default template - create Welcome page
+      initializePages('default-template')
     }
-  }
+  }, [pages.length, initializePages])
 
   const handleSearchClick = () => {
     console.log('Search clicked')
@@ -141,27 +84,18 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   }, [])
 
   const handleSidebarItemClick = (itemId: string) => {
-    // When embedded in EventHubPage (hideNavbarAndSidebar=true), this handler shouldn't be called
-    // as the sidebar won't be rendered. But if it is called, we'll handle it gracefully.
     if (hideNavbarAndSidebar) {
-      // If embedded, navigation should be handled by parent EventHubPage
-      // Don't do anything - let the parent handle it
       return
     }
     
-    // Only handle navigation when EventWebsitePage is standalone (not embedded)
-    // Handle Event Hub navigation - navigate to Event Hub page
     if (itemId === 'event-hub') {
-      // Navigate to Event Hub page
       window.history.pushState({}, '', '/event/hub')
       window.dispatchEvent(new PopStateEvent('popstate'))
       return
     }
     
-    // Handle Event Hub sub-items - navigate to Event Hub page with the section
     const isCardId = defaultCards.some((card) => card.id === itemId)
     if (isCardId) {
-      // Navigate to Event Hub page with the section as a URL parameter
       window.history.pushState({ section: itemId }, '', `/event/hub?section=${itemId}`)
       window.dispatchEvent(new PopStateEvent('popstate'))
       return
@@ -170,46 +104,74 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
 
   const handlePreview = () => {
     console.log('Preview clicked')
-    // TODO: Implement preview functionality
   }
 
   const handlePublishWebsite = () => {
     console.log('Publish website clicked')
-    // TODO: Implement publish functionality
   }
 
   const handleNewPage = () => {
     setShowPageCreationModal(true)
   }
 
+  // Get page name from PageType
+  const getPageNameFromType = (pageType: PageType): string => {
+    const pageTypeNames: Record<PageType, string> = {
+      'attendee': 'Attendee page',
+      'schedule': 'Schedule',
+      'html-general': 'HTML/General page',
+      'folder': 'Folder',
+      'organization': 'Organization page',
+      'hyperlink': 'Hyperlink',
+      'qr-scanner': 'App QR Scanner',
+      'documents': 'Documents list',
+      'gallery': 'Gallery page',
+      'forms': 'Forms',
+      'meeting-room': 'Meeting room'
+    }
+    return pageTypeNames[pageType] || 'New Page'
+  }
+
   const handlePageTypeSelect = async (pageType: PageType) => {
-    console.log('Selected page type:', pageType)
     setShowPageCreationModal(false)
     
-    // Handle schedule page creation
+    const pageName = getPageNameFromType(pageType)
+    const pageId = `page-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    
+    // Handle schedule page creation with special metadata
     if (pageType === 'schedule') {
-      await createSchedulePage()
+      // Add Schedule page to context with correct metadata
+      addPage({
+        id: pageId,
+        name: pageName,
+        slug: pageName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        source: 'advanced-component',
+        type: 'schedule',
+        component: 'SchedulePage'
+      })
+      await createSchedulePage(pageId, pageName)
     } else {
-      // TODO: Implement other page types
-      console.log('Page type not yet implemented:', pageType)
+      // Add other page types to context
+      addPage({
+        id: pageId,
+        name: pageName,
+        slug: pageName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        source: 'modal-created'
+      })
+      // For other page types, navigate to editor
+      window.history.pushState({}, '', `/event/website/editor/${pageId}`)
+      window.dispatchEvent(new PopStateEvent('popstate'))
     }
   }
 
-  const createSchedulePage = async () => {
+  const createSchedulePage = async (pageId: string, pageName: string) => {
     try {
-      // Generate page ID and name
-      const pageName = 'Schedule'
-      const sanitizedName = pageName.toLowerCase().replace(/[^a-z0-9]/g, '-')
-      const pageId = `page-${sanitizedName}-${Date.now()}`
-      
-      // Create schedule page template with SchedulePage component
-      // Include default events matching the schedule interface shown in the image
       const schedulePageData = {
         content: [
           {
             type: 'SchedulePage',
             props: {
-              title: 'Schedule',
+              title: pageName,
               events: [
                 {
                   id: "1",
@@ -222,81 +184,6 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                   participants: "",
                   tags: "",
                   attachments: 1,
-                  isCompleted: false,
-                  isExpanded: false,
-                  parentSessionId: undefined
-                },
-                {
-                  id: "2",
-                  title: "Poster presentation",
-                  startTime: "08:00 AM",
-                  endTime: "09:00 AM",
-                  location: "Room B",
-                  type: "In-Person",
-                  description: "Poster presentation session",
-                  participants: "",
-                  tags: "",
-                  attachments: 5,
-                  isCompleted: false,
-                  isExpanded: false,
-                  parentSessionId: undefined
-                },
-                {
-                  id: "3",
-                  title: "Welcome Note",
-                  startTime: "09:10 AM",
-                  endTime: "10:10 AM",
-                  location: "Drawing Room",
-                  type: "Virtual",
-                  description: "Welcome note from the chairman",
-                  participants: "Chairman: Speaker 1, Others: Speaker 2, +2 more",
-                  tags: "Poster",
-                  attachments: 12,
-                  isCompleted: false,
-                  isExpanded: false,
-                  parentSessionId: undefined
-                },
-                {
-                  id: "4",
-                  title: "Special topic",
-                  startTime: "09:15 AM",
-                  endTime: "09:30 AM",
-                  location: "Drawing Room",
-                  type: "Virtual",
-                  description: "Special topic discussion",
-                  participants: "Speakers: Speaker 1, Speaker 2",
-                  tags: "",
-                  attachments: 8,
-                  isCompleted: false,
-                  isExpanded: false,
-                  parentSessionId: undefined
-                },
-                {
-                  id: "5",
-                  title: "Tea break",
-                  startTime: "10:10 AM",
-                  endTime: "10:30 AM",
-                  location: "Cafeteria",
-                  type: "In-Person",
-                  description: "Tea break for networking",
-                  participants: "",
-                  tags: "break",
-                  attachments: 0,
-                  isCompleted: false,
-                  isExpanded: false,
-                  parentSessionId: undefined
-                },
-                {
-                  id: "6",
-                  title: "Workshop",
-                  startTime: "10:30 AM",
-                  endTime: "11:30 AM",
-                  location: "Room B",
-                  type: "In-Person",
-                  description: "Interactive workshop session",
-                  participants: "",
-                  tags: "workshop",
-                  attachments: 0,
                   isCompleted: false,
                   isExpanded: false,
                   parentSessionId: undefined
@@ -330,19 +217,6 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
       })
       
       if (response.ok) {
-        // Add the new schedule page to the pages list
-        setPages(prevPages => {
-          // Check if page already exists
-          const pageExists = prevPages.some(p => p.id === pageId || p.name === pageName)
-          if (!pageExists) {
-            return [...prevPages, { id: pageId, name: pageName }]
-          }
-          return prevPages
-        })
-        
-        // Reload pages to ensure we have the latest list
-        await loadPages()
-        
         // Navigate to editor with the new schedule page
         window.history.pushState({}, '', `/event/website/editor/${pageId}`)
         window.dispatchEvent(new PopStateEvent('popstate'))
@@ -355,30 +229,58 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   }
 
   const handlePageAction = (pageId: string, action: string) => {
-    console.log(`Page action: ${action} for page: ${pageId}`)
-    
-    if (action === 'view') {
-      // Navigate to preview page
-      window.history.pushState({}, '', `/event/website/preview/${pageId}`)
-      window.dispatchEvent(new PopStateEvent('popstate'))
-    } else if (action === 'edit') {
-      // Navigate to editor page
-      window.history.pushState({}, '', `/event/website/editor/${pageId}`)
-      window.dispatchEvent(new PopStateEvent('popstate'))
+    const page = pages.find(p => p.id === pageId)
+    if (!page) return
+
+    // Check if this is the first page (cannot be deleted)
+    const isFirstPage = pages.length > 0 && pages[0].id === pageId
+
+    switch (action) {
+      case 'view':
+        // Navigate to preview page
+        window.history.pushState({}, '', `/event/website/preview/${pageId}`)
+        window.dispatchEvent(new PopStateEvent('popstate'))
+        break
+      case 'edit':
+        // Navigate to editor page
+        window.history.pushState({}, '', `/event/website/editor/${pageId}`)
+        window.dispatchEvent(new PopStateEvent('popstate'))
+        break
+      case 'duplicate':
+        duplicatePage(pageId)
+        break
+      case 'delete':
+        if (isFirstPage) {
+          // Show error or prevent deletion
+          alert('The first page cannot be deleted.')
+          return
+        }
+        setShowDeleteConfirm({ id: pageId, name: page.name })
+        break
+      default:
+        break
     }
-    // TODO: Implement other page actions (duplicate, link, delete)
   }
 
-  // Don't render sidebar/navbar if embedded
+  const confirmDelete = () => {
+    if (showDeleteConfirm) {
+      deletePage(showDeleteConfirm.id)
+      setShowDeleteConfirm(null)
+    }
+  }
+
+  // Get first page ID to check if deletion should be disabled
+  const firstPageId = pages.length > 0 ? pages[0].id : null
+
+  // Render content for embedded mode (without navbar/sidebar)
   if (hideNavbarAndSidebar) {
     return (
       <div className="w-full h-full">
-        {/* Main Content */}
         <div className="flex-1 p-8 bg-white overflow-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 w-full">
             <h1 className="text-[26px] font-bold text-primary-dark">Event Website</h1>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-nowrap overflow-visible">
               <Button
                 variant="secondary"
                 size="md"
@@ -388,26 +290,220 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                 Preview
               </Button>
               <Button
-                variant="secondary"
-                size="md"
+                variant="primary"
+                size="sm"
                 onClick={handlePublishWebsite}
-                iconLeading={<Globe01 className="h-4 w-4" />}
+                iconLeading={<Globe01 className="h-3.5 w-3.5" />}
+                data-modal-button="true"
+                className="bg-[#6938EF] hover:bg-[#5925DC] text-white text-xs"
               >
                 Publish Website
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleNewPage}
-                iconLeading={<Plus className="h-4 w-4" />}
-              >
-                New page
               </Button>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-6 mb-6 border-b border-slate-200">
+          <div className="flex items-center justify-between mb-6 border-b border-slate-200">
+            <div className="flex gap-6">
+              <Button
+                variant="tertiary"
+                size="sm"
+                onClick={() => setActiveSubItem('website-pages')}
+                className={`pb-3 px-1 h-auto rounded-none border-b-2 transition-colors relative ${
+                  activeSubItem === 'website-pages'
+                    ? 'text-primary border-b-primary'
+                    : 'text-slate-600 hover:text-slate-900 border-b-transparent'
+                }`}
+              >
+                Website pages
+              </Button>
+              <Button
+                variant="tertiary"
+                size="sm"
+                onClick={() => setActiveSubItem('website-header')}
+                className={`pb-3 px-1 h-auto rounded-none border-b-2 transition-colors relative ${
+                  activeSubItem === 'website-header'
+                    ? 'text-primary border-b-primary'
+                    : 'text-slate-600 hover:text-slate-900 border-b-transparent'
+                }`}
+              >
+                Website header
+              </Button>
+            </div>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleNewPage}
+              iconLeading={<Plus className="h-4 w-4" />}
+            >
+              New page
+            </Button>
+          </div>
+
+          {/* Content based on active tab */}
+          {activeSubItem === 'website-pages' && (
+            <div>
+              {/* Pages List */}
+              <div className="space-y-0 border border-slate-200 rounded-lg bg-white">
+                {pages.length === 0 ? (
+                  <div className="flex items-center justify-center py-8 text-slate-500">
+                    <p>No pages yet. Click "+ New Page" to create one.</p>
+                  </div>
+                ) : (
+                  pages.map((page) => {
+                    const isFirstPage = page.id === firstPageId
+                    return (
+                      <div
+                        key={page.id}
+                        className="flex items-center justify-between py-2 px-4 border-b border-slate-200 last:border-b-0 hover:bg-slate-50 transition-colors"
+                      >
+                        <span className="text-sm font-medium text-slate-900">
+                          {page.name}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="tertiary"
+                            size="sm"
+                            onClick={() => handlePageAction(page.id, 'view')}
+                            className="p-2 text-slate-400 hover:text-slate-600"
+                            aria-label="View"
+                            iconLeading={<Eye className="h-4 w-4" />}
+                          />
+                          <Button
+                            variant="tertiary"
+                            size="sm"
+                            onClick={() => handlePageAction(page.id, 'edit')}
+                            className="p-2 text-slate-400 hover:text-slate-600"
+                            aria-label="Edit"
+                            iconLeading={<Edit05 className="h-4 w-4" />}
+                          />
+                          <Button
+                            variant="tertiary"
+                            size="sm"
+                            onClick={() => handlePageAction(page.id, 'duplicate')}
+                            className="p-2 text-slate-400 hover:text-slate-600"
+                            aria-label="Duplicate"
+                            iconLeading={<Copy01 className="h-4 w-4" />}
+                          />
+                          <Button
+                            variant="tertiary"
+                            size="sm"
+                            onClick={() => handlePageAction(page.id, 'delete')}
+                            className={`p-2 hover:text-red-600 ${
+                              isFirstPage 
+                                ? 'text-slate-300 cursor-not-allowed opacity-50' 
+                                : 'text-slate-400'
+                            }`}
+                            aria-label="Delete"
+                            disabled={isFirstPage}
+                            iconLeading={<Trash01 className="h-4 w-4" />}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeSubItem === 'website-header' && (
+            <div>
+              <p className="text-slate-600">Website header settings will be implemented here.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Page Creation Modal */}
+        <PageCreationModal
+          isVisible={showPageCreationModal}
+          onClose={() => setShowPageCreationModal(false)}
+          onSelect={handlePageTypeSelect}
+        />
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">Delete Page</h3>
+              <p className="text-sm text-slate-600 mb-6">
+                Are you sure you want to delete "{showDeleteConfirm.name}"? This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={() => setShowDeleteConfirm(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={confirmDelete}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Render full page with navbar and sidebar
+  return (
+    <div className="h-screen overflow-hidden bg-white">
+      {/* Navbar */}
+      <EventHubNavbar
+        eventName={eventData?.eventName || 'Highly important conference of 2025'}
+        isDraft={true}
+        onBackClick={onBackClick}
+        onSearchClick={handleSearchClick}
+        onNotificationClick={handleNotificationClick}
+        onProfileClick={handleProfileClick}
+        userAvatarUrl={userAvatarUrl}
+      />
+
+      {/* Sidebar */}
+      <EventHubSidebar
+        items={sidebarItems}
+        activeItemId="event-website"
+        onItemClick={handleSidebarItemClick}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 p-8 bg-white overflow-x-auto overflow-y-auto ml-[250px] mt-16 min-w-0">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 w-full">
+          <h1 className="text-[26px] font-bold text-primary-dark">Event Website</h1>
+          <div className="flex items-center gap-3 flex-nowrap overflow-visible">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handlePreview}
+              iconLeading={<Eye className="h-4 w-4" />}
+            >
+              Preview
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handlePublishWebsite}
+              iconLeading={<Globe01 className="h-3.5 w-3.5" />}
+              data-modal-button="true"
+              className="bg-[#6938EF] hover:bg-[#5925DC] text-white text-xs"
+            >
+              Publish Website
+            </Button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center justify-between mb-6 border-b border-slate-200">
+          <div className="flex gap-6">
             <Button
               variant="tertiary"
               size="sm"
@@ -433,32 +529,37 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
               Website header
             </Button>
           </div>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleNewPage}
+            iconLeading={<Plus className="h-4 w-4" />}
+          >
+            New page
+          </Button>
+        </div>
 
-          {/* Content based on active tab */}
-          {activeSubItem === 'website-pages' && (
-            <div>
-              {/* Pages List */}
-              <div className="space-y-0">
-                {pages.map((page) => (
-                  <div
-                    key={page.id}
-                    className={`flex items-center justify-between py-4 px-4 border-b border-slate-200 hover:bg-slate-50 transition-colors ${
-                      page.isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    <span className={`text-sm font-medium ${page.isDisabled ? 'text-slate-400' : 'text-slate-900'}`}>
-                      {page.name}
-                    </span>
-                    {!page.isDisabled && (
-                      <div className="flex items-center gap-4">
-                        <Button
-                          variant="tertiary"
-                          size="sm"
-                          onClick={() => handlePageAction(page.id, 'duplicate')}
-                          className="p-2 text-slate-400 hover:text-slate-600"
-                          aria-label="Duplicate"
-                          iconLeading={<Copy01 className="h-4 w-4" />}
-                        />
+        {/* Content based on active tab */}
+        {activeSubItem === 'website-pages' && (
+          <div>
+            {/* Pages List */}
+            <div className="space-y-0 bg-slate-100 rounded-lg">
+              {pages.length === 0 ? (
+                <div className="flex items-center justify-center py-8 text-slate-500">
+                  <p>No pages yet. Click "+ New Page" to create one.</p>
+                </div>
+              ) : (
+                pages.map((page) => {
+                  const isFirstPage = page.id === firstPageId
+                  return (
+                    <div
+                      key={page.id}
+                      className="flex items-center justify-between py-2 px-4 border-b border-slate-200 last:border-b-0 hover:bg-slate-50 transition-colors"
+                    >
+                      <span className="text-sm font-medium text-slate-900">
+                        {page.name}
+                      </span>
+                      <div className="flex items-center gap-2">
                         <Button
                           variant="tertiary"
                           size="sm"
@@ -466,14 +567,6 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                           className="p-2 text-slate-400 hover:text-slate-600"
                           aria-label="View"
                           iconLeading={<Eye className="h-4 w-4" />}
-                        />
-                        <Button
-                          variant="tertiary"
-                          size="sm"
-                          onClick={() => handlePageAction(page.id, 'link')}
-                          className="p-2 text-slate-400 hover:text-slate-600"
-                          aria-label="Copy link"
-                          iconLeading={<Link03 className="h-4 w-4" />}
                         />
                         <Button
                           variant="tertiary"
@@ -486,178 +579,29 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                         <Button
                           variant="tertiary"
                           size="sm"
+                          onClick={() => handlePageAction(page.id, 'duplicate')}
+                          className="p-2 text-slate-400 hover:text-slate-600"
+                          aria-label="Duplicate"
+                          iconLeading={<Copy01 className="h-4 w-4" />}
+                        />
+                        <Button
+                          variant="tertiary"
+                          size="sm"
                           onClick={() => handlePageAction(page.id, 'delete')}
-                          className="p-2 text-slate-400 hover:text-red-600"
+                          className={`p-2 hover:text-red-600 ${
+                            isFirstPage 
+                              ? 'text-slate-300 cursor-not-allowed opacity-50' 
+                              : 'text-slate-400'
+                          }`}
                           aria-label="Delete"
+                          disabled={isFirstPage}
                           iconLeading={<Trash01 className="h-4 w-4" />}
                         />
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeSubItem === 'website-header' && (
-            <div>
-              <p className="text-slate-600">Website header settings will be implemented here.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Page Creation Modal */}
-        <PageCreationModal
-          isVisible={showPageCreationModal}
-          onClose={() => setShowPageCreationModal(false)}
-          onSelect={handlePageTypeSelect}
-        />
-      </div>
-    )
-  }
-
-  return (
-    <div className="h-screen overflow-hidden bg-white">
-      {/* Navbar */}
-      <EventHubNavbar
-        eventName={eventData?.eventName || 'Highly important conference of 2025'}
-        isDraft={true}
-        onBackClick={onBackClick}
-        onSearchClick={handleSearchClick}
-        onNotificationClick={handleNotificationClick}
-        onProfileClick={handleProfileClick}
-        userAvatarUrl={userAvatarUrl}
-      />
-
-      {/* Sidebar */}
-      <EventHubSidebar
-        items={sidebarItems}
-        activeItemId="event-website"
-        onItemClick={handleSidebarItemClick}
-      />
-
-      {/* Main Content */}
-      <div className={`flex-1 p-8 bg-white overflow-auto ${hideNavbarAndSidebar ? "" : "ml-[250px] mt-16"}`}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-primary">Event Website</h1>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={handlePreview}
-              iconLeading={<Eye className="h-4 w-4" />}
-            >
-              Preview
-            </Button>
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={handlePublishWebsite}
-              iconLeading={<Globe01 className="h-4 w-4" />}
-            >
-              Publish Website
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              onClick={handleNewPage}
-              iconLeading={<Plus className="h-4 w-4" />}
-            >
-              New page
-            </Button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-6 mb-6 border-b border-slate-200">
-          <Button
-            variant="tertiary"
-            size="sm"
-            onClick={() => setActiveSubItem('website-pages')}
-            className={`pb-3 px-1 h-auto rounded-none border-b-2 transition-colors relative ${
-              activeSubItem === 'website-pages'
-                ? 'text-primary border-b-primary'
-                : 'text-slate-600 hover:text-slate-900 border-b-transparent'
-            }`}
-          >
-            Website pages
-          </Button>
-          <Button
-            variant="tertiary"
-            size="sm"
-            onClick={() => setActiveSubItem('website-header')}
-            className={`pb-3 px-1 h-auto rounded-none border-b-2 transition-colors relative ${
-              activeSubItem === 'website-header'
-                ? 'text-primary border-b-primary'
-                : 'text-slate-600 hover:text-slate-900 border-b-transparent'
-            }`}
-          >
-            Website header
-          </Button>
-        </div>
-
-        {/* Content based on active tab */}
-        {activeSubItem === 'website-pages' && (
-          <div>
-            {/* Pages List */}
-            <div className="space-y-0">
-              {pages.map((page) => (
-                <div
-                  key={page.id}
-                  className={`flex items-center justify-between py-4 px-4 border-b border-slate-200 hover:bg-slate-50 transition-colors ${
-                    page.isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  <span className={`text-sm font-medium ${page.isDisabled ? 'text-slate-400' : 'text-slate-900'}`}>
-                    {page.name}
-                  </span>
-                  {!page.isDisabled && (
-                    <div className="flex items-center gap-4">
-                      <Button
-                        variant="tertiary"
-                        size="sm"
-                        onClick={() => handlePageAction(page.id, 'duplicate')}
-                        className="p-2 text-slate-400 hover:text-slate-600"
-                        aria-label="Duplicate"
-                        iconLeading={<Copy01 className="h-4 w-4" />}
-                      />
-                      <Button
-                        variant="tertiary"
-                        size="sm"
-                        onClick={() => handlePageAction(page.id, 'view')}
-                        className="p-2 text-slate-400 hover:text-slate-600"
-                        aria-label="View"
-                        iconLeading={<Eye className="h-4 w-4" />}
-                      />
-                      <Button
-                        variant="tertiary"
-                        size="sm"
-                        onClick={() => handlePageAction(page.id, 'link')}
-                        className="p-2 text-slate-400 hover:text-slate-600"
-                        aria-label="Copy link"
-                        iconLeading={<Link03 className="h-4 w-4" />}
-                      />
-                      <Button
-                        variant="tertiary"
-                        size="sm"
-                        onClick={() => handlePageAction(page.id, 'edit')}
-                        className="p-2 text-slate-400 hover:text-slate-600"
-                        aria-label="Edit"
-                        iconLeading={<Edit05 className="h-4 w-4" />}
-                      />
-                      <Button
-                        variant="tertiary"
-                        size="sm"
-                        onClick={() => handlePageAction(page.id, 'delete')}
-                        className="p-2 text-slate-400 hover:text-red-600"
-                        aria-label="Delete"
-                        iconLeading={<Trash01 className="h-4 w-4" />}
-                      />
                     </div>
-                  )}
-                </div>
-              ))}
+                  )
+                })
+              )}
             </div>
           </div>
         )}
@@ -675,6 +619,35 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
         onClose={() => setShowPageCreationModal(false)}
         onSelect={handlePageTypeSelect}
       />
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Delete Page</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Are you sure you want to delete "{showDeleteConfirm.name}"? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => setShowDeleteConfirm(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={confirmDelete}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

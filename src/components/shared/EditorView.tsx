@@ -12,6 +12,7 @@ import type { PageCreationType } from '../page/NewPageCreationModal'
 import Preview from './Preview'
 import { NavigationProvider } from '../../contexts/NavigationContext'
 import { useEventForm } from '../../contexts/EventFormContext'
+import { useWebsitePages } from '../../contexts/WebsitePagesContext'
 import { Page } from '../../types'
 
 // Context to provide current data to custom fields
@@ -61,6 +62,9 @@ export const EditorView: React.FC<EditorViewProps> = ({
   onCreatePageFromTemplate,
   onCreateNewPage,
 }) => {
+  // Get pages from WebsitePagesContext
+  const { pages: websitePages } = useWebsitePages()
+  
   // Initially show default COMPONENTS sidebar, canvas, and property sidebar with Page 1
   // Custom sidebar only appears after "Create from scratch" is selected
   const [showCustomSidebar, setShowCustomSidebar] = useState(() => {
@@ -501,34 +505,16 @@ export const EditorView: React.FC<EditorViewProps> = ({
       ) : (
         <NavigationProvider onNavigateToEditor={onNavigateToEditor} onAddComponent={onAddComponent}>
           {showCustomSidebar && (() => {
-            // Filter pages based on editor mode
-            // When mode is 'template', exclude Page1
-            // When mode is 'blank', include Page1
-            let pagesForSidebar = pages
-              .filter(page => {
-                // If mode is 'template', exclude Page1
-                if (editorMode === 'template') {
-                  return page.id !== 'page1' && page.name !== 'Page 1'
-                }
-                // If mode is 'blank', include all pages (including Page1)
-                return true
-              })
-              .map(page => ({ id: page.id, name: page.name }))
+            // Use website pages from context, convert to sidebar format
+            let pagesForSidebar = websitePages.map(page => ({
+              id: page.id,
+              name: page.name
+            }))
             
             // Ensure current page is included if not already in the list
             const currentPageExists = pagesForSidebar.some(p => p.id === currentPage || p.name === currentPageName)
             if (!currentPageExists && currentPage && currentPageName) {
-              // Only add current page if it's not Page1 when mode is 'template'
-              if (editorMode === 'template' && (currentPage === 'page1' || currentPageName === 'Page 1')) {
-                // Don't add Page1 when mode is template
-              } else {
-                pagesForSidebar.push({ id: currentPage, name: currentPageName })
-              }
-            }
-            
-            // Ensure Page1 is in the list if we're on page1 AND mode is 'blank'
-            if (editorMode === 'blank' && currentPage === 'page1' && !pagesForSidebar.some(p => p.id === 'page1')) {
-              pagesForSidebar.unshift({ id: 'page1', name: currentPageName || 'Page 1' })
+              pagesForSidebar.push({ id: currentPage, name: currentPageName })
             }
             
             return (
@@ -543,19 +529,25 @@ export const EditorView: React.FC<EditorViewProps> = ({
                       return
                     }
                     
+                    // Navigate to editor for the selected page
+                    window.history.pushState({}, '', `/event/website/editor/${pageId}`)
+                    window.dispatchEvent(new PopStateEvent('popstate'))
+                    
                     try {
-                      // Try to find the page in the pages array
-                      const page = pages.find(p => p.id === pageId)
-                      if (page) {
-                        await onPageSelect(page.filename)
+                      // Try to find the page in website pages
+                      const websitePage = websitePages.find(p => p.id === pageId)
+                      if (websitePage) {
+                        // Try to load the page data
+                        const filename = pageId.endsWith('.json') ? pageId : `${pageId}.json`
+                        await onPageSelect(filename)
                       } else {
                         // Page not in array, but try to load it anyway using the pageId
-                        // This handles cases where Page 1 or Page 2 might not be in the array yet
                         const filename = pageId.endsWith('.json') ? pageId : `${pageId}.json`
                         await onPageSelect(filename)
                       }
                     } catch (error) {
                       // Error loading page - silently fail
+                      console.error('Error loading page:', error)
                     }
                   }}
                   onAddPage={editorMode === 'blank' ? () => setShowNewPageCreationModal(true) : undefined}
