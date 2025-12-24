@@ -214,9 +214,23 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
 
   const updateFormatState = () => {
     if (editorRef.current) {
+      // Check if subject input is focused - if so, don't interfere
+      const activeElement = document.activeElement
+      if (activeElement && activeElement.id === 'subject') {
+        // Subject input is focused, don't update format state or steal focus
+        return
+      }
+      
       // Ensure editor is focused before checking command state
       const wasFocused = document.activeElement === editorRef.current
       if (!wasFocused) {
+        // Only focus editor if we're not trying to focus something else
+        // Check if user is trying to focus the subject input
+        const subjectInput = document.getElementById('subject')
+        if (subjectInput && (subjectInput === activeElement || subjectInput.contains(activeElement as Node))) {
+          // User is trying to focus subject input, don't interfere
+          return
+        }
         editorRef.current.focus()
       }
       
@@ -243,13 +257,22 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
   const handleTextSelection = () => {
     // Small delay to ensure selection is complete
     setTimeout(() => {
+      // Don't update if subject input is focused
+      const activeElement = document.activeElement
+      if (activeElement && activeElement.id === 'subject') {
+        return
+      }
+      
       const selection = window.getSelection()
       const editor = editorRef.current
       if (!editor) return
       
       // Always update format state when selection changes (even if empty)
       // This ensures buttons reflect the format at cursor position
-      updateFormatState()
+      // But only if editor is focused
+      if (document.activeElement === editor) {
+        updateFormatState()
+      }
       
       if (selection && selection.toString().length > 0) {
         const anchorNode = selection.anchorNode
@@ -301,8 +324,15 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node
+      
+      // Don't interfere with subject input
+      const subjectInput = document.getElementById('subject')
+      if (subjectInput && (subjectInput === target || subjectInput.contains(target))) {
+        return
+      }
+      
       if (showColorPicker) {
-        const target = event.target as Node
         if (
           colorPickerButtonRef.current && 
           !colorPickerButtonRef.current.contains(target) &&
@@ -316,8 +346,8 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
       
       // Fix: Don't close if clicking inside the contextual toolbar
       if (showContextualToolbar && 
-          !editorRef.current?.contains(event.target as Node) && 
-          !contextualToolbarRef.current?.contains(event.target as Node)) {
+          !editorRef.current?.contains(target) && 
+          !contextualToolbarRef.current?.contains(target)) {
         setShowContextualToolbar(false)
       }
     }
@@ -752,7 +782,18 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                   className={`group relative flex flex-col w-full rounded-md border ${
                     type === 'email' && subject.length > 60 ? 'border-orange-300' : 'border-slate-300'
                   } bg-slate-50 transition-all`}
-                  onClick={() => document.getElementById('subject')?.focus()}
+                  onClick={(e) => {
+                    // Only focus if clicking on the container or label, not on the input itself
+                    const target = e.target as HTMLElement
+                    if (target.tagName === 'LABEL' || (target === e.currentTarget && target.tagName !== 'INPUT')) {
+                      const subjectInput = document.getElementById('subject') as HTMLInputElement
+                      if (subjectInput && document.activeElement !== subjectInput) {
+                        setTimeout(() => {
+                          subjectInput.focus()
+                        }, 0)
+                      }
+                    }
+                  }}
                 >
                   <div className="flex items-center px-3 pt-2.5">
                     <label htmlFor="subject" className="text-sm font-semibold text-slate-700 mr-2 cursor-text shrink-0">
@@ -769,7 +810,28 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                           setSubject(e.target.value)
                         }
                       }}
+                      onMouseDown={(e) => {
+                        // Stop propagation and ensure focus
+                        e.stopPropagation()
+                        // Use setTimeout to ensure focus happens after any other handlers
+                        setTimeout(() => {
+                          e.currentTarget.focus()
+                        }, 0)
+                      }}
+                      onClick={(e) => {
+                        // Stop propagation and ensure focus
+                        e.stopPropagation()
+                        e.currentTarget.focus()
+                      }}
+                      onFocus={(e) => {
+                        // Ensure input maintains focus
+                        if (document.activeElement !== e.target) {
+                          e.target.focus()
+                        }
+                      }}
+                      tabIndex={0}
                       className="flex-1 bg-transparent border-none p-0 text-sm text-slate-900 focus:ring-0 focus:outline-none placeholder-slate-400"
+                      autoComplete="off"
                     />
                   </div>
                   
@@ -1106,8 +1168,14 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                       // Update format state on key up to catch cursor movements
                       updateFormatState()
                     }}
-                    onBlur={() => {
+                    onBlur={(e) => {
                       // Update format state when editor loses focus
+                      // Only update if focus is not moving to the subject input
+                      const relatedTarget = (e.nativeEvent as FocusEvent).relatedTarget as HTMLElement
+                      if (relatedTarget && relatedTarget.id === 'subject') {
+                        // Focus is moving to subject input, don't interfere
+                        return
+                      }
                       updateFormatState()
                     }}
                     onFocus={() => {
