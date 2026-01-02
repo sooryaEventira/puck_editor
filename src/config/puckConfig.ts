@@ -7,7 +7,7 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import {
-  HeroSection, HeroVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer, RegistrationCTA, Sponsors, ContactFooter
+  HeroSection, HeroVideo, HeroSplitScreen, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer, RegistrationCTA, Sponsors, ContactFooter, EventNumbers, SpeakerHighlight, SessionHighlight, SessionHighlightKeynote, SessionHighlightWorkshop, VenueHeader, HotelPartners, VenueDirections, LocationFloorPlan, GridBlock, Article, Table
 } from '../components/advanced'
 import ScheduleContent from '../components/eventhub/schedulesession/ScheduleContent'
 import RegistrationCTA from '../components/advanced/RegistrationCTA'
@@ -19,6 +19,7 @@ import ImageSimple from '../components/advanced/ImageSimple'
 import CustomButtonField from '../components/fields/CustomButtonField'
 import SchedulesSectionField from '../components/fields/SchedulesSectionField'
 import PdfSelectField from '../components/fields/PdfSelectField'
+import SessionSelectField from '../components/fields/SessionSelectField'
 
 // Import split config modules
 import { viewports } from './puck/viewports'
@@ -101,17 +102,52 @@ export const config = {
         }
       }
     },
+    // Landing / Home Page Category
+    landing: {
+      title: "Landing / Home Page",
+      icon: "fa-solid fa-home",
+      defaultExpanded: true,
+      components: ["HeroSection", "HeroVideo", "HeroSplitScreen", "EventNumbers", "SpeakerHighlight", "SessionHighlight", "SessionHighlightKeynote", "SessionHighlightWorkshop", "ContactFooter"]
+    },
+    // Venue Page Category
+    venue: {
+      title: "Venue Page",
+      icon: "fa-solid fa-map-marker-alt",
+      defaultExpanded: true,
+      components: ["VenueHeader", "HotelPartners", "VenueDirections"]
+    },
+    // Location Page Category
+    location: {
+      title: "Location Page",
+      icon: "fa-solid fa-map",
+      defaultExpanded: true,
+      components: ["LocationFloorPlan"]
+    },
+    // General Page Category
+    general: {
+      title: "General Page",
+      icon: "fa-solid fa-file-alt",
+      defaultExpanded: true,
+      components: ["GridBlock", "Article"]
+    },
+    // Table / List Category
+    tableList: {
+      title: "Table / List",
+      icon: "fa-solid fa-table",
+      defaultExpanded: true,
+      components: ["Table"]
+    },
     // Advanced Components Category
     advanced: {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["HeroSection", "HeroVideo", "Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "RegistrationCTA", "Sponsors", "ContactFooter", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
+      components: ["Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "RegistrationCTA", "Sponsors", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["HeroSection", "HeroVideo", "SchedulePage", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "RegistrationCTA", "Sponsors", "ContactFooter", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm"]
+          components: ["SchedulePage", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "RegistrationCTA", "Sponsors", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm"]
         },
         media: {
           title: "Media",
@@ -2002,24 +2038,62 @@ export const config = {
           }
         },
         backgroundColor: {
-          type: 'text' as const,
+          type: 'select' as const,
           label: 'Background Color',
-          placeholder: '#ffffff'
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Custom...', value: '' }
+          ]
         },
         textColor: {
-          type: 'text' as const,
+          type: 'select' as const,
           label: 'Text Color',
-          placeholder: '#1f2937'
+          options: [
+            { label: 'Black', value: '#000000' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'Light Gray', value: '#9ca3af' },
+            { label: 'White', value: '#ffffff' },
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Custom...', value: '' }
+          ]
         },
         iconColor: {
-          type: 'text' as const,
+          type: 'select' as const,
           label: 'Icon Color',
-          placeholder: '#6938EF'
+          options: [
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
         },
         buttonColor: {
-          type: 'text' as const,
+          type: 'select' as const,
           label: 'Button Color',
-          placeholder: '#6938EF'
+          options: [
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
         },
         padding: {
           type: 'text' as const,
@@ -2068,6 +2142,1916 @@ export const config = {
         copyrightText: "Copyright © 2024"
       },
       render: ContactFooter
+    },
+    EventNumbers: {
+      label: "📊 Event Numbers",
+      fields: {
+        items: {
+          type: 'array' as const,
+          label: 'Statistics Items',
+          arrayFields: {
+            value: {
+              type: 'text' as const,
+              label: 'Value (Number)',
+              placeholder: '50+',
+              contentEditable: true
+            },
+            label: {
+              type: 'text' as const,
+              label: 'Label',
+              placeholder: 'SPEAKERS',
+              contentEditable: true
+            }
+          },
+          getItemSummary: (item: any, index: number) => {
+            return item?.value && item?.label ? `${item.value} ${item.label}` : `Stat ${index + 1}`;
+          }
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color',
+          options: [
+            { label: 'Dark Blue', value: '#1e3a8a' },
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Gray', value: '#4b5563' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        textColor: {
+          type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Gray', value: '#9ca3af' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        valueColor: {
+          type: 'select' as const,
+          label: 'Number Color (optional)',
+          options: [
+            { label: 'Same as Text', value: '' },
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Yellow', value: '#fbbf24' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        labelColor: {
+          type: 'select' as const,
+          label: 'Label Color (optional)',
+          options: [
+            { label: 'Same as Text', value: '' },
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Gray', value: '#9ca3af' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '3rem 2rem'
+        }
+      },
+      defaultProps: {
+        items: [
+          {
+            id: '1',
+            value: '50+',
+            label: 'SPEAKERS'
+          },
+          {
+            id: '2',
+            value: '2,000+',
+            label: 'ATTENDEES'
+          },
+          {
+            id: '3',
+            value: '30',
+            label: 'WORKSHOPS'
+          },
+          {
+            id: '4',
+            value: '3',
+            label: 'DAYS'
+          }
+        ],
+        backgroundColor: '#1e3a8a',
+        textColor: '#ffffff',
+        valueColor: '',
+        labelColor: '',
+        padding: '3rem 2rem'
+      },
+      render: EventNumbers
+    },
+    SpeakerHighlight: {
+      label: "🎤 Speaker Highlight",
+      fields: {
+        heading: {
+          type: 'text' as const,
+          label: 'Heading',
+          placeholder: 'Headlining Speakers',
+          contentEditable: true
+        },
+        subtitle: {
+          type: 'text' as const,
+          label: 'Subtitle',
+          placeholder: 'Learn from the pioneers shaping the industry.',
+          contentEditable: true
+        },
+        speakers: {
+          type: 'array' as const,
+          label: 'Speakers',
+          arrayFields: {
+            name: {
+              type: 'text' as const,
+              label: 'Name',
+              placeholder: 'Sarah Jenkins',
+              contentEditable: true
+            },
+            title: {
+              type: 'text' as const,
+              label: 'Title',
+              placeholder: 'CMO',
+              contentEditable: true
+            },
+            company: {
+              type: 'text' as const,
+              label: 'Company',
+              placeholder: 'TechGlobal',
+              contentEditable: true
+            },
+            quote: {
+              type: 'textarea' as const,
+              label: 'Quote',
+              placeholder: 'The Future of AI in Marketing',
+              contentEditable: true
+            },
+            photo: {
+              type: 'text' as const,
+              label: 'Photo URL',
+              placeholder: 'https://example.com/photo.jpg',
+              contentEditable: true
+            },
+            accentColor: {
+              type: 'select' as const,
+              label: 'Accent Color',
+              options: [
+                { label: 'Blue', value: '#3b82f6' },
+                { label: 'Purple', value: '#6938EF' },
+                { label: 'Pink', value: '#ec4899' },
+                { label: 'Red', value: '#ef4444' },
+                { label: 'Orange', value: '#f97316' },
+                { label: 'Green', value: '#10b981' },
+                { label: 'Indigo', value: '#6366f1' },
+                { label: 'Default', value: '' }
+              ]
+            }
+          },
+          getItemSummary: (item: any, index: number) => {
+            return item?.name || `Speaker ${index + 1}`;
+          }
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Gray', value: '#f3f4f6' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        textColor: {
+          type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'Black', value: '#000000' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        headingColor: {
+          type: 'select' as const,
+          label: 'Heading Color (optional)',
+          options: [
+            { label: 'Same as Text', value: '' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        subtitleColor: {
+          type: 'select' as const,
+          label: 'Subtitle Color (optional)',
+          options: [
+            { label: 'Gray (default)', value: '' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        accentColor: {
+          type: 'select' as const,
+          label: 'Default Accent Color',
+          options: [
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Pink', value: '#ec4899' },
+            { label: 'Red', value: '#ef4444' },
+            { label: 'Orange', value: '#f97316' },
+            { label: 'Green', value: '#10b981' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '4rem 2rem'
+        }
+      },
+      defaultProps: {
+        heading: 'Headlining Speakers',
+        subtitle: 'Learn from the pioneers shaping the industry.',
+        speakers: [
+          {
+            id: '1',
+            name: 'Sarah Jenkins',
+            title: 'CMO',
+            company: 'TechGlobal',
+            quote: 'The Future of AI in Marketing',
+            photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
+            accentColor: '#3b82f6'
+          },
+          {
+            id: '2',
+            name: 'David Chen',
+            title: 'Founder',
+            company: 'StartUp Inc.',
+            quote: 'Building for Scale',
+            photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
+            accentColor: '#6938EF'
+          },
+          {
+            id: '3',
+            name: 'Elena Rodriguez',
+            title: 'Director of Design',
+            company: 'ArtFlo',
+            quote: 'Empathy in UX',
+            photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
+            accentColor: '#ec4899'
+          }
+        ],
+        backgroundColor: '#ffffff',
+        textColor: '#000000',
+        headingColor: '',
+        subtitleColor: '',
+        accentColor: '#3b82f6',
+        padding: '4rem 2rem'
+      },
+      render: SpeakerHighlight
+    },
+    SessionHighlight: {
+      label: "🎯 Session Highlight",
+      fields: {
+        sessionId: {
+          type: 'custom' as const,
+          label: 'Select Session',
+          render: (props: any) => {
+            return React.createElement(SessionSelectField, {
+              ...props,
+              value: props.value || '',
+              onChange: props.onChange
+            })
+          }
+        },
+        sessions: {
+          type: 'array' as const,
+          label: 'Sessions (from scheduler)',
+          arrayFields: {
+            id: { type: 'text' as const, label: 'ID' },
+            title: { type: 'text' as const, label: 'Title' },
+            startTime: { type: 'text' as const, label: 'Start Time' },
+            startPeriod: { 
+              type: 'select' as const, 
+              label: 'Start Period',
+              options: [
+                { label: 'AM', value: 'AM' },
+                { label: 'PM', value: 'PM' }
+              ]
+            },
+            endTime: { type: 'text' as const, label: 'End Time' },
+            endPeriod: { 
+              type: 'select' as const, 
+              label: 'End Period',
+              options: [
+                { label: 'AM', value: 'AM' },
+                { label: 'PM', value: 'PM' }
+              ]
+            },
+            location: { type: 'text' as const, label: 'Location' },
+            sessionType: { type: 'text' as const, label: 'Session Type' },
+            tags: {
+              type: 'array' as const,
+              label: 'Tags',
+              arrayFields: {
+                value: { type: 'text' as const, label: 'Tag' }
+              }
+            },
+            sections: {
+              type: 'array' as const,
+              label: 'Sections',
+              arrayFields: {
+                id: { type: 'text' as const, label: 'ID' },
+                type: { type: 'text' as const, label: 'Type' },
+                title: { type: 'text' as const, label: 'Title' },
+                description: { type: 'textarea' as const, label: 'Description' }
+              }
+            }
+          }
+        },
+        backgroundStyle: {
+          type: 'select' as const,
+          label: 'Background Style',
+          options: [
+            { label: 'Gradient', value: 'gradient' },
+            { label: 'Solid', value: 'solid' }
+          ]
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color (Solid)',
+          options: [
+            { label: 'Dark Blue', value: '#1e3a8a' },
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        gradientFrom: {
+          type: 'select' as const,
+          label: 'Gradient From Color',
+          options: [
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Pink', value: '#ec4899' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        gradientTo: {
+          type: 'select' as const,
+          label: 'Gradient To Color',
+          options: [
+            { label: 'Dark Blue', value: '#1e3a8a' },
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        titleColor: {
+          type: 'select' as const,
+          label: 'Title Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        descriptionColor: {
+          type: 'select' as const,
+          label: 'Description Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Gray', value: '#9ca3af' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        metaTextColor: {
+          type: 'select' as const,
+          label: 'Meta Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Gray', value: '#9ca3af' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        badgeTextColor: {
+          type: 'select' as const,
+          label: 'Badge Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        badgeBackgroundColor: {
+          type: 'select' as const,
+          label: 'Badge Background Color',
+          options: [
+            { label: 'Semi-transparent White', value: 'rgba(255, 255, 255, 0.2)' },
+            { label: 'Semi-transparent Black', value: 'rgba(0, 0, 0, 0.2)' },
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        borderRadius: {
+          type: 'text' as const,
+          label: 'Border Radius',
+          placeholder: '16px'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '3rem 2rem'
+        },
+        contentAlignment: {
+          type: 'select' as const,
+          label: 'Content Alignment',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' }
+          ]
+        }
+      },
+      defaultProps: {
+        sessionId: '',
+        sessions: [],
+        backgroundStyle: 'gradient',
+        backgroundColor: '#1e3a8a',
+        gradientFrom: '#6938EF',
+        gradientTo: '#1e3a8a',
+        titleColor: '#ffffff',
+        descriptionColor: '#ffffff',
+        metaTextColor: '#ffffff',
+        badgeTextColor: '#ffffff',
+        badgeBackgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: '16px',
+        padding: '3rem 2rem',
+        contentAlignment: 'left'
+      },
+      render: SessionHighlight
+    },
+    SessionHighlightKeynote: {
+      label: "🎤 Session Highlight (Keynote)",
+      fields: {
+        sessionId: {
+          type: 'custom' as const,
+          label: 'Select Session',
+          render: (props: any) => {
+            return React.createElement(SessionSelectField, {
+              ...props,
+              value: props.value || '',
+              onChange: props.onChange
+            })
+          }
+        },
+        sessions: {
+          type: 'array' as const,
+          label: 'Sessions (from scheduler)',
+          arrayFields: {
+            id: { type: 'text' as const, label: 'ID' },
+            title: { type: 'text' as const, label: 'Title' },
+            startTime: { type: 'text' as const, label: 'Start Time' },
+            startPeriod: { 
+              type: 'select' as const, 
+              label: 'Start Period',
+              options: [
+                { label: 'AM', value: 'AM' },
+                { label: 'PM', value: 'PM' }
+              ]
+            },
+            endTime: { type: 'text' as const, label: 'End Time' },
+            endPeriod: { 
+              type: 'select' as const, 
+              label: 'End Period',
+              options: [
+                { label: 'AM', value: 'AM' },
+                { label: 'PM', value: 'PM' }
+              ]
+            },
+            location: { type: 'text' as const, label: 'Location' },
+            sessionType: { type: 'text' as const, label: 'Session Type' },
+            tags: {
+              type: 'array' as const,
+              label: 'Tags',
+              arrayFields: {
+                value: { type: 'text' as const, label: 'Tag' }
+              }
+            },
+            sections: {
+              type: 'array' as const,
+              label: 'Sections',
+              arrayFields: {
+                id: { type: 'text' as const, label: 'ID' },
+                type: { type: 'text' as const, label: 'Type' },
+                title: { type: 'text' as const, label: 'Title' },
+                description: { type: 'textarea' as const, label: 'Description' }
+              }
+            }
+          }
+        },
+        backgroundStyle: {
+          type: 'select' as const,
+          label: 'Background Style',
+          options: [
+            { label: 'Gradient', value: 'gradient' },
+            { label: 'Solid', value: 'solid' }
+          ]
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color (Solid)',
+          options: [
+            { label: 'Dark Purple', value: '#4c1d95' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Dark Blue', value: '#1e3a8a' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        gradientFrom: {
+          type: 'select' as const,
+          label: 'Gradient From Color',
+          options: [
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        gradientTo: {
+          type: 'select' as const,
+          label: 'Gradient To Color',
+          options: [
+            { label: 'Dark Purple', value: '#4c1d95' },
+            { label: 'Dark Blue', value: '#1e3a8a' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        titleColor: {
+          type: 'select' as const,
+          label: 'Title Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        descriptionColor: {
+          type: 'select' as const,
+          label: 'Description Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        metaTextColor: {
+          type: 'select' as const,
+          label: 'Meta Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        badgeTextColor: {
+          type: 'select' as const,
+          label: 'Badge Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        badgeBackgroundColor: {
+          type: 'select' as const,
+          label: 'Badge Background Color',
+          options: [
+            { label: 'Semi-transparent White', value: 'rgba(255, 255, 255, 0.2)' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        borderColor: {
+          type: 'select' as const,
+          label: 'Border Color',
+          options: [
+            { label: 'Purple', value: '#7c3aed' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        borderRadius: {
+          type: 'text' as const,
+          label: 'Border Radius',
+          placeholder: '16px'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '2rem'
+        }
+      },
+      defaultProps: {
+        sessionId: '',
+        sessions: [],
+        backgroundStyle: 'solid',
+        backgroundColor: '#4c1d95',
+        gradientFrom: '#6938EF',
+        gradientTo: '#4c1d95',
+        titleColor: '#ffffff',
+        descriptionColor: '#ffffff',
+        metaTextColor: '#ffffff',
+        badgeTextColor: '#ffffff',
+        badgeBackgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderColor: '#7c3aed',
+        borderRadius: '16px',
+        padding: '2rem'
+      },
+      render: SessionHighlightKeynote
+    },
+    SessionHighlightWorkshop: {
+      label: "🔧 Session Highlight (Workshop)",
+      fields: {
+        sessionId: {
+          type: 'custom' as const,
+          label: 'Select Session',
+          render: (props: any) => {
+            return React.createElement(SessionSelectField, {
+              ...props,
+              value: props.value || '',
+              onChange: props.onChange
+            })
+          }
+        },
+        sessions: {
+          type: 'array' as const,
+          label: 'Sessions (from scheduler)',
+          arrayFields: {
+            id: { type: 'text' as const, label: 'ID' },
+            title: { type: 'text' as const, label: 'Title' },
+            startTime: { type: 'text' as const, label: 'Start Time' },
+            startPeriod: { 
+              type: 'select' as const, 
+              label: 'Start Period',
+              options: [
+                { label: 'AM', value: 'AM' },
+                { label: 'PM', value: 'PM' }
+              ]
+            },
+            endTime: { type: 'text' as const, label: 'End Time' },
+            endPeriod: { 
+              type: 'select' as const, 
+              label: 'End Period',
+              options: [
+                { label: 'AM', value: 'AM' },
+                { label: 'PM', value: 'PM' }
+              ]
+            },
+            location: { type: 'text' as const, label: 'Location' },
+            sessionType: { type: 'text' as const, label: 'Session Type' },
+            tags: {
+              type: 'array' as const,
+              label: 'Tags',
+              arrayFields: {
+                value: { type: 'text' as const, label: 'Tag' }
+              }
+            },
+            sections: {
+              type: 'array' as const,
+              label: 'Sections',
+              arrayFields: {
+                id: { type: 'text' as const, label: 'ID' },
+                type: { type: 'text' as const, label: 'Type' },
+                title: { type: 'text' as const, label: 'Title' },
+                description: { type: 'textarea' as const, label: 'Description' }
+              }
+            }
+          }
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        textColor: {
+          type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        badgeColor: {
+          type: 'select' as const,
+          label: 'Badge Color',
+          options: [
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Green', value: '#10b981' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        badgeTextColor: {
+          type: 'select' as const,
+          label: 'Badge Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        buttonColor: {
+          type: 'select' as const,
+          label: 'Button Color',
+          options: [
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Green', value: '#10b981' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        buttonTextColor: {
+          type: 'select' as const,
+          label: 'Button Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        borderColor: {
+          type: 'select' as const,
+          label: 'Border Color',
+          options: [
+            { label: 'Light Gray', value: '#e5e7eb' },
+            { label: 'Gray', value: '#d1d5db' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        borderRadius: {
+          type: 'text' as const,
+          label: 'Border Radius',
+          placeholder: '12px'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '2rem'
+        }
+      },
+      defaultProps: {
+        sessionId: '',
+        sessions: [],
+        backgroundColor: '#ffffff',
+        textColor: '#1f2937',
+        badgeColor: '#3b82f6',
+        badgeTextColor: '#ffffff',
+        buttonColor: '#3b82f6',
+        buttonTextColor: '#ffffff',
+        borderColor: '#e5e7eb',
+        borderRadius: '12px',
+        padding: '2rem'
+      },
+      render: SessionHighlightWorkshop
+    },
+    VenueHeader: {
+      label: "📍 Venue Header",
+      fields: {
+        venueName: {
+          type: 'text' as const,
+          label: 'Venue Name',
+          placeholder: 'The Moscone Center',
+          contentEditable: true
+        },
+        address: {
+          type: 'text' as const,
+          label: 'Address',
+          placeholder: '747 Howard St',
+          contentEditable: true
+        },
+        city: {
+          type: 'text' as const,
+          label: 'City',
+          placeholder: 'San Francisco',
+          contentEditable: true
+        },
+        state: {
+          type: 'text' as const,
+          label: 'State',
+          placeholder: 'CA',
+          contentEditable: true
+        },
+        backgroundImage: {
+          type: 'text' as const,
+          label: 'Background Image URL',
+          placeholder: 'https://example.com/image.jpg'
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color',
+          options: [
+            { label: 'Dark Blue', value: '#1e3a8a' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        overlayColor: {
+          type: 'select' as const,
+          label: 'Overlay Color',
+          options: [
+            { label: 'Black', value: '#000000' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        overlayOpacity: {
+          type: 'number' as const,
+          label: 'Overlay Opacity',
+          placeholder: '0.4'
+        },
+        textColor: {
+          type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        badgeColor: {
+          type: 'select' as const,
+          label: 'Badge Background Color',
+          options: [
+            { label: 'Semi-transparent White', value: 'rgba(255, 255, 255, 0.2)' },
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        badgeTextColor: {
+          type: 'select' as const,
+          label: 'Badge Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        borderRadius: {
+          type: 'text' as const,
+          label: 'Border Radius',
+          placeholder: '0'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '6rem 2rem'
+        }
+      },
+      defaultProps: {
+        venueName: 'The Moscone Center',
+        address: '747 Howard St',
+        city: 'San Francisco',
+        state: 'CA',
+        backgroundImage: '',
+        backgroundColor: '#1e3a8a',
+        overlayColor: '#000000',
+        overlayOpacity: 0.4,
+        textColor: '#ffffff',
+        badgeColor: 'rgba(255, 255, 255, 0.2)',
+        badgeTextColor: '#ffffff',
+        borderRadius: '0',
+        padding: '6rem 2rem'
+      },
+      render: VenueHeader
+    },
+    HotelPartners: {
+      label: "🏨 Hotel Partners",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Title',
+          placeholder: 'Official Hotel Partners',
+          contentEditable: true
+        },
+        description: {
+          type: 'textarea' as const,
+          label: 'Description',
+          placeholder: "We've secured exclusive discounted rates for attendees.",
+          contentEditable: true
+        },
+        hotels: {
+          type: 'array' as const,
+          label: 'Hotels',
+          arrayFields: {
+            name: {
+              type: 'text' as const,
+              label: 'Hotel Name',
+              placeholder: 'The Grand Hyatt',
+              contentEditable: true
+            },
+            image: {
+              type: 'text' as const,
+              label: 'Hotel Image URL',
+              placeholder: 'https://example.com/hotel.jpg'
+            },
+            priceLevel: {
+              type: 'select' as const,
+              label: 'Price Level',
+              options: [
+                { label: '$', value: '1' },
+                { label: '$$', value: '2' },
+                { label: '$$$', value: '3' },
+                { label: '$$$$', value: '4' },
+                { label: '$$$$$', value: '5' }
+              ]
+            },
+            distance: {
+              type: 'text' as const,
+              label: 'Distance',
+              placeholder: '2 min walk to venue',
+              contentEditable: true
+            },
+            distanceType: {
+              type: 'select' as const,
+              label: 'Distance Type',
+              options: [
+                { label: 'Walk', value: 'walk' },
+                { label: 'Metro', value: 'metro' },
+                { label: 'Drive', value: 'drive' }
+              ]
+            },
+            features: {
+              type: 'array' as const,
+              label: 'Features',
+              arrayFields: {
+                value: {
+                  type: 'text' as const,
+                  label: 'Feature',
+                  placeholder: 'Free WiFi',
+                  contentEditable: true
+                }
+              }
+            },
+            badge: {
+              type: 'text' as const,
+              label: 'Badge (optional)',
+              placeholder: 'Most Popular',
+              contentEditable: true
+            },
+            link: {
+              type: 'text' as const,
+              label: 'Booking Link',
+              placeholder: 'https://example.com/book'
+            }
+          },
+          getItemSummary: (item: any, index: number) => {
+            return item?.name || `Hotel ${index + 1}`;
+          }
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        textColor: {
+          type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        cardBackgroundColor: {
+          type: 'select' as const,
+          label: 'Card Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        cardBorderColor: {
+          type: 'select' as const,
+          label: 'Card Border Color',
+          options: [
+            { label: 'Light Gray', value: '#e5e7eb' },
+            { label: 'Gray', value: '#d1d5db' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        badgeColor: {
+          type: 'select' as const,
+          label: 'Badge Color',
+          options: [
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Green', value: '#10b981' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        badgeTextColor: {
+          type: 'select' as const,
+          label: 'Badge Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        priceBadgeColor: {
+          type: 'select' as const,
+          label: 'Price Badge Color',
+          options: [
+            { label: 'Yellow', value: '#fbbf24' },
+            { label: 'Orange', value: '#f97316' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        buttonColor: {
+          type: 'select' as const,
+          label: 'Button Color',
+          options: [
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Green', value: '#10b981' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        buttonTextColor: {
+          type: 'select' as const,
+          label: 'Button Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '4rem 2rem'
+        },
+        gap: {
+          type: 'text' as const,
+          label: 'Gap Between Cards',
+          placeholder: '2rem'
+        }
+      },
+      defaultProps: {
+        title: 'Official Hotel Partners',
+        description: "We've secured exclusive discounted rates for attendees. Book by Oct 1st to guarantee availability.",
+        hotels: [
+          {
+            id: '1',
+            name: 'The Grand Hyatt',
+            image: '',
+            priceLevel: '3',
+            distance: '2 min walk to venue',
+            distanceType: 'walk',
+            features: ['Rooftop Bar', 'Free WiFi', '24h Gym'],
+            badge: '',
+            link: ''
+          },
+          {
+            id: '2',
+            name: 'Marriott Marquis',
+            image: '',
+            priceLevel: '2',
+            distance: '5 min walk to venue',
+            distanceType: 'walk',
+            features: ['Included Breakfast', 'Coworking Space', 'Late Checkout'],
+            badge: 'Most Popular',
+            link: ''
+          },
+          {
+            id: '3',
+            name: 'CitizenM',
+            image: '',
+            priceLevel: '1',
+            distance: '2 stops via Metro',
+            distanceType: 'metro',
+            features: ['Modern Pods', 'Smart Controls', '24h Canteen'],
+            badge: '',
+            link: ''
+          }
+        ],
+        backgroundColor: '#ffffff',
+        textColor: '#1f2937',
+        cardBackgroundColor: '#ffffff',
+        cardBorderColor: '#e5e7eb',
+        badgeColor: '#3b82f6',
+        badgeTextColor: '#ffffff',
+        priceBadgeColor: '#fbbf24',
+        buttonColor: '#3b82f6',
+        buttonTextColor: '#ffffff',
+        padding: '4rem 2rem',
+        gap: '2rem'
+      },
+      render: HotelPartners
+    },
+    VenueDirections: {
+      label: "🗺️ Venue Directions",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Title',
+          placeholder: 'How to Get Here',
+          contentEditable: true
+        },
+        mapEmbedUrl: {
+          type: 'text' as const,
+          label: 'Google Maps Embed URL',
+          placeholder: 'https://www.google.com/maps/embed?pb=...'
+        },
+        mapPlaceholder: {
+          type: 'textarea' as const,
+          label: 'Map Placeholder Text',
+          placeholder: 'Interactive Map Component'
+        },
+        entranceTitle: {
+          type: 'text' as const,
+          label: 'Entrance Title',
+          placeholder: 'Main Entrance (South Hall)',
+          contentEditable: true
+        },
+        entranceDescription: {
+          type: 'textarea' as const,
+          label: 'Entrance Description',
+          placeholder: 'Best drop-off point for Uber/Lyft.',
+          contentEditable: true
+        },
+        entranceLinkText: {
+          type: 'text' as const,
+          label: 'Entrance Link Text',
+          placeholder: 'Get Directions',
+          contentEditable: true
+        },
+        entranceLinkUrl: {
+          type: 'text' as const,
+          label: 'Entrance Link URL',
+          placeholder: 'https://maps.google.com/...'
+        },
+        directions: {
+          type: 'array' as const,
+          label: 'Directions',
+          arrayFields: {
+            title: {
+              type: 'text' as const,
+              label: 'Title',
+              placeholder: 'By Air',
+              contentEditable: true
+            },
+            description: {
+              type: 'textarea' as const,
+              label: 'Description',
+              placeholder: 'Fly into SFO...',
+              contentEditable: true
+            },
+            icon: {
+              type: 'text' as const,
+              label: 'Icon (emoji)',
+              placeholder: '✈️'
+            }
+          },
+          getItemSummary: (item: any, index: number) => {
+            return item?.title || `Direction ${index + 1}`;
+          }
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color',
+          options: [
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        textColor: {
+          type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        cardBackgroundColor: {
+          type: 'select' as const,
+          label: 'Card Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        cardBorderColor: {
+          type: 'select' as const,
+          label: 'Card Border Color',
+          options: [
+            { label: 'Light Gray', value: '#e5e7eb' },
+            { label: 'Gray', value: '#d1d5db' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        iconBackgroundColor: {
+          type: 'select' as const,
+          label: 'Icon Background Color',
+          options: [
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        buttonColor: {
+          type: 'select' as const,
+          label: 'Button Color',
+          options: [
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Green', value: '#10b981' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        buttonTextColor: {
+          type: 'select' as const,
+          label: 'Button Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '4rem 2rem'
+        },
+        gap: {
+          type: 'text' as const,
+          label: 'Gap',
+          placeholder: '3rem'
+        }
+      },
+      defaultProps: {
+        title: 'How to Get Here',
+        mapEmbedUrl: '',
+        mapPlaceholder: '',
+        entranceTitle: 'Main Entrance (South Hall)',
+        entranceDescription: 'Best drop-off point for Uber/Lyft.',
+        entranceLinkText: 'Get Directions',
+        entranceLinkUrl: '',
+        directions: [],
+        backgroundColor: '#f9fafb',
+        textColor: '#1f2937',
+        cardBackgroundColor: '#ffffff',
+        cardBorderColor: '#e5e7eb',
+        iconBackgroundColor: '#f3f4f6',
+        buttonColor: '#3b82f6',
+        buttonTextColor: '#ffffff',
+        padding: '4rem 2rem',
+        gap: '3rem'
+      },
+      render: VenueDirections
+    },
+    LocationFloorPlan: {
+      label: "📍 Location Floor Plan",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Title',
+          placeholder: 'Level 1: Conference Hall',
+          contentEditable: true
+        },
+        subtitle: {
+          type: 'text' as const,
+          label: 'Subtitle',
+          placeholder: 'Overview of the venue layout',
+          contentEditable: true
+        },
+        pdfUrl: {
+          type: 'text' as const,
+          label: 'PDF URL',
+          placeholder: 'https://example.com/floor-plan.pdf'
+        },
+        imageUrl: {
+          type: 'text' as const,
+          label: 'Image URL (JPG/PNG)',
+          placeholder: 'https://example.com/floor-plan.jpg'
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        textColor: {
+          type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        cardBackgroundColor: {
+          type: 'select' as const,
+          label: 'Card Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        cardBorderColor: {
+          type: 'select' as const,
+          label: 'Card Border Color',
+          options: [
+            { label: 'Light Gray', value: '#e5e7eb' },
+            { label: 'Gray', value: '#d1d5db' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        buttonColor: {
+          type: 'select' as const,
+          label: 'Button Color',
+          options: [
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Green', value: '#10b981' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        buttonTextColor: {
+          type: 'select' as const,
+          label: 'Button Text Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '4rem 2rem'
+        },
+        borderRadius: {
+          type: 'text' as const,
+          label: 'Border Radius',
+          placeholder: '12px'
+        }
+      },
+      defaultProps: {
+        title: 'Level 1: Conference Hall',
+        subtitle: 'Overview of the venue layout',
+        pdfUrl: '',
+        imageUrl: '',
+        backgroundColor: '#ffffff',
+        textColor: '#1f2937',
+        cardBackgroundColor: '#ffffff',
+        cardBorderColor: '#e5e7eb',
+        buttonColor: '#3b82f6',
+        buttonTextColor: '#ffffff',
+        padding: '4rem 2rem',
+        borderRadius: '12px'
+      },
+      render: LocationFloorPlan
+    },
+    GridBlock: {
+      label: "📊 Grid Block",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Section Title (optional)',
+          placeholder: 'Featured Content',
+          contentEditable: true
+        },
+        layout: {
+          type: 'select' as const,
+          label: 'Grid Layout',
+          options: [
+            { label: '1 Column', value: '1' },
+            { label: '2 Columns (2x1)', value: '2x1' },
+            { label: '2 Columns (2x2)', value: '2x2' },
+            { label: '3 Columns (2x3)', value: '2x3' }
+          ]
+        },
+        items: {
+          type: 'array' as const,
+          label: 'Grid Items',
+          arrayFields: {
+            image: {
+              type: 'text' as const,
+              label: 'Image URL',
+              placeholder: 'https://example.com/image.jpg'
+            },
+            title: {
+              type: 'text' as const,
+              label: 'Title',
+              placeholder: 'The Design',
+              contentEditable: true
+            },
+            text: {
+              type: 'textarea' as const,
+              label: 'Description',
+              placeholder: 'CSS frameworks like Tailwind allow for rapid prototyping...',
+              contentEditable: true
+            },
+            link: {
+              type: 'text' as const,
+              label: 'Link URL',
+              placeholder: 'https://example.com'
+            },
+            linkText: {
+              type: 'text' as const,
+              label: 'Link Text',
+              placeholder: 'Visit Link',
+              contentEditable: true
+            }
+          },
+          getItemSummary: (item: any, index: number) => {
+            return item?.title || `Item ${index + 1}`;
+          }
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        textColor: {
+          type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        cardBackgroundColor: {
+          type: 'select' as const,
+          label: 'Card Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        cardBorderColor: {
+          type: 'select' as const,
+          label: 'Card Border Color',
+          options: [
+            { label: 'Light Gray', value: '#e5e7eb' },
+            { label: 'Gray', value: '#d1d5db' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        linkColor: {
+          type: 'select' as const,
+          label: 'Link Color',
+          options: [
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Green', value: '#10b981' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '4rem 2rem'
+        },
+        gap: {
+          type: 'text' as const,
+          label: 'Gap Between Items',
+          placeholder: '1.5rem'
+        },
+        imageHeight: {
+          type: 'text' as const,
+          label: 'Image Height',
+          placeholder: '200px'
+        }
+      },
+      defaultProps: {
+        title: '',
+        layout: '2x2',
+        items: [
+          {
+            id: '1',
+            image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
+            title: 'The Design',
+            text: 'CSS frameworks like Tailwind allow for rapid prototyping without leaving your HTML file.',
+            link: '#',
+            linkText: 'Visit Tailwind'
+          },
+          {
+            id: '2',
+            image: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800&h=600&fit=crop',
+            title: 'Modern Development',
+            text: 'Build responsive layouts quickly with modern CSS utilities and component libraries.',
+            link: '#',
+            linkText: 'Learn More'
+          },
+          {
+            id: '3',
+            image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=600&fit=crop',
+            title: 'Creative Solutions',
+            text: 'Discover innovative approaches to building user interfaces that are both beautiful and functional.',
+            link: '#',
+            linkText: 'Explore More'
+          },
+          {
+            id: '4',
+            image: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=800&h=600&fit=crop',
+            title: 'Best Practices',
+            text: 'Learn from industry experts about modern web development techniques and design patterns.',
+            link: '#',
+            linkText: 'Read Article'
+          }
+        ],
+        backgroundColor: '#ffffff',
+        textColor: '#1f2937',
+        cardBackgroundColor: '#ffffff',
+        cardBorderColor: '#e5e7eb',
+        linkColor: '#3b82f6',
+        padding: '4rem 2rem',
+        gap: '1.5rem',
+        imageHeight: '200px'
+      },
+      render: GridBlock
+    },
+    Article: {
+      label: "📰 Article",
+      fields: {
+        heading: {
+          type: 'text' as const,
+          label: 'Heading',
+          placeholder: 'The Art of Structured Content: Building Better Web Pages',
+          contentEditable: true
+        },
+        content: {
+          type: 'textarea' as const,
+          label: 'Content',
+          placeholder: 'Creating a web page is more than just throwing text onto a screen. It requires a hierarchy, visual breaks, and meaningful connections.\n\nIn this template, we explore how to mix internal in-app links with standard text to create a seamless navigation experience.',
+          contentEditable: true
+        },
+        linkUrl: {
+          type: 'text' as const,
+          label: 'Link URL',
+          placeholder: 'https://example.com or /page-path'
+        },
+        linkText: {
+          type: 'text' as const,
+          label: 'Link Text',
+          placeholder: 'Learn More',
+          contentEditable: true
+        },
+        imageUrl: {
+          type: 'text' as const,
+          label: 'Image URL',
+          placeholder: 'https://example.com/image.jpg'
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        textColor: {
+          type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        headingColor: {
+          type: 'select' as const,
+          label: 'Heading Color',
+          options: [
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        linkColor: {
+          type: 'select' as const,
+          label: 'Link Color',
+          options: [
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Green', value: '#10b981' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '3rem 2rem'
+        },
+        maxWidth: {
+          type: 'text' as const,
+          label: 'Max Width',
+          placeholder: '800px'
+        },
+        imagePosition: {
+          type: 'select' as const,
+          label: 'Image Position',
+          options: [
+            { label: 'Bottom', value: 'bottom' },
+            { label: 'Top', value: 'top' }
+          ]
+        },
+        imageHeight: {
+          type: 'text' as const,
+          label: 'Image Height',
+          placeholder: '400px'
+        }
+      },
+      defaultProps: {
+        heading: 'The Art of Structured Content: Building Better Web Pages',
+        content: 'Creating a web page is more than just throwing text onto a screen. It requires a hierarchy, visual breaks, and meaningful connections. This paragraph represents your standard introduction text. It sets the stage for what the user is about to read.\n\nIn this template, we explore how to mix internal in-app links with standard text to create a seamless navigation experience. We also look at how typography affects readability.',
+        linkUrl: '#',
+        linkText: 'Learn More',
+        imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
+        backgroundColor: '#ffffff',
+        textColor: '#1f2937',
+        headingColor: '#1f2937',
+        linkColor: '#3b82f6',
+        padding: '3rem 2rem',
+        maxWidth: '800px',
+        imagePosition: 'bottom',
+        imageHeight: '400px'
+      },
+      render: Article
+    },
+    Table: {
+      label: "📊 Table",
+      fields: {
+        title: {
+          type: 'text' as const,
+          label: 'Table Title',
+          placeholder: 'Related Publishing Materials',
+          contentEditable: true
+        },
+        description: {
+          type: 'textarea' as const,
+          label: 'Description',
+          placeholder: 'A list of technical documents and standards referenced in this guide.',
+          contentEditable: true
+        },
+        columns: {
+          type: 'array' as const,
+          label: 'Table Columns',
+          arrayFields: {
+            id: {
+              type: 'text' as const,
+              label: 'Column ID',
+              placeholder: 'title'
+            },
+            label: {
+              type: 'text' as const,
+              label: 'Column Label',
+              placeholder: 'Title',
+              contentEditable: true
+            },
+            align: {
+              type: 'select' as const,
+              label: 'Alignment',
+              options: [
+                { label: 'Left', value: 'left' },
+                { label: 'Center', value: 'center' },
+                { label: 'Right', value: 'right' }
+              ]
+            }
+          },
+          getItemSummary: (item: any, index: number) => {
+            return item?.label || item?.id || `Column ${index + 1}`
+          }
+        },
+        rows: {
+          type: 'array' as const,
+          label: 'Table Rows',
+          arrayFields: {
+            title: {
+              type: 'text' as const,
+              label: 'Title',
+              placeholder: 'Digital Typography Standards',
+              contentEditable: true
+            },
+            refNumber: {
+              type: 'text' as const,
+              label: 'Ref. Number',
+              placeholder: 'PUB-2023-A1'
+            },
+            author: {
+              type: 'text' as const,
+              label: 'Author',
+              placeholder: 'W3C Working Group',
+              contentEditable: true
+            },
+            link: {
+              type: 'text' as const,
+              label: 'Link URL',
+              placeholder: 'https://example.com or /page-path'
+            },
+            linkText: {
+              type: 'text' as const,
+              label: 'Link Text',
+              placeholder: 'View',
+              contentEditable: true
+            }
+          },
+          getItemSummary: (item: any, index: number) => {
+            return item?.title || `Row ${index + 1}`
+          }
+        },
+        showSerialNumber: {
+          type: 'radio' as const,
+          label: 'Show Serial Number',
+          options: [
+            { label: 'Yes', value: true },
+            { label: 'No', value: false }
+          ]
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        headerBackgroundColor: {
+          type: 'select' as const,
+          label: 'Header Background Color',
+          options: [
+            { label: 'Light Gray', value: '#f9fafb' },
+            { label: 'Gray', value: '#f3f4f6' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        headerTextColor: {
+          type: 'select' as const,
+          label: 'Header Text Color',
+          options: [
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        textColor: {
+          type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        borderColor: {
+          type: 'select' as const,
+          label: 'Border Color',
+          options: [
+            { label: 'Light Gray', value: '#e5e7eb' },
+            { label: 'Gray', value: '#d1d5db' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        linkColor: {
+          type: 'select' as const,
+          label: 'Link Color',
+          options: [
+            { label: 'Blue', value: '#3b82f6' },
+            { label: 'Purple', value: '#6938EF' },
+            { label: 'Green', value: '#10b981' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        titleColor: {
+          type: 'select' as const,
+          label: 'Title Color',
+          options: [
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Black', value: '#000000' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        descriptionColor: {
+          type: 'select' as const,
+          label: 'Description Color',
+          options: [
+            { label: 'Gray', value: '#6b7280' },
+            { label: 'Dark Gray', value: '#4b5563' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '3rem 2rem'
+        },
+        maxWidth: {
+          type: 'text' as const,
+          label: 'Max Width',
+          placeholder: '100%'
+        }
+      },
+      defaultProps: {
+        title: 'Related Publishing Materials',
+        description: 'A list of technical documents and standards referenced in this guide.',
+        columns: [
+          { id: 'title', label: 'Title', align: 'left' },
+          { id: 'refNumber', label: 'Ref. Number', align: 'left' },
+          { id: 'author', label: 'Author', align: 'left' },
+          { id: 'link', label: 'Link', align: 'left' }
+        ],
+        rows: [
+          {
+            id: '1',
+            title: 'Digital Typography Standards',
+            refNumber: 'PUB-2023-A1',
+            author: 'W3C Working Group',
+            link: '#',
+            linkText: 'View'
+          },
+          {
+            id: '2',
+            title: 'Semantic HTML Structure Guide',
+            refNumber: 'HTML-5.3-REF',
+            author: 'Jane Doe',
+            link: '#',
+            linkText: 'Download'
+          },
+          {
+            id: '3',
+            title: 'Accessibility in Modern Web',
+            refNumber: 'WCAG-2.1-AA',
+            author: 'A11y Alliance',
+            link: '#',
+            linkText: 'View'
+          },
+          {
+            id: '4',
+            title: 'Responsive Layout Patterns',
+            refNumber: 'CSS-GRID-09',
+            author: 'Rachel Andrew',
+            link: '#',
+            linkText: 'View'
+          }
+        ],
+        showSerialNumber: true,
+        backgroundColor: '#ffffff',
+        headerBackgroundColor: '#f9fafb',
+        headerTextColor: '#1f2937',
+        textColor: '#1f2937',
+        borderColor: '#e5e7eb',
+        linkColor: '#3b82f6',
+        titleColor: '#1f2937',
+        descriptionColor: '#6b7280',
+        padding: '3rem 2rem',
+        maxWidth: '100%'
+      },
+      render: Table
     },
     FeedbackForm: {
       label: "📝 Feedback Form",
@@ -2351,7 +4335,7 @@ export const config = {
         videoUrl: {
           type: 'text' as const,
           label: 'Video URL',
-          placeholder: 'https://example.com/video.mp4',
+          placeholder: 'Direct video (.mp4, .webm) or Pexels/YouTube/Vimeo page URL',
           contentEditable: true
         },
         title: {
@@ -2466,6 +4450,131 @@ export const config = {
         height: '500px'
       },
       render: HeroVideo
+    },
+    HeroSplitScreen: {
+      label: "🎨 Hero Split Screen",
+      fields: {
+        imageSrc: {
+          type: 'text' as const,
+          label: 'Image URL',
+          placeholder: 'https://example.com/image.jpg',
+          contentEditable: true
+        },
+        imageAlt: {
+          type: 'text' as const,
+          label: 'Image Alt Text',
+          placeholder: 'Event hero image'
+        },
+        dateLabel: {
+          type: 'text' as const,
+          label: 'Date Label',
+          placeholder: 'OCT 10-12',
+          contentEditable: true
+        },
+        locationLabel: {
+          type: 'text' as const,
+          label: 'Location Label',
+          placeholder: 'New York City',
+          contentEditable: true
+        },
+        title: {
+          type: 'text' as const,
+          label: 'Title',
+          placeholder: 'Unlock the Power of Data',
+          contentEditable: true
+        },
+        highlightedText: {
+          type: 'text' as const,
+          label: 'Highlighted Text (in title)',
+          placeholder: 'Power of Data'
+        },
+        description: {
+          type: 'textarea' as const,
+          label: 'Description',
+          placeholder: 'Join 5,000+ analytics leaders for three days of immersive workshops, networking, and strategy.',
+          contentEditable: true
+        },
+        // Primary Button Section
+        primaryButtonText: {
+          type: 'text' as const,
+          label: 'Primary Button Text',
+          placeholder: 'Get Tickets',
+          contentEditable: true
+        },
+        primaryButtonAction: {
+          type: 'text' as const,
+          label: 'Primary Button Link',
+          placeholder: '/tickets',
+          contentEditable: true
+        },
+        primaryButtonColor: {
+          type: 'text' as const,
+          label: 'Primary Button Color',
+          placeholder: '#007bff'
+        },
+        primaryButtonTextColor: {
+          type: 'text' as const,
+          label: 'Primary Button Text Color',
+          placeholder: '#ffffff'
+        },
+        // Secondary Button Section
+        secondaryButtonText: {
+          type: 'text' as const,
+          label: 'Secondary Button Text',
+          placeholder: 'View Agenda'
+        },
+        secondaryButtonAction: {
+          type: 'text' as const,
+          label: 'Secondary Button Link',
+          placeholder: '/agenda'
+        },
+        secondaryButtonColor: {
+          type: 'text' as const,
+          label: 'Secondary Button Color',
+          placeholder: '#ffffff'
+        },
+        secondaryButtonTextColor: {
+          type: 'text' as const,
+          label: 'Secondary Button Text Color',
+          placeholder: '#000000'
+        },
+        backgroundColor: {
+          type: 'text' as const,
+          label: 'Background Color',
+          placeholder: '#ffffff'
+        },
+        textColor: {
+          type: 'text' as const,
+          label: 'Text Color',
+          placeholder: '#000000'
+        },
+        height: {
+          type: 'text' as const,
+          label: 'Section Height',
+          placeholder: '600px'
+        }
+      },
+      defaultProps: {
+        imageSrc: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=600&fit=crop',
+        imageAlt: 'Event hero image',
+        dateLabel: 'OCT 10-12',
+        locationLabel: 'New York City',
+        title: 'Unlock the Power of Data',
+        highlightedText: 'Power of Data',
+        description: 'Join 5,000+ analytics leaders for three days of immersive workshops, networking, and strategy. Define the future of your industry.',
+        primaryButtonText: 'Get Tickets',
+        primaryButtonAction: '/tickets',
+        primaryButtonColor: '#007bff',
+        primaryButtonTextColor: '#ffffff',
+        secondaryButtonText: 'View Agenda',
+        secondaryButtonAction: '/agenda',
+        secondaryButtonColor: '#ffffff',
+        secondaryButtonTextColor: '#000000',
+        backgroundColor: '#ffffff',
+        textColor: '#000000',
+        height: '600px'
+      },
+      render: HeroSplitScreen
     },
     HTMLContent: {
       label: "🌐 HTML Content",

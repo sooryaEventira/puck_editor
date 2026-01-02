@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { HeroVideoProps } from '../../types'
 
 const HeroVideo = ({ 
@@ -22,6 +22,7 @@ const HeroVideo = ({
   const [videoError, setVideoError] = useState(false);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [uploadedMediaType, setUploadedMediaType] = useState<'image' | 'video' | null>(null);
+  const [pexelsDirectUrl, setPexelsDirectUrl] = useState<string | null>(null);
 
   // Simple prop handling - use props directly for contentEditable, extract for display
   const getStringValue = (prop: any): string => {
@@ -115,6 +116,97 @@ const HeroVideo = ({
     }
   };
 
+  // Detect video URL type and convert if needed
+  const detectVideoType = (url: string): { type: 'direct' | 'pexels' | 'youtube' | 'vimeo' | 'unsupported', embedUrl?: string } => {
+    if (!url) return { type: 'unsupported' };
+
+    // Check if it's a direct video file
+    if (url.match(/\.(mp4|webm|ogg|mov|avi|wmv|flv|mkv)(\?.*)?$/i)) {
+      return { type: 'direct' };
+    }
+
+    // Check for Pexels video page URL
+    // Handles formats like: pexels.com/video/123456/ or pexels.com/video/slug-123456/
+    const pexelsMatch = url.match(/pexels\.com\/video\/(?:[^\/\s?]*-)?(\d+)/i);
+    if (pexelsMatch) {
+      const videoId = pexelsMatch[1];
+      // Pexels doesn't support direct iframe embeds, so we'll show instructions
+      return { 
+        type: 'pexels', 
+        embedUrl: `https://www.pexels.com/video/${videoId}/` 
+      };
+    }
+
+    // Check for YouTube
+    const youtubeMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+    if (youtubeMatch) {
+      return { 
+        type: 'youtube', 
+        embedUrl: `https://www.youtube.com/embed/${youtubeMatch[1]}` 
+      };
+    }
+
+    // Check for Vimeo
+    const vimeoMatch = url.match(/vimeo\.com\/(?:.*\/)?(\d+)/i);
+    if (vimeoMatch) {
+      return { 
+        type: 'vimeo', 
+        embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}` 
+      };
+    }
+
+    return { type: 'unsupported' };
+  };
+
+  const videoInfo = videoUrlValue ? detectVideoType(videoUrlValue) : { type: 'unsupported' as const };
+  const isEmbeddedVideo = videoInfo.type === 'pexels' || videoInfo.type === 'youtube' || videoInfo.type === 'vimeo';
+  const isDirectVideo = videoInfo.type === 'direct';
+  const isUnsupported = videoInfo.type === 'unsupported';
+
+  // Try to get direct video URL from Pexels page URL
+  useEffect(() => {
+    if (videoInfo.type === 'pexels' && videoUrlValue && !pexelsDirectUrl && !videoError) {
+      // Extract video ID from URL
+      const pexelsMatch = videoUrlValue.match(/pexels\.com\/video\/(?:[^\/\s?]*-)?(\d+)/i);
+      if (pexelsMatch) {
+        const videoId = pexelsMatch[1];
+        // Try to fetch the Pexels page and extract video URL
+        // Note: This may fail due to CORS, but we'll try
+        const tryFetchDirectUrl = async () => {
+          try {
+            // Try common Pexels direct video URL patterns
+            const possibleUrls = [
+              `https://videos.pexels.com/video-files/${videoId}/pexels-video-${videoId}.mp4`,
+              `https://videos.pexels.com/video-files/${videoId}/pexels-${videoId}.mp4`,
+            ];
+            
+            // Test each URL pattern
+            for (const testUrl of possibleUrls) {
+              try {
+                const response = await fetch(testUrl, { method: 'HEAD' });
+                if (response.ok) {
+                  setPexelsDirectUrl(testUrl);
+                  setVideoError(false);
+                  return;
+                }
+              } catch (e) {
+                // Continue to next URL
+              }
+            }
+            
+            // If all patterns fail, show instructions (pexelsDirectUrl stays null)
+            setVideoError(false); // Don't show error, just show instructions
+          } catch (error) {
+            // If fetch fails, show instructions
+            setVideoError(false);
+          }
+        };
+        
+        tryFetchDirectUrl();
+      }
+    }
+  }, [videoInfo.type, videoUrlValue, pexelsDirectUrl, videoError]);
+
   return (
     <>
       <style>
@@ -134,9 +226,10 @@ const HeroVideo = ({
       >
       {/* Media Background (Image or Video) */}
       {(uploadedVideoUrl || videoUrlValue) && !videoError ? (
-        uploadedMediaType === 'image' ? (
+        // Prioritize uploaded media over URL-based media
+        uploadedVideoUrl && uploadedMediaType === 'image' ? (
           <img
-            src={uploadedVideoUrl || videoUrlValue}
+            src={uploadedVideoUrl}
             alt="Hero background"
             className="absolute top-0 left-0 w-full h-full object-cover z-[1]"
             onLoad={() => {
@@ -147,7 +240,115 @@ const HeroVideo = ({
               setVideoError(true);
             }}
           />
-        ) : (
+        ) : uploadedVideoUrl && uploadedMediaType === 'video' ? (
+          // Uploaded video file - render as direct video
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute top-0 left-0 w-full h-full object-cover z-[1]"
+            onLoadedData={() => {
+              setIsVideoLoaded(true);
+              setVideoError(false);
+            }}
+            onCanPlay={() => {
+              setIsVideoLoaded(true);
+            }}
+            onError={() => {
+              setVideoError(true);
+            }}
+          >
+            <source src={uploadedVideoUrl} type="video/mp4" />
+            <source src={uploadedVideoUrl} type="video/webm" />
+            <source src={uploadedVideoUrl} type="video/ogg" />
+            Your browser does not support the video tag.
+          </video>
+        ) : !uploadedVideoUrl && videoUrlValue && uploadedMediaType === 'image' ? (
+          // URL-based image (fallback)
+          <img
+            src={videoUrlValue}
+            alt="Hero background"
+            className="absolute top-0 left-0 w-full h-full object-cover z-[1]"
+            onLoad={() => {
+              setIsVideoLoaded(true);
+              setVideoError(false);
+            }}
+            onError={() => {
+              setVideoError(true);
+            }}
+          />
+        ) : isEmbeddedVideo && videoInfo.embedUrl && !uploadedVideoUrl ? (
+          // Embedded video (Pexels, YouTube, Vimeo)
+          videoInfo.type === 'pexels' ? (
+            // Try to use direct video URL if found, otherwise show instructions
+            pexelsDirectUrl ? (
+              <video
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute top-0 left-0 w-full h-full object-cover z-[1]"
+                onLoadedData={() => {
+                  setIsVideoLoaded(true);
+                  setVideoError(false);
+                }}
+                onError={() => {
+                  setVideoError(true);
+                  setPexelsDirectUrl(null);
+                }}
+              >
+                <source src={pexelsDirectUrl} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            ) : (
+              // Show instructions if direct URL not available - as a banner at top
+              <div 
+                className="absolute top-0 left-0 w-full z-[4] bg-yellow-600/95 text-white p-4 shadow-lg"
+              >
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">📹</span>
+                    <div className="flex-1">
+                      <p className="font-semibold mb-2">Pexels Video Detected - Direct URL Required</p>
+                      <p className="text-sm mb-2 opacity-90">
+                        To use this video as a background, you need the direct video file URL:
+                      </p>
+                      <ol className="text-sm space-y-1 mb-2 ml-4 list-decimal">
+                        <li>Visit the Pexels video page</li>
+                        <li>Click the "Download" button</li>
+                        <li>Right-click the download link and "Copy link address" (or get the .mp4 URL)</li>
+                        <li>Paste the direct video URL (.mp4) in the Video URL field</li>
+                      </ol>
+                      <p className="text-xs opacity-75 italic">
+                        Or click the background to upload a video file directly from your computer
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          ) : (
+            // YouTube and Vimeo embeds
+            <iframe
+              src={videoInfo.embedUrl + (videoInfo.type === 'youtube' ? '?autoplay=1&mute=1&loop=1&playlist=' + (videoInfo.embedUrl.match(/embed\/([^?]+)/)?.[1] || '') : videoInfo.type === 'vimeo' ? '?autoplay=1&muted=1&loop=1' : '')}
+              className="absolute top-0 left-0 w-full h-full object-cover z-[1] border-0"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              onLoad={() => {
+                setIsVideoLoaded(true);
+                setVideoError(false);
+              }}
+              onError={() => {
+                setVideoError(true);
+              }}
+              style={{
+                pointerEvents: 'none' // Prevent interaction with iframe
+              }}
+            />
+          )
+        ) : isDirectVideo && !uploadedVideoUrl ? (
+          // Direct video file from URL (only if no uploaded video)
           <video
             autoPlay
             muted
@@ -162,10 +363,25 @@ const HeroVideo = ({
               setVideoError(true);
             }}
           >
-            <source src={uploadedVideoUrl || videoUrlValue} type="video/mp4" />
+            <source src={videoUrlValue} type="video/mp4" />
+            <source src={videoUrlValue} type="video/webm" />
+            <source src={videoUrlValue} type="video/ogg" />
             Your browser does not support the video tag.
           </video>
-        )
+        ) : isUnsupported && videoUrlValue && !uploadedVideoUrl ? (
+          // Unsupported URL - show error
+          <div 
+            className="absolute top-0 left-0 w-full h-full z-[1] flex items-center justify-center bg-gray-800"
+            onClick={handleFileUpload}
+          >
+            <div className="text-white text-center p-4">
+              <p className="text-lg mb-2">⚠️ Unsupported video URL format</p>
+              <p className="text-sm opacity-75">
+                Please use a direct video file URL (.mp4, .webm) or a Pexels/YouTube/Vimeo video page URL
+              </p>
+            </div>
+          </div>
+        ) : null
       ) : (
         <div 
           style={{

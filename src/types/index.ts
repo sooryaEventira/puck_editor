@@ -211,6 +211,229 @@ export interface HeroVideoProps {
   height?: string
 }
 
+export interface HeroSplitScreenProps {
+  imageSrc: string | React.ReactElement
+  imageAlt?: string
+  dateLabel: string | React.ReactElement
+  locationLabel: string | React.ReactElement
+  title: string | React.ReactElement
+  highlightedText?: string | React.ReactElement
+  description: string | React.ReactElement
+  // Primary Button (optional)
+  primaryButtonText?: string | React.ReactElement
+  primaryButtonAction?: string | React.ReactElement
+  primaryButtonColor?: string
+  primaryButtonTextColor?: string
+  // Secondary Button (optional)
+  secondaryButtonText?: string | React.ReactElement
+  secondaryButtonAction?: string | React.ReactElement
+  secondaryButtonColor?: string
+  secondaryButtonTextColor?: string
+  backgroundColor?: string
+  textColor?: string
+  height?: string
+}
+
+export interface EventNumberItem {
+  id: string
+  value: string | React.ReactElement
+  label: string | React.ReactElement
+}
+
+export interface EventNumbersProps {
+  items?: EventNumberItem[]
+  backgroundColor?: string
+  textColor?: string
+  valueColor?: string
+  labelColor?: string
+  padding?: string
+}
+
+export interface SpeakerItem {
+  id: string
+  name: string | React.ReactElement
+  title: string | React.ReactElement
+  company?: string | React.ReactElement
+  quote?: string | React.ReactElement
+  photo: string | React.ReactElement
+  accentColor?: string
+}
+
+export interface SpeakerHighlightProps {
+  heading?: string | React.ReactElement
+  subtitle?: string | React.ReactElement
+  speakers?: SpeakerItem[]
+  backgroundColor?: string
+  textColor?: string
+  headingColor?: string
+  subtitleColor?: string
+  accentColor?: string
+  padding?: string
+}
+
+export interface SessionHighlightProps {
+  sessionId?: string
+  sessions?: any[]
+  backgroundStyle?: 'solid' | 'gradient'
+  backgroundColor?: string
+  gradientFrom?: string
+  gradientTo?: string
+  titleColor?: string
+  descriptionColor?: string
+  metaTextColor?: string
+  badgeTextColor?: string
+  badgeBackgroundColor?: string
+  borderRadius?: string
+  padding?: string
+  contentAlignment?: 'left' | 'center'
+  data?: any
+}
+
+export interface SessionHighlightKeynoteProps {
+  sessionId?: string
+  sessions?: any[]
+  backgroundStyle?: 'solid' | 'gradient'
+  backgroundColor?: string
+  gradientFrom?: string
+  gradientTo?: string
+  titleColor?: string
+  descriptionColor?: string
+  metaTextColor?: string
+  badgeTextColor?: string
+  badgeBackgroundColor?: string
+  borderColor?: string
+  borderRadius?: string
+  padding?: string
+  data?: any
+}
+
+export interface SessionHighlightWorkshopProps {
+  sessionId?: string
+  sessions?: any[]
+  backgroundColor?: string
+  textColor?: string
+  badgeColor?: string
+  badgeTextColor?: string
+  buttonColor?: string
+  buttonTextColor?: string
+  borderColor?: string
+  borderRadius?: string
+  padding?: string
+  data?: any
+}
+
+export interface VenueHeaderProps {
+  venueName?: string | React.ReactElement
+  address?: string | React.ReactElement
+  city?: string | React.ReactElement
+  state?: string | React.ReactElement
+  backgroundImage?: string
+  backgroundColor?: string
+  overlayColor?: string
+  overlayOpacity?: number
+  textColor?: string
+  badgeColor?: string
+  badgeTextColor?: string
+  borderRadius?: string
+  padding?: string
+}
+
+export interface HotelItem {
+  id: string
+  name: string | React.ReactElement
+  image?: string | React.ReactElement
+  priceLevel?: '1' | '2' | '3' | '4' | '5'
+  distance?: string | React.ReactElement
+  distanceType?: 'walk' | 'metro' | 'drive'
+  features?: string[]
+  badge?: string | React.ReactElement
+  link?: string
+}
+
+export interface HotelPartnersProps {
+  title?: string | React.ReactElement
+  description?: string | React.ReactElement
+  hotels?: HotelItem[]
+  backgroundColor?: string
+  textColor?: string
+  cardBackgroundColor?: string
+  cardBorderColor?: string
+  badgeColor?: string
+  badgeTextColor?: string
+  priceBadgeColor?: string
+  buttonColor?: string
+  buttonTextColor?: string
+  padding?: string
+  gap?: string
+}
+
+export interface DirectionItem {
+  id: string
+  title: string | React.ReactElement
+  description: string | React.ReactElement
+  icon?: string
+  iconColor?: string
+}
+
+export interface VenueDirectionsProps {
+  title?: string | React.ReactElement
+  mapEmbedUrl?: string
+  mapPlaceholder?: string | React.ReactElement
+  entranceTitle?: string | React.ReactElement
+  entranceDescription?: string | React.ReactElement
+  entranceLinkText?: string | React.ReactElement
+  entranceLinkUrl?: string
+  directions?: DirectionItem[]
+  backgroundColor?: string
+  textColor?: string
+  cardBackgroundColor?: string
+  cardBorderColor?: string
+  iconBackgroundColor?: string
+  buttonColor?: string
+  buttonTextColor?: string
+  padding?: string
+  gap?: string
+}
+
+export interface LocationFloorPlanProps {
+  title?: string | React.ReactElement
+  subtitle?: string | React.ReactElement
+  pdfUrl?: string
+  imageUrl?: string
+  backgroundColor?: string
+  textColor?: string
+  cardBackgroundColor?: string
+  cardBorderColor?: string
+  buttonColor?: string
+  buttonTextColor?: string
+  padding?: string
+  borderRadius?: string
+}
+
+export interface GridItem {
+  id: string
+  image?: string | React.ReactElement
+  title?: string | React.ReactElement
+  text?: string | React.ReactElement
+  link?: string
+  linkText?: string | React.ReactElement
+}
+
+export interface GridBlockProps {
+  title?: string | React.ReactElement
+  layout?: '1' | '2x1' | '2x2' | '2x3'
+  items?: GridItem[]
+  backgroundColor?: string
+  textColor?: string
+  cardBackgroundColor?: string
+  cardBorderColor?: string
+  linkColor?: string
+  padding?: string
+  gap?: string
+  imageHeight?: string
+}
+
+
 export interface CountdownTimerProps {
   heading: string | React.ReactElement
   targetDate: string | React.ReactElement

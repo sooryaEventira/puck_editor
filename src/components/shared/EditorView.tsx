@@ -2,7 +2,7 @@ import React, { useEffect, useState, createContext, useContext, useRef } from 'r
 import { Puck } from '@measured/puck'
 import '@measured/puck/puck.css'
 
-import { config } from '../../config/puckConfig'
+import { getPuckConfig } from '../../config/getPuckConfig'
 import { PageSidebar, NewPageCreationModal } from '../page'
 import PageCreationModal, { type PageType } from '../page/PageCreationModal'
 import BlockTypeSelectionModal from '../page/BlockTypeSelectionModal'
@@ -720,7 +720,10 @@ export const EditorView: React.FC<EditorViewProps> = ({
             <PuckDataContext.Provider value={{ data: currentData, onChange }}>
               <Puck 
                 key={`${currentPage}-sidebar-${showCustomSidebar}-banner-${bannerKey.substring(0, 20)}`}
-                config={config as any} 
+                config={getPuckConfig(
+                  currentData?.root?.props?.pageType,
+                  currentPageName
+                ) as any} 
                 data={currentData || { content: [], root: { props: {} }, zones: {} }}
                 ui={showCustomSidebar ? {
                   ...puckUi,
