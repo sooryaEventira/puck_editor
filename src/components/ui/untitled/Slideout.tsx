@@ -5,6 +5,7 @@ export interface SlideoutProps {
   isOpen: boolean
   onClose: () => void
   title?: string
+  header?: React.ReactNode
   children: React.ReactNode
   footer?: React.ReactNode
   topOffset?: number
@@ -18,6 +19,7 @@ const Slideout: React.FC<SlideoutProps> = ({
   isOpen,
   onClose,
   title,
+  header,
   children,
   footer,
   topOffset = 64,
@@ -157,7 +159,7 @@ const Slideout: React.FC<SlideoutProps> = ({
       <aside
         ref={slideoutRef}
         tabIndex={-1}
-        className={`absolute ${side === 'right' ? 'right-0' : 'left-0'} top-0 flex transform flex-col bg-white shadow-2xl transition-transform duration-300 ${getResponsiveWidthClasses()} ${
+        className={`absolute ${side === 'right' ? 'right-0' : 'left-0'} top-0 flex min-h-0 transform flex-col bg-white shadow-2xl transition-transform duration-300 ${getResponsiveWidthClasses()} ${
           isOpen
             ? 'translate-x-0'
             : side === 'right'
@@ -170,8 +172,14 @@ const Slideout: React.FC<SlideoutProps> = ({
         style={panelStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        {title && (
-          <header className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        {header && (
+          <header className="flex-shrink-0">
+            {header}
+          </header>
+        )}
+
+        {title && !header && (
+          <header className="flex-shrink-0 flex items-center justify-between border-b border-slate-200 px-6 py-4">
             <h2 id="slideout-title" className="text-lg font-semibold text-slate-900">{title}</h2>
             <button
               type="button"
@@ -184,7 +192,7 @@ const Slideout: React.FC<SlideoutProps> = ({
           </header>
         )}
 
-        <div className="flex-1 overflow-y-auto">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
 
         {footer && (
           <footer className="flex items-center justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">
