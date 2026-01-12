@@ -3,8 +3,12 @@
       "rewrite": "/index.html"
     },
     "mimeTypes": {
-      ".js": "application/javascript",
-      ".mjs": "application/javascript",
-      ".css": "text/css"
+      ".js": "text/javascript",
+      ".mjs": "text/javascript",
+      ".ts": "text/javascript",
+      ".tsx": "text/javascript",
+      ".css": "text/css",
+      ".json": "application/json",
+      ".wasm": "application/wasm"
     }
   }
