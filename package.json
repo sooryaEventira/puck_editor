@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "npx vite build",
-    "build:analyze": "npx vite build --mode analyze",
-    "preview": "npx vite preview",
+    "build": "node node_modules/vite/bin/vite.js build",
+    "build:analyze": "node node_modules/vite/bin/vite.js build --mode analyze",
+    "preview": "node node_modules/vite/bin/vite.js preview",
     "server": "node server.js",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\""
   },
