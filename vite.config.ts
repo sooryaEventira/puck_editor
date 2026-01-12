@@ -25,6 +25,7 @@ export default defineConfig({
     }
   },
   build: {
+    outDir: 'build', // Match Azure Static Web Apps expected output location
     // Increase chunk size warning limit to 1000kb (from default 500kb)
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
