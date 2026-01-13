@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useRef } from 'react'
 
 export interface HotelItem {
   id: string
@@ -45,6 +45,32 @@ const HotelPartners: React.FC<HotelPartnersProps> = ({
   padding = '4rem 2rem',
   gap = '2rem'
 }) => {
+  // Store uploaded images per hotel ID
+  const [uploadedImages, setUploadedImages] = useState<Record<string, string>>({})
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  // Handle file upload for a specific hotel
+  const handleFileUpload = (hotelId: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        setUploadedImages(prev => ({
+          ...prev,
+          [hotelId]: result
+        }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleImageClick = (hotelId: string) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    fileInputRefs.current[hotelId]?.click()
+  }
+
   const getStringValue = (prop: any): string => {
     if (typeof prop === 'string') return prop;
     if (prop && typeof prop === 'object' && 'props' in prop && prop.props && 'value' in prop.props) {
@@ -125,18 +151,54 @@ const HotelPartners: React.FC<HotelPartnersProps> = ({
                 >
                   {/* Image */}
                   <div className="relative w-full h-48 bg-gray-200 overflow-hidden">
-                    {imageValue ? (
+                    {/* Hidden file input for image upload */}
+                    <input
+                      ref={(el) => {
+                        fileInputRefs.current[hotel.id] = el
+                      }}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload(hotel.id)}
+                      style={{ display: 'none' }}
+                    />
+                    {/* Clickable overlay for image upload */}
+                    <div
+                      className="absolute inset-0 cursor-pointer z-10"
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleImageClick(hotel.id)(e as any)
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleImageClick(hotel.id)(e)
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.opacity = '0.95'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = '1'
+                      }}
+                      title="Click to upload image"
+                      style={{
+                        backgroundColor: 'transparent',
+                      }}
+                    />
+                    {(uploadedImages[hotel.id] || imageValue) ? (
                       <img
-                        src={imageValue}
+                        src={uploadedImages[hotel.id] || imageValue}
                         alt={nameValue || 'Hotel'}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover pointer-events-none"
+                        style={{ zIndex: 0 }}
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
                         }}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-full h-full flex items-center justify-center pointer-events-none" style={{ zIndex: 0 }}>
                         <span className="text-gray-400 text-4xl">🏨</span>
+                        <span className="text-gray-400 text-sm ml-2">Click to upload</span>
                       </div>
                     )}
                     

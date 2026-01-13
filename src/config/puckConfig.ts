@@ -7,7 +7,7 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import {
-  HeroSection, HeroVideo, HeroSplitScreen, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer, RegistrationCTA, Sponsors, ContactFooter, EventNumbers, SpeakerHighlight, SessionHighlight, SessionHighlightKeynote, SessionHighlightWorkshop, VenueHeader, HotelPartners, VenueDirections, LocationFloorPlan, GridBlock, Article, Table
+  HeroSection, HeroVideo, HeroSplitScreen, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer, RegistrationCTA, Sponsors, ContactFooter, EventNumbers, SpeakerHighlight, SessionHighlight, SessionHighlightKeynote, SessionHighlightWorkshop, VenueBlock, SplitVenueBlock, HotelPartners, VenueDirections, LocationFloorPlan, GridBlock, Article, Table
 } from '../components/advanced'
 import ScheduleContent from '../components/eventhub/schedulesession/ScheduleContent'
 import RegistrationCTA from '../components/advanced/RegistrationCTA'
@@ -107,14 +107,14 @@ export const config = {
       title: "Landing / Home Page",
       icon: "fa-solid fa-home",
       defaultExpanded: true,
-      components: ["HeroSection", "HeroVideo", "HeroSplitScreen", "EventNumbers", "SpeakerHighlight", "SessionHighlight", "SessionHighlightKeynote", "SessionHighlightWorkshop", "ContactFooter"]
+      components: ["HeroSection", "HeroVideo", "HeroSplitScreen", "EventNumbers", "SpeakerHighlight", "SessionHighlight", "SessionHighlightKeynote", "SessionHighlightWorkshop", "ContactFooter", "PricingPlans", "CountdownTimer", "ProgressCircleStats", "RegistrationCTA"]
     },
     // Venue Page Category
     venue: {
       title: "Venue Page",
       icon: "fa-solid fa-map-marker-alt",
       defaultExpanded: true,
-      components: ["VenueHeader", "HotelPartners", "VenueDirections"]
+      components: ["VenueBlock", "SplitVenueBlock", "HotelPartners", "VenueDirections"]
     },
     // Location Page Category
     location: {
@@ -142,12 +142,12 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "RegistrationCTA", "Sponsors", "Navigation", "CountdownTimer", "ProgressCircleStats", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
+      components: ["Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "Sponsors", "Navigation", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["SchedulePage", "AboutSection", "TwoColumnContent", "PricingPlans", "FAQSection", "FAQAccordion", "RegistrationCTA", "Sponsors", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm"]
+          components: ["SchedulePage", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "Sponsors", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm"]
         },
         media: {
           title: "Media",
@@ -157,7 +157,7 @@ export const config = {
         interactive: {
           title: "Interactive",
           icon: "fa-solid fa-hand-pointer",
-          components: ["SpeakerCard", "SpeakersSection", "ScheduleSection", "Navigation", "CountdownTimer", "ProgressCircleStats"]
+          components: ["SpeakerCard", "SpeakersSection", "ScheduleSection", "Navigation"]
         }
       }
     }
@@ -864,24 +864,6 @@ export const config = {
           type: 'text' as const,
           label: 'Background Image URL'
         },
-        backgroundColor: { 
-          type: 'text' as const,
-          label: 'Background Color (fallback)'
-        },
-        textColor: { 
-          type: 'select' as const,
-          label: 'Text Color',
-          options: [
-            { label: 'White', value: 'white' },
-            { label: 'Black', value: 'black' },
-            { label: 'Blue', value: '#007bff' },
-            { label: 'Green', value: '#28a745' },
-            { label: 'Purple', value: '#8b5cf6' },
-            { label: 'Red', value: '#dc3545' },
-            { label: 'Orange', value: '#fd7e14' },
-            { label: 'Yellow', value: '#ffc107' }
-          ]
-        },
         height: { 
           type: 'select' as const,
           label: 'Section Height',
@@ -900,17 +882,6 @@ export const config = {
             { label: 'Left', value: 'left' },
             { label: 'Center', value: 'center' },
             { label: 'Right', value: 'right' }
-          ]
-        },
-        overlayOpacity: {
-          type: 'select' as const,
-          label: 'Background Overlay Opacity',
-          options: [
-            { label: 'None (0)', value: 0 },
-            { label: 'Light (0.2)', value: 0.2 },
-            { label: 'Medium (0.4)', value: 0.4 },
-            { label: 'Dark (0.6)', value: 0.6 },
-            { label: 'Very Dark (0.8)', value: 0.8 }
           ]
         },
         titleSize: {
@@ -933,30 +904,6 @@ export const config = {
             { label: 'Large (1.25rem)', value: '1.25rem' },
             { label: 'Extra Large (1.5rem)', value: '1.5rem' }
           ]
-        },
-        buttonColor: {
-          type: 'text' as const,
-          label: 'Button Color (hex code)'
-        },
-        buttonTextColor: {
-          type: 'select' as const,
-          label: 'Button Text Color',
-          options: [
-            { label: 'White', value: 'white' },
-            { label: 'Black', value: 'black' },
-            { label: 'Blue', value: '#007bff' },
-            { label: 'Green', value: '#28a745' }
-          ]
-        },
-        buttonSpacing: {
-          type: 'select' as const,
-          label: 'Button Spacing',
-          options: [
-            { label: 'Small (8px)', value: '8px' },
-            { label: 'Medium (12px)', value: '12px' },
-            { label: 'Large (16px)', value: '16px' },
-            { label: 'Extra Large (24px)', value: '24px' }
-          ]
         }
       },
       defaultProps: {
@@ -971,15 +918,11 @@ export const config = {
             size: 'large'
           }
         ],
-        backgroundColor: '#1a1a1a',
-        textColor: 'white' as const,
         backgroundImage: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80',
         height: '500px' as const,
         alignment: 'center' as const,
-        overlayOpacity: 0.4,
         titleSize: '3.5rem',
-        subtitleSize: '1.25rem',
-        buttonSpacing: '12px' as const
+        subtitleSize: '1.25rem'
       },
       render: HeroSection
     },
@@ -2379,10 +2322,13 @@ export const config = {
             { label: 'Custom...', value: '' }
           ]
         },
-        padding: {
-          type: 'text' as const,
-          label: 'Padding',
-          placeholder: '4rem 2rem'
+        imageShape: {
+          type: 'select' as const,
+          label: 'Image Shape',
+          options: [
+            { label: 'Circle', value: 'circle' },
+            { label: 'Rectangle', value: 'rectangle' }
+          ]
         }
       },
       defaultProps: {
@@ -2422,7 +2368,7 @@ export const config = {
         headingColor: '',
         subtitleColor: '',
         accentColor: '#3b82f6',
-        padding: '4rem 2rem'
+        imageShape: 'circle'
       },
       render: SpeakerHighlight
     },
@@ -2939,8 +2885,8 @@ export const config = {
       },
       render: SessionHighlightWorkshop
     },
-    VenueHeader: {
-      label: "📍 Venue Header",
+    VenueBlock: {
+      label: "📍 Venue Block",
       fields: {
         venueName: {
           type: 'text' as const,
@@ -2982,20 +2928,6 @@ export const config = {
             { label: 'Custom...', value: '' }
           ]
         },
-        overlayColor: {
-          type: 'select' as const,
-          label: 'Overlay Color',
-          options: [
-            { label: 'Black', value: '#000000' },
-            { label: 'Dark Gray', value: '#1f2937' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
-        overlayOpacity: {
-          type: 'number' as const,
-          label: 'Overlay Opacity',
-          placeholder: '0.4'
-        },
         textColor: {
           type: 'select' as const,
           label: 'Text Color',
@@ -3022,16 +2954,6 @@ export const config = {
             { label: 'Black', value: '#000000' },
             { label: 'Custom...', value: '' }
           ]
-        },
-        borderRadius: {
-          type: 'text' as const,
-          label: 'Border Radius',
-          placeholder: '0'
-        },
-        padding: {
-          type: 'text' as const,
-          label: 'Padding',
-          placeholder: '6rem 2rem'
         }
       },
       defaultProps: {
@@ -3041,15 +2963,110 @@ export const config = {
         state: 'CA',
         backgroundImage: '',
         backgroundColor: '#1e3a8a',
-        overlayColor: '#000000',
-        overlayOpacity: 0.4,
         textColor: '#ffffff',
         badgeColor: 'rgba(255, 255, 255, 0.2)',
-        badgeTextColor: '#ffffff',
-        borderRadius: '0',
-        padding: '6rem 2rem'
+        badgeTextColor: '#ffffff'
       },
-      render: VenueHeader
+      render: VenueBlock
+    },
+    SplitVenueBlock: {
+      label: "📍 Split Venue Block",
+      fields: {
+        heading: {
+          type: 'text' as const,
+          label: 'Heading',
+          placeholder: 'Venue Information',
+          contentEditable: true
+        },
+        imagePosition: {
+          type: 'select' as const,
+          label: 'Image Position',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Right', value: 'right' }
+          ]
+        },
+        imageSrc: {
+          type: 'text' as const,
+          label: 'Image URL',
+          placeholder: 'https://example.com/image.jpg'
+        },
+        venueName: {
+          type: 'text' as const,
+          label: 'Venue Name',
+          placeholder: 'The Moscone Center',
+          contentEditable: true
+        },
+        address: {
+          type: 'text' as const,
+          label: 'Address',
+          placeholder: '747 Howard St',
+          contentEditable: true
+        },
+        city: {
+          type: 'text' as const,
+          label: 'City',
+          placeholder: 'San Francisco',
+          contentEditable: true
+        },
+        state: {
+          type: 'text' as const,
+          label: 'State',
+          placeholder: 'CA',
+          contentEditable: true
+        },
+        description: {
+          type: 'textarea' as const,
+          label: 'Description',
+          placeholder: 'A premier event venue in the heart of the city.',
+          contentEditable: true
+        },
+        backgroundColor: {
+          type: 'select' as const,
+          label: 'Background Color',
+          options: [
+            { label: 'White', value: '#ffffff' },
+            { label: 'Light Gray', value: '#f3f4f6' },
+            { label: 'Dark Gray', value: '#1f2937' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        textColor: {
+          type: 'select' as const,
+          label: 'Text Color',
+          options: [
+            { label: 'Black', value: '#000000' },
+            { label: 'Dark Gray', value: '#374151' },
+            { label: 'White', value: '#ffffff' },
+            { label: 'Custom...', value: '' }
+          ]
+        },
+        headingColor: {
+          type: 'text' as const,
+          label: 'Heading Color (optional)',
+          placeholder: '#000000'
+        },
+        padding: {
+          type: 'text' as const,
+          label: 'Padding',
+          placeholder: '4rem 2rem'
+        }
+      },
+      defaultProps: {
+        heading: 'Venue Information',
+        imagePosition: 'left',
+        imageSrc: '',
+        venueName: 'The Moscone Center',
+        address: '747 Howard St',
+        city: 'San Francisco',
+        state: 'CA',
+        description: 'A premier event venue in the heart of the city.',
+        backgroundColor: '#ffffff',
+        textColor: '#000000',
+        headingColor: '',
+        padding: '4rem 2rem'
+      },
+      render: SplitVenueBlock
     },
     HotelPartners: {
       label: "🏨 Hotel Partners",
@@ -3292,6 +3309,11 @@ export const config = {
           type: 'text' as const,
           label: 'Google Maps Embed URL',
           placeholder: 'https://www.google.com/maps/embed?pb=...'
+        },
+        mapImageUrl: {
+          type: 'text' as const,
+          label: 'Map Image URL (optional)',
+          placeholder: 'https://example.com/map.jpg'
         },
         mapPlaceholder: {
           type: 'textarea' as const,
@@ -4348,22 +4370,6 @@ export const config = {
           label: 'Subtitle',
           contentEditable: true
         },
-        buttonText: {
-          type: 'text' as const,
-          label: 'Button Text',
-          contentEditable: true
-        },
-        buttonLink: {
-          type: 'text' as const,
-          label: 'Button Link',
-          placeholder: '/register',
-          contentEditable: true
-        },
-        backgroundColor: {
-          type: 'text' as const,
-          label: 'Background Color',
-          placeholder: '#000000'
-        },
         textColor: {
           type: 'text' as const,
           label: 'Text Color',
@@ -4393,6 +4399,17 @@ export const config = {
             { label: 'XS', value: 'XS' }
           ]
         },
+        buttonText: {
+          type: 'text' as const,
+          label: 'Button Text',
+          contentEditable: true
+        },
+        buttonLink: {
+          type: 'text' as const,
+          label: 'Button Link',
+          placeholder: '/register',
+          contentEditable: true
+        },
         buttonColor: {
           type: 'text' as const,
           label: 'Button Color',
@@ -4411,11 +4428,6 @@ export const config = {
             { label: 'Medium', value: 'medium' },
             { label: 'Large', value: 'large' }
           ]
-        },
-        overlayOpacity: {
-          type: 'text' as const,
-          label: 'Overlay Opacity',
-          placeholder: '0.4'
         },
         alignment: {
           type: 'select' as const,
@@ -4438,14 +4450,12 @@ export const config = {
         subtitle: 'Join us for an amazing experience with industry leaders and innovative solutions',
         buttonText: 'Register Now',
         buttonLink: '/register',
-        backgroundColor: '#000000',
         textColor: '#ffffff',
         titleSize: 'XL',
         subtitleSize: 'L',
         buttonColor: '#007bff',
         buttonTextColor: '#ffffff',
         buttonSize: 'medium',
-        overlayOpacity: 0.4,
         alignment: 'center',
         height: '500px'
       },

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useRef } from 'react'
 
 export interface SpeakerItem {
   id: string
@@ -20,6 +20,7 @@ export interface SpeakerHighlightProps {
   subtitleColor?: string
   accentColor?: string
   padding?: string
+  imageShape?: 'circle' | 'rectangle'
 }
 
 const SpeakerHighlight: React.FC<SpeakerHighlightProps> = ({
@@ -31,8 +32,34 @@ const SpeakerHighlight: React.FC<SpeakerHighlightProps> = ({
   headingColor,
   subtitleColor,
   accentColor = '#3b82f6',
-  padding = '4rem 2rem'
+  padding = '4rem 2rem',
+  imageShape = 'circle'
 }) => {
+  // Store uploaded images per speaker ID
+  const [uploadedImages, setUploadedImages] = useState<Record<string, string>>({})
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  // Handle file upload for a specific speaker
+  const handleFileUpload = (speakerId: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        setUploadedImages(prev => ({
+          ...prev,
+          [speakerId]: result
+        }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleImageClick = (speakerId: string) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    fileInputRefs.current[speakerId]?.click()
+  }
   // Extract string values from React elements
   const getStringValue = (prop: any): string => {
     if (typeof prop === 'string') return prop;
@@ -96,18 +123,38 @@ const SpeakerHighlight: React.FC<SpeakerHighlightProps> = ({
                 >
                   {/* Photo with accent border */}
                   <div className="relative mb-6">
+                    {/* Hidden file input for image upload */}
+                    <input
+                      ref={(el) => {
+                        fileInputRefs.current[speaker.id] = el
+                      }}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload(speaker.id)}
+                      style={{ display: 'none' }}
+                    />
                     <div
-                      className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4"
+                      className={`w-32 h-32 md:w-40 md:h-40 overflow-hidden border-4 cursor-pointer transition-opacity duration-200 ${
+                        imageShape === 'circle' ? 'rounded-full' : 'rounded-lg'
+                      }`}
                       style={{
                         borderColor: speakerAccentColor,
                         boxShadow: `0 4px 20px ${speakerAccentColor}40`
                       }}
+                      onClick={handleImageClick(speaker.id)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.opacity = '0.8'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = '1'
+                      }}
+                      title="Click to upload photo"
                     >
-                      {photoValue ? (
+                      {(uploadedImages[speaker.id] || photoValue) ? (
                         <img
-                          src={photoValue}
+                          src={uploadedImages[speaker.id] || photoValue}
                           alt={nameValue || 'Speaker'}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover pointer-events-none"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
                             const parent = e.currentTarget.parentElement;
@@ -117,8 +164,8 @@ const SpeakerHighlight: React.FC<SpeakerHighlightProps> = ({
                           }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-400 text-sm">No photo</span>
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center pointer-events-none">
+                          <span className="text-gray-400 text-sm">Click to upload</span>
                         </div>
                       )}
                     </div>

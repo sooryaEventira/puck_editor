@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useRef } from 'react'
 import { HeroSplitScreenProps } from '../../types'
 
 const HeroSplitScreen: React.FC<HeroSplitScreenProps> = ({
@@ -21,6 +21,29 @@ const HeroSplitScreen: React.FC<HeroSplitScreenProps> = ({
   textColor = '#000000',
   height = '600px'
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
+
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        setUploadedImageUrl(result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
   // Extract string values from React elements
   const getStringValue = (prop: any): string => {
     if (typeof prop === 'string') return prop;
@@ -40,6 +63,9 @@ const HeroSplitScreen: React.FC<HeroSplitScreenProps> = ({
   const primaryButtonActionValue = getStringValue(primaryButtonAction);
   const secondaryButtonTextValue = getStringValue(secondaryButtonText);
   const secondaryButtonActionValue = getStringValue(secondaryButtonAction);
+
+  // Get the current image (uploaded or prop)
+  const currentImageSrc = uploadedImageUrl || imageSrcValue;
 
   // Split title to insert highlighted text
   const renderTitle = () => {
@@ -76,15 +102,50 @@ const HeroSplitScreen: React.FC<HeroSplitScreenProps> = ({
     >
       <div className="flex flex-col lg:flex-row h-full min-h-[600px]">
         {/* Left Side - Image */}
-        <div className="w-full lg:w-1/2 h-[400px] lg:h-auto relative overflow-hidden">
-          {imageSrcValue ? (
+        <div 
+          className="w-full lg:w-1/2 h-[400px] lg:h-auto relative overflow-hidden"
+        >
+          {/* Hidden file input for image upload */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            style={{ display: 'none' }}
+          />
+          {/* Clickable overlay for image upload */}
+          <div
+            className="absolute inset-0 cursor-pointer z-10"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleImageClick(e as any)
+            }}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleImageClick(e)
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '0.95'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '1'
+            }}
+            title="Click to upload image"
+            style={{
+              backgroundColor: 'transparent',
+            }}
+          />
+          {currentImageSrc ? (
             <img
-              src={imageSrcValue}
+              src={currentImageSrc}
               alt={imageAlt}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover pointer-events-none"
               style={{
                 objectFit: 'cover',
-                objectPosition: 'center'
+                objectPosition: 'center',
+                zIndex: 0
               }}
               onError={(e) => {
                 // Fallback to placeholder if image fails to load
@@ -92,8 +153,8 @@ const HeroSplitScreen: React.FC<HeroSplitScreenProps> = ({
               }}
             />
           ) : (
-            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-              <span className="text-gray-400">No image selected</span>
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center pointer-events-none" style={{ zIndex: 0 }}>
+              <span className="text-gray-400">Click to upload image</span>
             </div>
           )}
         </div>

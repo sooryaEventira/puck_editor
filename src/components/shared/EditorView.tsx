@@ -560,7 +560,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
           })()}
           
           <div
-            className={`flex-1 h-full overflow-hidden transition-[margin-left] duration-200 ${
+            className={`flex-1 h-full transition-[margin-left] duration-200 ${
               showCustomSidebar ? 'ml-[280px]' : 'ml-0'
             }`}
           >

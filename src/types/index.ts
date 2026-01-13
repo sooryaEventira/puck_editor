@@ -322,7 +322,7 @@ export interface SessionHighlightWorkshopProps {
   data?: any
 }
 
-export interface VenueHeaderProps {
+export interface VenueBlockProps {
   venueName?: string | React.ReactElement
   address?: string | React.ReactElement
   city?: string | React.ReactElement

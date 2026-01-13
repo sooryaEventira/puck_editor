@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useRef } from 'react'
 
 export interface DirectionItem {
   id: string
@@ -11,6 +11,7 @@ export interface DirectionItem {
 export interface VenueDirectionsProps {
   title?: string | React.ReactElement
   mapEmbedUrl?: string
+  mapImageUrl?: string
   mapPlaceholder?: string | React.ReactElement
   entranceTitle?: string | React.ReactElement
   entranceDescription?: string | React.ReactElement
@@ -31,6 +32,7 @@ export interface VenueDirectionsProps {
 const VenueDirections: React.FC<VenueDirectionsProps> = ({
   title = 'How to Get Here',
   mapEmbedUrl,
+  mapImageUrl,
   mapPlaceholder,
   entranceTitle,
   entranceDescription,
@@ -47,6 +49,28 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
   padding = '4rem 2rem',
   gap = '3rem'
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
+
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        setUploadedImageUrl(result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    fileInputRef.current?.click()
+  }
+
   const getStringValue = (prop: any): string => {
     if (typeof prop === 'string') return prop;
     if (prop && typeof prop === 'object' && 'props' in prop && prop.props && 'value' in prop.props) {
@@ -100,7 +124,7 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
           <div className="flex flex-col gap-6">
             {/* Map */}
             <div
-              className="w-full rounded-xl overflow-hidden border"
+              className="w-full rounded-xl overflow-hidden border relative"
               style={{
                 backgroundColor: cardBackgroundColor,
                 borderColor: cardBorderColor,
@@ -108,18 +132,60 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
                 minHeight: '400px',
               }}
             >
-              {mapEmbedUrl ? (
+              {/* Hidden file input for image upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+              />
+              {/* Clickable overlay for image upload */}
+              <div
+                className="absolute inset-0 cursor-pointer z-10"
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleImageClick(e as any)
+                }}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleImageClick(e)
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '0.95'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '1'
+                }}
+                title="Click to upload map image"
+                style={{
+                  backgroundColor: 'transparent',
+                }}
+              />
+              {(uploadedImageUrl || mapImageUrl) ? (
+                <img
+                  src={uploadedImageUrl || mapImageUrl}
+                  alt="Venue Map"
+                  className="w-full h-full object-cover pointer-events-none"
+                  style={{ zIndex: 0 }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : mapEmbedUrl ? (
                 <iframe
                   src={mapEmbedUrl}
                   width="100%"
                   height="100%"
-                  style={{ border: 0 }}
+                  style={{ border: 0, zIndex: 0 }}
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-8">
+                <div className="w-full h-full flex flex-col items-center justify-center p-8 pointer-events-none" style={{ zIndex: 0 }}>
                   {mapPlaceholder ? (
                     <div style={{ color: textColor, opacity: 0.6 }}>
                       {mapPlaceholder}
@@ -131,7 +197,7 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
                         Interactive Map Component
                       </p>
                       <p className="text-sm mt-2" style={{ color: textColor, opacity: 0.4 }}>
-                        Add Google Maps embed URL in properties
+                        Click to upload map image or add Google Maps embed URL
                       </p>
                     </>
                   )}

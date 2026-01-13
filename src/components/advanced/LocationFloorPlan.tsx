@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 
 export interface LocationFloorPlanProps {
   title?: string | React.ReactElement
@@ -31,6 +31,27 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
 }) => {
   const [zoomLevel, setZoomLevel] = useState(1)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
+
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        setUploadedImageUrl(result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    fileInputRef.current?.click()
+  }
 
   const getStringValue = (prop: any): string => {
     if (typeof prop === 'string') return prop;
@@ -91,14 +112,23 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
   }, [])
 
   const handleDownload = () => {
-    const url = pdfUrl || imageUrl
+    const url = pdfUrl || uploadedImageUrl || imageUrl
     if (url) {
-      const link = document.createElement('a')
-      link.href = url
-      link.download = url.split('/').pop() || 'floor-plan'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      // For same-origin resources, try to download directly
+      // For cross-origin, open in new tab
+      try {
+        const link = document.createElement('a')
+        link.href = url
+        link.download = url.split('/').pop() || (pdfUrl ? 'floor-plan.pdf' : 'floor-plan.jpg')
+        link.target = '_blank'
+        link.rel = 'noopener noreferrer'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } catch (error) {
+        // Fallback: open in new tab if download fails
+        window.open(url, '_blank')
+      }
     }
   }
 
@@ -112,26 +142,30 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
     >
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        {(titleValue || subtitleValue) && (
-          <div className="mb-8">
-            {titleValue && (
-              <h2
-                className="text-2xl md:text-3xl font-bold mb-2"
-                style={{ color: textColor }}
-              >
-                {title}
-              </h2>
-            )}
-            {subtitleValue && (
-              <p
-                className="text-lg opacity-80"
-                style={{ color: textColor }}
-              >
-                {subtitle}
-              </p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div className="flex-1">
+            {(titleValue || subtitleValue) && (
+              <>
+                {titleValue && (
+                  <h2
+                    className="text-2xl md:text-3xl font-bold mb-2"
+                    style={{ color: textColor }}
+                  >
+                    {title}
+                  </h2>
+                )}
+                {subtitleValue && (
+                  <p
+                    className="text-lg opacity-80"
+                    style={{ color: textColor }}
+                  >
+                    {subtitle}
+                  </p>
+                )}
+              </>
             )}
           </div>
-        )}
+        </div>
 
         {/* Viewer Container */}
         <div
@@ -147,6 +181,14 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
         >
           {/* Document Viewer */}
           <div className="relative w-full h-full" style={{ minHeight: '600px' }}>
+            {/* Hidden file input for image upload */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              style={{ display: 'none' }}
+            />
             {pdfUrl ? (
               <iframe
                 src={pdfUrl}
@@ -157,28 +199,70 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
                 }}
                 title="Floor Plan PDF"
               />
-            ) : imageUrl ? (
+            ) : (uploadedImageUrl || imageUrl) ? (
               <div
-                className="w-full h-full flex items-center justify-center overflow-auto bg-gray-100"
+                className="w-full h-full flex items-center justify-center overflow-auto bg-gray-100 relative cursor-pointer"
                 style={{
                   minHeight: '600px',
-                  transform: `scale(${zoomLevel})`,
-                  transformOrigin: 'center center'
                 }}
+                onClick={(e) => {
+                  // Don't trigger if clicking on toolbar or download button
+                  const target = e.target as HTMLElement
+                  if (target.closest('.toolbar-controls') || target.closest('[data-download-button]') || target.closest('button')) {
+                    return
+                  }
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleImageClick(e)
+                }}
+                onMouseDown={(e) => {
+                  // Don't trigger if clicking on toolbar or download button
+                  const target = e.target as HTMLElement
+                  if (target.closest('.toolbar-controls') || target.closest('[data-download-button]') || target.closest('button')) {
+                    return
+                  }
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleImageClick(e as any)
+                }}
+                title="Click to upload image"
               >
-                <img
-                  src={imageUrl}
-                  alt={titleValue || 'Floor Plan'}
-                  className="max-w-full h-auto"
+                {/* Image container with zoom transform */}
+                <div
+                  className="w-full h-full flex items-center justify-center pointer-events-none"
                   style={{
-                    maxHeight: '100%',
-                    objectFit: 'contain'
+                    transform: `scale(${zoomLevel})`,
+                    transformOrigin: 'center center'
                   }}
-                />
+                >
+                  <img
+                    src={uploadedImageUrl || imageUrl}
+                    alt={titleValue || 'Floor Plan'}
+                    className="max-w-full h-auto"
+                    style={{
+                      maxHeight: '100%',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </div>
               </div>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center" style={{ minHeight: '600px' }}>
-                <div className="text-center p-8">
+              <div 
+                className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" 
+                style={{ minHeight: '600px' }}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleImageClick(e)
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleImageClick(e as any)
+                }}
+                title="Click to upload image"
+              >
+                <div className="text-center p-8 pointer-events-none">
                   <div className="mb-4">
                     <span className="text-6xl">📄</span>
                   </div>
@@ -194,58 +278,62 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
                   >
                     1 Floor Plan
                   </p>
-                  <button
-                    className="px-4 py-2 rounded text-sm font-medium border"
+                  <div
+                    className="px-4 py-2 rounded text-sm font-medium border inline-block"
                     style={{
                       backgroundColor: cardBackgroundColor,
                       borderColor: cardBorderColor,
                       color: textColor
                     }}
-                    disabled
                   >
-                    Click to Zoom
-                  </button>
+                    Click to Upload Image
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Download Button */}
-          {(pdfUrl || imageUrl) && (
-            <button
-              onClick={handleDownload}
-              className="absolute top-4 right-4 px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-opacity hover:opacity-90 z-10"
-              style={{
-                backgroundColor: buttonColor,
-                color: buttonTextColor,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-              }}
-            >
-              <span>📥</span>
-              <span>Download PDF</span>
-            </button>
-          )}
+          {/* Download Button - Top Right Corner - Always visible */}
+          <button
+            onClick={handleDownload}
+            disabled={!pdfUrl && !uploadedImageUrl && !imageUrl}
+            data-download-button="true"
+            className="absolute top-4 right-4 px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-all hover:opacity-90 hover:scale-105 z-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            style={{
+              backgroundColor: (pdfUrl || uploadedImageUrl || imageUrl) ? buttonColor : '#9ca3af',
+              color: buttonTextColor,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              zIndex: 50,
+              pointerEvents: 'auto'
+            }}
+            title={pdfUrl || uploadedImageUrl || imageUrl ? `Download ${pdfUrl ? 'PDF' : 'Image'}` : 'Add PDF or Image URL to enable download'}
+          >
+            <span>📥</span>
+            <span>Download {pdfUrl ? 'PDF' : imageUrl ? 'Image' : 'File'}</span>
+          </button>
 
           {/* Viewer Controls (only for images) */}
-          {imageUrl && !pdfUrl && (
+          {(uploadedImageUrl || imageUrl) && !pdfUrl && (
             <>
               {/* Vertical Toolbar */}
               <div
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 flex flex-col gap-2 z-10"
+                className="toolbar-controls absolute right-4 top-1/2 transform -translate-y-1/2 flex flex-col gap-2 z-50"
                 style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
                   padding: '8px',
                   borderRadius: '8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  pointerEvents: 'auto'
                 }}
               >
-                {/* Menu (placeholder) */}
+                {/* Download */}
                 <button
+                  onClick={handleDownload}
                   className="p-2 rounded hover:bg-gray-100 transition-colors"
                   style={{ color: textColor }}
-                  title="Menu"
+                  title="Download Image"
                 >
-                  <span className="text-lg">⋯</span>
+                  <span className="text-lg">📥</span>
                 </button>
 
                 {/* Zoom In */}
@@ -293,7 +381,7 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
           )}
 
           {/* Click to Zoom overlay for images */}
-          {imageUrl && !pdfUrl && (
+          {(uploadedImageUrl || imageUrl) && !pdfUrl && (
             <button
               onClick={handleZoomIn}
               className="absolute bottom-4 left-4 px-4 py-2 rounded text-sm font-medium border transition-opacity hover:opacity-90"
