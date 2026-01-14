@@ -4,7 +4,6 @@
  */
 
 import { logger } from '../utils/logger'
-import { showToast } from '../utils/toast'
 import { type PageType } from '../components/page/PageCreationModal'
 
 interface UseAppHandlersProps {
@@ -34,7 +33,7 @@ export const useAppHandlers = ({
    * Handle profile button click
    */
   const handleProfileClick = () => {
-    showToast.info('Profile clicked - This would typically open a profile menu or navigate to profile page')
+    // Profile menu is handled by DashboardNavbar component
   }
 
   /**
