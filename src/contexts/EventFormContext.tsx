@@ -1,10 +1,14 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 import { EventFormData } from '../components/dashboard/NewEventForm'
+import { CreateEventResponseData } from '../services/eventService'
 
 interface EventFormContextType {
   eventData: EventFormData | null
   setEventData: (data: EventFormData) => void
   clearEventData: () => void
+  createdEvent: CreateEventResponseData | null
+  setCreatedEvent: (event: CreateEventResponseData) => void
+  clearCreatedEvent: () => void
 }
 
 const EventFormContext = createContext<EventFormContextType | undefined>(undefined)
@@ -18,6 +22,19 @@ export const EventFormProvider: React.FC<{ children: ReactNode }> = ({ children 
         const parsed = JSON.parse(stored)
         // Convert File objects back (they won't be preserved, but we handle it)
         return parsed
+      } catch {
+        return null
+      }
+    }
+    return null
+  })
+
+  const [createdEvent, setCreatedEventState] = useState<CreateEventResponseData | null>(() => {
+    // Load created event from localStorage on mount
+    const stored = localStorage.getItem('created-event')
+    if (stored) {
+      try {
+        return JSON.parse(stored)
       } catch {
         return null
       }
@@ -58,8 +75,28 @@ export const EventFormProvider: React.FC<{ children: ReactNode }> = ({ children 
     localStorage.removeItem('event-form-banner')
   }
 
+  const setCreatedEvent = (event: CreateEventResponseData) => {
+    setCreatedEventState(event)
+    localStorage.setItem('created-event', JSON.stringify(event))
+    // Also store the UUID separately for easy access
+    localStorage.setItem('currentEventUuid', event.uuid)
+  }
+
+  const clearCreatedEvent = () => {
+    setCreatedEventState(null)
+    localStorage.removeItem('created-event')
+    localStorage.removeItem('currentEventUuid')
+  }
+
   return (
-    <EventFormContext.Provider value={{ eventData, setEventData, clearEventData }}>
+    <EventFormContext.Provider value={{ 
+      eventData, 
+      setEventData, 
+      clearEventData,
+      createdEvent,
+      setCreatedEvent,
+      clearCreatedEvent
+    }}>
       {children}
     </EventFormContext.Provider>
   )

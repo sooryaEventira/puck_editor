@@ -1,29 +1,38 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 3000,
-    open: true,
-    headers: {
-      'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: http: https:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' http: https: ws: wss:; frame-src 'self' data: blob: https://docs.google.com;"
-    },
-    proxy: {
-      // Proxy API requests to the backend server to avoid CORS issues
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        secure: false,
-        // Only proxy if backend is actually running (optional)
-        configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
-            console.log('Proxy error - make sure backend server is running on http://localhost:8000:', err.message)
-          })
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  const env = loadEnv(mode, process.cwd(), '')
+  
+  // Default Azure backend URL
+  const defaultBackendUrl = 'https://eventiracommon-event-api-dev-ci01-aaeddsh3hbdkcjfa.centralindia-01.azurewebsites.net'
+  const proxyTarget = env.VITE_PROXY_TARGET || defaultBackendUrl
+
+  return {
+    plugins: [react()],
+    server: {
+      port: 3000,
+      open: true,
+      headers: {
+        'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: http: https:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' http: https: ws: wss:; frame-src 'self' data: blob: https://docs.google.com;"
+      },
+      proxy: {
+        // Proxy API requests to the backend server to avoid CORS issues
+        // Defaults to Azure backend, can be overridden with VITE_PROXY_TARGET env variable
+        '/api': {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: true,
+          // Only proxy if backend is actually running (optional)
+          configure: (proxy, _options) => {
+            proxy.on('error', (err, _req, _res) => {
+              console.log(`Proxy error - make sure backend server is running on ${proxyTarget}:`, err.message)
+            })
+          }
         }
       }
-    }
-  },
+    },
   build: {
     outDir: 'build', // Match Azure Static Web Apps expected output location
     // Increase chunk size warning limit to 1000kb (from default 500kb)
@@ -70,5 +79,6 @@ export default defineConfig({
   // Optimize dependencies
   optimizeDeps: {
     include: ['react', 'react-dom', '@measured/puck']
+  }
   }
 })

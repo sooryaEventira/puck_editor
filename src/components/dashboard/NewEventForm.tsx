@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import logoImage from '../../assets/images/Logo.png'
 import { ProgressSteps } from '../ui/untitled'
 import EventDetailsStep from './NewEventForm/EventDetailsStep'
-import DesignStep from './NewEventForm/DesignStep'
+import FileUploadStep, { FileUploadStepRef } from './NewEventForm/FileUploadStep'
 import { useEventForm } from '../../contexts/EventFormContext'
 
 interface NewEventFormProps {
@@ -27,7 +27,7 @@ export interface EventFormData {
 }
 
 // Total steps - update this as you add more steps
-// Currently: Step 1 (Event Details), Step 2 (Design)
+// Currently: Step 1 (Event Details), Step 2 (File Upload)
 const TOTAL_STEPS = 2
 
 const NewEventForm: React.FC<NewEventFormProps> = ({ onClose, onSubmit }) => {
@@ -45,40 +45,64 @@ const NewEventForm: React.FC<NewEventFormProps> = ({ onClose, onSubmit }) => {
     logo: null,
     banner: null
   })
+  
+  // Ref to access FileUploadStep's submit function
+  const fileUploadStepRef = useRef<FileUploadStepRef>(null)
 
   const updateFormData = (updates: Partial<EventFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }))
   }
 
   const handleNext = () => {
+    console.log(`🔄 [NewEventForm] handleNext called - currentStep: ${currentStep}`)
+    
     if (currentStep === 1) {
-      // Validate step 1
+      // Validate step 1 - all required fields must be filled
+      console.log('📝 [NewEventForm] Validating step 1 data:', {
+        eventName: formData.eventName,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        timezone: formData.timezone,
+        location: formData.location,
+        attendees: formData.attendees,
+        eventExperience: formData.eventExperience
+      })
+      
       if (
         formData.eventName &&
         formData.startDate &&
         formData.endDate &&
         formData.timezone &&
         formData.location &&
-        formData.attendees > 0
+        formData.attendees > 0 &&
+        formData.eventExperience
       ) {
+        // Store form data in context before moving to next step
+        console.log('💾 [NewEventForm] Storing form data in context and moving to step 2')
+        setEventData(formData)
         setCurrentStep(2)
+      } else {
+        console.warn('⚠️ [NewEventForm] Step 1 validation failed - missing required fields')
       }
     } else if (currentStep === TOTAL_STEPS) {
-      // Step 2 (Design) - Save data and navigate to template selection
-      // Save to global context
-      setEventData(formData)
-
-      // Log form data to console
-      console.log('Form Data for Backend:', formData)
-
-      // Navigate to template selection page
-      window.history.pushState({}, '', '/event/create/template')
-      window.dispatchEvent(new PopStateEvent('popstate'))
+      // Step 2 (File Upload) - Trigger API call via FileUploadStep
+      console.log('🚀 [NewEventForm] Step 2 - Triggering event creation via FileUploadStep')
+      if (fileUploadStepRef.current) {
+        fileUploadStepRef.current.submit()
+      } else {
+        console.error('❌ [NewEventForm] FileUploadStep ref is not available')
+      }
     } else {
       // Intermediate steps - move to next step
-      // Add validation here for future steps if needed
+      console.log(`➡️ [NewEventForm] Moving to next step: ${currentStep + 1}`)
       setCurrentStep(currentStep + 1)
     }
+  }
+
+  const handleEventCreated = () => {
+    // Navigate to template selection page after successful event creation
+    window.history.pushState({}, '', '/event/create/template')
+    window.dispatchEvent(new PopStateEvent('popstate'))
   }
 
   const handlePrevious = () => {
@@ -111,7 +135,7 @@ const NewEventForm: React.FC<NewEventFormProps> = ({ onClose, onSubmit }) => {
           {currentStep === 1 ? (
             <h1 className="text-2xl font-semibold text-slate-900">Set up your event details.</h1>
           ) : (
-            <h1 className="text-2xl font-semibold text-slate-900">Customize your design.</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Upload your event assets.</h1>
           )}
         </div>
 
@@ -119,8 +143,8 @@ const NewEventForm: React.FC<NewEventFormProps> = ({ onClose, onSubmit }) => {
         <div className="px-6 mb-6">
           <ProgressSteps
             steps={[
-              { title: 'Event details', description: 'Name and email' },
-              { title: 'Design', description: 'Font and colours' }
+              { title: 'Event details', description: 'Name, date, and location' },
+              { title: 'File upload', description: 'Logo and banner' }
             ]}
             currentStep={currentStep}
           />
@@ -134,9 +158,11 @@ const NewEventForm: React.FC<NewEventFormProps> = ({ onClose, onSubmit }) => {
               updateFormData={updateFormData}
             />
           ) : (
-            <DesignStep
+            <FileUploadStep
+              ref={fileUploadStepRef}
               formData={formData}
               updateFormData={updateFormData}
+              onSuccess={handleEventCreated}
             />
           )}
         </div>
@@ -153,10 +179,25 @@ const NewEventForm: React.FC<NewEventFormProps> = ({ onClose, onSubmit }) => {
           <button
             type="button"
             onClick={handleNext}
-            disabled={currentStep === 1 && !isStep1Valid()}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#6938EF] hover:bg-[#5925DC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#6938EF]"
+            disabled={
+              (currentStep === 1 && !isStep1Valid()) ||
+              (currentStep === TOTAL_STEPS && fileUploadStepRef.current?.isSubmitting)
+            }
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#6938EF] hover:bg-[#5925DC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#6938EF] flex items-center gap-2"
           >
-            Next
+            {currentStep === TOTAL_STEPS ? (
+              <>
+                {fileUploadStepRef.current?.isSubmitting && (
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                {fileUploadStepRef.current?.isSubmitting ? 'Creating Event...' : 'Create Event'}
+              </>
+            ) : (
+              'Next'
+            )}
           </button>
         </div>
       </div>

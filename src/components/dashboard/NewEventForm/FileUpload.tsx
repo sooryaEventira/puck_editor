@@ -29,7 +29,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const uploadIntervalRef = useRef<number | null>(null)
+  const uploadIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Clear interval on unmount
   useEffect(() => {

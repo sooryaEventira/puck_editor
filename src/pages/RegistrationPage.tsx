@@ -130,6 +130,13 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({
                 </div>
               </div>
 
+              {/* Error Message */}
+              {error && (
+                <div className="w-full text-xs sm:text-sm text-red-500">
+                  {error}
+                </div>
+              )}
+
               {/* Terms and Conditions Checkbox */}
               <div className="flex w-full items-start justify-start gap-2 self-stretch">
                 <div className="flex items-center justify-center pt-0.5">

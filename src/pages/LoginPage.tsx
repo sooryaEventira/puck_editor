@@ -24,11 +24,24 @@ const LoginPage: React.FC<LoginPageProps> = ({
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!email.trim() || !password.trim()) {
+      return
+    }
+    
     if (onSubmit) {
-      onSubmit(email, password)
+      setIsLoading(true)
+      try {
+        await onSubmit(email, password)
+      } catch (error) {
+        // Error handling is done in App.tsx
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -182,12 +195,19 @@ const LoginPage: React.FC<LoginPageProps> = ({
             <button
               type="button"
               onClick={handleSubmit}
-              className="inline-flex w-full mt-4 items-center justify-center self-stretch overflow-hidden rounded-lg px-4 py-2.5 sm:py-2.5 touch-manipulation bg-[#6938EF] shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] outline outline-2 outline-white -outline-offset-2 gap-1.5"
+              disabled={!email.trim() || !password.trim() || isLoading}
+              className="inline-flex w-full mt-4 items-center justify-center self-stretch overflow-hidden rounded-lg px-4 py-2.5 sm:py-2.5 touch-manipulation bg-[#6938EF] shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] outline outline-2 outline-white -outline-offset-2 gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5925DC] transition-colors"
             >
               <div className="flex items-center justify-center px-0.5">
-                <span className="break-words text-sm sm:text-base font-semibold leading-5 sm:leading-6 text-white">
-                  Sign in
-                </span>
+                {isLoading ? (
+                  <span className="break-words text-sm sm:text-base font-semibold leading-5 sm:leading-6 text-white">
+                    Signing in...
+                  </span>
+                ) : (
+                  <span className="break-words text-sm sm:text-base font-semibold leading-5 sm:leading-6 text-white">
+                    Sign in
+                  </span>
+                )}
               </div>
             </button>
 

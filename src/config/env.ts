@@ -13,24 +13,24 @@ export const env = {
 
   /**
    * Auth API Base URL (for authentication endpoints)
-   * Default: http://localhost:8000
+   * Default: https://eventiracommon-event-api-dev-ci01-aaeddsh3hbdkcjfa.centralindia-01.azurewebsites.net
    * Override with: VITE_AUTH_API_URL environment variable
    * If USE_PROXY is true in dev, this will be ignored and relative paths will be used
    */
-  AUTH_API_URL: import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8000',
+  AUTH_API_URL: import.meta.env.VITE_AUTH_API_URL || 'https://eventiracommon-event-api-dev-ci01-aaeddsh3hbdkcjfa.centralindia-01.azurewebsites.net',
 
   /**
    * Page Management API Base URL (for page editor endpoints)
-   * Set to empty string to disable page API calls
+   * Default: https://eventiracommon-event-api-dev-ci01-aaeddsh3hbdkcjfa.centralindia-01.azurewebsites.net
    * Override with: VITE_PAGE_API_URL environment variable
    */
-  PAGE_API_URL: import.meta.env.VITE_PAGE_API_URL || '',
+  PAGE_API_URL: import.meta.env.VITE_PAGE_API_URL || 'https://eventiracommon-event-api-dev-ci01-aaeddsh3hbdkcjfa.centralindia-01.azurewebsites.net',
 
   /**
    * Legacy API URL (for backward compatibility)
    * Default: same as PAGE_API_URL
    */
-  API_URL: import.meta.env.VITE_API_URL || import.meta.env.VITE_PAGE_API_URL || 'http://localhost:3001',
+  API_URL: import.meta.env.VITE_API_URL || import.meta.env.VITE_PAGE_API_URL || 'https://eventiracommon-event-api-dev-ci01-aaeddsh3hbdkcjfa.centralindia-01.azurewebsites.net',
 
   /**
    * Is Development Mode
@@ -51,27 +51,29 @@ export const env = {
 
 /**
  * API Endpoints
+ * All endpoints use full URLs to the Azure backend
  */
 export const API_ENDPOINTS = {
-  // Page Management endpoints (for editor) - only available if PAGE_API_URL is set
-  SAVE_PAGE: env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/save-page` : '',
-  GET_PAGES: env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/pages` : '',
-  GET_PAGE: (filename: string) => env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/pages/${filename}` : '',
+  // Page Management endpoints (for editor)
+  // SAVE_PAGE: env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/save-page` : '',
+  // GET_PAGES: env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/pages` : '',
+  // GET_PAGE: (filename: string) => env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/pages/${filename}` : '',
   // Auth endpoints (authentication backend)
-  // Use proxy path in development if USE_PROXY is enabled, otherwise use full URL
   AUTH: {
-    REGISTER_SEND_OTP: env.USE_PROXY && env.IS_DEV
-      ? '/api/v1/auth/register/send-otp/'
-      : `${env.AUTH_API_URL}/api/v1/auth/register/send-otp/`,
-    REGISTER_VERIFY_OTP: env.USE_PROXY && env.IS_DEV
-      ? '/api/v1/auth/register/verify-otp/'
-      : `${env.AUTH_API_URL}/api/v1/auth/register/verify-otp/`,
-    CREATE_PASSWORD: env.USE_PROXY && env.IS_DEV
-      ? '/api/v1/register/'
-      : `${env.AUTH_API_URL}/api/v1/register/`,
-    CREATE_ORGANIZATION: env.USE_PROXY && env.IS_DEV
-      ? '/api/v1/organizations/'
-      : `${env.AUTH_API_URL}/api/v1/organizations/`,
+    REGISTER_SEND_OTP: `${env.AUTH_API_URL}/api/v1/auth/register/send-otp/`,
+    REGISTER_VERIFY_OTP: `${env.AUTH_API_URL}/api/v1/auth/register/verify-otp/`,
+    CREATE_PASSWORD: `${env.AUTH_API_URL}/api/v1/register/`,
+    CREATE_ORGANIZATION: `${env.AUTH_API_URL}/api/v1/organizations/`,
+    GET_ORGANIZATIONS: `${env.AUTH_API_URL}/api/v1/organizations/`,
+    SIGNIN: `${env.AUTH_API_URL}/api/v1/token/`,
+  },
+  // Event endpoints
+  EVENT: {
+    CREATE: `${env.AUTH_API_URL}/api/v1/event/`,
+  },
+  // Timezone endpoints
+  TIMEZONE: {
+    LIST: `${env.AUTH_API_URL}/api/v1/timezones/`,
   },
 }
 

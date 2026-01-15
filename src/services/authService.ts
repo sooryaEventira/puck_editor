@@ -126,6 +126,47 @@ export const sendRegistrationOtp = async (email: string): Promise<ApiResponse<Se
     // Success response
     if (data.status === 'success') {
       showToast.success(data.message || 'OTP sent successfully')
+      
+      // Log the full response to console (OTP might be in data field for development)
+      console.log('📧 [authService] OTP sent - Full API response:', JSON.stringify(data, null, 2))
+      
+      // Check if OTP is in the response data (for development/testing)
+      // Handle different response structures
+      const responseData = data.data as any // Use any to handle flexible response structure
+      
+      if (responseData) {
+        // Check if OTP is a direct string value (4-6 digits)
+        if (typeof responseData === 'string' && /^\d{4,6}$/.test(responseData)) {
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+          console.log('   📱 YOUR OTP CODE: ' + responseData)
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        } 
+        // Check if OTP is in an object property
+        else if (typeof responseData === 'object') {
+          // Check common OTP field names
+          const otpValue = responseData.otp || responseData.code || responseData.otpCode || responseData.otp_code
+          if (otpValue && /^\d{4,6}$/.test(String(otpValue))) {
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+            console.log('   📱 YOUR OTP CODE: ' + otpValue)
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+          }
+          
+          // Log email if present
+          if (responseData.email) {
+            console.log('📧 [authService] OTP sent to:', responseData.email)
+          }
+        }
+      }
+      
+      // Also check message field for OTP (some APIs return it there)
+      if (data.message && /OTP.*\d{4,6}/i.test(data.message)) {
+        const otpMatch = data.message.match(/\d{4,6}/)
+        if (otpMatch) {
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+          console.log('   📱 YOUR OTP CODE: ' + otpMatch[0])
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        }
+      }
     }
 
     return data
@@ -353,6 +394,73 @@ export const createPassword = async (email: string, password: string): Promise<A
     const errorMessage = error instanceof Error ? error.message : 'Failed to create password. Please try again.'
     showToast.error(errorMessage)
     throw new Error(errorMessage)
+  }
+}
+
+/**
+ * Get user's organizations
+ */
+export const getUserOrganizations = async (): Promise<OrganizationData[]> => {
+  try {
+    const accessToken = localStorage.getItem('accessToken')
+    
+    if (!accessToken) {
+      const errorMessage = 'Authentication required. Please login again.'
+      showToast.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    const response = await fetch(API_ENDPOINTS.AUTH.GET_ORGANIZATIONS, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      credentials: 'include',
+    })
+    
+    if (!response || !response.ok) {
+      if (!response) {
+        const errorMessage = 'Cannot connect to the server.'
+        console.error('Network error: Server is not reachable', API_ENDPOINTS.AUTH.GET_ORGANIZATIONS)
+        throw new Error(errorMessage)
+      }
+
+      try {
+        const errorData: any = await response.json()
+        const errorMessage = errorData.message || errorData.detail || `Server error (${response.status})`
+        throw new Error(errorMessage)
+      } catch (parseError) {
+        const errorMessage = `Server error: ${response.status} ${response.statusText}`
+        throw new Error(errorMessage)
+      }
+    }
+
+    // Handle different response formats
+    const responseData: any = await response.json()
+    
+    // Check if it's wrapped in ApiResponse format
+    if (responseData.status === 'success' || responseData.status === 'error') {
+      if (responseData.status === 'error') {
+        const errorMessage = responseData.message || 'Failed to fetch organizations'
+        throw new Error(errorMessage)
+      }
+      // Return data from wrapped response
+      return responseData.data || []
+    } else if (Array.isArray(responseData)) {
+      // Direct array response
+      return responseData
+    } else if (responseData.results && Array.isArray(responseData.results)) {
+      // Paginated response format
+      return responseData.results
+    } else {
+      // Unknown format, try to extract data
+      console.warn('⚠️ [getUserOrganizations] Unexpected response format:', responseData)
+      return []
+    }
+  } catch (error) {
+    console.error('Error fetching organizations:', error)
+    throw error
   }
 }
 
@@ -585,6 +693,276 @@ export const createOrganization = async (name: string): Promise<OrganizationData
     // Generic error fallback
     console.error('Error creating organization:', error)
     const errorMessage = error instanceof Error ? error.message : 'Failed to create organization. Please try again.'
+    showToast.error(errorMessage)
+    throw new Error(errorMessage)
+  }
+}
+
+export interface SigninRequest {
+  email: string
+  password: string
+}
+
+export interface SigninResponse {
+  access: string
+  refresh: string
+  user?: UserData
+  organization?: OrganizationData
+}
+
+/**
+ * Sign in user with email and password
+ */
+export const signin = async (email: string, password: string): Promise<ApiResponse<SigninResponse>> => {
+  try {
+    const requestBody = { email, password }
+    const endpoint = API_ENDPOINTS.AUTH.SIGNIN
+    
+    console.log('🔐 [signin] Starting signin request:', {
+      endpoint,
+      email: email.substring(0, 3) + '***', // Log partial email for privacy
+      hasPassword: !!password,
+      requestBody: { email: email.substring(0, 3) + '***', hasPassword: !!password }
+    })
+    
+    let response: Response
+    try {
+      response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody),
+      })
+      
+      console.log('🔐 [signin] Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        url: response.url,
+        headers: Object.fromEntries(response.headers.entries())
+      })
+    } catch (fetchError) {
+      console.error('🔐 [signin] Fetch error (network/CORS):', fetchError)
+      const errorMessage = 'Network error: Unable to connect to the server. Please check your internet connection and ensure the backend is running.'
+      showToast.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    // Check for network/CORS errors before parsing response
+    if (!response || !response.ok) {
+      // Network error or CORS error - response might not exist
+      if (!response) {
+        const errorMessage = 'Cannot connect to the server. Please make sure the backend server is running.'
+        console.error('Network error: Server is not reachable', API_ENDPOINTS.AUTH.SIGNIN)
+        showToast.error(errorMessage)
+        throw new Error(errorMessage)
+      }
+
+      // HTTP error - try to parse error response
+      try {
+        const errorData: any = await response.json()
+        console.error('Backend error response for signin:', errorData)
+        
+        // Handle different error response formats
+        let errorMessage = errorData.message || errorData.detail || errorData.error || `Server error (${response.status})`
+        const errors = errorData.errors || []
+        
+        // Check for common Django REST framework error formats
+        if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+          errorMessage = errorData.non_field_errors.join(', ')
+        } else if (typeof errorData === 'object' && !errorData.message) {
+          // Try to extract error from object
+          const errorKeys = Object.keys(errorData)
+          if (errorKeys.length > 0) {
+            const firstError = errorData[errorKeys[0]]
+            errorMessage = Array.isArray(firstError) ? firstError.join(', ') : String(firstError)
+          }
+        }
+        
+        const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
+        showToast.error(errorText)
+        throw new Error(errorText)
+      } catch (parseError) {
+        // Failed to parse error response
+        const errorMessage = `Server error: ${response.status} ${response.statusText}`
+        console.error('Failed to parse error response:', parseError)
+        showToast.error(errorMessage)
+        throw new Error(errorMessage)
+      }
+    }
+
+    // Parse successful response
+    // Token endpoint may return tokens directly or wrapped in ApiResponse format
+    let responseData: any
+    try {
+      responseData = await response.json()
+      // Log the full response to see its structure
+      console.log('🔐 [signin] Full API response:', JSON.stringify(responseData, null, 2))
+    } catch (parseError) {
+      const errorMessage = 'Invalid response from server. Please try again.'
+      console.error('Failed to parse response:', parseError)
+      showToast.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    // Handle both response formats:
+    // 1. Direct token format: { access: "...", refresh: "...", user?: {...}, organization?: {...} }
+    // 2. Wrapped format: { status: "success", data: { access: "...", refresh: "...", organization?: {...} } }
+    let tokenData: SigninResponse | null = null
+    let apiResponse: ApiResponse<SigninResponse> | null = null
+
+    console.log('🔐 [signin] Parsing response data:', {
+      hasStatus: !!responseData.status,
+      status: responseData.status,
+      hasAccess: !!responseData.access,
+      hasData: !!responseData.data,
+      fullResponse: responseData
+    })
+
+    if (responseData.status === 'success' || responseData.status === 'error') {
+      // Wrapped ApiResponse format
+      apiResponse = responseData as ApiResponse<SigninResponse>
+      
+      if (apiResponse.status === 'error') {
+        const errorMessage = apiResponse.message || 'Failed to sign in'
+        const errors = apiResponse.errors || []
+        const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
+        showToast.error(errorText)
+        throw new Error(errorText)
+      }
+      
+      // Extract token data from wrapped response
+      tokenData = apiResponse.data
+      
+      // Check if organization is in the wrapped response data
+      if (apiResponse.data && !tokenData.organization && (apiResponse.data as any).organization) {
+        tokenData.organization = (apiResponse.data as any).organization
+      }
+    } else if (responseData.access) {
+      // Direct token format (Django REST framework style)
+      tokenData = responseData as SigninResponse
+    } else {
+      // Unknown format
+      const errorMessage = 'Invalid response format from server'
+      console.error('Unexpected response format:', responseData)
+      showToast.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+    
+    // Extract and store organization from response
+    // Response format: { status: "success", data: { access, refresh, organizations: [] } }
+    let organizationToStore: OrganizationData | null = null
+    
+    // 1. Check if organizations array is in responseData.data
+    if ((responseData as any).data?.organizations && Array.isArray((responseData as any).data.organizations)) {
+      const organizations = (responseData as any).data.organizations
+      console.log('📋 [signin] Organizations array found in response:', organizations)
+      
+      if (organizations.length > 0) {
+        // Use the first organization
+        organizationToStore = organizations[0]
+        console.log('✅ [signin] Organization found in organizations array:', organizationToStore)
+      } else {
+        console.warn('⚠️ [signin] Organizations array is empty. User may need to create an organization.')
+      }
+    }
+    // 2. Check if organization is in tokenData (for backward compatibility)
+    else if (tokenData.organization?.uuid) {
+      organizationToStore = tokenData.organization
+      console.log('✅ [signin] Organization found in tokenData:', organizationToStore)
+    }
+    // 3. Check other possible locations (for backward compatibility)
+    else {
+      console.log('⚠️ [signin] No organizations array found, checking other locations...')
+      
+      // Check top level
+      if ((responseData as any).organization?.uuid) {
+        organizationToStore = (responseData as any).organization
+        console.log('✅ [signin] Organization found at top level of responseData:', organizationToStore)
+      }
+      // Check organization_uuid at top level
+      else if ((responseData as any).organization_uuid) {
+        organizationToStore = {
+          uuid: (responseData as any).organization_uuid,
+          name: (responseData as any).organization_name || (responseData as any).organization?.name || 'Organization'
+        }
+        console.log('✅ [signin] Organization UUID found at top level:', organizationToStore)
+      }
+      // Check in data field (single organization object)
+      else if ((responseData as any).data?.organization?.uuid) {
+        organizationToStore = (responseData as any).data.organization
+        console.log('✅ [signin] Organization found in data.organization:', organizationToStore)
+      }
+      // Check organization_uuid in data field
+      else if ((responseData as any).data?.organization_uuid) {
+        organizationToStore = {
+          uuid: (responseData as any).data.organization_uuid,
+          name: (responseData as any).data.organization_name || 'Organization'
+        }
+        console.log('✅ [signin] Organization UUID found in data field:', organizationToStore)
+      }
+    }
+
+    // Store tokens
+    if (tokenData) {
+      if (tokenData.access) {
+        localStorage.setItem('accessToken', tokenData.access)
+      }
+      if (tokenData.refresh) {
+        localStorage.setItem('refreshToken', tokenData.refresh)
+      }
+      if (tokenData.user) {
+        localStorage.setItem('userEmail', tokenData.user.email)
+      }
+      
+      // Store organization if found
+      if (organizationToStore?.uuid) {
+        localStorage.setItem('organizationUuid', organizationToStore.uuid)
+        localStorage.setItem('organizationName', organizationToStore.name)
+        console.log('✅ [signin] Organization stored in localStorage:', {
+          uuid: organizationToStore.uuid,
+          name: organizationToStore.name
+        })
+      } else {
+        console.warn('⚠️ [signin] No organization found in signin response. Full response:', JSON.stringify(responseData, null, 2))
+      }
+      
+      // Also set authentication state
+      localStorage.setItem('isAuthenticated', 'true')
+      
+      showToast.success('Signed in successfully')
+    }
+
+    // Return in ApiResponse format for consistency
+    return apiResponse || {
+      status: 'success',
+      message: 'Signed in successfully',
+      errors: [],
+      data: tokenData!
+    }
+  } catch (error) {
+    // Handle network errors (CORS, connection refused, etc.)
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      const errorMessage = 'Cannot connect to the server. Please check:\n1. Backend server is running\n2. CORS is properly configured\n3. No firewall is blocking the connection'
+      console.error('Network error when signing in:', error)
+      showToast.error('Connection error. Please check if the server is running.')
+      throw new Error(errorMessage)
+    }
+
+    // Re-throw if it's already our custom error
+    if (error instanceof Error && (
+        error.message.startsWith('Cannot connect') || 
+        error.message.startsWith('Server error') ||
+        error.message.startsWith('Invalid response')
+    )) {
+      throw error
+    }
+
+    // Generic error fallback
+    console.error('Error signing in:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Failed to sign in. Please try again.'
     showToast.error(errorMessage)
     throw new Error(errorMessage)
   }

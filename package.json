@@ -7,9 +7,7 @@
     "dev": "vite",
     "build": "node node_modules/vite/bin/vite.js build && node -e \"require('fs').copyFileSync('staticwebapp.config.json', 'build/staticwebapp.config.json')\"",
     "build:analyze": "node node_modules/vite/bin/vite.js build --mode analyze",
-    "preview": "node node_modules/vite/bin/vite.js preview",
-    "server": "node server.js",
-    "dev:full": "concurrently \"npm run dev\" \"npm run server\""
+    "preview": "node node_modules/vite/bin/vite.js preview"
   },
   "dependencies": {
     "@measured/puck": "^0.20.1",
@@ -28,6 +26,7 @@
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
+    "@types/node": "^25.0.8",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.3.3",

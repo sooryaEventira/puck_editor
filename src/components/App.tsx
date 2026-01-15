@@ -9,7 +9,7 @@ import { EventFormProvider, useEventForm } from '../contexts/EventFormContext'
 import { logger } from '../utils/logger'
 import { setupPuckStyling } from '../utils/puckStyling'
 import { showToast } from '../utils/toast'
-import { verifyRegistrationOtp, createPassword, createOrganization } from '../services/authService'
+import { verifyRegistrationOtp, createPassword, createOrganization, signin, getUserOrganizations } from '../services/authService'
 
 // Lazy load heavy components for code splitting
 const EventHubPage = lazy(() => import('./eventhub').then(module => ({ default: module.EventHubPage })))
@@ -34,7 +34,28 @@ const LoadingFallback = () => (
 const App: React.FC = () => {
   // Check if user is authenticated (check localStorage on mount)
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('isAuthenticated') === 'true'
+    const authState = localStorage.getItem('isAuthenticated') === 'true'
+    const accessToken = localStorage.getItem('accessToken')
+    
+    // Log authentication state on app mount
+    console.log('🚀 [App] Application starting - Authentication check:', {
+      isAuthenticated: authState,
+      hasAccessToken: !!accessToken,
+      accessTokenLength: accessToken?.length || 0,
+      hasRefreshToken: !!localStorage.getItem('refreshToken'),
+      hasOrganization: !!localStorage.getItem('organizationUuid'),
+      userEmail: localStorage.getItem('userEmail') || 'not set'
+    })
+    
+    if (authState && !accessToken) {
+      console.warn('⚠️ [App] WARNING: isAuthenticated is true but no accessToken found! This is an invalid state.')
+    } else if (authState && accessToken) {
+      console.log('✅ [App] User is authenticated and ready to use the app')
+    } else {
+      console.log('ℹ️ [App] User is not authenticated - login required')
+    }
+    
+    return authState
   })
   const [showRegistration, setShowRegistration] = useState(false)
   const [showEmailVerification, setShowEmailVerification] = useState(false)
@@ -134,11 +155,95 @@ const App: React.FC = () => {
 
 
   // Handle login
-  const handleLogin = (_email: string, _password: string) => {
-    // TODO: Implement actual authentication logic
-    // For now, just set authenticated to true
-    setIsAuthenticated(true)
-    localStorage.setItem('isAuthenticated', 'true')
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      console.log('🔐 [App] Starting login process...')
+      
+      // Call the signin API
+      const response = await signin(email, password)
+      
+      console.log('🔐 [App] Signin response received:', response)
+      
+      // Check if signin was successful
+      if (response.status === 'success' && response.data) {
+        // Store tokens and user data (already done in authService, but ensure state is updated)
+        const { access, refresh, user, organization } = response.data
+        
+        if (access) {
+          localStorage.setItem('accessToken', access)
+          console.log('✅ [App] Access token stored')
+        }
+        if (refresh) {
+          localStorage.setItem('refreshToken', refresh)
+          console.log('✅ [App] Refresh token stored')
+        }
+        if (user?.email) {
+          localStorage.setItem('userEmail', user.email)
+          console.log('✅ [App] User email stored:', user.email)
+        }
+        
+        // Check if organization is already in localStorage (from signin function)
+        let storedOrgUuid = localStorage.getItem('organizationUuid')
+        
+        // Check if organization is in signin response
+        if (organization?.uuid) {
+          localStorage.setItem('organizationUuid', organization.uuid)
+          localStorage.setItem('organizationName', organization.name)
+          storedOrgUuid = organization.uuid
+          console.log('✅ [App] Organization from signin response:', {
+            uuid: organization.uuid,
+            name: organization.name
+          })
+        }
+        
+        // If still no organization, try to fetch user's organizations
+        if (!storedOrgUuid) {
+          try {
+            console.log('🔍 [App] No organization found, fetching user organizations...')
+            const organizations = await getUserOrganizations()
+            console.log('📋 [App] Organizations fetched:', organizations)
+            if (organizations && organizations.length > 0) {
+              const userOrg = organizations[0] // Use first organization
+              localStorage.setItem('organizationUuid', userOrg.uuid)
+              localStorage.setItem('organizationName', userOrg.name)
+              storedOrgUuid = userOrg.uuid
+              console.log('✅ [App] Organization fetched and stored:', {
+                uuid: userOrg.uuid,
+                name: userOrg.name
+              })
+            } else {
+              console.warn('⚠️ [App] User has no organizations. They may need to create one.')
+            }
+          } catch (orgError) {
+            console.error('❌ [App] Could not fetch organizations:', orgError)
+            // Continue without organization - user might need to create one
+          }
+        }
+        
+        // Log final organization state
+        console.log('🏢 [App] Final organization state:', {
+          hasOrganizationUuid: !!localStorage.getItem('organizationUuid'),
+          organizationUuid: localStorage.getItem('organizationUuid') || 'not set',
+          organizationName: localStorage.getItem('organizationName') || 'not set'
+        })
+        
+        // Set authenticated state
+        localStorage.setItem('isAuthenticated', 'true')
+        setIsAuthenticated(true)
+        
+        // Navigate to dashboard
+        setCurrentView('dashboard')
+        window.history.pushState({}, '', '/dashboard')
+        console.log('✅ [App] Login successful, navigating to dashboard')
+      } else {
+        // Signin failed - error already shown by authService
+        console.error('❌ [App] Login failed:', response)
+      }
+    } catch (error) {
+      // Error is already handled in authService with toast
+      console.error('❌ [App] Login error:', error)
+      // Don't set authenticated state on error
+    }
   }
 
   // Handle registration
@@ -185,19 +290,30 @@ const App: React.FC = () => {
       const response = await createPassword(registrationEmail, password)
       
       // Store tokens in localStorage if available
+      console.log('🔐 [App] Password created successfully, storing tokens...')
       if (response.data) {
         const { access, refresh, user } = response.data
         if (access) {
           localStorage.setItem('accessToken', access)
+          console.log('✅ [App] Access token stored:', {
+            length: access.length,
+            preview: `${access.substring(0, 20)}...`
+          })
+        } else {
+          console.warn('⚠️ [App] No access token in response')
         }
         if (refresh) {
           localStorage.setItem('refreshToken', refresh)
+          console.log('✅ [App] Refresh token stored')
         }
         
         // Store user data
         if (user?.email) {
           localStorage.setItem('userEmail', user.email)
+          console.log('✅ [App] User email stored:', user.email)
         }
+      } else {
+        console.warn('⚠️ [App] No data in response')
       }
       
       // Navigate to eventspace setup page - always navigate if API call succeeded
@@ -223,15 +339,31 @@ const App: React.FC = () => {
       const organization = await createOrganization(eventspaceName)
       
       // Store organization data in localStorage
+      console.log('🏢 [App] Organization created, storing data...')
       if (organization.uuid) {
         localStorage.setItem('organizationUuid', organization.uuid)
         localStorage.setItem('organizationName', organization.name)
+        console.log('✅ [App] Organization data stored:', {
+          uuid: organization.uuid,
+          name: organization.name
+        })
       }
       
       // Complete setup and authenticate user
       // Set authentication state first
+      console.log('✅ [App] Authentication complete! Setting authenticated state...')
       setIsAuthenticated(true)
       localStorage.setItem('isAuthenticated', 'true')
+      
+      // Verify authentication state
+      const accessToken = localStorage.getItem('accessToken')
+      console.log('🔍 [App] Final authentication check:', {
+        isAuthenticated: true,
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!localStorage.getItem('refreshToken'),
+        hasOrganization: !!organization.uuid,
+        userEmail: localStorage.getItem('userEmail')
+      })
       
       // Hide eventspace setup page
       setShowEventspaceSetup(false)
@@ -243,6 +375,7 @@ const App: React.FC = () => {
       showToast.success('Organization created successfully!')
       
       logger.debug('✅ Organization created, navigating to dashboard')
+      console.log('🎉 [App] User fully authenticated and ready to use the app!')
     } catch (error) {
       // Error is already handled in authService with toast
       // Set local error state for UI display
@@ -271,6 +404,10 @@ const App: React.FC = () => {
     localStorage.removeItem('organizationUuid')
     localStorage.removeItem('organizationName')
     
+    // Redirect to login page
+    window.history.pushState({}, '', '/login')
+    console.log('🚪 [App] User logged out, redirected to /login')
+    
     // Show logout confirmation
     showToast.success('Logged out successfully')
   }
@@ -278,14 +415,16 @@ const App: React.FC = () => {
   // Handle social sign-in (placeholder)
   const handleGoogleSignIn = () => {
     // TODO: Implement Google OAuth
-    setIsAuthenticated(true)
-    localStorage.setItem('isAuthenticated', 'true')
+    console.warn('⚠️ [App] Google sign-in is not yet implemented. Please use email registration/login.')
+    showToast.error('Google sign-in is not yet implemented. Please use email registration.')
+    // Don't set authenticated state without a token
   }
 
   const handleMicrosoftSignIn = () => {
     // TODO: Implement Microsoft OAuth
-    setIsAuthenticated(true)
-    localStorage.setItem('isAuthenticated', 'true')
+    console.warn('⚠️ [App] Microsoft sign-in is not yet implemented. Please use email registration/login.')
+    showToast.error('Microsoft sign-in is not yet implemented. Please use email registration.')
+    // Don't set authenticated state without a token
   }
 
   const handleMagicLinkSignIn = () => {
@@ -298,6 +437,15 @@ const App: React.FC = () => {
       return setupPuckStyling()
     }
   }, [showPreview, isAuthenticated])
+
+  // Log when authentication state changes
+  useEffect(() => {
+    console.log('🔐 [App] Authentication state changed:', {
+      isAuthenticated,
+      hasAccessToken: !!localStorage.getItem('accessToken'),
+      currentView
+    })
+  }, [isAuthenticated, currentView])
 
   // Store loadPage in a ref to avoid re-running effect when function reference changes
   const loadPageRef = useRef(loadPage)
@@ -399,6 +547,78 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated])
 
+  // Fetch organization on mount if authenticated but missing
+  useEffect(() => {
+    const fetchOrgIfNeeded = async () => {
+      const accessToken = localStorage.getItem('accessToken')
+      const organizationUuid = localStorage.getItem('organizationUuid')
+      
+      if (isAuthenticated && accessToken && !organizationUuid) {
+        try {
+          console.log('🔍 [App] Fetching organization on mount...')
+          const organizations = await getUserOrganizations()
+          console.log('📋 [App] Organizations fetched on mount:', organizations)
+          if (organizations && organizations.length > 0) {
+            const userOrg = organizations[0]
+            localStorage.setItem('organizationUuid', userOrg.uuid)
+            localStorage.setItem('organizationName', userOrg.name)
+            console.log('✅ [App] Organization fetched and stored on mount:', {
+              uuid: userOrg.uuid,
+              name: userOrg.name
+            })
+          } else {
+            console.warn('⚠️ [App] User has no organizations on mount.')
+          }
+        } catch (error) {
+          console.error('❌ [App] Could not fetch organization on mount:', error)
+        }
+      }
+    }
+    
+    fetchOrgIfNeeded()
+  }, [isAuthenticated])
+
+  // Handle URL routing - check pathname and update URL accordingly
+  useEffect(() => {
+    const path = window.location.pathname
+    const hasAccessToken = !!localStorage.getItem('accessToken')
+    
+    // Check if authentication state is valid (must have token if authenticated)
+    const isValidAuth = isAuthenticated && hasAccessToken
+    
+    // If user is not authenticated or doesn't have a token
+    if (!isValidAuth) {
+      // Clear invalid authentication state
+      if (isAuthenticated && !hasAccessToken) {
+        console.warn('⚠️ [App] Invalid auth state detected - isAuthenticated is true but no token. Clearing state.')
+        setIsAuthenticated(false)
+        localStorage.removeItem('isAuthenticated')
+        // Reset view to dashboard (will be overridden by login page)
+        setCurrentView('dashboard')
+      }
+      
+      // If showing registration or other auth flows, update URL accordingly
+      if (showRegistration && path !== '/register') {
+        window.history.pushState({}, '', '/register')
+        console.log('📍 [App] Updated URL to /register')
+      } else if (!showRegistration && !showEmailVerification && !showCreatePassword && !showEventspaceSetup) {
+        // Not showing any auth flow, ensure we're on /login
+        if (path !== '/login') {
+          window.history.pushState({}, '', '/login')
+          console.log('📍 [App] Redirecting to /login - user not authenticated or missing token')
+        }
+      }
+    } else {
+      // User is authenticated and has token
+      // If on /login or /register, redirect to dashboard
+      if (path === '/login' || path === '/register') {
+        window.history.pushState({}, '', '/dashboard')
+        setCurrentView('dashboard')
+        console.log('📍 [App] Redirecting authenticated user from /login to /dashboard')
+      }
+    }
+  }, [isAuthenticated, showRegistration, showEmailVerification, showCreatePassword, showEventspaceSetup])
+
   // Show login, registration, email verification, password creation, or eventspace setup page if not authenticated
   if (!isAuthenticated) {
     if (showEventspaceSetup) {
@@ -448,8 +668,15 @@ const App: React.FC = () => {
           <RegistrationPage
             onSubmit={handleRegistration}
             onTermsClick={() => {}}
-            onAlreadyHaveAccount={() => setShowRegistration(false)}
-            onClose={() => setShowRegistration(false)}
+            onAlreadyHaveAccount={() => {
+              setShowRegistration(false)
+              window.history.pushState({}, '', '/login')
+              console.log('📍 [App] Navigating back to login page')
+            }}
+            onClose={() => {
+              setShowRegistration(false)
+              window.history.pushState({}, '', '/login')
+            }}
           />
         </Suspense>
       )
@@ -463,7 +690,11 @@ const App: React.FC = () => {
           onMicrosoftSignIn={handleMicrosoftSignIn}
           onMagicLinkSignIn={handleMagicLinkSignIn}
           onForgotPassword={() => {}}
-          onNavigateToRegistration={() => setShowRegistration(true)}
+          onNavigateToRegistration={() => {
+            setShowRegistration(true)
+            window.history.pushState({}, '', '/register')
+            console.log('📍 [App] Navigating to registration page')
+          }}
         />
       </Suspense>
     )
