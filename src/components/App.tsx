@@ -9,7 +9,7 @@ import { EventFormProvider, useEventForm } from '../contexts/EventFormContext'
 import { logger } from '../utils/logger'
 import { setupPuckStyling } from '../utils/puckStyling'
 import { showToast } from '../utils/toast'
-import { verifyRegistrationOtp, createPassword, createOrganization } from '../services/authService'
+import { verifyRegistrationOtp, createPassword, createOrganization, signIn, sendRegistrationOtp } from '../services/authService'
 
 // Lazy load heavy components for code splitting
 const EventHubPage = lazy(() => import('./eventhub').then(module => ({ default: module.EventHubPage })))
@@ -134,26 +134,78 @@ const App: React.FC = () => {
 
 
   // Handle login
-  const handleLogin = (_email: string, _password: string) => {
-    // TODO: Implement actual authentication logic
-    // For now, just set authenticated to true
-    setIsAuthenticated(true)
-    localStorage.setItem('isAuthenticated', 'true')
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      // Call the sign in API
+      const response = await signIn(email, password)
+      
+      // Store tokens in localStorage if available
+      if (response.data) {
+        const { access, refresh, organizations } = response.data
+        if (access) {
+          localStorage.setItem('accessToken', access)
+        }
+        if (refresh) {
+          localStorage.setItem('refreshToken', refresh)
+        }
+        
+        // Store email for reference
+        localStorage.setItem('userEmail', email)
+        
+        // Store organization if available
+        if (organizations && organizations.length > 0) {
+          const firstOrg = organizations[0]
+          if (firstOrg.uuid) {
+            localStorage.setItem('organizationUuid', firstOrg.uuid)
+          }
+          if (firstOrg.name) {
+            localStorage.setItem('organizationName', firstOrg.name)
+          }
+        }
+      }
+      
+      // Set authentication state
+      setIsAuthenticated(true)
+      localStorage.setItem('isAuthenticated', 'true')
+      
+      // Navigate to dashboard
+      setCurrentView('dashboard')
+    } catch (error) {
+      // Error is already handled in authService with toast
+      // Authentication failed, user remains on login page
+    }
   }
 
   // Handle registration
-  const handleRegistration = (email: string) => {
-    // TODO: Implement actual registration logic (send OTP email)
-    // Store email and navigate to verification page
-    setRegistrationEmail(email)
-    setShowRegistration(false)
-    setShowEmailVerification(true)
+  const handleRegistration = async (email: string) => {
+    try {
+      // Call the send OTP API
+      const response = await sendRegistrationOtp(email)
+      
+      if (response.status === 'success') {
+        // Toast notification is already shown by authService
+        // Store email and navigate to verification page
+        setRegistrationEmail(email)
+        setShowRegistration(false)
+        setShowEmailVerification(true)
+      }
+    } catch (error) {
+      // Error is already handled in authService with toast
+      // Registration failed, user remains on registration page
+    }
   }
 
   // Handle email verification
   const handleEmailVerification = async (code: string) => {
     setIsVerifyingOtp(true)
     setOtpVerificationError(null)
+
+    // Log OTP for debugging
+    console.log('🔐 [OTP Verification] OTP entered:', {
+      email: registrationEmail,
+      otp: code,
+      otpLength: code.length
+    })
 
     try {
       // Call the verify OTP API

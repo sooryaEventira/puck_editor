@@ -10,6 +10,7 @@ export interface ApiResponse<T = any> {
 
 export interface SendOtpRequest {
   email: string
+  otp?: string
 }
 
 export interface SendOtpResponse {
@@ -50,6 +51,12 @@ export interface CreatePasswordResponse {
   refresh: string
 }
 
+export interface SignInResponse {
+  access: string
+  refresh: string
+  organizations: any[]
+}
+
 export interface CreateOrganizationRequest {
   name: string
 }
@@ -67,14 +74,19 @@ export interface OrganizationData {
 /**
  * Send OTP to user's email for registration
  */
-export const sendRegistrationOtp = async (email: string): Promise<ApiResponse<SendOtpResponse>> => {
+export const sendRegistrationOtp = async (email: string, otp?: string): Promise<ApiResponse<SendOtpResponse>> => {
   try {
+    const requestBody: SendOtpRequest = { email }
+    if (otp) {
+      requestBody.otp = otp
+    }
+
     const response = await fetch(API_ENDPOINTS.AUTH.REGISTER_SEND_OTP, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify(requestBody),
     })
 
     // Check for network/CORS errors before parsing response
@@ -106,9 +118,15 @@ export const sendRegistrationOtp = async (email: string): Promise<ApiResponse<Se
     let data: ApiResponse<SendOtpResponse>
     try {
       data = await response.json()
+      // Log OTP send response
+      console.log('📧 [Registration] Send OTP response:', {
+        status: data.status,
+        message: data.message,
+        email: data.data?.email,
+        fullResponse: data
+      })
     } catch (parseError) {
       const errorMessage = 'Invalid response from server. Please try again.'
-      console.error('Failed to parse response:', parseError)
       showToast.error(errorMessage)
       throw new Error(errorMessage)
     }
@@ -156,6 +174,14 @@ export const sendRegistrationOtp = async (email: string): Promise<ApiResponse<Se
  * Verify OTP for email registration
  */
 export const verifyRegistrationOtp = async (email: string, otp: string): Promise<ApiResponse<VerifyOtpResponse>> => {
+  // Log OTP being verified
+  console.log('🔐 [OTP Verification] Verifying OTP:', {
+    email,
+    otp,
+    otpLength: otp.length,
+    endpoint: API_ENDPOINTS.AUTH.REGISTER_VERIFY_OTP
+  })
+
   try {
     const response = await fetch(API_ENDPOINTS.AUTH.REGISTER_VERIFY_OTP, {
       method: 'POST',
@@ -194,9 +220,16 @@ export const verifyRegistrationOtp = async (email: string, otp: string): Promise
     let data: ApiResponse<VerifyOtpResponse>
     try {
       data = await response.json()
+      // Log OTP verification response
+      console.log('🔐 [OTP Verification] Verify OTP response:', {
+        status: data.status,
+        message: data.message,
+        email,
+        otp,
+        fullResponse: data
+      })
     } catch (parseError) {
       const errorMessage = 'Invalid response from server. Please try again.'
-      console.error('Failed to parse response:', parseError)
       showToast.error(errorMessage)
       throw new Error(errorMessage)
     }
@@ -298,9 +331,17 @@ export const createPassword = async (email: string, password: string): Promise<A
     let data: ApiResponse<CreatePasswordResponse>
     try {
       data = await response.json()
+      // Log authentication response
+      console.log('🔐 [Authentication] Password creation response:', {
+        status: data.status,
+        message: data.message,
+        hasAccessToken: !!data.data?.access,
+        hasRefreshToken: !!data.data?.refresh,
+        userEmail: data.data?.user?.email,
+        fullResponse: data
+      })
     } catch (parseError) {
       const errorMessage = 'Invalid response from server. Please try again.'
-      console.error('Failed to parse response:', parseError)
       showToast.error(errorMessage)
       throw new Error(errorMessage)
     }
@@ -339,6 +380,115 @@ export const createPassword = async (email: string, password: string): Promise<A
 
     // Generic error fallback
     const errorMessage = error instanceof Error ? error.message : 'Failed to create password. Please try again.'
+    showToast.error(errorMessage)
+    throw new Error(errorMessage)
+  }
+}
+
+/**
+ * Sign in with email and password
+ */
+export const signIn = async (email: string, password: string): Promise<ApiResponse<SignInResponse>> => {
+  try {
+    const response = await fetch(API_ENDPOINTS.AUTH.SIGNIN, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ email, password }),
+    })
+
+    // Check for network/CORS errors before parsing response
+    if (!response || !response.ok) {
+      if (!response) {
+        const errorMessage = 'Cannot connect to the server. Please make sure the backend server is running.'
+        showToast.error(errorMessage)
+        throw new Error(errorMessage)
+      }
+
+      // HTTP error - try to parse error response
+      try {
+        const errorData: any = await response.json()
+        
+        // Handle different error response formats
+        let errorMessage = errorData.message || errorData.detail || `Server error (${response.status})`
+        const errors = errorData.errors || []
+        
+        // Check for common Django REST framework error formats
+        if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+          errorMessage = errorData.non_field_errors.join(', ')
+        } else if (typeof errorData === 'object' && !errorData.message) {
+          const errorKeys = Object.keys(errorData)
+          if (errorKeys.length > 0) {
+            const firstError = errorData[errorKeys[0]]
+            errorMessage = Array.isArray(firstError) ? firstError.join(', ') : String(firstError)
+          }
+        }
+        
+        const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
+        showToast.error(errorText)
+        throw new Error(errorText)
+      } catch (parseError) {
+        const errorMessage = `Server error: ${response.status} ${response.statusText}`
+        showToast.error(errorMessage)
+        throw new Error(errorMessage)
+      }
+    }
+
+    // Parse successful response
+    let data: ApiResponse<SignInResponse>
+    try {
+      data = await response.json()
+      // Log authentication response
+      console.log('🔐 [Authentication] Sign in response:', {
+        status: data.status,
+        message: data.message,
+        hasAccessToken: !!data.data?.access,
+        hasRefreshToken: !!data.data?.refresh,
+        organizationsCount: data.data?.organizations?.length || 0,
+        fullResponse: data
+      })
+    } catch (parseError) {
+      const errorMessage = 'Invalid response from server. Please try again.'
+      showToast.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    // Check if response has error status
+    if (data.status === 'error') {
+      const errorMessage = data.message || 'Failed to sign in'
+      const errors = data.errors || []
+      const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
+      showToast.error(errorText)
+      throw new Error(errorText)
+    }
+
+    // Success response
+    if (data.status === 'success') {
+      showToast.success(data.message || 'Signed in successfully')
+    }
+
+    return data
+  } catch (error) {
+    // Handle network errors (CORS, connection refused, etc.)
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      const errorMessage = 'Cannot connect to the server. Please check:\n1. Backend server is running\n2. CORS is properly configured\n3. No firewall is blocking the connection'
+      showToast.error('Connection error. Please check if the server is running.')
+      throw new Error(errorMessage)
+    }
+
+    // Re-throw if it's already our custom error
+    if (error instanceof Error && (
+        error.message.startsWith('Cannot connect') || 
+        error.message.startsWith('Server error') ||
+        error.message.startsWith('Invalid response')
+    )) {
+      throw error
+    }
+
+    // Generic error fallback
+    const errorMessage = error instanceof Error ? error.message : 'Failed to sign in. Please try again.'
     showToast.error(errorMessage)
     throw new Error(errorMessage)
   }

@@ -3,6 +3,7 @@ import { XClose } from '@untitled-ui/icons-react'
 import logoImage from '../assets/images/Logo.png'
 import backgroundImage from '../assets/images/background.png'
 import { sendRegistrationOtp } from '../services/authService'
+import { validateEmail } from '../utils/validation'
 
 interface RegistrationPageProps {
   onSubmit?: (email: string) => void
@@ -31,8 +32,10 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({
       return
     }
 
-    if (!email.trim()) {
-      setError('Please enter your email')
+    // Validate email
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.isValid) {
+      setError(emailValidation.error || 'Invalid email')
       return
     }
 
