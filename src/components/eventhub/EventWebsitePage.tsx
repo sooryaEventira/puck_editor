@@ -220,26 +220,26 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
         zones: {}
       }
       
-      // Save page to server
-      const apiUrl = API_ENDPOINTS.SAVE_PAGE || '/api/save-page'
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          data: schedulePageData,
-          filename: `${pageId}.json`
-        })
-      })
+      // // Save page to server
+      // const apiUrl = API_ENDPOINTS.SAVE_PAGE || '/api/save-page'
+      // const response = await fetch(apiUrl, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     data: schedulePageData,
+      //     filename: `${pageId}.json`
+      //   })
+      // })
       
-      if (response.ok) {
-        // Navigate to editor with the new schedule page
-        window.history.pushState({}, '', `/event/website/editor/${pageId}`)
-        window.dispatchEvent(new PopStateEvent('popstate'))
-      } else {
-        console.error('Failed to save schedule page')
-      }
+      // if (response.ok) {
+      //   // Navigate to editor with the new schedule page
+      //   window.history.pushState({}, '', `/event/website/editor/${pageId}`)
+      //   window.dispatchEvent(new PopStateEvent('popstate'))
+      // } else {
+      //   console.error('Failed to save schedule page')
+      // }
     } catch (error) {
       console.error('Error creating schedule page:', error)
     }

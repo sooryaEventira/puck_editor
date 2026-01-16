@@ -12,16 +12,26 @@ import ContactFooter from '../advanced/ContactFooter'
 const TemplateSelectionPage: React.FC = () => {
   const { eventData, createdEvent } = useEventForm()
   const [bannerUrl, setBannerUrl] = useState<string>('')
+  const [isLoadingBanner, setIsLoadingBanner] = useState<boolean>(true)
 
   // Prioritize createdEvent data from API, fallback to eventData from form
   const displayEventName = createdEvent?.eventName || eventData?.eventName
   const displayStartDate = createdEvent?.startDate || eventData?.startDate
   const displayLocation = createdEvent?.location || eventData?.location
 
-  // Load banner from backend (createdEvent), localStorage, or eventData
+  // Load banner: Priority 1 = localStorage (most reliable), Priority 2 = backend, Priority 3 = eventData
   useEffect(() => {
-    const loadBanner = async () => {
-      // Priority 1: Try to get banner URL from createdEvent (backend response)
+    // Priority 1: Check localStorage first (where banner is stored during event creation)
+    const storedBanner = localStorage.getItem('event-form-banner')
+    if (storedBanner) {
+      console.log('✅ TemplateSelectionPage: Banner loaded from localStorage')
+      setBannerUrl(storedBanner)
+      setIsLoadingBanner(false)
+      return
+    }
+
+    // Priority 2: Try to get banner URL from createdEvent (backend response)
+    const loadBannerFromBackend = async () => {
       if (createdEvent) {
         // Check for various possible banner URL field names
         const bannerUrlFromBackend = (createdEvent as any).banner || 
@@ -31,48 +41,111 @@ const TemplateSelectionPage: React.FC = () => {
                                      (createdEvent as any).banner_image
         
         if (bannerUrlFromBackend && typeof bannerUrlFromBackend === 'string') {
+          let finalBannerUrl = bannerUrlFromBackend
+          
           // If it's a full URL (starts with http/https), use it directly
           if (bannerUrlFromBackend.startsWith('http://') || bannerUrlFromBackend.startsWith('https://')) {
-            setBannerUrl(bannerUrlFromBackend)
-            return
+            finalBannerUrl = bannerUrlFromBackend
+            // Convert HTTP to HTTPS if needed (to avoid redirect issues)
+            if (finalBannerUrl.startsWith('http://') && finalBannerUrl.includes('azurewebsites.net')) {
+              finalBannerUrl = finalBannerUrl.replace('http://', 'https://')
+            }
           }
           // If it's a relative path (starts with /), prepend the API base URL
-          if (bannerUrlFromBackend.startsWith('/')) {
-            const fullUrl = `${env.AUTH_API_URL}${bannerUrlFromBackend}`
-            setBannerUrl(fullUrl)
-            return
+          else if (bannerUrlFromBackend.startsWith('/')) {
+            finalBannerUrl = `${env.AUTH_API_URL}${bannerUrlFromBackend}`
           }
           // If it doesn't start with /, it might be a relative path without leading slash
-          // Try prepending the API base URL with a slash
-          const fullUrl = `${env.AUTH_API_URL}/${bannerUrlFromBackend}`
-          setBannerUrl(fullUrl)
+          else {
+            finalBannerUrl = `${env.AUTH_API_URL}/${bannerUrlFromBackend}`
+          }
+          
+          console.log('🌐 TemplateSelectionPage: Attempting to load banner from backend:', finalBannerUrl)
+          console.log('📋 CreatedEvent object:', createdEvent)
+          
+          // Fetch with authentication to avoid CORS issues
+          const accessToken = localStorage.getItem('accessToken')
+          const organizationUuid = localStorage.getItem('organizationUuid')
+          
+          const headers: HeadersInit = {}
+          if (accessToken) {
+            headers['Authorization'] = `Bearer ${accessToken}`
+          }
+          if (organizationUuid) {
+            headers['X-Organization'] = organizationUuid
+          }
+          
+          fetch(finalBannerUrl, {
+            method: 'GET',
+            headers,
+            credentials: 'include',
+            redirect: 'follow', // Follow redirects (301, 302, etc.)
+          })
+            .then(async (response) => {
+              if (response.ok) {
+                const blob = await response.blob()
+                const reader = new FileReader()
+                reader.onload = () => {
+                  const dataUrl = reader.result as string
+                  console.log('✅ TemplateSelectionPage: Banner loaded from backend with authentication')
+                  setBannerUrl(dataUrl)
+                  setIsLoadingBanner(false)
+                }
+                reader.onerror = () => {
+                  console.error('❌ TemplateSelectionPage: Error converting banner blob to data URL')
+                  loadEventDataFallback()
+                }
+                reader.readAsDataURL(blob)
+              } else {
+                console.warn('⚠️ TemplateSelectionPage: Failed to fetch banner with auth, status:', response.status, response.statusText)
+                loadEventDataFallback()
+              }
+            })
+            .catch((fetchError) => {
+              console.warn('⚠️ TemplateSelectionPage: Error fetching banner with auth:', fetchError)
+              console.log('Falling back to localStorage or eventData')
+              loadEventDataFallback()
+            })
+          
           return
         }
       }
-
-      // Priority 2: Try to get banner from eventData (if it's still a File)
+      
+      // If no banner URL in createdEvent, try eventData fallback
+      loadEventDataFallback()
+    }
+    
+    const loadEventDataFallback = () => {
+      // Priority 3: Try to get banner from eventData (if it's still a File)
       if (eventData?.banner && eventData.banner instanceof File) {
+        console.log('📁 TemplateSelectionPage: Reading banner from eventData File')
         const reader = new FileReader()
         reader.onload = () => {
           const dataUrl = reader.result as string
           setBannerUrl(dataUrl)
           localStorage.setItem('event-form-banner', dataUrl)
+          setIsLoadingBanner(false)
+          console.log('✅ TemplateSelectionPage: Banner loaded from eventData File and saved to localStorage')
         }
         reader.onerror = () => {
-          console.error('Error reading banner file')
+          console.error('❌ TemplateSelectionPage: Error reading banner file')
         }
         reader.readAsDataURL(eventData.banner)
         return
       }
 
-      // Priority 3: Try to load from localStorage
-      const storedBanner = localStorage.getItem('event-form-banner')
-      if (storedBanner) {
-        setBannerUrl(storedBanner)
-      }
+      console.log('⚠️ TemplateSelectionPage: No banner found')
+      console.log('📋 Debug info:', {
+        hasCreatedEvent: !!createdEvent,
+        createdEventKeys: createdEvent ? Object.keys(createdEvent) : [],
+        hasEventData: !!eventData,
+        eventDataBanner: eventData?.banner,
+        localStorageBanner: !!localStorage.getItem('event-form-banner')
+      })
+      setIsLoadingBanner(false)
     }
 
-    loadBanner()
+    loadBannerFromBackend()
   }, [createdEvent, eventData])
 
   const handlePrevious = () => {
@@ -179,7 +252,7 @@ const TemplateSelectionPage: React.FC = () => {
             ]}
             backgroundColor="#1a1a1a"
             textColor="#FFFFFF"
-            backgroundImage={bannerUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'}
+            backgroundImage={isLoadingBanner ? '' : (bannerUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80')}
             height="500px"
             alignment="center"
             overlayOpacity={0.4}

@@ -217,6 +217,20 @@ const FileUploadStep = forwardRef<FileUploadStepRef, FileUploadStepProps>(({
       console.log('🌐 [FileUploadStep] Calling createEvent API...')
       const createdEventData = await createEvent(eventRequest)
 
+      // Ensure banner is stored in localStorage before navigation
+      if (formData.banner && formData.banner instanceof File) {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const dataUrl = reader.result as string
+          localStorage.setItem('event-form-banner', dataUrl)
+          console.log('💾 [FileUploadStep] Banner saved to localStorage')
+        }
+        reader.onerror = () => {
+          console.error('❌ [FileUploadStep] Error saving banner to localStorage')
+        }
+        reader.readAsDataURL(formData.banner)
+      }
+
       // Store the created event in context
       console.log('💾 [FileUploadStep] Storing created event in context:', {
         uuid: createdEventData.uuid,

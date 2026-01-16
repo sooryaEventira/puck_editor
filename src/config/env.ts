@@ -49,9 +49,9 @@ export const env = {
  */
 export const API_ENDPOINTS = {
   // Page Management endpoints (for editor)
-  SAVE_PAGE: env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/save-page` : '',
-  GET_PAGES: env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/pages` : '',
-  GET_PAGE: (filename: string) => env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/pages/${filename}` : '',
+  // SAVE_PAGE: env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/save-page` : '',
+  // GET_PAGES: env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/pages` : '',
+  // GET_PAGE: (filename: string) => env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/pages/${filename}` : '',
   // Auth endpoints (authentication backend)
   AUTH: {
     REGISTER_SEND_OTP: `${env.AUTH_API_URL}/api/v1/auth/register/send-otp/`,
@@ -63,7 +63,6 @@ export const API_ENDPOINTS = {
   // Event endpoints
   EVENT: {
     CREATE: `${env.AUTH_API_URL}/api/v1/event/`,
-    LIST: `${env.AUTH_API_URL}/api/v1/event/`,
   },
   // Timezone endpoints
   TIMEZONE: {

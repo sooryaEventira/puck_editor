@@ -2,81 +2,6 @@ import { API_ENDPOINTS } from '../config/env'
 import { showToast } from '../utils/toast'
 import type { ApiResponse } from './authService'
 
-// Helper function to get auth headers
-const getAuthHeaders = (requireAuth: boolean = true): HeadersInit => {
-  const accessToken = localStorage.getItem('accessToken')
-  const organizationUuid = localStorage.getItem('organizationUuid')
-  
-  if (requireAuth) {
-    if (!accessToken) {
-      const errorMessage = 'Authentication required. Please login again.'
-      showToast.error(errorMessage)
-      throw new Error(errorMessage)
-    }
-    if (!organizationUuid) {
-      const errorMessage = 'Organization UUID is missing. Please create or select an organization first.'
-      showToast.error(errorMessage)
-      throw new Error(errorMessage)
-    }
-  }
-
-  const headers: HeadersInit = { 'Content-Type': 'application/json' }
-  if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`
-  if (organizationUuid) headers['X-Organization'] = organizationUuid
-  return headers
-}
-
-// Helper function to handle HTTP errors
-const handleHttpError = async (response: Response, showErrorToast: boolean = true): Promise<never> => {
-  if (!response) {
-    const errorMessage = 'Cannot connect to the server. Please make sure the backend server is running.'
-    if (showErrorToast) showToast.error(errorMessage)
-    throw new Error(errorMessage)
-  }
-
-  // Handle specific status codes
-  if (response.status === 502) {
-    const errorMessage = 'Bad Gateway (502): The server is temporarily unavailable. Please try again later.'
-    if (showErrorToast) showToast.error(errorMessage)
-    throw new Error(errorMessage)
-  }
-
-  try {
-    const responseText = await response.text()
-    const errorData = JSON.parse(responseText)
-    const errorMessage = errorData.message || errorData.detail || errorData.error || `Server error (${response.status})`
-    const errorText = errorData.errors?.join(', ') || errorData.non_field_errors?.join(', ') || errorMessage
-    if (showErrorToast) showToast.error(errorText)
-    throw new Error(errorText)
-  } catch {
-    const errorMessage = response.status === 500
-      ? 'Internal server error. Please check the backend logs or try again later.'
-      : `Server error: ${response.status} ${response.statusText}`
-    if (showErrorToast) showToast.error(errorMessage)
-    throw new Error(errorMessage)
-  }
-}
-
-// Helper function to parse API response
-const parseApiResponse = <T>(apiResponse: ApiResponse<T>, defaultErrorMessage: string): T => {
-  if (!apiResponse || typeof apiResponse !== 'object') {
-    throw new Error('Invalid response format from server')
-  }
-  
-  if (apiResponse.status === 'error') {
-    const errorMessage = apiResponse.message || defaultErrorMessage
-    const errorText = apiResponse.errors?.join(', ') || errorMessage
-    showToast.error(errorText)
-    throw new Error(errorText)
-  }
-  
-  if (apiResponse.status !== 'success') {
-    throw new Error(`Unexpected response status: ${apiResponse.status}`)
-  }
-  
-  return apiResponse.data
-}
-
 export interface CreateEventRequest {
   eventName: string
   startDate: string
@@ -105,23 +30,6 @@ export interface CreateEventResponseData {
   [key: string]: any // Allow additional fields
 }
 
-export interface EventData {
-  uuid: string
-  eventName: string
-  startDate?: string
-  endDate?: string
-  location?: string
-  attendees?: number
-  eventExperience?: 'in-person' | 'virtual' | 'hybrid'
-  logo?: string
-  banner?: string
-  bannerUrl?: string
-  banner_url?: string
-  bannerImage?: string
-  banner_image?: string
-  [key: string]: any // Allow additional fields
-}
-
 export interface TimezoneData {
   uuid: string
   label: string
@@ -134,9 +42,28 @@ export interface TimezoneData {
  */
 export const createEvent = async (request: CreateEventRequest): Promise<CreateEventResponseData> => {
   try {
-    const headers = getAuthHeaders(true)
+    // Get access token from localStorage
+    const accessToken = localStorage.getItem('accessToken')
+    
+    if (!accessToken) {
+      const errorMessage = 'Authentication required. Please login again.'
+      showToast.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    // Get organization UUID from localStorage
+    const organizationUuid = localStorage.getItem('organizationUuid')
+    
+    if (!organizationUuid) {
+      const errorMessage = 'Organization UUID is missing. Please create or select an organization first.'
+      showToast.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    // Prepare FormData for file uploads
     const formData = new FormData()
     
+    // Add text fields
     formData.append('eventName', request.eventName)
     formData.append('startDate', request.startDate)
     formData.append('startDateTimeISO', request.startDateTimeISO)
@@ -149,63 +76,186 @@ export const createEvent = async (request: CreateEventRequest): Promise<CreateEv
     formData.append('attendees', request.attendees.toString())
     formData.append('eventExperience', request.eventExperience)
     formData.append('fixTimezoneForAttendees', request.fixTimezoneForAttendees.toString())
-    if (request.logo) formData.append('logo', request.logo)
-    if (request.banner) formData.append('banner', request.banner)
 
-    let response: Response
-    try {
-      response = await fetch(API_ENDPOINTS.EVENT.CREATE, {
-        method: 'POST',
-        headers: { ...headers, 'Content-Type': undefined } as any, // Remove Content-Type for FormData
-        credentials: 'include',
-        body: formData,
-      })
-    } catch (fetchError) {
-      // Handle CORS and network errors during fetch
-      if (fetchError instanceof TypeError) {
-        const errorMessage = 'CORS error: Cannot connect to the server. This may be due to:\n1. Backend server is not running\n2. CORS is not properly configured on the backend\n3. Network connectivity issues'
-        showToast.error('Connection error. Please check if the server is running and CORS is configured.')
+    // Add files if present
+    if (request.logo) {
+      formData.append('logo', request.logo)
+    }
+    if (request.banner) {
+      formData.append('banner', request.banner)
+    }
+
+    const response = await fetch(API_ENDPOINTS.EVENT.CREATE, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'X-Organization': organizationUuid,
+      },
+      credentials: 'include',
+      body: formData,
+    })
+
+    // Check for network/CORS errors before parsing response
+    if (!response || !response.ok) {
+      // Network error or CORS error - response might not exist
+      if (!response) {
+        const errorMessage = 'Cannot connect to the server. Please make sure the backend server is running.'
+        showToast.error(errorMessage)
         throw new Error(errorMessage)
       }
-      throw fetchError
+
+      // HTTP error - try to parse error response
+      try {
+        const responseText = await response.text()
+        
+        let errorData: any
+        try {
+          errorData = JSON.parse(responseText)
+        } catch (jsonError) {
+          // Response is not JSON
+          const errorMessage = response.status === 500 
+            ? 'Internal server error. The server encountered an unexpected error. Please check the backend logs or try again later.'
+            : `Server error: ${response.status} ${response.statusText}`
+          showToast.error(errorMessage)
+          throw new Error(errorMessage)
+        }
+        
+        // Handle different error response formats
+        let errorMessage = errorData.message || errorData.detail || errorData.error || `Server error (${response.status})`
+        const errors = errorData.errors || []
+        
+        // Check for common error formats
+        if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+          errorMessage = errorData.non_field_errors.join(', ')
+        } else if (typeof errorData === 'object' && !errorData.message && !errorData.detail) {
+          const errorKeys = Object.keys(errorData)
+          if (errorKeys.length > 0) {
+            const firstError = errorData[errorKeys[0]]
+            errorMessage = Array.isArray(firstError) ? firstError.join(', ') : String(firstError)
+          }
+        }
+        
+        const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
+        showToast.error(errorText)
+        throw new Error(errorText)
+      } catch (parseError) {
+        // Failed to parse error response
+        const errorMessage = response.status === 500
+          ? 'Internal server error. The server encountered an unexpected error. Please check the backend logs or try again later.'
+          : `Server error: ${response.status} ${response.statusText}`
+        showToast.error(errorMessage)
+        throw new Error(errorMessage)
+      }
     }
 
-    if (!response.ok) {
-      await handleHttpError(response)
+    // Parse successful response
+    let data: CreateEventResponseData
+    try {
+      const apiResponse: ApiResponse<CreateEventResponseData> = await response.json()
+      
+      // Validate response structure
+      if (!apiResponse || typeof apiResponse !== 'object') {
+        throw new Error('Invalid response format from server: response is not an object')
+      }
+      
+      // Check if response has error status
+      if (apiResponse.status === 'error') {
+        const errorMessage = apiResponse.message || 'Failed to create event'
+        const errors = apiResponse.errors || []
+        const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
+        showToast.error(errorText)
+        throw new Error(errorText)
+      }
+      
+      // Ensure status is 'success'
+      if (apiResponse.status !== 'success') {
+        const errorMessage = `Unexpected response status: ${apiResponse.status}. Expected 'success'.`
+        showToast.error('Server error: Unexpected response status.')
+        throw new Error(errorMessage)
+      }
+      
+      // Extract event data from the wrapped response
+      let responseData: any = apiResponse.data
+      
+      // Check if data field is an empty string (backend issue)
+      if (typeof responseData === 'string' && responseData === '') {
+        const errorMessage = 'Backend returned empty event data. The API response has status "success" but the "data" field is an empty string.'
+        showToast.error('Server error: Event data not returned. Please try again or contact support.')
+        throw new Error(errorMessage)
+      }
+      
+      // Validate that data field exists and is an object
+      if (!responseData || typeof responseData !== 'object') {
+        const errorMessage = `Invalid response format: event data should be an object, but received ${typeof responseData}. Value: ${JSON.stringify(responseData)}`
+        showToast.error('Server error: Invalid event data format.')
+        throw new Error(errorMessage)
+      }
+      
+      // Handle nested data structure: if responseData has a 'data' property with uuid, use that instead
+      if (responseData.data && typeof responseData.data === 'object' && responseData.data.uuid) {
+        responseData = responseData.data
+      }
+      
+      // Validate required fields (uuid and eventName)
+      if (!responseData.uuid) {
+        throw new Error('Invalid response format from server: missing uuid in event data')
+      }
+      
+      if (!responseData.eventName) {
+        throw new Error('Invalid response format from server: missing eventName in event data')
+      }
+      
+      // Map the response to CreateEventResponseData interface
+      data = {
+        uuid: String(responseData.uuid),
+        eventName: String(responseData.eventName),
+        startDate: responseData.startDate || undefined,
+        endDate: responseData.endDate || undefined,
+        location: responseData.location || undefined,
+        attendees: responseData.attendees || undefined,
+        eventExperience: responseData.eventExperience || undefined,
+        ...responseData,
+      }
+    } catch (parseError) {
+      // Check if it's our custom validation error - re-throw it
+      if (parseError instanceof Error && parseError.message.includes('Invalid response format')) {
+        showToast.error(parseError.message)
+        throw parseError
+      }
+      
+      // JSON parsing or other error
+      const errorMessage = 'Invalid response from server. Please try again.'
+      showToast.error(errorMessage)
+      throw new Error(errorMessage)
     }
 
-    const apiResponse: ApiResponse<CreateEventResponseData> = await response.json()
-    let responseData: any = parseApiResponse(apiResponse, 'Failed to create event')
-    
-    if (typeof responseData === 'string' && responseData === '') {
-      throw new Error('Backend returned empty event data')
-    }
-    
-    if (responseData.data?.uuid) {
-      responseData = responseData.data
-    }
-    
-    if (!responseData.uuid || !responseData.eventName) {
-      throw new Error('Invalid response format: missing required fields')
-    }
-
+    // Success - show toast notification
     showToast.success('Event created successfully')
-    return {
-      uuid: String(responseData.uuid),
-      eventName: String(responseData.eventName),
-      startDate: responseData.startDate || undefined,
-      endDate: responseData.endDate || undefined,
-      location: responseData.location || undefined,
-      attendees: responseData.attendees || undefined,
-      eventExperience: responseData.eventExperience || undefined,
-      ...responseData,
-    }
+
+    return data
   } catch (error) {
+    // Handle network errors (CORS, connection refused, etc.)
     if (error instanceof TypeError && error.message.includes('fetch')) {
+      const errorMessage = 'Cannot connect to the server. Please check:\n1. Backend server is running\n2. CORS is properly configured\n3. No firewall is blocking the connection'
       showToast.error('Connection error. Please check if the server is running.')
-      throw new Error('Cannot connect to the server')
+      throw new Error(errorMessage)
     }
-    throw error
+
+    // Re-throw if it's already our custom error
+    if (error instanceof Error && (
+        error.message.startsWith('Cannot connect') || 
+        error.message.startsWith('Server error') ||
+        error.message.startsWith('Invalid response') ||
+        error.message.startsWith('Authentication required') ||
+        error.message.startsWith('Organization UUID')
+    )) {
+      throw error
+    }
+
+    // Generic error fallback
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create event. Please try again.'
+    showToast.error(errorMessage)
+    throw new Error(errorMessage)
   }
 }
 
@@ -214,114 +264,175 @@ export const createEvent = async (request: CreateEventRequest): Promise<CreateEv
  */
 export const fetchTimezones = async (): Promise<TimezoneData[]> => {
   try {
-    const headers = getAuthHeaders(false)
-    let response: Response
-    try {
-      response = await fetch(API_ENDPOINTS.TIMEZONE.LIST, {
-        method: 'GET',
-        headers,
-        credentials: 'include',
-      })
-    } catch (fetchError) {
-      if (fetchError instanceof TypeError) {
-        throw new Error('CORS error: Cannot connect to the server. Please check if the server is running and CORS is configured.')
-      }
-      throw fetchError
+    // Get access token from localStorage (optional for timezones, but include if available)
+    const accessToken = localStorage.getItem('accessToken')
+    
+    // Get organization UUID from localStorage (optional for timezones, but include if available)
+    const organizationUuid = localStorage.getItem('organizationUuid')
+
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
     }
 
-    if (!response.ok) {
-      await handleHttpError(response, false)
+    // Add authorization if available
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`
     }
 
-    const apiResponse: ApiResponse<TimezoneData[]> = await response.json()
-    let responseData: any = parseApiResponse(apiResponse, 'Failed to fetch timezones')
-    
-    if (!responseData) return []
-    
-    const mapTimezone = (tz: any): TimezoneData => ({
-      uuid: String(tz.uuid),
-      label: String(tz.label || tz.name || ''),
-      name: String(tz.name || ''),
-      utc_offset: String(tz.utc_offset || '+00:00'),
+    // Add organization header if available
+    if (organizationUuid) {
+      headers['X-Organization'] = organizationUuid
+    }
+
+    const response = await fetch(API_ENDPOINTS.TIMEZONE.LIST, {
+      method: 'GET',
+      headers,
+      credentials: 'include',
     })
 
-    if (Array.isArray(responseData)) {
-      return responseData.map(mapTimezone).filter((tz: TimezoneData) => tz.uuid && tz.name)
-    }
-    
-    if (responseData.data && Array.isArray(responseData.data)) {
-      return responseData.data.map(mapTimezone).filter((tz: TimezoneData) => tz.uuid && tz.name)
-    }
-    
-    return responseData.uuid ? [mapTimezone(responseData)] : []
-  } catch (error) {
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Cannot connect to the server')
-    }
-    throw error
-  }
-}
-
-/**
- * Fetch all events
- */
-export const fetchEvents = async (): Promise<EventData[]> => {
-  try {
-    const headers = getAuthHeaders(true)
-    let response: Response
-    try {
-      response = await fetch(API_ENDPOINTS.EVENT.LIST, {
-        method: 'GET',
-        headers,
-        credentials: 'include',
-      })
-    } catch (fetchError) {
-      if (fetchError instanceof TypeError) {
-        const errorMessage = 'CORS error: Cannot connect to the server. This may be due to:\n1. Backend server is not running\n2. CORS is not properly configured on the backend\n3. Network connectivity issues'
-        showToast.error('Connection error. Please check if the server is running and CORS is configured.')
+    // Check for network/CORS errors before parsing response
+    if (!response || !response.ok) {
+      // Network error or CORS error - response might not exist
+      if (!response) {
+        const errorMessage = 'Cannot connect to the server. Please make sure the backend server is running.'
         throw new Error(errorMessage)
       }
-      throw fetchError
+
+      // HTTP error - try to parse error response
+      try {
+        const responseText = await response.text()
+        
+        let errorData: any
+        try {
+          errorData = JSON.parse(responseText)
+        } catch (jsonError) {
+          // Response is not JSON
+          const errorMessage = response.status === 500 
+            ? 'Internal server error. The server encountered an unexpected error. Please check the backend logs or try again later.'
+            : `Server error: ${response.status} ${response.statusText}`
+          throw new Error(errorMessage)
+        }
+        
+        // Handle different error response formats
+        let errorMessage = errorData.message || errorData.detail || errorData.error || `Server error (${response.status})`
+        const errors = errorData.errors || []
+        
+        // Check for common error formats
+        if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+          errorMessage = errorData.non_field_errors.join(', ')
+        } else if (typeof errorData === 'object' && !errorData.message && !errorData.detail) {
+          const errorKeys = Object.keys(errorData)
+          if (errorKeys.length > 0) {
+            const firstError = errorData[errorKeys[0]]
+            errorMessage = Array.isArray(firstError) ? firstError.join(', ') : String(firstError)
+          }
+        }
+        
+        const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
+        throw new Error(errorText)
+      } catch (parseError) {
+        // Failed to parse error response
+        const errorMessage = response.status === 500
+          ? 'Internal server error. The server encountered an unexpected error. Please check the backend logs or try again later.'
+          : `Server error: ${response.status} ${response.statusText}`
+        throw new Error(errorMessage)
+      }
     }
 
-    if (!response.ok) {
-      await handleHttpError(response)
+    // Parse successful response
+    let data: TimezoneData[]
+    try {
+      const apiResponse: ApiResponse<TimezoneData[]> = await response.json()
+      
+      // Validate response structure
+      if (!apiResponse || typeof apiResponse !== 'object') {
+        throw new Error('Invalid response format from server: response is not an object')
+      }
+      
+      // Check if response has error status
+      if (apiResponse.status === 'error') {
+        const errorMessage = apiResponse.message || 'Failed to fetch timezones'
+        const errors = apiResponse.errors || []
+        const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
+        throw new Error(errorText)
+      }
+      
+      // Ensure status is 'success'
+      if (apiResponse.status !== 'success') {
+        const errorMessage = `Unexpected response status: ${apiResponse.status}. Expected 'success'.`
+        throw new Error(errorMessage)
+      }
+      
+      // Extract timezone data from the wrapped response
+      let responseData: any = apiResponse.data
+      
+      // Check if data field is an empty string or null
+      if (!responseData) {
+        return []
+      }
+      
+      // Handle case where data might be an array directly
+      if (Array.isArray(responseData)) {
+        data = responseData.map((tz: any) => ({
+          uuid: String(tz.uuid),
+          label: String(tz.label || tz.name || ''),
+          name: String(tz.name || ''),
+          utc_offset: String(tz.utc_offset || '+00:00'),
+        }))
+      } else if (typeof responseData === 'object') {
+        // Handle nested data structure
+        if (responseData.data && Array.isArray(responseData.data)) {
+          data = responseData.data.map((tz: any) => ({
+            uuid: String(tz.uuid),
+            label: String(tz.label || tz.name || ''),
+            name: String(tz.name || ''),
+            utc_offset: String(tz.utc_offset || '+00:00'),
+          }))
+        } else {
+          // Single timezone object (unlikely but handle it)
+          data = [{
+            uuid: String(responseData.uuid),
+            label: String(responseData.label || responseData.name || ''),
+            name: String(responseData.name || ''),
+            utc_offset: String(responseData.utc_offset || '+00:00'),
+          }]
+        }
+      } else {
+        throw new Error('Invalid response format: timezone data should be an array')
+      }
+      
+      // Validate that we have valid timezone data
+      data = data.filter(tz => tz.uuid && tz.name)
+    } catch (parseError) {
+      // Check if it's our custom validation error - re-throw it
+      if (parseError instanceof Error && parseError.message.includes('Invalid response format')) {
+        throw parseError
+      }
+      
+      // JSON parsing or other error
+      const errorMessage = 'Invalid response from server. Please try again.'
+      throw new Error(errorMessage)
     }
 
-    const apiResponse: ApiResponse<EventData[]> = await response.json()
-    let responseData: any = parseApiResponse(apiResponse, 'Failed to fetch events')
-    
-    if (!responseData) return []
-    
-    const mapEvent = (event: any): EventData => ({
-      uuid: String(event.uuid),
-      eventName: String(event.eventName),
-      startDate: event.startDate || undefined,
-      endDate: event.endDate || undefined,
-      location: event.location || undefined,
-      attendees: event.attendees || undefined,
-      eventExperience: event.eventExperience || undefined,
-      logo: event.logo || undefined,
-      banner: event.banner || undefined,
-      bannerUrl: event.bannerUrl || event.banner_url || undefined,
-      bannerImage: event.bannerImage || event.banner_image || undefined,
-      ...event,
-    })
-
-    if (Array.isArray(responseData)) {
-      return responseData.map(mapEvent).filter((event: EventData) => event.uuid && event.eventName)
-    }
-    
-    if (responseData.data && Array.isArray(responseData.data)) {
-      return responseData.data.map(mapEvent).filter((event: EventData) => event.uuid && event.eventName)
-    }
-    
-    return responseData.uuid ? [mapEvent(responseData)] : []
+    return data
   } catch (error) {
+    // Handle network errors (CORS, connection refused, etc.)
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      showToast.error('Connection error. Please check if the server is running.')
-      throw new Error('Cannot connect to the server')
+      const errorMessage = 'Cannot connect to the server. Please check:\n1. Backend server is running\n2. CORS is properly configured\n3. No firewall is blocking the connection'
+      throw new Error(errorMessage)
     }
-    throw error
+
+    // Re-throw if it's already our custom error
+    if (error instanceof Error && (
+        error.message.startsWith('Cannot connect') || 
+        error.message.startsWith('Server error') ||
+        error.message.startsWith('Invalid response')
+    )) {
+      throw error
+    }
+
+    // Generic error fallback
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch timezones. Please try again.'
+    throw new Error(errorMessage)
   }
 }
