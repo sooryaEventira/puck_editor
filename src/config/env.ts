@@ -41,12 +41,6 @@ export const env = {
    * Is Production Mode
    */
   IS_PROD: import.meta.env.PROD,
-
-  /**
-   * Log Level
-   * Default: 'debug' in dev, 'error' in production
-   */
-  LOG_LEVEL: import.meta.env.VITE_LOG_LEVEL || (import.meta.env.DEV ? 'debug' : 'error'),
 }
 
 /**
@@ -64,7 +58,6 @@ export const API_ENDPOINTS = {
     REGISTER_VERIFY_OTP: `${env.AUTH_API_URL}/api/v1/auth/register/verify-otp/`,
     CREATE_PASSWORD: `${env.AUTH_API_URL}/api/v1/register/`,
     CREATE_ORGANIZATION: `${env.AUTH_API_URL}/api/v1/organizations/`,
-    GET_ORGANIZATIONS: `${env.AUTH_API_URL}/api/v1/organizations/`,
     SIGNIN: `${env.AUTH_API_URL}/api/v1/token/`,
   },
   // Event endpoints
