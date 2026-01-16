@@ -3,7 +3,6 @@ import { XClose } from '@untitled-ui/icons-react'
 import { SocialButton } from '../components/ui/untitled'
 import logoImage from '../assets/images/Logo.png'
 import backgroundImage from '../assets/images/background.png'
-import { validateEmail } from '../utils/validation'
 
 interface LoginPageProps {
   onSubmit?: (email: string, password: string) => void
@@ -26,38 +25,18 @@ const LoginPage: React.FC<LoginPageProps> = ({
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [emailError, setEmailError] = useState<string | null>(null)
-  const [passwordError, setPasswordError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Reset errors
-    setEmailError(null)
-    setPasswordError(null)
-
-    // Validate email
-    const emailValidation = validateEmail(email)
-    if (!emailValidation.isValid) {
-      setEmailError(emailValidation.error || 'Invalid email')
-      return
-    }
-
-    // Validate password
-    if (!password || !password.trim()) {
-      setPasswordError('Password is required')
-      return
-    }
-
-    if (password.trim().length < 6) {
-      setPasswordError('Password must be at least 6 characters long')
+    if (!email.trim() || !password.trim()) {
       return
     }
     
     if (onSubmit) {
       setIsLoading(true)
       try {
-        await onSubmit(email.trim(), password)
+        await onSubmit(email, password)
       } catch (error) {
         // Error handling is done in App.tsx
       } finally {
@@ -139,21 +118,13 @@ const LoginPage: React.FC<LoginPageProps> = ({
                         id="email"
                         type="email"
                         value={email}
-                        onChange={(e) => {
-                          setEmail(e.target.value)
-                          if (emailError) setEmailError(null)
-                        }}
+                        onChange={(e) => setEmail(e.target.value)}
                         placeholder="Enter your email"
-                        className={`flex-1 bg-transparent text-sm sm:text-base font-normal leading-5 sm:leading-6 text-[#181D27] placeholder:text-[#717680] outline-none ${emailError ? 'text-red-500' : ''}`}
+                        className="flex-1 bg-transparent text-sm sm:text-base font-normal leading-5 sm:leading-6 text-[#181D27] placeholder:text-[#717680] outline-none"
                         required
                       />
                     </div>
                   </div>
-                  {emailError && (
-                    <p className="text-xs sm:text-sm text-red-500 mt-1">
-                      {emailError}
-                    </p>
-                  )}
                 </div>
 
                 {/* Password Input */}
@@ -179,44 +150,6 @@ const LoginPage: React.FC<LoginPageProps> = ({
                       />
                     </div>
                   </div>
-                  {passwordError && (
-                    <p className="text-xs sm:text-sm text-red-500 mt-1">
-                      {passwordError}
-                    </p>
-                  )}
-                </div>
-
-                {/* Password Input */}
-                <div className="flex w-full flex-col items-start justify-start gap-1.5 self-stretch">
-                  <div className="inline-flex items-start justify-start gap-0.5">
-                    <label className="text-xs sm:text-sm font-medium leading-4 sm:leading-5 text-[#414651]">
-                      Password
-                    </label>
-                    <span className="text-xs sm:text-sm font-medium leading-4 sm:leading-5 text-red-500">*</span>
-                  </div>
-                  <div 
-                    className={`inline-flex w-full items-center justify-start gap-2 self-stretch rounded-lg bg-white px-3 sm:px-3.5 py-2 sm:py-2.5 shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] outline outline-1 ${passwordError ? 'outline-red-500' : 'outline-[#D5D7DA]'} -outline-offset-1`}
-                  >
-                    <div className="flex flex-1 items-center justify-start gap-2">
-                      <input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value)
-                          if (passwordError) setPasswordError(null)
-                        }}
-                        placeholder="••••••••"
-                        className="flex-1 bg-transparent text-sm sm:text-base font-normal leading-5 sm:leading-6 text-[#181D27] placeholder:text-[#717680] outline-none"
-                        required
-                      />
-                    </div>
-                  </div>
-                  {passwordError && (
-                    <p className="text-xs sm:text-sm text-red-500 mt-1">
-                      {passwordError}
-                    </p>
-                  )}
                 </div>
               </div>
 

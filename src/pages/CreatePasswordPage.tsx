@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { Eye, EyeOff } from '@untitled-ui/icons-react'
 import logoImage from '../assets/images/Logo.png'
-import { validatePassword } from '../utils/validation'
 
 interface CreatePasswordPageProps {
   onSubmit?: (password: string) => void
@@ -18,19 +17,9 @@ const CreatePasswordPage: React.FC<CreatePasswordPageProps> = ({
 }) => {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [passwordError, setPasswordError] = useState<string | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setPasswordError(null)
-
-    // Validate password
-    const passwordValidation = validatePassword(password)
-    if (!passwordValidation.isValid) {
-      setPasswordError(passwordValidation.error || 'Invalid password')
-      return
-    }
-
     if (password && onSubmit) {
       onSubmit(password)
     }
@@ -64,7 +53,7 @@ const CreatePasswordPage: React.FC<CreatePasswordPageProps> = ({
               New Password
             </label>
             <div 
-              className={`inline-flex w-full items-center justify-start gap-2 self-stretch rounded-lg bg-white px-3 sm:px-3.5 py-2 sm:py-2.5 shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] hover:shadow-md outline outline-1 ${passwordError ? 'outline-red-500' : 'outline-[#D5D7DA]'} -outline-offset-1 relative`}
+              className="inline-flex w-full items-center justify-start gap-2 self-stretch rounded-lg bg-white px-3 sm:px-3.5 py-2 sm:py-2.5 shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] hover:shadow-md   outline outline-1 outline-[#D5D7DA] -outline-offset-1 relative"
             >
               <input
                 id="password"
@@ -72,7 +61,6 @@ const CreatePasswordPage: React.FC<CreatePasswordPageProps> = ({
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value)
-                  if (passwordError) setPasswordError(null)
                   // Clear error when user starts typing
                   if (onPasswordChange && e.target.value) {
                     onPasswordChange()
@@ -95,11 +83,6 @@ const CreatePasswordPage: React.FC<CreatePasswordPageProps> = ({
                 )}
               </button>
             </div>
-            {passwordError && (
-              <p className="text-xs sm:text-sm text-red-500 mt-1">
-                {passwordError}
-              </p>
-            )}
           </div>
 
           {/* Error Message */}
