@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { XClose } from '@untitled-ui/icons-react'
+import { XClose, Eye, EyeOff } from '@untitled-ui/icons-react'
 import { SocialButton } from '../components/ui/untitled'
 import logoImage from '../assets/images/Logo.png'
 import backgroundImage from '../assets/images/background.png'
@@ -23,6 +23,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
 }) => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -136,19 +137,31 @@ const LoginPage: React.FC<LoginPageProps> = ({
                     <span className="text-xs sm:text-sm font-medium leading-4 sm:leading-5 text-red-500">*</span>
                   </div>
                   <div 
-                    className="inline-flex w-full items-center justify-start gap-2 self-stretch rounded-lg bg-white px-3 sm:px-3.5 py-2 sm:py-2.5 shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] outline outline-1 outline-[#D5D7DA] -outline-offset-1"
+                    className="inline-flex w-full items-center justify-start gap-2 self-stretch rounded-lg bg-white px-3 sm:px-3.5 py-2 sm:py-2.5 shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] outline outline-1 outline-[#D5D7DA] -outline-offset-1 relative"
                   >
                     <div className="flex flex-1 items-center justify-start gap-2">
                       <input
                         id="password"
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="flex-1 bg-transparent text-sm sm:text-base font-normal leading-5 sm:leading-6 text-[#181D27] placeholder:text-[#717680] outline-none"
+                        className="flex-1 bg-transparent text-sm sm:text-base font-normal leading-5 sm:leading-6 text-[#181D27] placeholder:text-[#717680] outline-none pr-10"
                         required
                       />
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 flex items-center justify-center text-[#717680] hover:text-[#414651] transition-colors"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>

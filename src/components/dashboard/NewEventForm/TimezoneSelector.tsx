@@ -62,12 +62,10 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value, onChange, cl
       setIsLoading(true)
       setError(null)
       try {
-        console.log('🔄 [TimezoneSelector] Starting to load timezones...')
         const timezoneData = await fetchTimezones()
         
         if (!timezoneData || timezoneData.length === 0) {
           const errorMsg = 'No timezones available. Please check your connection and try again.'
-          console.warn('⚠️ [TimezoneSelector]', errorMsg)
           setError(errorMsg)
           setTimezones([])
           return
@@ -83,7 +81,6 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value, onChange, cl
         
         setTimezones(options)
         setError(null)
-        console.log('✅ [TimezoneSelector] Successfully loaded timezones:', options.length)
         
         // Auto-select detected timezone if no value is set
         if (!value && options.length > 0) {
@@ -93,14 +90,12 @@ const TimezoneSelector: React.FC<TimezoneSelectorProps> = ({ value, onChange, cl
             // Find timezone by IANA name
             const detectedTz = options.find(tz => tz.name === detected)
             if (detectedTz) {
-              console.log('🌍 [TimezoneSelector] Auto-selecting detected timezone:', detectedTz.label)
               onChange(detectedTz.uuid)
             }
           }
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Failed to load timezones. Please try again.'
-        console.error('❌ [TimezoneSelector] Error loading timezones:', error)
         setError(errorMsg)
         setTimezones([])
       } finally {

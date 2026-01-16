@@ -272,8 +272,17 @@ const getDefaultTemplateData = (pageName: string = 'Page 1', eventData?: any) =>
 }
 
 export const usePageManagement = () => {
-  const { eventData } = useEventForm()
-  const defaultPage1Data = getDefaultTemplateData('Page 1', eventData)
+  const { eventData, createdEvent } = useEventForm()
+  
+  // Prioritize createdEvent data from API, fallback to eventData from form
+  const displayEventData = createdEvent ? {
+    eventName: createdEvent.eventName,
+    startDate: createdEvent.startDate,
+    location: createdEvent.location,
+    banner: eventData?.banner // Banner might still be in eventData as File
+  } : eventData
+  
+  const defaultPage1Data = getDefaultTemplateData('Page 1', displayEventData)
   const [currentData, setCurrentData] = useState<any>(defaultPage1Data)
   const [currentPage, setCurrentPage] = useState('page1')
   const [currentPageName, setCurrentPageName] = useState('Page 1')
@@ -308,10 +317,10 @@ export const usePageManagement = () => {
       
       console.log('🖼️ Will use bannerUrl:', currentBannerUrl ? (currentBannerUrl.startsWith('data:') ? 'data:image...' : currentBannerUrl.substring(0, 50) + '...') : 'NONE')
       
-      // Get event data - use eventData if available, otherwise use existing props or defaults
-      const eventName = eventData?.eventName || heroSection.props.title || 'Event Title'
-      const location = eventData?.location || ''
-      const eventDate = formatEventDate(eventData?.startDate)
+      // Get event data - prioritize createdEvent, then eventData, then existing props or defaults
+      const eventName = createdEvent?.eventName || eventData?.eventName || heroSection.props.title || 'Event Title'
+      const location = createdEvent?.location || eventData?.location || ''
+      const eventDate = formatEventDate(createdEvent?.startDate || eventData?.startDate)
       // Match WebsitePreviewPage format: "Location | Date" or just "Date" if no location
       const subtitle = location ? `${location} | ${eventDate}` : (eventDate || 'Location | Date')
 
@@ -381,15 +390,15 @@ export const usePageManagement = () => {
       
       return updatedData
     })
-  }, [eventData]) // Include eventData in dependencies
+  }, [eventData, createdEvent]) // Include eventData and createdEvent in dependencies
 
-  // Update currentData when eventData changes or on mount (for banner, title, etc.)
+  // Update currentData when eventData or createdEvent changes or on mount (for banner, title, etc.)
   useEffect(() => {
     // Always run on mount and when dependencies change
     const bannerInStorage = localStorage.getItem('event-form-banner')
-    console.log('🖼️ useEffect triggered - Banner in storage:', !!bannerInStorage, 'EventData:', !!eventData, 'CurrentPage:', currentPage)
+    console.log('🖼️ useEffect triggered - Banner in storage:', !!bannerInStorage, 'EventData:', !!eventData, 'CreatedEvent:', !!createdEvent, 'CurrentPage:', currentPage)
     updateHeroSectionWithEventData()
-  }, [eventData?.eventName, eventData?.location, eventData?.startDate, currentData?.content?.length, currentPage, updateHeroSectionWithEventData]) // Trigger when eventData fields change, content changes, or page changes
+  }, [createdEvent?.eventName, createdEvent?.location, createdEvent?.startDate, eventData?.eventName, eventData?.location, eventData?.startDate, currentData?.content?.length, currentPage, updateHeroSectionWithEventData]) // Trigger when eventData or createdEvent fields change, content changes, or page changes
 
   // Also run on initial mount to ensure banner is loaded
   useEffect(() => {
@@ -572,6 +581,13 @@ export const usePageManagement = () => {
   }
 
   const applyServerDataForPage = (pageId: string, serverData: any) => {
+    // Remove ScheduleSection from welcome page
+    if (pageId === 'welcome' && serverData?.content) {
+      serverData = {
+        ...serverData,
+        content: serverData.content.filter((item: any) => item.type !== 'ScheduleSection')
+      }
+    }
     if (!serverData) {
       return
     }
@@ -1062,7 +1078,15 @@ export const usePageManagement = () => {
               const defaultData = getDefaultTemplateData(pageName, eventData)
               applyServerDataForPage(pageId, defaultData)
             } else {
-              applyServerDataForPage(pageId, result.data)
+              // Remove ScheduleSection from welcome page
+              let cleanedData = result.data
+              if (pageId === 'welcome' && cleanedData.content) {
+                cleanedData = {
+                  ...cleanedData,
+                  content: cleanedData.content.filter((item: any) => item.type !== 'ScheduleSection')
+                }
+              }
+              applyServerDataForPage(pageId, cleanedData)
             }
             setCurrentPage(pageId)
             
@@ -1124,6 +1148,11 @@ export const usePageManagement = () => {
         
         // Clean any duplicates before saving
         const cleanedDefaultData = cleanDuplicateComponents(defaultData)
+        
+        // Remove ScheduleSection from welcome page
+        if (pageId === 'welcome' && cleanedDefaultData?.content) {
+          cleanedDefaultData.content = cleanedDefaultData.content.filter((item: any) => item.type !== 'ScheduleSection')
+        }
         
         // Update HeroSection banner BEFORE setting data if banner exists in localStorage
         const bannerUrl = localStorage.getItem('event-form-banner')

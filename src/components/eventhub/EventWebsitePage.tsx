@@ -29,8 +29,11 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   userAvatarUrl,
   hideNavbarAndSidebar = false
 }) => {
-  const { eventData } = useEventForm()
+  const { eventData, createdEvent } = useEventForm()
   const { pages, addPage, deletePage, duplicatePage, initializePages } = useWebsitePages()
+
+  // Prioritize createdEvent data from API, fallback to eventData from form
+  const displayEventName = createdEvent?.eventName || eventData?.eventName
   const [activeSubItem, setActiveSubItem] = useState('website-pages')
   const [showPageCreationModal, setShowPageCreationModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ id: string; name: string } | null>(null)
@@ -50,6 +53,20 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
       initializePages('default-template')
     }
   }, [pages.length, initializePages])
+
+  // Remove Schedule pages - only keep Welcome page
+  useEffect(() => {
+    const schedulePages = pages.filter(page => 
+      page.name.toLowerCase() === 'schedule' || 
+      (page as any).type === 'schedule'
+    )
+    
+    if (schedulePages.length > 0) {
+      schedulePages.forEach(schedulePage => {
+        deletePage(schedulePage.id)
+      })
+    }
+  }, [pages, deletePage])
 
   const handleSearchClick = () => {
     console.log('Search clicked')
@@ -293,11 +310,12 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                 variant="primary"
                 size="sm"
                 onClick={handlePublishWebsite}
-                iconLeading={<Globe01 className="h-3.5 w-3.5" />}
+                iconLeading={<Globe01 className="h-3.5 w-3.5 flex-shrink-0" />}
                 data-modal-button="true"
-                className="bg-[#6938EF] hover:bg-[#5925DC] text-white text-xs"
+                className="bg-[#6938EF] hover:bg-[#5925DC] text-white text-xs !min-w-[140px] px-8"
+                style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
               >
-                Publish Website
+                Publish
               </Button>
             </div>
           </div>
@@ -458,7 +476,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
     <div className="h-screen overflow-hidden bg-white">
       {/* Navbar */}
       <EventHubNavbar
-        eventName={eventData?.eventName || 'Highly important conference of 2025'}
+        eventName={displayEventName || 'Highly important conference of 2025'}
         isDraft={true}
         onBackClick={onBackClick}
         onSearchClick={handleSearchClick}
@@ -492,11 +510,14 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
               variant="primary"
               size="sm"
               onClick={handlePublishWebsite}
-              iconLeading={<Globe01 className="h-3.5 w-3.5" />}
               data-modal-button="true"
-              className="bg-[#6938EF] hover:bg-[#5925DC] text-white text-xs"
+              className="bg-[#6938EF] hover:bg-[#5925DC] text-white text-xs !min-w-[100px]"
+              style={{ whiteSpace: 'nowrap', paddingTop: '10px', paddingBottom: '10px', minHeight: '38px' }}
             >
-              Publish Website
+              <span className="flex items-center gap-1.5 pl-3">
+                <Globe01 className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>Publish</span>
+              </span>
             </Button>
           </div>
         </div>

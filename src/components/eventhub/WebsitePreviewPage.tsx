@@ -27,10 +27,15 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   onBackClick,
   userAvatarUrl
 }) => {
-  const { eventData } = useEventForm()
+  const { eventData, createdEvent } = useEventForm()
   const { pages: websitePages } = useWebsitePages()
   const [bannerUrl, setBannerUrl] = useState<string>('')
   const [activeTab, setActiveTab] = useState<'preview' | 'settings'>('preview')
+
+  // Prioritize createdEvent data from API, fallback to eventData from form
+  const displayEventName = createdEvent?.eventName || eventData?.eventName
+  const displayStartDate = createdEvent?.startDate || eventData?.startDate
+  const displayLocation = createdEvent?.location || eventData?.location
   
   // Convert WebsitePage format to PageSidebar format
   const pages = websitePages.map(page => ({
@@ -148,9 +153,14 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
 
   // Format date for display
   const formatEventDate = () => {
-    if (!eventData?.startDate) return 'Jan 13, 2025'
-    const date = new Date(eventData.startDate)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    if (!displayStartDate) return 'Jan 13, 2025'
+    try {
+      const date = new Date(displayStartDate)
+      if (isNaN(date.getTime())) return 'Jan 13, 2025'
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    } catch {
+      return 'Jan 13, 2025'
+    }
   }
 
   // Default speakers data
@@ -199,8 +209,8 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
       {/* Hero Section */}
       <div className="w-full">
         <HeroSection
-          title={eventData?.eventName || 'HIC 2025'}
-          subtitle={`${eventData?.location || 'New York, NY'} | ${formatEventDate()}`}
+          title={displayEventName || 'HIC 2025'}
+          subtitle={`${displayLocation || 'New York, NY'} | ${formatEventDate()}`}
           buttons={[
             {
               text: 'Register Now',
@@ -284,7 +294,7 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     <div className="h-screen overflow-hidden bg-white flex flex-col">
       {/* Navbar */}
       <EventHubNavbar
-        eventName={eventData?.eventName || 'Highly important conference of 2025'}
+        eventName={displayEventName || 'Highly important conference of 2025'}
         isDraft={true}
         onBackClick={handleBack}
         onSearchClick={handleSearchClick}

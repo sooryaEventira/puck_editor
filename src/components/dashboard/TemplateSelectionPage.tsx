@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useEventForm } from '../../contexts/EventFormContext'
+import { env } from '../../config/env'
 import HeroSection from '../advanced/HeroSection'
 import AboutSection from '../advanced/AboutSection'
 import SpeakersSection from '../advanced/SpeakersSection'
@@ -9,31 +10,70 @@ import FAQAccordion from '../advanced/FAQAccordion'
 import ContactFooter from '../advanced/ContactFooter'
 
 const TemplateSelectionPage: React.FC = () => {
-  const { eventData } = useEventForm()
+  const { eventData, createdEvent } = useEventForm()
   const [bannerUrl, setBannerUrl] = useState<string>('')
 
-  // Load banner from localStorage or eventData
+  // Prioritize createdEvent data from API, fallback to eventData from form
+  const displayEventName = createdEvent?.eventName || eventData?.eventName
+  const displayStartDate = createdEvent?.startDate || eventData?.startDate
+  const displayLocation = createdEvent?.location || eventData?.location
+
+  // Load banner from backend (createdEvent), localStorage, or eventData
   useEffect(() => {
-    // First, try to get banner from eventData (if it's still a File)
-    if (eventData?.banner && eventData.banner instanceof File) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const dataUrl = reader.result as string
-        setBannerUrl(dataUrl)
-        localStorage.setItem('event-form-banner', dataUrl)
+    const loadBanner = async () => {
+      // Priority 1: Try to get banner URL from createdEvent (backend response)
+      if (createdEvent) {
+        // Check for various possible banner URL field names
+        const bannerUrlFromBackend = (createdEvent as any).banner || 
+                                     (createdEvent as any).bannerUrl || 
+                                     (createdEvent as any).banner_url ||
+                                     (createdEvent as any).bannerImage ||
+                                     (createdEvent as any).banner_image
+        
+        if (bannerUrlFromBackend && typeof bannerUrlFromBackend === 'string') {
+          // If it's a full URL (starts with http/https), use it directly
+          if (bannerUrlFromBackend.startsWith('http://') || bannerUrlFromBackend.startsWith('https://')) {
+            setBannerUrl(bannerUrlFromBackend)
+            return
+          }
+          // If it's a relative path (starts with /), prepend the API base URL
+          if (bannerUrlFromBackend.startsWith('/')) {
+            const fullUrl = `${env.AUTH_API_URL}${bannerUrlFromBackend}`
+            setBannerUrl(fullUrl)
+            return
+          }
+          // If it doesn't start with /, it might be a relative path without leading slash
+          // Try prepending the API base URL with a slash
+          const fullUrl = `${env.AUTH_API_URL}/${bannerUrlFromBackend}`
+          setBannerUrl(fullUrl)
+          return
+        }
       }
-      reader.onerror = () => {
-        console.error('Error reading banner file')
+
+      // Priority 2: Try to get banner from eventData (if it's still a File)
+      if (eventData?.banner && eventData.banner instanceof File) {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const dataUrl = reader.result as string
+          setBannerUrl(dataUrl)
+          localStorage.setItem('event-form-banner', dataUrl)
+        }
+        reader.onerror = () => {
+          console.error('Error reading banner file')
+        }
+        reader.readAsDataURL(eventData.banner)
+        return
       }
-      reader.readAsDataURL(eventData.banner)
-    } else {
-      // Otherwise, try to load from localStorage
+
+      // Priority 3: Try to load from localStorage
       const storedBanner = localStorage.getItem('event-form-banner')
       if (storedBanner) {
         setBannerUrl(storedBanner)
       }
     }
-  }, [eventData])
+
+    loadBanner()
+  }, [createdEvent, eventData])
 
   const handlePrevious = () => {
     // Navigate back to dashboard and reopen form at step 2
@@ -77,9 +117,14 @@ const TemplateSelectionPage: React.FC = () => {
 
   // Format date for display
   const formatEventDate = () => {
-    if (!eventData?.startDate) return 'Jan 13, 2025'
-    const date = new Date(eventData.startDate)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    if (!displayStartDate) return 'Jan 13, 2025'
+    try {
+      const date = new Date(displayStartDate)
+      if (isNaN(date.getTime())) return 'Jan 13, 2025'
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    } catch {
+      return 'Jan 13, 2025'
+    }
   }
 
   // Default speakers data
@@ -121,8 +166,8 @@ const TemplateSelectionPage: React.FC = () => {
         {/* Hero Section */}
         <div className="w-full">
           <HeroSection
-            title={eventData?.eventName || 'HIC 2025'}
-            subtitle={`${eventData?.location || 'New York, NY'} | ${formatEventDate()}`}
+            title={displayEventName || 'HIC 2025'}
+            subtitle={`${displayLocation || 'New York, NY'} | ${formatEventDate()}`}
             buttons={[
               {
                 text: 'Register Now',

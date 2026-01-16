@@ -135,8 +135,8 @@ export const EditorView: React.FC<EditorViewProps> = ({
     }
   }, [currentData, currentPage, currentPageName])
 
-  // Get eventData from context
-  const { eventData } = useEventForm()
+  // Get eventData and createdEvent from context
+  const { eventData, createdEvent } = useEventForm()
 
   // Helper function to format event date
   const formatEventDate = (startDate?: string): string => {
@@ -165,10 +165,10 @@ export const EditorView: React.FC<EditorViewProps> = ({
         return
       }
 
-      // Get event data values
-      const eventName = eventData?.eventName || heroSection.props.title || 'Event Title'
-      const location = eventData?.location || ''
-      const eventDate = formatEventDate(eventData?.startDate)
+      // Get event data values - prioritize createdEvent, then eventData, then existing props
+      const eventName = createdEvent?.eventName || eventData?.eventName || heroSection.props.title || 'Event Title'
+      const location = createdEvent?.location || eventData?.location || ''
+      const eventDate = formatEventDate(createdEvent?.startDate || eventData?.startDate)
       const subtitle = location ? `${location} | ${eventDate}` : (eventDate || 'Location | Date')
 
       const currentBanner = heroSection.props.backgroundImage
