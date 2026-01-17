@@ -8,6 +8,7 @@ import EventWebsitePage from '../eventhub/EventWebsitePage'
 import WebsitePreviewPage from '../eventhub/WebsitePreviewPage'
 import { defaultEvents, type Event } from './EventsTable'
 import type { DateRange } from '../ui/untitled'
+import { fetchEvents, type EventData } from '../../services/eventService'
 
 interface DashboardLayoutProps {
   organizationName?: string
@@ -111,8 +112,85 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
   }, [])
   
-  // Events data - in a real app, this would come from an API or context
-  const [events] = useState<Event[]>(defaultEvents)
+  // Events data - fetched from API
+  const [events, setEvents] = useState<Event[]>([])
+  const [isLoadingEvents, setIsLoadingEvents] = useState<boolean>(true)
+  const [eventsError, setEventsError] = useState<string | null>(null)
+
+  // Fetch events on mount
+  useEffect(() => {
+    const loadEvents = async () => {
+      setIsLoadingEvents(true)
+      setEventsError(null)
+      
+      try {
+        const eventDataList = await fetchEvents()
+        
+        // Map API response to Event interface format
+        const mappedEvents: Event[] = eventDataList.map((eventData: EventData) => {
+          // Map eventExperience to attendanceType
+          const attendanceTypeMap: Record<string, 'Online' | 'Offline' | 'Hybrid'> = {
+            'virtual': 'Online',
+            'in-person': 'Offline',
+            'hybrid': 'Hybrid',
+          }
+          
+          // Map status to Live/Draft
+          const statusMap: Record<string, 'Live' | 'Draft'> = {
+            'Live': 'Live',
+            'live': 'Live',
+            'Published': 'Live',
+            'published': 'Live',
+            'Draft': 'Draft',
+            'draft': 'Draft',
+          }
+          
+          // Format date
+          const formatDate = (dateString?: string): string => {
+            if (!dateString) return 'TBD'
+            try {
+              const date = new Date(dateString)
+              if (isNaN(date.getTime())) return 'TBD'
+              return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })
+            } catch {
+              return 'TBD'
+            }
+          }
+          
+          // Get createdBy from user info or default
+          const createdBy = eventData.createdBy || 
+                           eventData.created_by || 
+                           localStorage.getItem('userEmail')?.split('@')[0] || 
+                           'Unknown'
+          
+          return {
+            id: eventData.uuid,
+            name: eventData.eventName,
+            status: statusMap[eventData.status || ''] || 'Draft',
+            attendanceType: attendanceTypeMap[eventData.eventExperience || ''] || 'Online',
+            registrations: eventData.registrations || 0,
+            eventDate: formatDate(eventData.startDate),
+            createdBy: createdBy,
+          }
+        })
+        
+        setEvents(mappedEvents)
+      } catch (error) {
+        console.error('Failed to fetch events:', error)
+        setEventsError(error instanceof Error ? error.message : 'Failed to load events')
+        // Fallback to empty array or default events on error
+        setEvents([])
+      } finally {
+        setIsLoadingEvents(false)
+      }
+    }
+    
+    loadEvents()
+  }, [])
 
   // Helper function to parse event date from format "Jan 13, 2025" to Date object
   const parseEventDate = (dateString: string): Date | null => {
@@ -283,20 +361,36 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
       {/* Main Content */}
       <main className="lg:ml-[250px] mt-16 p-4 sm:p-6">
-        <DashboardContent
-          title={title}
-          onNewEventClick={handleNewEventClick}
-          searchValue={searchValue}
-          onSearchChange={setSearchValue}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-          onEditEvent={onEditEvent}
-          onSortEvents={onSortEvents}
-          events={filteredEvents}
-          totalEvents={summaryStats.totalEvents}
-          liveEvents={summaryStats.liveEvents}
-          eventDrafts={summaryStats.eventDrafts}
-        />
+        {isLoadingEvents ? (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#6938EF] mb-4"></div>
+              <p className="text-slate-600">Loading events...</p>
+            </div>
+          </div>
+        ) : eventsError ? (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <p className="text-red-600 mb-2">Error loading events</p>
+              <p className="text-slate-600 text-sm">{eventsError}</p>
+            </div>
+          </div>
+        ) : (
+          <DashboardContent
+            title={title}
+            onNewEventClick={handleNewEventClick}
+            searchValue={searchValue}
+            onSearchChange={setSearchValue}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            onEditEvent={onEditEvent}
+            onSortEvents={onSortEvents}
+            events={filteredEvents}
+            totalEvents={summaryStats.totalEvents}
+            liveEvents={summaryStats.liveEvents}
+            eventDrafts={summaryStats.eventDrafts}
+          />
+        )}
       </main>
     </div>
   )

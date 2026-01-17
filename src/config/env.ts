@@ -63,6 +63,7 @@ export const API_ENDPOINTS = {
   // Event endpoints
   EVENT: {
     CREATE: `${env.AUTH_API_URL}/api/v1/event/`,
+    LIST: `${env.AUTH_API_URL}/api/v1/event/`,
   },
   // Timezone endpoints
   TIMEZONE: {
