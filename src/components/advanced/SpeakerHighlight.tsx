@@ -31,7 +31,6 @@ const SpeakerHighlight: React.FC<SpeakerHighlightProps> = ({
   textColor = '#000000',
   headingColor,
   subtitleColor,
-  accentColor = '#3b82f6',
   padding = '4rem 2rem',
   imageShape = 'circle'
 }) => {
@@ -114,7 +113,8 @@ const SpeakerHighlight: React.FC<SpeakerHighlightProps> = ({
               const companyValue = getStringValue(speaker.company);
               const quoteValue = getStringValue(speaker.quote);
               const photoValue = getStringValue(speaker.photo);
-              const speakerAccentColor = speaker.accentColor || accentColor;
+              // Always use gray for accent color
+              const speakerAccentColor = '#6b7280';
 
               return (
                 <div
@@ -185,7 +185,7 @@ const SpeakerHighlight: React.FC<SpeakerHighlightProps> = ({
                   {(titleValue || companyValue) && (
                     <p
                       className="text-base md:text-lg mb-3 font-medium"
-                      style={{ color: accentColor }}
+                      style={{ color: '#6b7280' }}
                     >
                       {titleValue && companyValue ? (
                         <>

@@ -2243,20 +2243,6 @@ export const config = {
               label: 'Photo URL',
               placeholder: 'https://example.com/photo.jpg',
               contentEditable: true
-            },
-            accentColor: {
-              type: 'select' as const,
-              label: 'Accent Color',
-              options: [
-                { label: 'Blue', value: '#3b82f6' },
-                { label: 'Purple', value: '#6938EF' },
-                { label: 'Pink', value: '#ec4899' },
-                { label: 'Red', value: '#ef4444' },
-                { label: 'Orange', value: '#f97316' },
-                { label: 'Green', value: '#10b981' },
-                { label: 'Indigo', value: '#6366f1' },
-                { label: 'Default', value: '' }
-              ]
             }
           },
           getItemSummary: (item: any, index: number) => {
@@ -2308,20 +2294,6 @@ export const config = {
             { label: 'Custom...', value: '' }
           ]
         },
-        accentColor: {
-          type: 'select' as const,
-          label: 'Default Accent Color',
-          options: [
-            { label: 'Blue', value: '#3b82f6' },
-            { label: 'Purple', value: '#6938EF' },
-            { label: 'Pink', value: '#ec4899' },
-            { label: 'Red', value: '#ef4444' },
-            { label: 'Orange', value: '#f97316' },
-            { label: 'Green', value: '#10b981' },
-            { label: 'Indigo', value: '#6366f1' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
         imageShape: {
           type: 'select' as const,
           label: 'Image Shape',
@@ -2341,8 +2313,7 @@ export const config = {
             title: 'CMO',
             company: 'TechGlobal',
             quote: 'The Future of AI in Marketing',
-            photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
-            accentColor: '#3b82f6'
+            photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop'
           },
           {
             id: '2',
@@ -2350,8 +2321,7 @@ export const config = {
             title: 'Founder',
             company: 'StartUp Inc.',
             quote: 'Building for Scale',
-            photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
-            accentColor: '#6938EF'
+            photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop'
           },
           {
             id: '3',
@@ -2359,15 +2329,13 @@ export const config = {
             title: 'Director of Design',
             company: 'ArtFlo',
             quote: 'Empathy in UX',
-            photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
-            accentColor: '#ec4899'
+            photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop'
           }
         ],
         backgroundColor: '#ffffff',
         textColor: '#000000',
         headingColor: '',
         subtitleColor: '',
-        accentColor: '#3b82f6',
         imageShape: 'circle'
       },
       render: SpeakerHighlight
@@ -3739,33 +3707,94 @@ export const config = {
     Article: {
       label: "📰 Article",
       fields: {
-        heading: {
-          type: 'text' as const,
-          label: 'Heading',
-          placeholder: 'The Art of Structured Content: Building Better Web Pages',
-          contentEditable: true
-        },
-        content: {
-          type: 'textarea' as const,
-          label: 'Content',
-          placeholder: 'Creating a web page is more than just throwing text onto a screen. It requires a hierarchy, visual breaks, and meaningful connections.\n\nIn this template, we explore how to mix internal in-app links with standard text to create a seamless navigation experience.',
-          contentEditable: true
-        },
-        linkUrl: {
-          type: 'text' as const,
-          label: 'Link URL',
-          placeholder: 'https://example.com or /page-path'
-        },
-        linkText: {
-          type: 'text' as const,
-          label: 'Link Text',
-          placeholder: 'Learn More',
-          contentEditable: true
-        },
-        imageUrl: {
-          type: 'text' as const,
-          label: 'Image URL',
-          placeholder: 'https://example.com/image.jpg'
+        sections: {
+          type: 'array' as const,
+          label: 'Sections',
+          arrayFields: {
+            type: {
+              type: 'select' as const,
+              label: 'Section Type',
+              options: [
+                { label: 'Heading', value: 'heading' },
+                { label: 'Paragraph', value: 'paragraph' },
+                { label: 'Image', value: 'image' },
+                { label: 'Links', value: 'links' }
+              ]
+            },
+            // Heading section fields
+            heading: {
+              type: 'text' as const,
+              label: 'Heading Text',
+              placeholder: 'The Art of Structured Content',
+              contentEditable: true
+            },
+            // Paragraph section fields
+            paragraph: {
+              type: 'textarea' as const,
+              label: 'Paragraph Text',
+              placeholder: 'Enter your paragraph content here...',
+              contentEditable: true
+            },
+            // Image section fields
+            imageUrl: {
+              type: 'text' as const,
+              label: 'Image URL',
+              placeholder: 'https://example.com/image.jpg'
+            },
+            imageHeight: {
+              type: 'text' as const,
+              label: 'Image Height',
+              placeholder: '400px'
+            },
+            // Links section fields
+            links: {
+              type: 'array' as const,
+              label: 'Links',
+              arrayFields: {
+                label: {
+                  type: 'text' as const,
+                  label: 'Label',
+                  placeholder: 'Learn More',
+                  contentEditable: true
+                },
+                url: {
+                  type: 'text' as const,
+                  label: 'URL',
+                  placeholder: 'https://example.com or /page-path'
+                },
+                openInNewTab: {
+                  type: 'radio' as const,
+                  label: 'Open in New Tab',
+                  options: [
+                    { label: 'Yes', value: true },
+                    { label: 'No', value: false }
+                  ]
+                }
+              },
+              getItemSummary: (item: any, index: number) => {
+                return item?.label || `Link ${index + 1}`
+              }
+            },
+            linkDisplayStyle: {
+              type: 'select' as const,
+              label: 'Link Display Style',
+              options: [
+                { label: 'Vertical List', value: 'list' },
+                { label: 'Inline Buttons', value: 'buttons' }
+              ]
+            }
+          },
+          getItemSummary: (item: any, index: number) => {
+            const typeLabels: Record<string, string> = {
+              heading: 'Heading',
+              paragraph: 'Paragraph',
+              image: 'Image',
+              links: 'Links'
+            }
+            const typeLabel = typeLabels[item?.type] || 'Section'
+            const content = item?.heading || item?.paragraph?.substring(0, 30) || item?.imageUrl || `${item?.links?.length || 0} link(s)`
+            return `${typeLabel}: ${content}${content.length >= 30 ? '...' : ''}`
+          }
         },
         backgroundColor: {
           type: 'select' as const,
@@ -3813,35 +3842,52 @@ export const config = {
           type: 'text' as const,
           label: 'Max Width',
           placeholder: '800px'
-        },
-        imagePosition: {
-          type: 'select' as const,
-          label: 'Image Position',
-          options: [
-            { label: 'Bottom', value: 'bottom' },
-            { label: 'Top', value: 'top' }
-          ]
-        },
-        imageHeight: {
-          type: 'text' as const,
-          label: 'Image Height',
-          placeholder: '400px'
         }
       },
       defaultProps: {
-        heading: 'The Art of Structured Content: Building Better Web Pages',
-        content: 'Creating a web page is more than just throwing text onto a screen. It requires a hierarchy, visual breaks, and meaningful connections. This paragraph represents your standard introduction text. It sets the stage for what the user is about to read.\n\nIn this template, we explore how to mix internal in-app links with standard text to create a seamless navigation experience. We also look at how typography affects readability.',
-        linkUrl: '#',
-        linkText: 'Learn More',
-        imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
+        sections: [
+          {
+            id: '1',
+            type: 'heading',
+            heading: 'The Art of Structured Content: Building Better Web Pages'
+          },
+          {
+            id: '2',
+            type: 'paragraph',
+            paragraph: 'Creating a web page is more than just throwing text onto a screen. It requires a hierarchy, visual breaks, and meaningful connections. This paragraph represents your standard introduction text. It sets the stage for what the user is about to read.\n\nIn this template, we explore how to mix internal in-app links with standard text to create a seamless navigation experience. We also look at how typography affects readability.'
+          },
+          {
+            id: '3',
+            type: 'image',
+            imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
+            imageHeight: '400px'
+          },
+          {
+            id: '4',
+            type: 'links',
+            links: [
+              {
+                id: 'link-1',
+                label: 'Learn More',
+                url: '#',
+                openInNewTab: false
+              },
+              {
+                id: 'link-2',
+                label: 'Read Documentation',
+                url: 'https://example.com',
+                openInNewTab: true
+              }
+            ],
+            linkDisplayStyle: 'list'
+          }
+        ],
         backgroundColor: '#ffffff',
         textColor: '#1f2937',
         headingColor: '#1f2937',
         linkColor: '#3b82f6',
         padding: '3rem 2rem',
-        maxWidth: '800px',
-        imagePosition: 'bottom',
-        imageHeight: '400px'
+        maxWidth: '800px'
       },
       render: Article
     },

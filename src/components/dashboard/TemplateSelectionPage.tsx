@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { useEventForm } from '../../contexts/EventFormContext'
-import { env } from '../../config/env'
 import HeroSection from '../advanced/HeroSection'
 import AboutSection from '../advanced/AboutSection'
 import SpeakersSection from '../advanced/SpeakersSection'
@@ -19,7 +18,7 @@ const TemplateSelectionPage: React.FC = () => {
   const displayStartDate = createdEvent?.startDate || eventData?.startDate
   const displayLocation = createdEvent?.location || eventData?.location
 
-  // Load banner: Priority 1 = localStorage (most reliable), Priority 2 = backend, Priority 3 = eventData
+  // Load banner from context: Priority 1 = localStorage, Priority 2 = eventData File
   useEffect(() => {
     // Priority 1: Check localStorage first (where banner is stored during event creation)
     const storedBanner = localStorage.getItem('event-form-banner')
@@ -30,123 +29,28 @@ const TemplateSelectionPage: React.FC = () => {
       return
     }
 
-    // Priority 2: Try to get banner URL from createdEvent (backend response)
-    const loadBannerFromBackend = async () => {
-      if (createdEvent) {
-        // Check for various possible banner URL field names
-        const bannerUrlFromBackend = (createdEvent as any).banner || 
-                                     (createdEvent as any).bannerUrl || 
-                                     (createdEvent as any).banner_url ||
-                                     (createdEvent as any).bannerImage ||
-                                     (createdEvent as any).banner_image
-        
-        if (bannerUrlFromBackend && typeof bannerUrlFromBackend === 'string') {
-          let finalBannerUrl = bannerUrlFromBackend
-          
-          // If it's a full URL (starts with http/https), use it directly
-          if (bannerUrlFromBackend.startsWith('http://') || bannerUrlFromBackend.startsWith('https://')) {
-            finalBannerUrl = bannerUrlFromBackend
-            // Convert HTTP to HTTPS if needed (to avoid redirect issues)
-            if (finalBannerUrl.startsWith('http://') && finalBannerUrl.includes('azurewebsites.net')) {
-              finalBannerUrl = finalBannerUrl.replace('http://', 'https://')
-            }
-          }
-          // If it's a relative path (starts with /), prepend the API base URL
-          else if (bannerUrlFromBackend.startsWith('/')) {
-            finalBannerUrl = `${env.AUTH_API_URL}${bannerUrlFromBackend}`
-          }
-          // If it doesn't start with /, it might be a relative path without leading slash
-          else {
-            finalBannerUrl = `${env.AUTH_API_URL}/${bannerUrlFromBackend}`
-          }
-          
-          console.log('🌐 TemplateSelectionPage: Attempting to load banner from backend:', finalBannerUrl)
-          console.log('📋 CreatedEvent object:', createdEvent)
-          
-          // Fetch with authentication to avoid CORS issues
-          const accessToken = localStorage.getItem('accessToken')
-          const organizationUuid = localStorage.getItem('organizationUuid')
-          
-          const headers: HeadersInit = {}
-          if (accessToken) {
-            headers['Authorization'] = `Bearer ${accessToken}`
-          }
-          if (organizationUuid) {
-            headers['X-Organization'] = organizationUuid
-          }
-          
-          fetch(finalBannerUrl, {
-            method: 'GET',
-            headers,
-            credentials: 'include',
-            redirect: 'follow', // Follow redirects (301, 302, etc.)
-          })
-            .then(async (response) => {
-              if (response.ok) {
-                const blob = await response.blob()
-                const reader = new FileReader()
-                reader.onload = () => {
-                  const dataUrl = reader.result as string
-                  console.log('✅ TemplateSelectionPage: Banner loaded from backend with authentication')
-                  setBannerUrl(dataUrl)
-                  setIsLoadingBanner(false)
-                }
-                reader.onerror = () => {
-                  console.error('❌ TemplateSelectionPage: Error converting banner blob to data URL')
-                  loadEventDataFallback()
-                }
-                reader.readAsDataURL(blob)
-              } else {
-                console.warn('⚠️ TemplateSelectionPage: Failed to fetch banner with auth, status:', response.status, response.statusText)
-                loadEventDataFallback()
-              }
-            })
-            .catch((fetchError) => {
-              console.warn('⚠️ TemplateSelectionPage: Error fetching banner with auth:', fetchError)
-              console.log('Falling back to localStorage or eventData')
-              loadEventDataFallback()
-            })
-          
-          return
-        }
+    // Priority 2: Try to get banner from eventData (if it's a File)
+    if (eventData?.banner && eventData.banner instanceof File) {
+      console.log('📁 TemplateSelectionPage: Reading banner from eventData File')
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = reader.result as string
+        setBannerUrl(dataUrl)
+        localStorage.setItem('event-form-banner', dataUrl)
+        setIsLoadingBanner(false)
+        console.log('✅ TemplateSelectionPage: Banner loaded from eventData File and saved to localStorage')
       }
-      
-      // If no banner URL in createdEvent, try eventData fallback
-      loadEventDataFallback()
-    }
-    
-    const loadEventDataFallback = () => {
-      // Priority 3: Try to get banner from eventData (if it's still a File)
-      if (eventData?.banner && eventData.banner instanceof File) {
-        console.log('📁 TemplateSelectionPage: Reading banner from eventData File')
-        const reader = new FileReader()
-        reader.onload = () => {
-          const dataUrl = reader.result as string
-          setBannerUrl(dataUrl)
-          localStorage.setItem('event-form-banner', dataUrl)
-          setIsLoadingBanner(false)
-          console.log('✅ TemplateSelectionPage: Banner loaded from eventData File and saved to localStorage')
-        }
-        reader.onerror = () => {
-          console.error('❌ TemplateSelectionPage: Error reading banner file')
-        }
-        reader.readAsDataURL(eventData.banner)
-        return
+      reader.onerror = () => {
+        console.error('❌ TemplateSelectionPage: Error reading banner file')
+        setIsLoadingBanner(false)
       }
-
-      console.log('⚠️ TemplateSelectionPage: No banner found')
-      console.log('📋 Debug info:', {
-        hasCreatedEvent: !!createdEvent,
-        createdEventKeys: createdEvent ? Object.keys(createdEvent) : [],
-        hasEventData: !!eventData,
-        eventDataBanner: eventData?.banner,
-        localStorageBanner: !!localStorage.getItem('event-form-banner')
-      })
-      setIsLoadingBanner(false)
+      reader.readAsDataURL(eventData.banner)
+      return
     }
 
-    loadBannerFromBackend()
-  }, [createdEvent, eventData])
+    console.log('⚠️ TemplateSelectionPage: No banner found in context or localStorage')
+    setIsLoadingBanner(false)
+  }, [eventData])
 
   const handlePrevious = () => {
     // Navigate back to dashboard and reopen form at step 2
