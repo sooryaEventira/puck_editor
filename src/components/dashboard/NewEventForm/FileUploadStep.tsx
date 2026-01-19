@@ -231,7 +231,7 @@ const FileUploadStep = forwardRef<FileUploadStepRef, FileUploadStepProps>(({
       // Save banner to localStorage only if API didn't return banner URL (fallback)
       // If API returns banner URL, we'll use that directly from createdEvent
       if (!createdEventData.banner && formData.banner && formData.banner instanceof File) {
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>((resolve) => {
           const reader = new FileReader()
           reader.onload = () => {
             const dataUrl = reader.result as string
@@ -241,10 +241,10 @@ const FileUploadStep = forwardRef<FileUploadStepRef, FileUploadStepProps>(({
           }
           reader.onerror = () => {
             console.error('❌ [FileUploadStep] Error saving banner to localStorage')
-            // Don't reject - continue even if banner save fails
+            // Continue even if banner save fails
             resolve()
           }
-          reader.readAsDataURL(formData.banner)
+          reader.readAsDataURL(formData.banner as File)
         })
       } else if (createdEventData.banner) {
         console.log('✅ [FileUploadStep] Banner URL received from API, using that instead of localStorage')
@@ -252,7 +252,7 @@ const FileUploadStep = forwardRef<FileUploadStepRef, FileUploadStepProps>(({
 
       // Save logo to localStorage only if API didn't return logo URL (fallback)
       if (!createdEventData.logo && formData.logo && formData.logo instanceof File) {
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>((resolve) => {
           const reader = new FileReader()
           reader.onload = () => {
             const dataUrl = reader.result as string
@@ -264,7 +264,7 @@ const FileUploadStep = forwardRef<FileUploadStepRef, FileUploadStepProps>(({
             console.error('❌ [FileUploadStep] Error saving logo to localStorage')
             resolve()
           }
-          reader.readAsDataURL(formData.logo)
+          reader.readAsDataURL(formData.logo as File)
         })
       } else if (createdEventData.logo) {
         console.log('✅ [FileUploadStep] Logo URL received from API, using that instead of localStorage')
