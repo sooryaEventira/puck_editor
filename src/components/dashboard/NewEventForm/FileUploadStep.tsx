@@ -8,6 +8,7 @@ interface FileUploadStepProps {
   formData: EventFormData
   updateFormData: (updates: Partial<EventFormData>) => void
   onSuccess: () => void
+  onSubmittingChange?: (isSubmitting: boolean) => void
 }
 
 export interface FileUploadStepRef {
@@ -18,7 +19,8 @@ export interface FileUploadStepRef {
 const FileUploadStep = forwardRef<FileUploadStepRef, FileUploadStepProps>(({ 
   formData, 
   updateFormData,
-  onSuccess 
+  onSuccess,
+  onSubmittingChange
 }, ref) => {
   const { setCreatedEvent } = useEventForm()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -132,6 +134,7 @@ const FileUploadStep = forwardRef<FileUploadStepRef, FileUploadStepProps>(({
     }
 
     setIsSubmitting(true)
+    onSubmittingChange?.(true)
     setValidationErrors([])
 
     console.log('📝 [FileUploadStep] Preparing event data for submission...')
@@ -217,30 +220,60 @@ const FileUploadStep = forwardRef<FileUploadStepRef, FileUploadStepProps>(({
       console.log('🌐 [FileUploadStep] Calling createEvent API...')
       const createdEventData = await createEvent(eventRequest)
 
-      // Ensure banner is stored in localStorage before navigation
-      if (formData.banner && formData.banner instanceof File) {
-        const reader = new FileReader()
-        reader.onload = () => {
-          const dataUrl = reader.result as string
-          localStorage.setItem('event-form-banner', dataUrl)
-          console.log('💾 [FileUploadStep] Banner saved to localStorage')
-        }
-        reader.onerror = () => {
-          console.error('❌ [FileUploadStep] Error saving banner to localStorage')
-        }
-        reader.readAsDataURL(formData.banner)
-      }
-
-      // Store the created event in context
+      // Store the created event in context first
       console.log('💾 [FileUploadStep] Storing created event in context:', {
         uuid: createdEventData.uuid,
-        eventName: createdEventData.eventName
+        eventName: createdEventData.eventName,
+        banner: createdEventData.banner ? 'present' : 'missing'
       })
       setCreatedEvent(createdEventData)
+
+      // Save banner to localStorage only if API didn't return banner URL (fallback)
+      // If API returns banner URL, we'll use that directly from createdEvent
+      if (!createdEventData.banner && formData.banner && formData.banner instanceof File) {
+        await new Promise<void>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            const dataUrl = reader.result as string
+            localStorage.setItem('event-form-banner', dataUrl)
+            console.log('💾 [FileUploadStep] Banner saved to localStorage (API did not return banner URL)')
+            resolve()
+          }
+          reader.onerror = () => {
+            console.error('❌ [FileUploadStep] Error saving banner to localStorage')
+            // Don't reject - continue even if banner save fails
+            resolve()
+          }
+          reader.readAsDataURL(formData.banner)
+        })
+      } else if (createdEventData.banner) {
+        console.log('✅ [FileUploadStep] Banner URL received from API, using that instead of localStorage')
+      }
+
+      // Save logo to localStorage only if API didn't return logo URL (fallback)
+      if (!createdEventData.logo && formData.logo && formData.logo instanceof File) {
+        await new Promise<void>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            const dataUrl = reader.result as string
+            localStorage.setItem('event-form-logo', dataUrl)
+            console.log('💾 [FileUploadStep] Logo saved to localStorage (API did not return logo URL)')
+            resolve()
+          }
+          reader.onerror = () => {
+            console.error('❌ [FileUploadStep] Error saving logo to localStorage')
+            resolve()
+          }
+          reader.readAsDataURL(formData.logo)
+        })
+      } else if (createdEventData.logo) {
+        console.log('✅ [FileUploadStep] Logo URL received from API, using that instead of localStorage')
+      }
 
       console.log('✅ [FileUploadStep] Event created successfully!', createdEventData)
 
       // Call success callback (which will navigate to template selection)
+      // All data is now ready in context and localStorage
       console.log('🎯 [FileUploadStep] Navigating to template selection...')
       onSuccess()
     } catch (error) {
@@ -249,6 +282,7 @@ const FileUploadStep = forwardRef<FileUploadStepRef, FileUploadStepProps>(({
       setValidationErrors([errorMessage])
     } finally {
       setIsSubmitting(false)
+      onSubmittingChange?.(false)
     }
   }
 

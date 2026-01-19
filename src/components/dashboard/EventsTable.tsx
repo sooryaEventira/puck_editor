@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Edit05 } from '@untitled-ui/icons-react'
 import { DividerLineTable, type DividerLineTableColumn, type DividerLineTableSortDescriptor } from '../ui/untitled'
+import { TablePagination } from '../ui/TablePagination'
 
 export interface Event {
   id: string
@@ -11,46 +12,6 @@ export interface Event {
   eventDate: string
   createdBy: string
 }
-
-// Default events data
-export const defaultEvents: Event[] = [
-  {
-    id: '1',
-    name: 'Global Tech Innovation Summit 2025',
-    status: 'Live',
-    attendanceType: 'Online',
-    registrations: 300,
-    eventDate: 'Jan 13, 2025',
-    createdBy: 'Olivia Rhye'
-  },
-  {
-    id: '2',
-    name: 'Healthcare Leaders Conference...',
-    status: 'Live',
-    attendanceType: 'Offline',
-    registrations: 400,
-    eventDate: 'Jan 15, 2025',
-    createdBy: 'Phoenix Baker'
-  },
-  {
-    id: '3',
-    name: 'Future of Design Expo & Awards',
-    status: 'Live',
-    attendanceType: 'Hybrid',
-    registrations: 200,
-    eventDate: 'Jan 20, 2025',
-    createdBy: 'Lana Steiner'
-  },
-  {
-    id: '4',
-    name: 'Global Tech Innovation Summit 2025',
-    status: 'Draft',
-    attendanceType: 'Online',
-    registrations: 100,
-    eventDate: 'Feb 1, 2025',
-    createdBy: 'Demi Wilkinson'
-  }
-]
 
 interface EventsTableProps {
   events?: Event[]
@@ -85,17 +46,57 @@ const AttendanceTypeBadge: React.FC<{ type: 'Online' | 'Offline' | 'Hybrid' }> =
 }
 
 const EventsTable: React.FC<EventsTableProps> = ({
-  events = defaultEvents,
+  events = [],
   onEditClick,
   onSort,
   searchValue = ''
 }) => {
   const [sortDescriptor, setSortDescriptor] = useState<DividerLineTableSortDescriptor | undefined>()
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const handleSortChange = (descriptor: DividerLineTableSortDescriptor) => {
     setSortDescriptor(descriptor)
     onSort?.(descriptor.column)
   }
+
+  // Filter events based on search value
+  const filteredEvents = useMemo(() => {
+    if (!searchValue.trim()) return events
+
+    const query = searchValue.trim().toLowerCase()
+    return events.filter((event) => {
+      const haystack = [
+        event.name,
+        event.status,
+        event.attendanceType,
+        event.createdBy,
+        event.eventDate
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      return haystack.includes(query)
+    })
+  }, [events, searchValue])
+
+  // Paginate filtered events
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return filteredEvents.slice(startIndex, endIndex)
+  }, [filteredEvents, currentPage])
+
+  // Calculate total pages
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredEvents.length / itemsPerPage)
+  }, [filteredEvents.length])
+
+  // Reset to page 1 when search value changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchValue])
 
   const columns: Array<DividerLineTableColumn<Event>> = useMemo(
     () => [
@@ -165,7 +166,7 @@ const EventsTable: React.FC<EventsTableProps> = ({
 
   return (
     <DividerLineTable
-      data={events}
+      data={paginatedEvents}
       columns={columns}
       getRowKey={(item) => item.id}
       sortDescriptor={sortDescriptor}
@@ -177,6 +178,13 @@ const EventsTable: React.FC<EventsTableProps> = ({
             ? `No events found matching "${searchValue}".` 
             : 'No events available.'}
         </div>
+      }
+      footer={
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       }
     />
   )

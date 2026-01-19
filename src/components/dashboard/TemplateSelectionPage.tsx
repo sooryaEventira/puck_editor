@@ -18,9 +18,17 @@ const TemplateSelectionPage: React.FC = () => {
   const displayStartDate = createdEvent?.startDate || eventData?.startDate
   const displayLocation = createdEvent?.location || eventData?.location
 
-  // Load banner from context: Priority 1 = localStorage, Priority 2 = eventData File
+  // Load banner from context: Priority 1 = API response (createdEvent), Priority 2 = localStorage, Priority 3 = eventData File
   useEffect(() => {
-    // Priority 1: Check localStorage first (where banner is stored during event creation)
+    // Priority 1: Check API response first (createdEvent.banner from API)
+    if (createdEvent?.banner) {
+      console.log('✅ TemplateSelectionPage: Banner loaded from API response')
+      setBannerUrl(createdEvent.banner)
+      setIsLoadingBanner(false)
+      return
+    }
+
+    // Priority 2: Check localStorage (where banner is stored during event creation as fallback)
     const storedBanner = localStorage.getItem('event-form-banner')
     if (storedBanner) {
       console.log('✅ TemplateSelectionPage: Banner loaded from localStorage')
@@ -29,7 +37,7 @@ const TemplateSelectionPage: React.FC = () => {
       return
     }
 
-    // Priority 2: Try to get banner from eventData (if it's a File)
+    // Priority 3: Try to get banner from eventData (if it's a File)
     if (eventData?.banner && eventData.banner instanceof File) {
       console.log('📁 TemplateSelectionPage: Reading banner from eventData File')
       const reader = new FileReader()
@@ -48,9 +56,9 @@ const TemplateSelectionPage: React.FC = () => {
       return
     }
 
-    console.log('⚠️ TemplateSelectionPage: No banner found in context or localStorage')
+    console.log('⚠️ TemplateSelectionPage: No banner found in API response, context or localStorage')
     setIsLoadingBanner(false)
-  }, [eventData])
+  }, [createdEvent, eventData])
 
   const handlePrevious = () => {
     // Navigate back to dashboard and reopen form at step 2

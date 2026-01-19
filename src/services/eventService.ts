@@ -27,6 +27,8 @@ export interface CreateEventResponseData {
   location?: string
   attendees?: number
   eventExperience?: 'in-person' | 'virtual' | 'hybrid'
+  banner?: string // Banner URL from API response
+  logo?: string // Logo URL from API response
   [key: string]: any // Allow additional fields
 }
 
