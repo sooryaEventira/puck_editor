@@ -107,7 +107,7 @@ export const config = {
       title: "Landing / Home Page",
       icon: "fa-solid fa-home",
       defaultExpanded: true,
-      components: ["HeroSection", "HeroVideo", "HeroSplitScreen", "EventNumbers", "SpeakerHighlight", "SessionHighlight", "SessionHighlightKeynote", "SessionHighlightWorkshop", "ContactFooter", "PricingPlans", "CountdownTimer", "ProgressCircleStats", "RegistrationCTA"]
+      components: ["HeroSection", "EventNumbers", "SpeakerHighlight", "SessionHighlight", "ContactFooter", "RegistrationCTA"]
     },
     // Venue Page Category
     venue: {

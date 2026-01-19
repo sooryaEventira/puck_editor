@@ -55,6 +55,12 @@ const EventsTable: React.FC<EventsTableProps> = ({
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
+  // Log events received
+  useEffect(() => {
+    console.log('📊 [EventsTable] Received events:', events.length, 'events')
+    console.log('📊 [EventsTable] Events data:', JSON.stringify(events, null, 2))
+  }, [events])
+
   const handleSortChange = (descriptor: DividerLineTableSortDescriptor) => {
     setSortDescriptor(descriptor)
     onSort?.(descriptor.column)

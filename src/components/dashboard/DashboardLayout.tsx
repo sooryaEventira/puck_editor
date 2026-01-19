@@ -124,7 +124,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       setEventsError(null)
       
       try {
+        console.log('🔄 [DashboardLayout] Fetching events...')
         const eventDataList = await fetchEvents()
+        console.log('✅ [DashboardLayout] Events fetched:', eventDataList.length, 'events')
+        console.log('📋 [DashboardLayout] Event data list:', JSON.stringify(eventDataList, null, 2))
         
         // Map API response to Event interface format
         const mappedEvents: Event[] = eventDataList.map((eventData: EventData) => {
@@ -178,6 +181,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           }
         })
         
+        console.log('✅ [DashboardLayout] Mapped events:', mappedEvents.length, 'events')
+        console.log('📋 [DashboardLayout] Mapped events data:', JSON.stringify(mappedEvents, null, 2))
         setEvents(mappedEvents)
       } catch (error) {
         console.error('Failed to fetch events:', error)

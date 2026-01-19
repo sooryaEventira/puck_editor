@@ -22,9 +22,18 @@ const TemplateSelectionPage: React.FC = () => {
   useEffect(() => {
     // Priority 1: Check API response first (createdEvent.banner from API)
     if (createdEvent?.banner) {
-      console.log('✅ TemplateSelectionPage: Banner loaded from API response')
-      setBannerUrl(createdEvent.banner)
+      console.log('✅ TemplateSelectionPage: Banner found in API response:', createdEvent.banner)
+      
+      // Convert http to https to avoid redirect issues
+      let bannerUrl = createdEvent.banner
+      if (bannerUrl.startsWith('http://')) {
+        bannerUrl = bannerUrl.replace('http://', 'https://')
+        console.log('🔒 TemplateSelectionPage: Converted http to https')
+      }
+      
+      setBannerUrl(bannerUrl)
       setIsLoadingBanner(false)
+      console.log('✅ TemplateSelectionPage: Banner URL set:', bannerUrl)
       return
     }
 

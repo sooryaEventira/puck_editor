@@ -220,11 +220,28 @@ const FileUploadStep = forwardRef<FileUploadStepRef, FileUploadStepProps>(({
       console.log('🌐 [FileUploadStep] Calling createEvent API...')
       const createdEventData = await createEvent(eventRequest)
 
+      // Log the full API response
+      console.log('📥 [FileUploadStep] Full API Response:', JSON.stringify(createdEventData, null, 2))
+      console.log('📥 [FileUploadStep] API Response Details:', {
+        uuid: createdEventData.uuid,
+        eventName: createdEventData.eventName,
+        banner: createdEventData.banner,
+        logo: createdEventData.logo,
+        location: createdEventData.location,
+        startDate: createdEventData.startDate,
+        endDate: createdEventData.endDate,
+        attendees: createdEventData.attendees,
+        eventExperience: createdEventData.eventExperience,
+        status: createdEventData.status,
+        event_id: createdEventData.event_id
+      })
+
       // Store the created event in context first
       console.log('💾 [FileUploadStep] Storing created event in context:', {
         uuid: createdEventData.uuid,
         eventName: createdEventData.eventName,
-        banner: createdEventData.banner ? 'present' : 'missing'
+        banner: createdEventData.banner ? 'present' : 'missing',
+        logo: createdEventData.logo ? 'present' : 'missing'
       })
       setCreatedEvent(createdEventData)
 
