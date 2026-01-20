@@ -26,19 +26,6 @@ const EmailVerificationPage: React.FC<EmailVerificationPageProps> = ({
     inputRefs.current[0]?.focus()
   }, [])
 
-  // Auto-verify when all 6 digits are entered
-  useEffect(() => {
-    const codeString = code.join('')
-    const isComplete = code.every(digit => digit !== '')
-    if (codeString.length === 6 && isComplete && !isLoading && onVerify) {
-      // Small delay to allow the last digit to be visible
-      const timer = setTimeout(() => {
-        onVerify(codeString)
-      }, 300)
-      return () => clearTimeout(timer)
-    }
-  }, [code, isLoading, onVerify])
-
   const handleChange = (index: number, value: string) => {
     // Only allow digits
     if (value && !/^\d$/.test(value)) {

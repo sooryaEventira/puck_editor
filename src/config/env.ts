@@ -57,7 +57,7 @@ export const API_ENDPOINTS = {
     REGISTER_SEND_OTP: `${env.AUTH_API_URL}/api/v1/auth/register/send-otp/`,
     REGISTER_VERIFY_OTP: `${env.AUTH_API_URL}/api/v1/auth/register/verify-otp/`,
     CREATE_PASSWORD: `${env.AUTH_API_URL}/api/v1/register/`,
-    CREATE_ORGANIZATION: `${env.AUTH_API_URL}/api/v1/organizations/`,
+    CREATE_ORGANIZATION: `${env.AUTH_API_URL}/api/v1/admin/organizations/`,
     SIGNIN: `${env.AUTH_API_URL}/api/v1/token/`,
   },
   // Event endpoints
