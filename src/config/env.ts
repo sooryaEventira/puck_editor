@@ -69,5 +69,9 @@ export const API_ENDPOINTS = {
   TIMEZONE: {
     LIST: `${env.AUTH_API_URL}/api/v1/admin/timezones/`,
   },
+  // Webpage endpoints
+  WEBPAGE: {
+    CREATE: `${env.AUTH_API_URL}/api/v1/admin/webpages/`,
+  },
 }
 

@@ -10,6 +10,7 @@ import MoveToFolderModal from './MoveToFolderModal'
 import DeleteConfirmationModal from './DeleteConfirmationModal'
 import GalleryShortcutModal from './GalleryShortcutModal'
 import RestrictAccessModal from './RestrictAccessModal'
+import CreateFolderModal from './CreateFolderModal'
 
 export interface MediaFile {
   id: string
@@ -71,6 +72,7 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
   const [fileForShortcut, setFileForShortcut] = useState<MediaFile | null>(null)
   const [showRestrictAccessModal, setShowRestrictAccessModal] = useState(false)
   const [itemForRestriction, setItemForRestriction] = useState<{ id: string; name: string; type: 'folder' | 'file' } | null>(null)
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false)
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null)
   const [editingFolderName, setEditingFolderName] = useState('')
   const [editingFileId, setEditingFileId] = useState<string | null>(null)
@@ -128,22 +130,27 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
   }
 
   const handleCreateFolder = () => {
-    // Generate unique folder name
-    const baseName = 'New folder'
-    let folderName = baseName
+    // Open the create folder modal
+    setShowCreateFolderModal(true)
+  }
+
+  const handleFolderCreate = (folderName: string) => {
+    // Generate unique folder name if the provided name already exists
+    let finalFolderName = folderName
     let counter = 1
-    while (folders.some((f) => f.name === folderName && f.parentId === currentFolderId)) {
-      folderName = `${baseName} ${counter}`
+    while (folders.some((f) => f.name === finalFolderName && f.parentId === currentFolderId)) {
+      finalFolderName = `${folderName} ${counter}`
       counter++
     }
 
     const newFolder: MediaFolder = {
       id: `folder-${Date.now()}`,
-      name: folderName,
+      name: finalFolderName,
       files: [],
       parentId: currentFolderId
     }
     setFolders([...folders, newFolder])
+    setShowCreateFolderModal(false)
   }
 
   const handleFolderClick = (folderId: string) => {
@@ -800,6 +807,13 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
             }}
             itemName={itemForRestriction?.name}
             itemType={itemForRestriction?.type || 'folder'}
+          />
+
+          {/* Create Folder Modal */}
+          <CreateFolderModal
+            isVisible={showCreateFolderModal}
+            onClose={() => setShowCreateFolderModal(false)}
+            onCreate={handleFolderCreate}
           />
         </div>
       </div>

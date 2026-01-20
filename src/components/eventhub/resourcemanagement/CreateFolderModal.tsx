@@ -51,8 +51,9 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
       title={initialName ? 'Rename folder' : 'Create folder'}
       subtitle={initialName ? 'Enter a new name for this folder' : 'Enter a name for the new folder'}
       width={400}
+      showHeaderBorder={false}
       footer={
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 mb-4">
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
@@ -62,7 +63,7 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
         </div>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-4 mb-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
             Folder name

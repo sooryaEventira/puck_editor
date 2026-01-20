@@ -638,3 +638,148 @@ export const fetchEvents = async (): Promise<EventData[]> => {
     throw new Error(errorMessage)
   }
 }
+
+export interface CreateWebpageRequest {
+  event_uuid: string // Event UUID
+  name: string // Page name (e.g., "welcome")
+  content: {
+    [key: string]: {
+      title: string
+      slug: string
+      data: {
+        [slug: string]: {
+          root: {
+            props: any
+          }
+          content: any[]
+          zones: any
+        }
+      }
+    }
+  }
+}
+
+export interface CreateWebpageResponseData {
+  uuid: string
+  event: string
+  name: string
+  slug: string
+  content: any
+  created_by: number
+  updated_by: number
+  created_date: string
+  updated_date: string
+}
+
+/**
+ * Create a new webpage for an event
+ */
+export const createWebpage = async (request: CreateWebpageRequest): Promise<CreateWebpageResponseData> => {
+  try {
+    // Get access token from localStorage
+    const accessToken = localStorage.getItem('accessToken')
+    
+    if (!accessToken) {
+      const errorMessage = 'Authentication required. Please login again.'
+      showToast.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    // Get organization UUID from localStorage
+    const organizationUuid = localStorage.getItem('organizationUuid')
+    
+    if (!organizationUuid) {
+      const errorMessage = 'Organization UUID is missing. Please create or select an organization first.'
+      showToast.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    const response = await fetch(API_ENDPOINTS.WEBPAGE.CREATE, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'X-Organization': organizationUuid,
+      },
+      credentials: 'include',
+      body: JSON.stringify(request),
+    })
+
+    // Check for network/CORS errors before parsing response
+    if (!response || !response.ok) {
+      if (!response) {
+        const errorMessage = 'Cannot connect to the server. Please make sure the backend server is running.'
+        showToast.error(errorMessage)
+        throw new Error(errorMessage)
+      }
+
+      // HTTP error - try to parse error response
+      try {
+        const errorData: any = await response.json()
+        const errorMessage = errorData.message || errorData.detail || `Server error (${response.status})`
+        const errors = errorData.errors || []
+        const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
+        showToast.error(errorText)
+        throw new Error(errorText)
+      } catch (parseError) {
+        const errorMessage = `Server error: ${response.status} ${response.statusText}`
+        showToast.error(errorMessage)
+        throw new Error(errorMessage)
+      }
+    }
+
+    // Parse successful response
+    let data: ApiResponse<CreateWebpageResponseData>
+    try {
+      data = await response.json()
+    } catch (parseError) {
+      const errorMessage = 'Invalid response from server. Please try again.'
+      showToast.error(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    // Check if response has error status
+    if (data.status === 'error') {
+      const errorMessage = data.message || 'Failed to create webpage'
+      const errors = data.errors || []
+      const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
+      showToast.error(errorText)
+      throw new Error(errorText)
+    }
+
+    // Success response
+    if (data.status === 'success') {
+      showToast.success(data.message || 'Webpage created successfully')
+    }
+
+    // Extract and return the webpage data
+    if (!data.data) {
+      throw new Error('No data returned from server')
+    }
+
+    return data.data
+  } catch (error) {
+    // Handle network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      const errorMessage = 'Cannot connect to the server. Please check if the server is running.'
+      showToast.error('Connection error. Please check if the server is running.')
+      throw new Error(errorMessage)
+    }
+
+    // Re-throw if it's already our custom error
+    if (error instanceof Error && (
+        error.message.startsWith('Cannot connect') || 
+        error.message.startsWith('Server error') ||
+        error.message.startsWith('Invalid response') ||
+        error.message.startsWith('Authentication required') ||
+        error.message.startsWith('Organization UUID') ||
+        error.message.startsWith('No data returned')
+    )) {
+      throw error
+    }
+
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create webpage. Please try again.'
+    showToast.error(errorMessage)
+    throw new Error(errorMessage)
+  }
+}

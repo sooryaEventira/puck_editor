@@ -132,6 +132,12 @@ const App: React.FC = () => {
     logger.debug('📍 Navigating back to event hub')
   }
 
+  // Helper function to check if user has an organization
+  const hasOrganization = (): boolean => {
+    const orgUuid = localStorage.getItem('organizationUuid')
+    const orgName = localStorage.getItem('organizationName')
+    return !!(orgUuid && orgName)
+  }
 
   // Handle login
   const handleLogin = async (email: string, password: string) => {
@@ -152,7 +158,7 @@ const App: React.FC = () => {
         // Store email for reference
         localStorage.setItem('userEmail', email)
         
-        // Store organization if available
+        // Store organization if available, otherwise clear any existing organization data
         if (organizations && organizations.length > 0) {
           const firstOrg = organizations[0]
           if (firstOrg.uuid) {
@@ -161,6 +167,10 @@ const App: React.FC = () => {
           if (firstOrg.name) {
             localStorage.setItem('organizationName', firstOrg.name)
           }
+        } else {
+          // Clear organization data if no organizations in response
+          localStorage.removeItem('organizationUuid')
+          localStorage.removeItem('organizationName')
         }
       }
       
@@ -168,8 +178,17 @@ const App: React.FC = () => {
       setIsAuthenticated(true)
       localStorage.setItem('isAuthenticated', 'true')
       
-      // Navigate to dashboard
-      setCurrentView('dashboard')
+      // Check if user has organization
+      const hasOrg = hasOrganization()
+      
+      if (hasOrg) {
+        // User has organization - navigate to dashboard
+        setCurrentView('dashboard')
+      } else {
+        // User doesn't have organization - redirect to eventspace setup
+        setShowEventspaceSetup(true)
+        logger.debug('⚠️ User logged in without organization, redirecting to eventspace setup')
+      }
     } catch (error) {
       // Error is already handled in authService with toast
       // Authentication failed, user remains on login page
@@ -280,10 +299,11 @@ const App: React.FC = () => {
         localStorage.setItem('organizationName', organization.name)
       }
       
-      // Complete setup and authenticate user
-      // Set authentication state first
-      setIsAuthenticated(true)
-      localStorage.setItem('isAuthenticated', 'true')
+      // Ensure user is authenticated (in case they skipped password creation)
+      if (!isAuthenticated) {
+        setIsAuthenticated(true)
+        localStorage.setItem('isAuthenticated', 'true')
+      }
       
       // Hide eventspace setup page
       setShowEventspaceSetup(false)
@@ -343,6 +363,19 @@ const App: React.FC = () => {
   const handleMagicLinkSignIn = () => {
     // TODO: Implement magic link authentication
   }
+
+  // Check organization status on mount and when authentication changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      const hasOrg = hasOrganization()
+      
+      // If authenticated but no organization, show eventspace setup
+      if (!hasOrg && !showEventspaceSetup && !showCreatePassword && !showEmailVerification && !showRegistration) {
+        setShowEventspaceSetup(true)
+        logger.debug('⚠️ Authenticated user without organization detected, showing eventspace setup')
+      }
+    }
+  }, [isAuthenticated, showEventspaceSetup, showCreatePassword, showEmailVerification, showRegistration])
 
   // Apply Puck styling when not in preview mode
   useEffect(() => {
@@ -451,20 +484,22 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated])
 
-  // Show login, registration, email verification, password creation, or eventspace setup page if not authenticated
+  // Show eventspace setup if authenticated but no organization (or if explicitly shown during registration)
+  if (showEventspaceSetup && (!isAuthenticated || !hasOrganization())) {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <EventspaceSetupPage
+          onSubmit={handleEventspaceSetup}
+          isLoading={isCreatingOrganization}
+          error={organizationCreationError}
+          onNameChange={() => setOrganizationCreationError(null)}
+        />
+      </Suspense>
+    )
+  }
+
+  // Show login, registration, email verification, password creation pages if not authenticated
   if (!isAuthenticated) {
-    if (showEventspaceSetup) {
-      return (
-        <Suspense fallback={<LoadingFallback />}>
-          <EventspaceSetupPage
-            onSubmit={handleEventspaceSetup}
-            isLoading={isCreatingOrganization}
-            error={organizationCreationError}
-            onNameChange={() => setOrganizationCreationError(null)}
-          />
-        </Suspense>
-      )
-    }
     
     if (showCreatePassword) {
       return (
@@ -516,6 +551,21 @@ const App: React.FC = () => {
           onMagicLinkSignIn={handleMagicLinkSignIn}
           onForgotPassword={() => {}}
           onNavigateToRegistration={() => setShowRegistration(true)}
+        />
+      </Suspense>
+    )
+  }
+
+  // Route protection: Check if user has organization before accessing protected routes
+  if (isAuthenticated && !hasOrganization()) {
+    // User is authenticated but doesn't have organization - show eventspace setup
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <EventspaceSetupPage
+          onSubmit={handleEventspaceSetup}
+          isLoading={isCreatingOrganization}
+          error={organizationCreationError}
+          onNameChange={() => setOrganizationCreationError(null)}
         />
       </Suspense>
     )

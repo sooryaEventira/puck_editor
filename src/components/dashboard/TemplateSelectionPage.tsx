@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useEventForm } from '../../contexts/EventFormContext'
+import { createWebpage } from '../../services/eventService'
+import { showToast } from '../../utils/toast'
 import HeroSection from '../advanced/HeroSection'
 import AboutSection from '../advanced/AboutSection'
 import SpeakersSection from '../advanced/SpeakersSection'
@@ -12,6 +14,7 @@ const TemplateSelectionPage: React.FC = () => {
   const { eventData, createdEvent } = useEventForm()
   const [bannerUrl, setBannerUrl] = useState<string>('')
   const [isLoadingBanner, setIsLoadingBanner] = useState<boolean>(true)
+  const [isSaving, setIsSaving] = useState<boolean>(false)
 
   // Prioritize createdEvent data from API, fallback to eventData from form
   const displayEventName = createdEvent?.eventName || eventData?.eventName
@@ -77,12 +80,200 @@ const TemplateSelectionPage: React.FC = () => {
     window.dispatchEvent(new PopStateEvent('popstate'))
   }
 
-  const handleNext = () => {
-    // Clear create-from-scratch flag to indicate default template was selected
-    localStorage.removeItem('create-from-scratch')
-    // Navigate to Event Website page
-    window.history.pushState({}, '', '/event/website')
-    window.dispatchEvent(new PopStateEvent('popstate'))
+  // Generate default template data structure
+  const getDefaultTemplateData = () => {
+    // Get banner image from state or localStorage or use default
+    const bannerImage = bannerUrl || localStorage.getItem('event-form-banner') || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'
+    
+    // Get event data values
+    const eventName = displayEventName || 'Event Title'
+    const location = displayLocation || 'Location'
+    const eventDate = formatEventDate()
+    const subtitle = `${location} | ${eventDate}`
+    
+    // Generate unique IDs for each component
+    const generateId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    
+    return {
+      content: [
+        {
+          type: 'HeroSection',
+          props: {
+            id: generateId('HeroSection'),
+            title: eventName,
+            subtitle: subtitle,
+            buttons: [
+              {
+                text: 'Register Now',
+                link: '#register',
+                color: '#6938EF',
+                textColor: 'white',
+                size: 'large'
+              }
+            ],
+            backgroundColor: '#1a1a1a',
+            textColor: '#FFFFFF',
+            backgroundImage: bannerImage,
+            height: '500px',
+            alignment: 'center',
+            overlayOpacity: 0.4
+          }
+        },
+        {
+          type: 'AboutSection',
+          props: {
+            id: generateId('AboutSection'),
+            leftTitle: 'About Event',
+            leftText: 'We are dedicated to providing innovative solutions that help our clients achieve their goals and drive success in their respective industries.'
+          }
+        },
+        {
+          type: 'SpeakersSection',
+          props: {
+            id: generateId('SpeakersSection'),
+            title: 'Speakers',
+            showTitle: true,
+            speakers: [
+              {
+                name: 'Speaker Name',
+                title: 'Speaker Title',
+                image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400'
+              },
+              {
+                name: 'Speaker Name',
+                title: 'Speaker Title',
+                image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400'
+              },
+              {
+                name: 'Speaker Name',
+                title: 'Speaker Title',
+                image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400'
+              }
+            ],
+            containerMaxWidth: 'max-w-7xl',
+            containerPadding: 'px-4 sm:px-6 lg:px-8 py-8'
+          }
+        },
+        {
+          type: 'RegistrationCTA',
+          props: {
+            id: generateId('RegistrationCTA'),
+            title: "Register now to enjoy exclusive benefits!",
+            subtitle: "Don't miss out on this opportunity, join us today!",
+            buttonText: "Register Now"
+          }
+        },
+        {
+          type: 'Sponsors',
+          props: {
+            id: generateId('Sponsors'),
+            title: "Sponsors",
+            sponsors: [
+              { id: '1', name: 'Sponsor 1', logoUrl: '' },
+              { id: '2', name: 'Sponsor 2', logoUrl: '' },
+              { id: '3', name: 'Sponsor 3', logoUrl: '' },
+              { id: '4', name: 'Sponsor 4', logoUrl: '' }
+            ]
+          }
+        },
+        {
+          type: 'FAQAccordion',
+          props: {
+            id: generateId('FAQAccordion'),
+            title: "Frequently Asked Questions",
+            description: "Everything you need to know about the product and billing. Can't find the answer you're looking for? Please chat to our friendly team",
+            containerMaxWidth: 'max-w-7xl',
+            containerPadding: 'px-4 sm:px-6 lg:px-8 py-8'
+          }
+        },
+        {
+          type: 'ContactFooter',
+          props: {
+            id: generateId('ContactFooter'),
+            items: [
+              {
+                id: '1',
+                type: 'email',
+                title: 'Email',
+                description: "Our friendly team is here to help.",
+                actionText: 'Send us an email',
+                actionEmail: 'contact@example.com'
+              },
+              {
+                id: '2',
+                type: 'office',
+                title: 'Office',
+                description: 'Come and say hello at our office HQ.',
+                actionText: 'View on map',
+                actionUrl: '#'
+              },
+              {
+                id: '3',
+                type: 'phone',
+                title: 'Phone',
+                description: 'Mon-Fri from 8am to 5pm.',
+                actionText: 'Call us now',
+                actionPhone: '+1 (555) 000-0000'
+              }
+            ]
+          }
+        }
+      ],
+      root: { props: { title: 'Welcome', pageTitle: 'Welcome' } },
+      zones: {}
+    }
+  }
+
+  const handleNext = async () => {
+    // Check if event is created
+    if (!createdEvent?.uuid) {
+      showToast.error('Event not found. Please create an event first.')
+      return
+    }
+
+    setIsSaving(true)
+
+    try {
+      // Get default template data
+      const templateData = getDefaultTemplateData()
+
+      // Format data according to API structure
+      // The content object uses the page key (e.g., "welcome") and each page has title, slug, and data
+      const webpageRequest = {
+        event_uuid: createdEvent.uuid,
+        name: 'welcome',
+        content: {
+          welcome: {
+            title: 'Welcome',
+            slug: '/',
+            data: {
+              '/': {
+                root: templateData.root,
+                content: templateData.content,
+                zones: templateData.zones
+              }
+            }
+          }
+        }
+      }
+
+      // Save webpage to backend
+      const response = await createWebpage(webpageRequest)
+      
+      console.log('✅ Webpage created successfully:', response)
+      
+      // Clear create-from-scratch flag to indicate default template was selected
+      localStorage.removeItem('create-from-scratch')
+      
+      // Navigate to Event Website page
+      window.history.pushState({}, '', '/event/website')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    } catch (error) {
+      // Error is already handled in createWebpage with toast
+      console.error('❌ Failed to create webpage:', error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleCreateFromScratch = () => {
@@ -235,9 +426,10 @@ const TemplateSelectionPage: React.FC = () => {
         </button>
         <button
           onClick={handleNext}
-          className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#6938EF] hover:bg-[#5925DC] transition-colors"
+          disabled={isSaving}
+          className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#6938EF] hover:bg-[#5925DC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Next
+          {isSaving ? 'Saving...' : 'Next'}
         </button>
       </footer>
     </div>

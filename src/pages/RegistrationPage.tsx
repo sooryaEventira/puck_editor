@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { XClose } from '@untitled-ui/icons-react'
 import logoImage from '../assets/images/Logo.png'
 import backgroundImage from '../assets/images/background.png'
@@ -21,9 +21,17 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const isSubmittingRef = useRef(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+    
+    // Prevent multiple submissions
+    if (isSubmittingRef.current || isLoading) {
+      return
+    }
+
     setError(null)
 
     if (!acceptTerms) {
@@ -36,6 +44,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({
       return
     }
 
+    isSubmittingRef.current = true
     setIsLoading(true)
 
     try {
@@ -50,6 +59,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({
       setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.')
     } finally {
       setIsLoading(false)
+      isSubmittingRef.current = false
     }
   }
 
@@ -103,7 +113,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({
           <div className="h-4 sm:h-5 w-full self-stretch" />
 
           {/* Form Section */}
-          <form onSubmit={handleSubmit} className="flex w-full flex-col items-start justify-start gap-4 sm:gap-5 self-stretch px-4 sm:px-6">
+          <form id="registration-form" onSubmit={handleSubmit} className="flex w-full flex-col items-start justify-start gap-4 sm:gap-5 self-stretch px-4 sm:px-6">
             <div className="flex w-full flex-col items-center justify-start gap-4 sm:gap-5 self-stretch rounded-xl">
               {/* Email Input */}
               <div className="flex w-full flex-col items-start justify-start gap-1.5 self-stretch">
@@ -179,7 +189,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={!acceptTerms || isLoading}
+              disabled={!acceptTerms || isLoading || isSubmittingRef.current}
               className="inline-flex w-full mt-4 items-center justify-center self-stretch overflow-hidden rounded-lg px-4 py-2.5 sm:py-2.5 touch-manipulation bg-[#6938EF] shadow-[0px_1px_2px_rgba(10,12.67,18,0.05)] outline outline-2 outline-white -outline-offset-2 gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5925DC] transition-colors"
             >
               <div className="flex items-center justify-center px-0.5">
