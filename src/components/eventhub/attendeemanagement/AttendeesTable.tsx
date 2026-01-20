@@ -73,7 +73,7 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
       const haystack = [
         attendee.name,
         attendee.email,
-        attendee.status,
+        // attendee.status,
         attendee.inviteCode,
         ...attendee.groups.map((g) => g.name)
       ]

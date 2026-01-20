@@ -119,20 +119,6 @@ export const useAttendeeTableColumns = ({
         }
       },
       {
-        id: 'status',
-        header: 'Status',
-        sortable: true,
-        sortAccessor: ({ attendee }) => attendee?.status || '',
-        render: ({ attendee }) => {
-          if (!attendee) return null
-          return (
-            <Badge variant={getStatusBadgeVariant(attendee.status)}>
-              {attendee.status.charAt(0).toUpperCase() + attendee.status.slice(1)}
-            </Badge>
-          )
-        }
-      },
-      {
         id: 'inviteCode',
         header: 'Invite code',
         sortable: true,

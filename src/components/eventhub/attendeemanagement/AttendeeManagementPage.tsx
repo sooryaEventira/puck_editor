@@ -1,12 +1,13 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { useEventForm } from '../../../contexts/EventFormContext'
+import { uploadUserFile, fetchAttendees, type AttendeeData } from '../../../services/eventService'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import AttendeesTable from './AttendeesTable'
 import CreateProfileModal from './CreateProfileModal'
 import CreateGroupModal from './CreateGroupModal'
 import CreateCustomFieldModal from './CreateCustomFieldModal'
-import UploadModal from '../schedulesession/UploadModal'
+import UploadModal from '../../ui/UploadModal'
 import AttendeeDetailsSlideout from './AttendeeDetailsSlideout'
 import { Attendee, AttendeeTab, Group, CustomField } from './attendeeTypes'
 import { defaultCards, ContentCard } from '../EventHubContent'
@@ -101,12 +102,69 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
     setIsUploadModalOpen(true)
   }
 
-  const handleUploadFiles = (files: File[]) => {
-    console.log('Upload files:', files)
-    // TODO: Implement file upload logic for attendees
-    // Process the uploaded files (e.g., CSV, Excel) and create attendees
-    setIsUploadModalOpen(false)
+  const { createdEvent } = useEventForm()
+
+  const handleUploadFiles = async (files: File[]) => {
+    // Get event UUID from context
+    const eventUuid = createdEvent?.uuid
+    
+    if (!eventUuid) {
+      throw new Error('Event UUID is required. Please select an event first.')
+    }
+
+    // Upload each file
+    for (const file of files) {
+      await uploadUserFile(file, eventUuid)
+    }
+
+    // Refresh attendees list after upload
+    await loadAttendees()
   }
+
+  // Load attendees from API
+  const loadAttendees = async () => {
+    const eventUuid = createdEvent?.uuid
+    
+    if (!eventUuid) {
+      return
+    }
+
+    try {
+      const attendeesData = await fetchAttendees(eventUuid)
+      
+      // Map API response to Attendee interface
+      const mappedAttendees: Attendee[] = attendeesData.map((attendeeData: AttendeeData) => ({
+        id: attendeeData.id || attendeeData.uuid || '',
+        name: attendeeData.name || `${attendeeData.first_name || ''} ${attendeeData.last_name || ''}`.trim() || 'Unknown',
+        firstName: attendeeData.first_name,
+        lastName: attendeeData.last_name,
+        email: attendeeData.email,
+        avatarUrl: attendeeData.avatar_url,
+        bannerUrl: attendeeData.banner_url,
+        status: (attendeeData.status as Attendee['status']) || 'sent',
+        inviteCode: attendeeData.invite_code,
+        groups: attendeeData.groups || [],
+        institute: attendeeData.institute,
+        post: attendeeData.post,
+        emailVerified: attendeeData.email_verified,
+        emailVerifiedDate: attendeeData.email_verified_date,
+        feedbackIncomplete: attendeeData.feedback_incomplete,
+      }))
+
+      setAttendees(mappedAttendees)
+    } catch (error) {
+      // Error is already handled in fetchAttendees with toast
+      console.error('Failed to load attendees:', error)
+    }
+  }
+
+  // Load attendees on mount and when event changes
+  useEffect(() => {
+    if (createdEvent?.uuid) {
+      loadAttendees()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createdEvent?.uuid])
 
   const handleCreateProfile = () => {
     setIsCreateProfileModalOpen(true)
@@ -300,7 +358,13 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onAttachFiles={handleUploadFiles}
+        onUpload={handleUploadFiles}
+        title="Upload attendees"
+        description="XLSX files only"
+        instructions={[
+          'Step 1: Download template',
+          'Step 2: Upload attendees'
+        ]}
       />
 
       {/* Attendee Details Slideout */}

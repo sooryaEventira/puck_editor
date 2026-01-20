@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import DashboardSidebar from './DashboardSidebar'
 import DashboardNavbar from './DashboardNavbar'
 import DashboardContent from './DashboardContent'
@@ -6,7 +6,7 @@ import NewEventForm, { type EventFormData } from './NewEventForm'
 import TemplateSelectionPage from './TemplateSelectionPage'
 import EventWebsitePage from '../eventhub/EventWebsitePage'
 import WebsitePreviewPage from '../eventhub/WebsitePreviewPage'
-import { defaultEvents, type Event } from './EventsTable'
+import { type Event } from './EventsTable'
 import type { DateRange } from '../ui/untitled'
 import { fetchEvents, type EventData } from '../../services/eventService'
 
@@ -78,9 +78,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         setShowNewEventForm(false)
         setShowPreviewPage(false)
       } else {
+        const wasShowingOtherPages = showTemplatePage || showEventWebsitePage || showPreviewPage
         setShowTemplatePage(false)
         setShowEventWebsitePage(false)
         setShowPreviewPage(false)
+        // If navigating back to dashboard from other pages, refresh events
+        if ((path === '/dashboard' || path === '/') && wasShowingOtherPages) {
+          loadEvents()
+        }
       }
     }
 
@@ -117,85 +122,203 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const [isLoadingEvents, setIsLoadingEvents] = useState<boolean>(true)
   const [eventsError, setEventsError] = useState<string | null>(null)
 
-  // Fetch events on mount
-  useEffect(() => {
-    const loadEvents = async () => {
-      setIsLoadingEvents(true)
-      setEventsError(null)
+  // Fetch events function
+  const loadEvents = async () => {
+    setIsLoadingEvents(true)
+    setEventsError(null)
+    
+    try {
+      console.log('🔄 [DashboardLayout] Fetching events...')
+      const eventDataList = await fetchEvents()
+      console.log('✅ [DashboardLayout] Events fetched:', eventDataList.length, 'events')
       
-      try {
-        console.log('🔄 [DashboardLayout] Fetching events...')
-        const eventDataList = await fetchEvents()
-        console.log('✅ [DashboardLayout] Events fetched:', eventDataList.length, 'events')
-        console.log('📋 [DashboardLayout] Event data list:', JSON.stringify(eventDataList, null, 2))
-        
-        // Map API response to Event interface format
-        const mappedEvents: Event[] = eventDataList.map((eventData: EventData) => {
-          // Map eventExperience to attendanceType
-          const attendanceTypeMap: Record<string, 'Online' | 'Offline' | 'Hybrid'> = {
-            'virtual': 'Online',
-            'in-person': 'Offline',
-            'hybrid': 'Hybrid',
-          }
-          
-          // Map status to Live/Draft
-          const statusMap: Record<string, 'Live' | 'Draft'> = {
-            'Live': 'Live',
-            'live': 'Live',
-            'Published': 'Live',
-            'published': 'Live',
-            'Draft': 'Draft',
-            'draft': 'Draft',
-          }
-          
-          // Format date
-          const formatDate = (dateString?: string): string => {
-            if (!dateString) return 'TBD'
-            try {
-              const date = new Date(dateString)
-              if (isNaN(date.getTime())) return 'TBD'
-              return date.toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
-              })
-            } catch {
-              return 'TBD'
+      // Debug: Log first event to see available fields
+      if (eventDataList.length > 0) {
+        const sampleEvent = eventDataList[0] as any
+        console.log('🔍 [DashboardLayout] Sample event fields:', Object.keys(sampleEvent))
+        console.log('🔍 [DashboardLayout] Sample event - created_at:', sampleEvent.created_at, 'createdAt:', sampleEvent.createdAt, 'created_date:', sampleEvent.created_date, 'event_date:', sampleEvent.event_date)
+      }
+      
+      // Sort events by createdAt in descending order (newest first)
+      const sortedEventDataList = [...eventDataList].sort((a, b) => {
+        // Get creation date from various possible fields
+        const getCreationDate = (event: EventData | any): number => {
+          // Priority 1: Try created_at (snake_case from API - most common)
+          if ((event as any).created_at) {
+            const date = new Date((event as any).created_at)
+            if (!isNaN(date.getTime())) {
+              return date.getTime()
             }
           }
-          
-          // Get createdBy from user info or default
-          const createdBy = eventData.createdBy || 
-                           eventData.created_by || 
-                           localStorage.getItem('userEmail')?.split('@')[0] || 
-                           'Unknown'
-          
-          return {
-            id: eventData.uuid,
-            name: eventData.eventName,
-            status: statusMap[eventData.status || ''] || 'Draft',
-            attendanceType: attendanceTypeMap[eventData.eventExperience || ''] || 'Online',
-            registrations: eventData.registrations || 0,
-            eventDate: formatDate(eventData.startDate),
-            createdBy: createdBy,
+          // Priority 2: Try createdAt (camelCase)
+          if (event.createdAt) {
+            const date = new Date(event.createdAt)
+            if (!isNaN(date.getTime())) {
+              return date.getTime()
+            }
           }
-        })
+          // Priority 3: Try created_date
+          if ((event as any).created_date) {
+            const date = new Date((event as any).created_date)
+            if (!isNaN(date.getTime())) {
+              return date.getTime()
+            }
+          }
+          // Fallback: Use event_date or startDate if no creation date available
+          if ((event as any).event_date) {
+            const date = new Date((event as any).event_date)
+            if (!isNaN(date.getTime())) {
+              return date.getTime()
+            }
+          }
+          if (event.startDate) {
+            const date = new Date(event.startDate)
+            if (!isNaN(date.getTime())) {
+              return date.getTime()
+            }
+          }
+          // If no date found, put at the end (oldest)
+          return 0
+        }
         
-        console.log('✅ [DashboardLayout] Mapped events:', mappedEvents.length, 'events')
-        console.log('📋 [DashboardLayout] Mapped events data:', JSON.stringify(mappedEvents, null, 2))
-        setEvents(mappedEvents)
-      } catch (error) {
-        console.error('Failed to fetch events:', error)
-        setEventsError(error instanceof Error ? error.message : 'Failed to load events')
-        // Fallback to empty array or default events on error
-        setEvents([])
-      } finally {
-        setIsLoadingEvents(false)
+        const dateA = getCreationDate(a)
+        const dateB = getCreationDate(b)
+        // Descending order: newest first (larger date value comes first)
+        return dateB - dateA
+      })
+      
+      console.log('📊 [DashboardLayout] Events sorted by createdAt (newest first)')
+      
+      // Map API response to Event interface format (already sorted)
+      const mappedEvents: Event[] = sortedEventDataList.map((eventData: EventData) => {
+        // Map eventExperience to attendanceType
+        const attendanceTypeMap: Record<string, 'Online' | 'Offline' | 'Hybrid'> = {
+          'virtual': 'Online',
+          'in-person': 'Offline',
+          'hybrid': 'Hybrid',
+        }
+        
+        // Map status to Live/Draft
+        const statusMap: Record<string, 'Live' | 'Draft'> = {
+          'Live': 'Live',
+          'live': 'Live',
+          'Published': 'Live',
+          'published': 'Live',
+          'Draft': 'Draft',
+          'draft': 'Draft',
+        }
+        
+        // Format date
+        const formatDate = (dateString?: string): string => {
+          if (!dateString) return 'TBD'
+          try {
+            const date = new Date(dateString)
+            if (isNaN(date.getTime())) return 'TBD'
+            return date.toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric', 
+              year: 'numeric' 
+            })
+          } catch {
+            return 'TBD'
+          }
+        }
+        
+        // Get createdBy from user info or default
+        const createdBy = eventData.createdBy || 
+                         (eventData as any).created_by || 
+                         localStorage.getItem('userEmail')?.split('@')[0] || 
+                         'Unknown'
+        
+        return {
+          id: eventData.uuid,
+          name: eventData.eventName,
+          status: statusMap[eventData.status || ''] || 'Draft',
+          attendanceType: attendanceTypeMap[eventData.eventExperience || ''] || 'Online',
+          registrations: eventData.registrations || 0,
+          eventDate: formatDate(eventData.startDate),
+          createdBy: createdBy,
+          createdAt: eventData.createdAt || (eventData as any).created_at || (eventData as any).created_date,
+        }
+      })
+      
+      // Ensure events are still sorted by createdAt after mapping (newest first)
+      mappedEvents.sort((a, b) => {
+        const getDate = (event: Event): number => {
+          if (event.createdAt) {
+            const date = new Date(event.createdAt)
+            if (!isNaN(date.getTime())) {
+              return date.getTime()
+            }
+          }
+          return 0
+        }
+        const dateA = getDate(a)
+        const dateB = getDate(b)
+        return dateB - dateA // Descending order (newest first)
+      })
+      
+      console.log('✅ [DashboardLayout] Mapped and sorted events by createdAt (newest first):', mappedEvents.length, 'events')
+      if (mappedEvents.length > 0) {
+        console.log('📊 [DashboardLayout] First event (newest):', mappedEvents[0].name, 'createdAt:', mappedEvents[0].createdAt)
+        if (mappedEvents.length > 1) {
+          console.log('📊 [DashboardLayout] Last event (oldest):', mappedEvents[mappedEvents.length - 1].name, 'createdAt:', mappedEvents[mappedEvents.length - 1].createdAt)
+        }
       }
+      setEvents(mappedEvents)
+    } catch (error) {
+      console.error('Failed to fetch events:', error)
+      setEventsError(error instanceof Error ? error.message : 'Failed to load events')
+      // Fallback to empty array or default events on error
+      setEvents([])
+    } finally {
+      setIsLoadingEvents(false)
     }
-    
+  }
+
+  // Fetch events on mount
+  useEffect(() => {
     loadEvents()
   }, [])
+
+  // Track previous path to detect navigation back to dashboard
+  const prevPathRef = useRef<string>(window.location.pathname)
+
+  // Refresh events when navigating back to dashboard
+  useEffect(() => {
+    const checkAndRefresh = () => {
+      const currentPath = window.location.pathname
+      const prevPath = prevPathRef.current
+
+      // Check if we're navigating back to dashboard from event creation flow
+      const isNavigatingToDashboard = (currentPath === '/dashboard' || currentPath === '/') && 
+                                       (prevPath.startsWith('/event/create') || prevPath.startsWith('/event/website'))
+      
+      // Check if we're on dashboard and not showing other pages
+      const isOnDashboard = (currentPath === '/dashboard' || currentPath === '/') && 
+                            !showTemplatePage && !showEventWebsitePage && !showPreviewPage && !showNewEventForm
+
+      if (isNavigatingToDashboard || (isOnDashboard && prevPath !== currentPath)) {
+        loadEvents()
+      }
+
+      prevPathRef.current = currentPath
+    }
+
+    checkAndRefresh()
+
+    // Listen for navigation events
+    const handleLocationChange = () => {
+      checkAndRefresh()
+    }
+
+    window.addEventListener('popstate', handleLocationChange)
+    
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showTemplatePage, showEventWebsitePage, showPreviewPage, showNewEventForm])
 
   // Helper function to parse event date from format "Jan 13, 2025" to Date object
   const parseEventDate = (dateString: string): Date | null => {
@@ -235,8 +358,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         
         // Set time to start of day for accurate comparison
         const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
-        const startDateOnly = new Date(dateRange.start.getFullYear(), dateRange.start.getMonth(), dateRange.start.getDate())
-        const endDateOnly = new Date(dateRange.end.getFullYear(), dateRange.end.getMonth(), dateRange.end.getDate())
+        const startDate = dateRange.start!
+        const endDate = dateRange.end!
+        const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
+        const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
         
         return eventDateOnly >= startDateOnly && eventDateOnly <= endDateOnly
       })

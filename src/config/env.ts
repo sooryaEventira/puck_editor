@@ -73,5 +73,10 @@ export const API_ENDPOINTS = {
   WEBPAGE: {
     CREATE: `${env.AUTH_API_URL}/api/v1/admin/webpages/`,
   },
+  // User Management endpoints
+  USER_MANAGEMENT: {
+    UPLOAD_USER: `${env.AUTH_API_URL}/api/v1/admin/attendees/upload-excel/`,
+    LIST: (eventUuid: string) => `${env.AUTH_API_URL}/api/v1/admin/attendees/?event_uuid=${eventUuid}`,
+  },
 }
 

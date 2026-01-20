@@ -11,6 +11,7 @@ export interface Event {
   registrations: number
   eventDate: string
   createdBy: string
+  createdAt?: string
 }
 
 interface EventsTableProps {

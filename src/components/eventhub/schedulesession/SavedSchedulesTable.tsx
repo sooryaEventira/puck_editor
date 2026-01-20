@@ -9,7 +9,7 @@ import {
 import { SavedSchedule } from './sessionTypes'
 import { useTableHeader, TablePagination } from '../../ui'
 import NewTagModal from './NewTagModal'
-import UploadModal from './UploadModal'
+import UploadModal from '../../ui/UploadModal'
 
 type TableRowData = {
   schedule: SavedSchedule
