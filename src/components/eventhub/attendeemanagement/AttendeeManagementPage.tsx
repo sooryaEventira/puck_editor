@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { useEventForm } from '../../../contexts/EventFormContext'
-import { uploadUserFile, fetchAttendees, type AttendeeData } from '../../../services/eventService'
+import { uploadUserFile, fetchAttendees, type AttendeeData } from '../../../services/attendeeService'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import AttendeesTable from './AttendeesTable'

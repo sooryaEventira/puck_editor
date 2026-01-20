@@ -249,18 +249,18 @@ const FileUploadStep = forwardRef<FileUploadStepRef, FileUploadStepProps>(({
       // If API returns banner URL, we'll use that directly from createdEvent
       if (!createdEventData.banner && formData.banner && formData.banner instanceof File) {
         await new Promise<void>((resolve) => {
-          const reader = new FileReader()
-          reader.onload = () => {
-            const dataUrl = reader.result as string
-            localStorage.setItem('event-form-banner', dataUrl)
+        const reader = new FileReader()
+        reader.onload = () => {
+          const dataUrl = reader.result as string
+          localStorage.setItem('event-form-banner', dataUrl)
             console.log('💾 [FileUploadStep] Banner saved to localStorage (API did not return banner URL)')
             resolve()
-          }
-          reader.onerror = () => {
-            console.error('❌ [FileUploadStep] Error saving banner to localStorage')
+        }
+        reader.onerror = () => {
+          console.error('❌ [FileUploadStep] Error saving banner to localStorage')
             // Continue even if banner save fails
             resolve()
-          }
+        }
           reader.readAsDataURL(formData.banner as File)
         })
       } else if (createdEventData.banner) {

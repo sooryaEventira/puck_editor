@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useEventForm } from '../../contexts/EventFormContext'
-import { createWebpage } from '../../services/eventService'
+import { createWebpage } from '../../services/webpageService'
 import { showToast } from '../../utils/toast'
 import HeroSection from '../advanced/HeroSection'
 import AboutSection from '../advanced/AboutSection'

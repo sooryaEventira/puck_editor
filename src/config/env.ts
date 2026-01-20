@@ -44,6 +44,13 @@ export const env = {
 }
 
 /**
+ * Common API base paths
+ */
+const ADMIN_API_BASE = '/api/v1/admin/'
+const AUTH_API_BASE = '/api/v1/auth/'
+const API_V1_BASE = '/api/v1/'
+
+/**
  * API Endpoints
  * All endpoints use full URLs to the Azure backend
  */
@@ -54,29 +61,52 @@ export const API_ENDPOINTS = {
   // GET_PAGE: (filename: string) => env.PAGE_API_URL ? `${env.PAGE_API_URL}/api/pages/${filename}` : '',
   // Auth endpoints (authentication backend)
   AUTH: {
-    REGISTER_SEND_OTP: `${env.AUTH_API_URL}/api/v1/auth/register/send-otp/`,
-    REGISTER_VERIFY_OTP: `${env.AUTH_API_URL}/api/v1/auth/register/verify-otp/`,
-    CREATE_PASSWORD: `${env.AUTH_API_URL}/api/v1/register/`,
-    CREATE_ORGANIZATION: `${env.AUTH_API_URL}/api/v1/admin/organizations/`,
-    SIGNIN: `${env.AUTH_API_URL}/api/v1/token/`,
+    REGISTER_SEND_OTP: `${env.AUTH_API_URL}${AUTH_API_BASE}register/send-otp/`,
+    REGISTER_VERIFY_OTP: `${env.AUTH_API_URL}${AUTH_API_BASE}register/verify-otp/`,
+    CREATE_PASSWORD: `${env.AUTH_API_URL}${API_V1_BASE}register/`,
+    CREATE_ORGANIZATION: `${env.AUTH_API_URL}${ADMIN_API_BASE}organizations/`,
+    SIGNIN: `${env.AUTH_API_URL}${API_V1_BASE}token/`,
   },
   // Event endpoints
   EVENT: {
-    CREATE: `${env.AUTH_API_URL}/api/v1/admin/event/`,
-    LIST: `${env.AUTH_API_URL}/api/v1/admin/event/`,
+    CREATE: `${env.AUTH_API_URL}${ADMIN_API_BASE}event/`,
+    LIST: `${env.AUTH_API_URL}${ADMIN_API_BASE}event/`,
   },
   // Timezone endpoints
   TIMEZONE: {
-    LIST: `${env.AUTH_API_URL}/api/v1/admin/timezones/`,
+    LIST: `${env.AUTH_API_URL}${ADMIN_API_BASE}timezones/`,
   },
   // Webpage endpoints
   WEBPAGE: {
-    CREATE: `${env.AUTH_API_URL}/api/v1/admin/webpages/`,
+    CREATE: `${env.AUTH_API_URL}${ADMIN_API_BASE}webpages/`,
   },
   // User Management endpoints
   USER_MANAGEMENT: {
-    UPLOAD_USER: `${env.AUTH_API_URL}/api/v1/admin/attendees/upload-excel/`,
-    LIST: (eventUuid: string) => `${env.AUTH_API_URL}/api/v1/admin/attendees/?event_uuid=${eventUuid}`,
+    UPLOAD_USER: `${env.AUTH_API_URL}${ADMIN_API_BASE}attendees/upload-excel/`,
+    LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}attendees/?event_uuid=${eventUuid}`,
+  },
+  // Resource Management endpoints
+  RESOURCE: {
+    CREATE_FOLDER: `${env.AUTH_API_URL}${ADMIN_API_BASE}resources/folders/`,
+    DELETE_FOLDER: (uuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}resources/folders/${uuid}/`,
+    LIST_FOLDERS: (eventUuid: string, parentFolderId?: string | null) => {
+      let url = `${env.AUTH_API_URL}${ADMIN_API_BASE}resources/folders/?event_uuid=${eventUuid}`
+      // Only add parent parameter if it's explicitly provided (not null/undefined)
+      // When undefined, fetch all folders; when null, fetch root folders; when string, fetch nested folders
+      if (parentFolderId !== undefined && parentFolderId !== null) {
+        url += `&parent=${parentFolderId}`
+      }
+      return url
+    },
+    UPLOAD_FILE: `${env.AUTH_API_URL}${ADMIN_API_BASE}resources/files/`,
+    DELETE_FILE: (uuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}resources/files/${uuid}/`,
+    LIST_FILES: (folderId?: string | null) => {
+      let url = `${env.AUTH_API_URL}${ADMIN_API_BASE}resources/files/`
+      if (folderId !== undefined && folderId !== null) {
+        url += `?folder=${folderId}`
+      }
+      return url
+    },
   },
 }
 

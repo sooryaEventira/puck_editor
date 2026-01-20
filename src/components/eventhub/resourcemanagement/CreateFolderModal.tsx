@@ -1,26 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Modal } from '../../ui'
 import { Button } from '../../ui/untitled'
+import { createFolder } from '../../../services/resourceService'
+import { useEventForm } from '../../../contexts/EventFormContext'
 
 interface CreateFolderModalProps {
   isVisible: boolean
   onClose: () => void
-  onCreate: (folderName: string) => void
+  onCreate: (folderData: { uuid: string; name: string }) => void
   initialName?: string
+  parentFolderId?: string | null // Optional parent folder UUID for nested folders
 }
 
 const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
   isVisible,
   onClose,
   onCreate,
-  initialName = ''
+  initialName = '',
+  parentFolderId = null
 }) => {
   const [folderName, setFolderName] = useState(initialName)
+  const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const { createdEvent } = useEventForm()
 
   useEffect(() => {
     if (isVisible) {
       setFolderName(initialName)
+      setIsLoading(false)
       setTimeout(() => {
         inputRef.current?.focus()
         inputRef.current?.select()
@@ -28,11 +35,57 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
     }
   }, [isVisible, initialName])
 
-  const handleSubmit = () => {
-    if (folderName.trim()) {
-      onCreate(folderName.trim())
+  const handleSubmit = async () => {
+    if (!folderName.trim() || isLoading) {
+      return
+    }
+
+    if (!createdEvent?.uuid) {
+      console.error('Event UUID is required to create folder')
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const folderData: { name: string; event_uuid: string; parent?: string } = {
+        name: folderName.trim(),
+        event_uuid: createdEvent.uuid,
+      }
+      
+      // Add parent field if parentFolderId is provided
+      if (parentFolderId) {
+        folderData.parent = parentFolderId
+        console.log('Creating nested folder with parent:', parentFolderId)
+      } else {
+        console.log('Creating root folder (no parent)')
+      }
+      
+      console.log('Folder data being sent:', folderData)
+      const response = await createFolder(folderData)
+      console.log('Folder created successfully:', response)
+
+      // Call onCreate with the folder data from API response
+      onCreate({
+        uuid: response.uuid,
+        name: response.name,
+      })
+
       setFolderName('')
       onClose()
+    } catch (error) {
+      // Error is already handled by createFolder function (toast message)
+      console.error('Failed to create folder:', error)
+      
+      // Even if there's an error (like "Folder already exists"), reload folders
+      // in case the folder exists but in a different location or the error is misleading
+      if (error instanceof Error && error.message.includes('already exists')) {
+        // Still call onCreate to trigger folder reload
+        // This will refresh the folder list to show the existing folder
+        onCreate({ uuid: '', name: '' })
+      }
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -54,11 +107,11 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
       showHeaderBorder={false}
       footer={
         <div className="flex justify-end gap-3 mb-4">
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={!folderName.trim()}>
-            {initialName ? 'Rename' : 'Create'}
+          <Button variant="primary" onClick={handleSubmit} disabled={!folderName.trim() || isLoading}>
+            {isLoading ? 'Creating...' : (initialName ? 'Rename' : 'Create')}
           </Button>
         </div>
       }

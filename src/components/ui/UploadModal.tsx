@@ -199,7 +199,11 @@ const UploadModal: React.FC<UploadModalProps> = ({
               <div className="w-full text-base font-semibold leading-6 text-[#181D27]" style={{ fontFamily: 'Inter' }}>
                 {title}
               </div>
-
+              {description && (
+                <div className="w-full text-sm font-normal leading-5 text-[#535862]" style={{ fontFamily: 'Inter' }}>
+                  {description}
+                </div>
+              )}
             </div>
           </div>
 
@@ -307,15 +311,21 @@ const UploadModal: React.FC<UploadModalProps> = ({
                 {/* Upload Text */}
                 <div className="flex w-full flex-col items-center justify-start gap-1 self-stretch">
                   <div className="inline-flex w-full items-start justify-center gap-1 self-stretch">
-                    <span className="text-sm font-semibold leading-5 text-[#5925DC] pointer-events-auto cursor-pointer" style={{ fontFamily: 'Inter' }} onClick={handleClickUpload}>
-                      {uploadText}
-                    </span>
+                    {uploadText.includes(' or ') ? (
+                      <>
+                        <span className="text-sm font-semibold leading-5 text-[#5925DC] pointer-events-auto cursor-pointer" style={{ fontFamily: 'Inter' }} onClick={handleClickUpload}>
+                          {uploadText.split(' or ')[0]}
+                        </span>
+                        <span className="text-sm font-normal leading-5 text-[#535862]" style={{ fontFamily: 'Inter' }}>
+                          {' or ' + uploadText.split(' or ')[1]}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-sm font-semibold leading-5 text-[#5925DC] pointer-events-auto cursor-pointer" style={{ fontFamily: 'Inter' }} onClick={handleClickUpload}>
+                        {uploadText}
+                      </span>
+                    )}
                   </div>
-                  {description && (
-                    <div className="w-full text-center text-xs font-normal leading-[18px] text-[#535862]" style={{ fontFamily: 'Inter' }}>
-                      {description}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

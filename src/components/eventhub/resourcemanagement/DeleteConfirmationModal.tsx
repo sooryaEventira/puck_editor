@@ -1,7 +1,9 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Modal } from '../../ui'
 import { Button } from '../../ui/untitled'
 import { XClose } from '@untitled-ui/icons-react'
+import { deleteFolder, deleteFile } from '../../../services/resourceService'
+import { useEventForm } from '../../../contexts/EventFormContext'
 
 interface DeleteConfirmationModalProps {
   isVisible: boolean
@@ -9,6 +11,7 @@ interface DeleteConfirmationModalProps {
   onConfirm: () => void
   itemName: string
   itemType: 'folder' | 'file'
+  itemId?: string // UUID of the item to delete (required for folders)
 }
 
 const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
@@ -16,11 +19,50 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   onClose,
   onConfirm,
   itemName,
-  itemType
+  itemType,
+  itemId
 }) => {
-  const handleConfirm = () => {
-    onConfirm()
-    onClose()
+  const [isLoading, setIsLoading] = useState(false)
+  const { createdEvent } = useEventForm()
+
+  // Reset loading state when modal closes
+  useEffect(() => {
+    if (!isVisible) {
+      setIsLoading(false)
+    }
+  }, [isVisible])
+
+  const handleConfirm = async () => {
+    if (!createdEvent?.uuid) {
+      console.error('Event UUID is required to delete item')
+      return
+    }
+
+    if (!itemId) {
+      console.error('Item ID is required to delete')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      if (itemType === 'folder') {
+        // Delete folder via API
+        await deleteFolder(itemId, createdEvent.uuid)
+      } else if (itemType === 'file') {
+        // Delete file via API
+        await deleteFile(itemId, createdEvent.uuid)
+      }
+      
+      // On success, call the onConfirm callback to update UI
+      onConfirm()
+      onClose()
+    } catch (error) {
+      // Error is already handled by deleteFolder/deleteFile function (toast message)
+      console.error(`Failed to delete ${itemType}:`, error)
+      // Don't close modal on error so user can try again
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -51,11 +93,11 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
       }
       footer={
         <div className="flex justify-end gap-3 py-4 -mt-2 bg-white">
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button variant="destructive" onClick={handleConfirm}>
-            Delete
+          <Button variant="destructive" onClick={handleConfirm} disabled={isLoading}>
+            {isLoading ? 'Deleting...' : 'Delete'}
           </Button>
         </div>
       }

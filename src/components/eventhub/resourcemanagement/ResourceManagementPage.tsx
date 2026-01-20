@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react'
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react'
 import { useEventForm } from '../../../contexts/EventFormContext'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
@@ -11,12 +11,14 @@ import DeleteConfirmationModal from './DeleteConfirmationModal'
 import GalleryShortcutModal from './GalleryShortcutModal'
 import RestrictAccessModal from './RestrictAccessModal'
 import CreateFolderModal from './CreateFolderModal'
+import { UploadModal } from '../../ui'
+import { fetchFolders, fetchAllFolders, uploadFile, fetchFiles } from '../../../services/resourceService'
 
 export interface MediaFile {
   id: string
   name: string
   type: 'image' | 'document' | 'video' | 'other'
-  file: File
+  file: File | null // Can be null for files loaded from API
   preview?: string
   folderId?: string | null
 }
@@ -46,13 +48,15 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
   hideNavbarAndSidebar = false
 }) => {
   // Get eventData from context to maintain consistency with EventHubPage navbar
-  const { eventData } = useEventForm()
+  const { eventData, createdEvent } = useEventForm()
   
   // Use eventData from context, fallback to props if not available
   const eventName = eventData?.eventName || propEventName || 'Highly important conference of 2025'
   const isDraft = propIsDraft !== undefined ? propIsDraft : true
-  const [folders, setFolders] = useState<MediaFolder[]>([])
+  const [allFolders, setAllFolders] = useState<MediaFolder[]>([]) // Store all folders for navigation
+  const [folders, setFolders] = useState<MediaFolder[]>([]) // Current level folders for display
   const [files, setFiles] = useState<MediaFile[]>([])
+  const [isLoadingFolders, setIsLoadingFolders] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('all')
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
@@ -73,6 +77,7 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
   const [showRestrictAccessModal, setShowRestrictAccessModal] = useState(false)
   const [itemForRestriction, setItemForRestriction] = useState<{ id: string; name: string; type: 'folder' | 'file' } | null>(null)
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null)
   const [editingFolderName, setEditingFolderName] = useState('')
   const [editingFileId, setEditingFileId] = useState<string | null>(null)
@@ -129,27 +134,146 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
     }
   }
 
+  // Load all folders from API (for navigation and breadcrumbs)
+  const loadAllFolders = useCallback(async () => {
+    if (!createdEvent?.uuid) {
+      return
+    }
+
+    setIsLoadingFolders(true)
+    try {
+      // Fetch all folders recursively (root and all nested folders)
+      const fetchedFolders = await fetchAllFolders(createdEvent.uuid)
+      
+      // Map API response to MediaFolder interface
+      const mappedFolders: MediaFolder[] = fetchedFolders.map((folder) => ({
+        id: folder.uuid,
+        name: folder.name,
+        files: [],
+        parentId: folder.parent || null,
+      }))
+      
+      console.log('📁 Loaded all folders from API:', {
+        totalCount: mappedFolders.length,
+        folders: mappedFolders.map(f => ({ id: f.id, name: f.name, parentId: f.parentId }))
+      })
+      
+      setAllFolders(mappedFolders)
+    } catch (error) {
+      // Error is already handled by fetchFolders function (toast message)
+      console.error('Failed to load folders:', error)
+    } finally {
+      setIsLoadingFolders(false)
+    }
+  }, [createdEvent?.uuid])
+
+  // Load folders for current level
+  const loadFolders = useCallback(async () => {
+    if (!createdEvent?.uuid) {
+      return
+    }
+
+    setIsLoadingFolders(true)
+    try {
+      // Fetch folders for the current location (null for root, or currentFolderId for nested)
+      const fetchedFolders = await fetchFolders(createdEvent.uuid, currentFolderId)
+      
+      // Map API response to MediaFolder interface
+      const mappedFolders: MediaFolder[] = fetchedFolders.map((folder) => ({
+        id: folder.uuid,
+        name: folder.name,
+        files: [],
+        parentId: folder.parent || null,
+      }))
+      
+      console.log('📁 Loaded folders for current level:', {
+        currentFolderId,
+        fetchedCount: fetchedFolders.length,
+        folders: mappedFolders.map(f => ({ id: f.id, name: f.name, parentId: f.parentId }))
+      })
+      
+      setFolders(mappedFolders)
+    } catch (error) {
+      // Error is already handled by fetchFolders function (toast message)
+      console.error('Failed to load folders:', error)
+    } finally {
+      setIsLoadingFolders(false)
+    }
+  }, [createdEvent?.uuid, currentFolderId])
+
+  // Load all folders on mount and when event UUID changes (for navigation)
+  useEffect(() => {
+    loadAllFolders()
+  }, [loadAllFolders])
+
+  // Load folders for current level when currentFolderId changes
+  useEffect(() => {
+    loadFolders()
+  }, [loadFolders])
+
+  // Load files for current folder
+  const loadFiles = useCallback(async () => {
+    if (!createdEvent?.uuid) {
+      return
+    }
+
+    try {
+      // Fetch files for the current folder (null for root, or currentFolderId for nested)
+      const fetchedFiles = await fetchFiles(currentFolderId)
+      
+      // Map API response to MediaFile interface
+      const mappedFiles: MediaFile[] = fetchedFiles.map((file) => {
+        // Determine file type from content_type or file extension
+        const fileExtension = file.name.split('.').pop()?.toLowerCase() || ''
+        const contentType = file.content_type || ''
+        
+        let fileType: 'image' | 'document' | 'video' | 'other' = 'other'
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(fileExtension) || contentType.startsWith('image/')) {
+          fileType = 'image'
+        } else if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'].includes(fileExtension) || contentType.includes('pdf') || contentType.includes('document') || contentType.includes('spreadsheet')) {
+          fileType = 'document'
+        } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExtension) || contentType.startsWith('video/')) {
+          fileType = 'video'
+        }
+
+        return {
+          id: file.uuid,
+          name: file.name,
+          type: fileType,
+          file: null, // We don't have the original File object from API
+          preview: fileType === 'image' ? file.file : undefined, // Use API URL for images
+          folderId: file.folder || currentFolderId || null
+        }
+      })
+      
+      console.log('📄 Loaded files from API:', {
+        folderId: currentFolderId || 'root',
+        fileCount: mappedFiles.length,
+        files: mappedFiles.map(f => ({ id: f.id, name: f.name, type: f.type }))
+      })
+      
+      setFiles(mappedFiles)
+    } catch (error) {
+      // Error is already handled by fetchFiles function (toast message)
+      console.error('Failed to load files:', error)
+    }
+  }, [createdEvent?.uuid, currentFolderId])
+
+  // Load files when currentFolderId changes
+  useEffect(() => {
+    loadFiles()
+  }, [loadFiles])
+
   const handleCreateFolder = () => {
     // Open the create folder modal
     setShowCreateFolderModal(true)
   }
 
-  const handleFolderCreate = (folderName: string) => {
-    // Generate unique folder name if the provided name already exists
-    let finalFolderName = folderName
-    let counter = 1
-    while (folders.some((f) => f.name === finalFolderName && f.parentId === currentFolderId)) {
-      finalFolderName = `${folderName} ${counter}`
-      counter++
-    }
-
-    const newFolder: MediaFolder = {
-      id: `folder-${Date.now()}`,
-      name: finalFolderName,
-      files: [],
-      parentId: currentFolderId
-    }
-    setFolders([...folders, newFolder])
+  const handleFolderCreate = (folderData: { uuid: string; name: string }) => {
+    // Reload all folders and current level folders after creation
+    // This ensures allFolders is updated for breadcrumb navigation
+    loadAllFolders()
+    loadFolders()
     setShowCreateFolderModal(false)
   }
 
@@ -218,11 +342,46 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
     }
   }
 
+  // Helper function to recursively get all nested folder IDs
+  const getNestedFolderIds = (parentId: string, allFolders: MediaFolder[]): string[] => {
+    const nestedIds: string[] = []
+    const directChildren = allFolders.filter((folder) => folder.parentId === parentId)
+    
+    for (const child of directChildren) {
+      nestedIds.push(child.id)
+      // Recursively get nested folders
+      const deeperNested = getNestedFolderIds(child.id, allFolders)
+      nestedIds.push(...deeperNested)
+    }
+    
+    return nestedIds
+  }
+
   const handleDeleteFolder = (folderId: string) => {
-    // Delete all files inside the folder
-    setFiles((prev) => prev.filter((file) => file.folderId !== folderId))
-    // Delete folder
-    setFolders((prev) => prev.filter((folder) => folder.id !== folderId))
+    // Get all nested folder IDs (recursively) from allFolders
+    const nestedFolderIds = getNestedFolderIds(folderId, allFolders)
+    
+    // Delete the parent folder and all nested folders from local state
+    setAllFolders((prev) => 
+      prev.filter((folder) => folder.id !== folderId && !nestedFolderIds.includes(folder.id))
+    )
+    setFolders((prev) => 
+      prev.filter((folder) => folder.id !== folderId && !nestedFolderIds.includes(folder.id))
+    )
+    
+    // Delete all files inside the parent folder and all nested folders
+    const allFolderIdsToDelete = [folderId, ...nestedFolderIds]
+    setFiles((prev) => 
+      prev.filter((file) => !allFolderIdsToDelete.includes(file.folderId || ''))
+    )
+    
+    // If we're currently inside a deleted folder or its nested folder, navigate to root
+    if (currentFolderId && (currentFolderId === folderId || nestedFolderIds.includes(currentFolderId))) {
+      setCurrentFolderId(null)
+    }
+    
+    // Reload folders from API after deletion (backend should handle cascading deletes)
+    loadFolders()
   }
 
   const handleRenameFile = (fileId: string, newName: string) => {
@@ -284,23 +443,106 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
     setFiles((prev) => prev.filter((file) => file.id !== fileId))
   }
 
-  const getBreadcrumbs = () => {
-    const breadcrumbs: Array<{ id: string | null; name: string }> = [
+  const breadcrumbs = useMemo(() => {
+    const breadcrumbList: Array<{ id: string | null; name: string }> = [
       { id: null, name: 'All media' }
     ]
 
-    if (currentFolderId) {
-      const currentFolder = folders.find((f) => f.id === currentFolderId)
-      if (currentFolder) {
-        breadcrumbs.push({ id: currentFolder.id, name: currentFolder.name })
-      }
+    if (!currentFolderId) {
+      return breadcrumbList
     }
 
-    return breadcrumbs
-  }
+    // Build complete path by traversing up the folder hierarchy
+    const buildPath = (folderId: string | null, path: Array<{ id: string | null; name: string }>): Array<{ id: string | null; name: string }> => {
+      if (!folderId) {
+        return path
+      }
+
+      const folder = allFolders.find((f) => f.id === folderId)
+      if (!folder) {
+        console.warn('Folder not found in allFolders:', folderId, 'Available folders:', allFolders.map(f => ({ id: f.id, name: f.name, parentId: f.parentId })))
+        return path
+      }
+
+      // Add current folder to path
+      path.push({ id: folder.id, name: folder.name })
+
+      // If folder has a parent, continue traversing up
+      if (folder.parentId) {
+        return buildPath(folder.parentId, path)
+      }
+
+      return path
+    }
+
+    // Build the path from current folder up to root
+    const pathFromCurrent = buildPath(currentFolderId, [])
+    
+    console.log('🍞 Building breadcrumbs:', {
+      currentFolderId,
+      allFoldersCount: allFolders.length,
+      pathFromCurrent: pathFromCurrent.map(p => ({ id: p.id, name: p.name }))
+    })
+    
+    // Reverse to get root -> ... -> current folder order
+    const reversedPath = pathFromCurrent.reverse()
+    
+    // Combine root breadcrumb with the path
+    return [...breadcrumbList, ...reversedPath]
+  }, [currentFolderId, allFolders])
 
   const handleUploadClick = () => {
-    fileInputRef.current?.click()
+    setShowUploadModal(true)
+  }
+
+  const handleFileUpload = async (uploadedFiles: File[]) => {
+    if (!createdEvent?.uuid) {
+      console.error('Event UUID is required to upload files')
+      return
+    }
+
+    // Upload each file to the API
+    for (const file of uploadedFiles) {
+      try {
+        const response = await uploadFile({
+          file: file,
+          event_uuid: createdEvent.uuid,
+          parent: currentFolderId || undefined, // Use undefined instead of null to omit the field
+        })
+
+        // Determine file type from content_type or file extension
+        const fileExtension = file.name.split('.').pop()?.toLowerCase() || ''
+        const contentType = response.content_type || ''
+        
+        let fileType: 'image' | 'document' | 'video' | 'other' = 'other'
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(fileExtension) || contentType.startsWith('image/')) {
+          fileType = 'image'
+        } else if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'].includes(fileExtension) || contentType.includes('pdf') || contentType.includes('document') || contentType.includes('spreadsheet')) {
+          fileType = 'document'
+        } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExtension) || contentType.startsWith('video/')) {
+          fileType = 'video'
+        }
+
+        // Create MediaFile from API response
+        const mediaFile: MediaFile = {
+          id: response.uuid,
+          name: response.name,
+          type: fileType,
+          file: file, // Keep original file object for preview
+          preview: fileType === 'image' ? response.file : undefined, // Use API URL for images
+          folderId: response.folder || currentFolderId || null
+        }
+
+        setFiles((prev) => [...prev, mediaFile])
+      } catch (error) {
+        // Error is already handled by uploadFile function (toast message)
+        console.error('Failed to upload file:', file.name, error)
+        // Continue with other files even if one fails
+      }
+    }
+    
+    // Reload files from API after upload to ensure consistency
+    loadFiles()
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -360,14 +602,72 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
     }
   }
 
+  // Helper function to get file extension
+  const getFileExtension = (fileName: string): string => {
+    return fileName.split('.').pop()?.toLowerCase() || ''
+  }
+
+  // Helper function to check if file is Excel
+  const isExcelFile = (file: MediaFile): boolean => {
+    const ext = getFileExtension(file.name)
+    return ['xls', 'xlsx', 'xlsm', 'xlsb'].includes(ext)
+  }
+
+  // Helper function to check if file is Word
+  const isWordFile = (file: MediaFile): boolean => {
+    const ext = getFileExtension(file.name)
+    return ['doc', 'docx', 'docm'].includes(ext)
+  }
+
   const getFileIcon = (file: MediaFile) => {
+    // Don't show icon for images - they will be rendered as <img>
     if (file.type === 'image') {
-      return <Image01 className="h-12 w-12 text-slate-400" />
-    } else if (file.type === 'document') {
-      return <File01 className="h-12 w-12 text-slate-400" />
-    } else if (file.type === 'video') {
+      return null
+    }
+    
+    // Excel files - green icon
+    if (isExcelFile(file)) {
+      const ext = getFileExtension(file.name).toUpperCase() || 'XLS'
+      return (
+        <div className="relative h-12 w-12 flex-shrink-0 flex items-center justify-center">
+          <div className="relative h-10 w-8">
+            <div className="absolute left-0 top-0 h-10 w-8 bg-[#079455] rounded-sm" />
+            <div className="absolute left-5 top-0.5 h-2.5 w-2.5 bg-white opacity-30 rounded-sm" />
+            <div className="absolute left-0.5 top-[18px] w-7 text-center text-[8px] font-bold leading-none text-white" style={{ fontFamily: 'Inter' }}>
+              {ext}
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // Word files - blue icon
+    if (isWordFile(file)) {
+      const ext = getFileExtension(file.name).toUpperCase() || 'DOC'
+      return (
+        <div className="relative h-12 w-12 flex-shrink-0 flex items-center justify-center">
+          <div className="relative h-10 w-8">
+            <div className="absolute left-0 top-0 h-10 w-8 bg-[#2B579A] rounded-sm" />
+            <div className="absolute left-5 top-0.5 h-2.5 w-2.5 bg-white opacity-30 rounded-sm" />
+            <div className="absolute left-0.5 top-[18px] w-7 text-center text-[8px] font-bold leading-none text-white" style={{ fontFamily: 'Inter' }}>
+              {ext}
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // Other documents - generic icon
+    if (file.type === 'document') {
       return <File01 className="h-12 w-12 text-slate-400" />
     }
+    
+    // Video files
+    if (file.type === 'video') {
+      return <File01 className="h-12 w-12 text-slate-400" />
+    }
+    
+    // Default/other files
     return <File01 className="h-12 w-12 text-slate-400" />
   }
 
@@ -443,12 +743,29 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
   }
 
   const filteredFolders = useMemo(() => {
-    let filtered = folders.filter((folder) => folder.parentId === currentFolderId)
+    // Handle null comparison: if currentFolderId is null, show folders with parentId === null
+    // If currentFolderId has a value, show folders with parentId === currentFolderId
+    let filtered = folders.filter((folder) => {
+      if (currentFolderId === null) {
+        return folder.parentId === null || folder.parentId === undefined
+      }
+      // String comparison for UUIDs
+      return String(folder.parentId) === String(currentFolderId)
+    })
+    
     if (searchQuery) {
       filtered = filtered.filter((folder) =>
         folder.name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
+    
+    console.log('🔍 Filtered folders:', {
+      currentFolderId,
+      totalFolders: folders.length,
+      filteredCount: filtered.length,
+      filtered: filtered.map(f => ({ id: f.id, name: f.name, parentId: f.parentId }))
+    })
+    
     return filtered
   }, [folders, currentFolderId, searchQuery])
 
@@ -581,28 +898,26 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
           <div className="border border-slate-200 rounded-lg bg-white min-h-[400px]">
             
             {/* Breadcrumbs */}
-            {currentFolderId && (
-              <div className="px-4 md:px-8 pt-4 pb-2 border-b border-slate-200">
-                <div className="flex items-center gap-2 text-sm">
-                  {getBreadcrumbs().map((crumb, index) => (
-                    <React.Fragment key={crumb.id || 'root'}>
-                      {index > 0 && <ChevronRight className="h-4 w-4 text-slate-400" />}
-                      <button
-                        type="button"
-                        onClick={() => setCurrentFolderId(crumb.id)}
-                        className={`${
-                          index === getBreadcrumbs().length - 1
-                            ? 'text-slate-900 font-medium'
-                            : 'text-slate-600 hover:text-primary'
-                        }`}
-                      >
-                        {crumb.name}
-                      </button>
-                    </React.Fragment>
-                  ))}
-                </div>
+            <div className="px-4 md:px-8 pt-4 pb-2 border-b border-slate-200">
+              <div className="flex items-center gap-2 text-sm">
+                {breadcrumbs.map((crumb, index) => (
+                  <React.Fragment key={crumb.id || 'root'}>
+                    {index > 0 && <ChevronRight className="h-4 w-4 text-slate-400" />}
+                    <button
+                      type="button"
+                      onClick={() => setCurrentFolderId(crumb.id)}
+                      className={`${
+                        index === breadcrumbs.length - 1
+                          ? 'text-slate-900 font-medium'
+                          : 'text-slate-600 hover:text-primary'
+                      }`}
+                    >
+                      {crumb.name}
+                    </button>
+                  </React.Fragment>
+                ))}
               </div>
-            )}
+            </div>
             
             {/* Content */}
             <div className="p-4 md:p-8">
@@ -674,12 +989,20 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
                             src={file.preview}
                             alt={file.name}
                             className="absolute inset-0 h-full w-full object-cover"
+                            onError={(e) => {
+                              // If image fails to load, hide img and show icon instead
+                              const target = e.currentTarget
+                              target.style.display = 'none'
+                              const iconContainer = target.parentElement?.querySelector('.file-icon-fallback') as HTMLElement
+                              if (iconContainer) {
+                                iconContainer.style.display = 'flex'
+                              }
+                            }}
                           />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            {getFileIcon(file)}
-                          </div>
-                        )}
+                        ) : null}
+                        <div className={`absolute inset-0 flex items-center justify-center file-icon-fallback ${file.type === 'image' && file.preview ? 'hidden' : ''}`}>
+                          {getFileIcon(file)}
+                        </div>
                         <button
                           type="button"
                           className="relative z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 backdrop-blur-sm border border-slate-300 p-0 transition-all opacity-0 group-hover:opacity-100 hover:bg-white"
@@ -770,14 +1093,21 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
             onConfirm={() => {
               if (itemToDelete) {
                 if (itemToDelete.type === 'folder') {
+                  // For folders, the API call is handled in the modal
+                  // Just update the local state after successful deletion
                   handleDeleteFolder(itemToDelete.id)
                 } else {
+                  // For files, the API call is handled in the modal
+                  // Just update the local state after successful deletion
                   handleDeleteFile(itemToDelete.id)
+                  // Reload files from API to ensure consistency
+                  loadFiles()
                 }
               }
             }}
             itemName={itemToDelete?.name || ''}
             itemType={itemToDelete?.type || 'file'}
+            itemId={itemToDelete?.id}
           />
 
           {/* Gallery/Shortcut Modal */}
@@ -814,6 +1144,23 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
             isVisible={showCreateFolderModal}
             onClose={() => setShowCreateFolderModal(false)}
             onCreate={handleFolderCreate}
+            parentFolderId={currentFolderId}
+          />
+
+          {/* Upload Modal */}
+          <UploadModal
+            isOpen={showUploadModal}
+            onClose={() => setShowUploadModal(false)}
+            onUpload={handleFileUpload}
+            title="Upload and attach files"
+            description="Upload and attach files to this project."
+            uploadText="Click to upload or drag and drop"
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,video/*"
+            multiple={true}
+            showTemplate={false}
+            buttonText="Attach files"
+            cancelButtonText="Cancel"
+            instructions={['SVG, PNG, JPG or GIF (max. 800×400px)']}
           />
         </div>
       </div>

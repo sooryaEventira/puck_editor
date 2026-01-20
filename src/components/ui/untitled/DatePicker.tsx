@@ -7,6 +7,8 @@ interface DatePickerProps {
   placeholder?: string
   label?: string
   disabled?: boolean
+  minDate?: string // ISO date string (YYYY-MM-DD)
+  maxDate?: string // ISO date string (YYYY-MM-DD)
 }
 
 const formatIsoDate = (date: Date) => {
@@ -54,7 +56,9 @@ const DatePicker: React.FC<DatePickerProps> = ({
   onChange,
   placeholder = 'Select date',
   label,
-  disabled = false
+  disabled = false,
+  minDate,
+  maxDate
 }) => {
   const parsedDate = useMemo(() => parseIsoDate(value), [value])
   const [isOpen, setIsOpen] = useState(false)
@@ -103,6 +107,9 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
   const days = useMemo(() => getMonthDays(new Date(visibleMonth)), [visibleMonth])
 
+  const minDateObj = useMemo(() => minDate ? parseIsoDate(minDate) : null, [minDate])
+  const maxDateObj = useMemo(() => maxDate ? parseIsoDate(maxDate) : null, [maxDate])
+
   const isSameDay = (dateA: Date | null, dateB: Date | null) => {
     if (!dateA || !dateB) return false
     return (
@@ -110,6 +117,28 @@ const DatePicker: React.FC<DatePickerProps> = ({
       dateA.getMonth() === dateB.getMonth() &&
       dateA.getDate() === dateB.getDate()
     )
+  }
+
+  const isDateDisabled = (date: Date): boolean => {
+    if (minDateObj) {
+      const minDateNormalized = new Date(minDateObj)
+      minDateNormalized.setHours(0, 0, 0, 0)
+      const dateNormalized = new Date(date)
+      dateNormalized.setHours(0, 0, 0, 0)
+      if (dateNormalized < minDateNormalized) {
+        return true
+      }
+    }
+    if (maxDateObj) {
+      const maxDateNormalized = new Date(maxDateObj)
+      maxDateNormalized.setHours(0, 0, 0, 0)
+      const dateNormalized = new Date(date)
+      dateNormalized.setHours(0, 0, 0, 0)
+      if (dateNormalized > maxDateNormalized) {
+        return true
+      }
+    }
+    return false
   }
 
   return (
@@ -203,17 +232,21 @@ const DatePicker: React.FC<DatePickerProps> = ({
 
               const isSelected = isSameDay(day, parsedDate)
               const isToday = isSameDay(day, new Date())
+              const isDisabled = isDateDisabled(day)
 
               return (
                 <button
                   key={day.toISOString()}
                   type="button"
-                  onClick={() => handleSelect(day)}
+                  onClick={() => !isDisabled && handleSelect(day)}
+                  disabled={isDisabled}
                   className={`flex h-9 w-9 items-center justify-center rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-                    isSelected
+                    isDisabled
+                      ? 'cursor-not-allowed text-slate-300'
+                      : isSelected
                       ? 'bg-primary text-white'
                       : 'text-slate-600 hover:bg-primary/10'
-                  } ${isToday && !isSelected ? 'border border-primary/40' : ''}`}
+                  } ${isToday && !isSelected && !isDisabled ? 'border border-primary/40' : ''}`}
                 >
                   {day.getDate()}
                 </button>

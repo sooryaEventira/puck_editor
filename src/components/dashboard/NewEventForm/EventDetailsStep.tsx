@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { DatePicker } from '../../ui/untitled'
 import { SearchLg, X } from '@untitled-ui/icons-react'
 import type { EventFormData } from '../NewEventForm'
@@ -10,6 +10,43 @@ interface EventDetailsStepProps {
 }
 
 const EventDetailsStep: React.FC<EventDetailsStepProps> = ({ formData, updateFormData }) => {
+  // Validate that end date is after start date
+  const dateValidationError = useMemo(() => {
+    if (!formData.startDate || !formData.endDate) {
+      return null
+    }
+    
+    const startDate = new Date(formData.startDate)
+    const endDate = new Date(formData.endDate)
+    
+    // Reset time to compare only dates
+    startDate.setHours(0, 0, 0, 0)
+    endDate.setHours(0, 0, 0, 0)
+    
+    if (endDate <= startDate) {
+      return 'End date must be after start date'
+    }
+    
+    return null
+  }, [formData.startDate, formData.endDate])
+
+  const handleStartDateChange = (value: string) => {
+    updateFormData({ startDate: value })
+    // If end date is before or equal to new start date, clear it
+    if (formData.endDate) {
+      const startDate = new Date(value)
+      const endDate = new Date(formData.endDate)
+      startDate.setHours(0, 0, 0, 0)
+      endDate.setHours(0, 0, 0, 0)
+      if (endDate <= startDate) {
+        updateFormData({ endDate: '' })
+      }
+    }
+  }
+
+  const handleEndDateChange = (value: string) => {
+    updateFormData({ endDate: value })
+  }
 
   return (
     <div className="space-y-4">
@@ -36,7 +73,7 @@ const EventDetailsStep: React.FC<EventDetailsStepProps> = ({ formData, updateFor
           <DatePicker
             id="start-date"
             value={formData.startDate}
-            onChange={(value) => updateFormData({ startDate: value })}
+            onChange={handleStartDateChange}
             placeholder="Select date"
           />
         </div>
@@ -47,9 +84,13 @@ const EventDetailsStep: React.FC<EventDetailsStepProps> = ({ formData, updateFor
           <DatePicker
             id="end-date"
             value={formData.endDate}
-            onChange={(value) => updateFormData({ endDate: value })}
+            onChange={handleEndDateChange}
             placeholder="Select date"
+            minDate={formData.startDate ? formData.startDate : undefined}
           />
+          {dateValidationError && (
+            <span className="text-xs text-red-500 mt-0.5">{dateValidationError}</span>
+          )}
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium uppercase tracking-wide text-slate-500">

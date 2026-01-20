@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { SearchLg, X, ChevronDown } from '@untitled-ui/icons-react'
-import { fetchTimezones } from '../../../services/eventService'
+import { fetchTimezones } from '../../../services/timezoneService'
 
 export interface TimezoneOption {
   uuid: string // Timezone UUID from backend
