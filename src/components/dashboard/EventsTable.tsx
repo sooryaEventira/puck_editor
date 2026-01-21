@@ -17,6 +17,7 @@ export interface Event {
 interface EventsTableProps {
   events?: Event[]
   onEditClick?: (eventId: string) => void
+  onRowClick?: (event: Event) => void
   onSort?: (column: string) => void
   searchValue?: string
 }
@@ -49,6 +50,7 @@ const AttendanceTypeBadge: React.FC<{ type: 'Online' | 'Offline' | 'Hybrid' }> =
 const EventsTable: React.FC<EventsTableProps> = ({
   events = [],
   onEditClick,
+  onRowClick,
   onSort,
   searchValue = ''
 }) => {
@@ -178,6 +180,7 @@ const EventsTable: React.FC<EventsTableProps> = ({
       getRowKey={(item) => item.id}
       sortDescriptor={sortDescriptor}
       onSortChange={handleSortChange}
+      onRowClick={onRowClick}
       size="md"
       emptyState={
         <div className="flex min-h-[200px] items-center justify-center text-sm text-slate-500">

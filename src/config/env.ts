@@ -71,6 +71,7 @@ export const API_ENDPOINTS = {
   EVENT: {
     CREATE: `${env.AUTH_API_URL}${ADMIN_API_BASE}event/`,
     LIST: `${env.AUTH_API_URL}${ADMIN_API_BASE}event/`,
+    GET: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}event/${eventUuid}/`,
   },
   // Timezone endpoints
   TIMEZONE: {
@@ -79,11 +80,18 @@ export const API_ENDPOINTS = {
   // Webpage endpoints
   WEBPAGE: {
     CREATE: `${env.AUTH_API_URL}${ADMIN_API_BASE}webpages/`,
+    LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}webpages/?event_uuid=${eventUuid}`,
+    GET: (webpageUuid: string, eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}webpages/${webpageUuid}/?event_uuid=${eventUuid}`,
   },
   // User Management endpoints
   USER_MANAGEMENT: {
     UPLOAD_USER: `${env.AUTH_API_URL}${ADMIN_API_BASE}attendees/upload-excel/`,
     LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}attendees/?event_uuid=${eventUuid}`,
+  },
+  // Speaker Management endpoints
+  SPEAKER_MANAGEMENT: {
+    UPLOAD_SPEAKER: `${env.AUTH_API_URL}${ADMIN_API_BASE}speakers/import/`,
+    LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}speakers/?event=${eventUuid}`,
   },
   // Resource Management endpoints
   RESOURCE: {

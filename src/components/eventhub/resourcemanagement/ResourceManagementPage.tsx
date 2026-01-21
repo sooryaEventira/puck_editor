@@ -47,11 +47,12 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
   onCardClick,
   hideNavbarAndSidebar = false
 }) => {
-  // Get eventData from context to maintain consistency with EventHubPage navbar
+  // Get eventData and createdEvent from context to maintain consistency with EventHubPage navbar
   const { eventData, createdEvent } = useEventForm()
   
-  // Use eventData from context, fallback to props if not available
-  const eventName = eventData?.eventName || propEventName || 'Highly important conference of 2025'
+  // Prioritize createdEvent data from API (set when clicking event from dashboard), 
+  // fallback to eventData from form, then props
+  const eventName = createdEvent?.eventName || eventData?.eventName || propEventName || 'Highly important conference of 2025'
   const isDraft = propIsDraft !== undefined ? propIsDraft : true
   const [allFolders, setAllFolders] = useState<MediaFolder[]>([]) // Store all folders for navigation
   const [folders, setFolders] = useState<MediaFolder[]>([]) // Current level folders for display

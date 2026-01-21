@@ -9,7 +9,7 @@ import { EventFormProvider, useEventForm } from '../contexts/EventFormContext'
 import { logger } from '../utils/logger'
 import { setupPuckStyling } from '../utils/puckStyling'
 import { showToast } from '../utils/toast'
-import { verifyRegistrationOtp, createPassword, createOrganization, signIn, sendRegistrationOtp } from '../services/authService'
+import { verifyRegistrationOtp, createPassword, createOrganization, signIn } from '../services/authService'
 
 // Lazy load heavy components for code splitting
 const EventHubPage = lazy(() => import('./eventhub').then(module => ({ default: module.EventHubPage })))
@@ -132,6 +132,13 @@ const App: React.FC = () => {
     logger.debug('📍 Navigating back to event hub')
   }
 
+  // Custom back to dashboard handler
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard')
+    window.history.pushState({}, '', '/dashboard')
+    logger.debug('📍 Navigating back to dashboard')
+  }
+
   // Helper function to check if user has an organization
   const hasOrganization = (): boolean => {
     const orgUuid = localStorage.getItem('organizationUuid')
@@ -196,22 +203,13 @@ const App: React.FC = () => {
   }
 
   // Handle registration
-  const handleRegistration = async (email: string) => {
-    try {
-      // Call the send OTP API
-      const response = await sendRegistrationOtp(email)
-      
-      if (response.status === 'success') {
-        // Toast notification is already shown by authService
-        // Store email and navigate to verification page
-        setRegistrationEmail(email)
-        setShowRegistration(false)
-        setShowEmailVerification(true)
-      }
-    } catch (error) {
-      // Error is already handled in authService with toast
-      // Registration failed, user remains on registration page
-    }
+  // Note: OTP is already sent in RegistrationPage.tsx, this function only handles navigation
+  const handleRegistration = (email: string) => {
+    // Store email and navigate to verification page
+    // The OTP API call and toast notification are already handled in RegistrationPage.tsx
+    setRegistrationEmail(email)
+    setShowRegistration(false)
+    setShowEmailVerification(true)
   }
 
   // Handle email verification
@@ -613,7 +611,7 @@ const App: React.FC = () => {
         <EventHubPage
           eventName="Highly important conference of 2025"
           isDraft={true}
-          onBackClick={handleBackToEditor}
+          onBackClick={handleBackToDashboard}
           userAvatarUrl="" // Add user avatar URL here if available
           onCardClick={handleEventHubCardClick}
         />

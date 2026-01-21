@@ -173,7 +173,3 @@ export const getPuckConfig = (pageType?: string, pageName?: string) => {
   return config
 }
 
-// Export both the base config and getPuckConfig for backward compatibility
-// Other files can import 'config' from puckConfig directly if they don't need filtering
-export const config = baseConfig
-

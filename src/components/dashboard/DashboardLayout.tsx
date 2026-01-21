@@ -8,7 +8,8 @@ import EventWebsitePage from '../eventhub/EventWebsitePage'
 import WebsitePreviewPage from '../eventhub/WebsitePreviewPage'
 import { type Event } from './EventsTable'
 import type { DateRange } from '../ui/untitled'
-import { fetchEvents, type EventData } from '../../services/eventService'
+import { fetchEvents, fetchEvent, type EventData, type CreateEventResponseData } from '../../services/eventService'
+import { useEventForm } from '../../contexts/EventFormContext'
 
 interface DashboardLayoutProps {
   organizationName?: string
@@ -39,6 +40,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   onEditEvent,
   onSortEvents
 }) => {
+  const { setCreatedEvent } = useEventForm()
   const [activeItemId, setActiveItemId] = useState('events')
   const [searchValue, setSearchValue] = useState('')
   const [dateRange, setDateRange] = useState<DateRange>({ start: null, end: null })
@@ -421,13 +423,36 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     onNewEventClick?.()
   }
 
+  const handleEventRowClick = async (event: Event) => {
+    try {
+      // Fetch event details by UUID (assuming event.id is the UUID)
+      const eventData = await fetchEvent(event.id)
+      
+      // Convert EventData to CreateEventResponseData format for context
+      // EventData already contains all required fields, so we can cast it directly
+      const createdEventData: CreateEventResponseData = {
+        ...eventData
+      }
+        
+      // Set event in context
+      setCreatedEvent(createdEventData)
+      
+      // Navigate to event website page
+      window.history.pushState({}, '', '/event/website')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    } catch (error) {
+      console.error('Failed to load event:', error)
+      // Error is already handled in fetchEvent with toast
+    }
+  }
+
   // Show preview page
   if (showPreviewPage) {
     return (
       <WebsitePreviewPage
         pageId={previewPageId}
         onBackClick={() => {
-          window.history.pushState({}, '', '/event/website')
+          window.history.pushState({ section: 'event-website' }, '', '/event/hub?section=event-website')
           window.dispatchEvent(new PopStateEvent('popstate'))
         }}
         userAvatarUrl={userAvatarUrl}
@@ -514,6 +539,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             onEditEvent={onEditEvent}
+            onEventRowClick={handleEventRowClick}
             onSortEvents={onSortEvents}
             events={filteredEvents}
             totalEvents={summaryStats.totalEvents}

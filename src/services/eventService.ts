@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from '../config/env'
 import { showToast } from '../utils/toast'
+import { handleApiError, handleNetworkError, handleParseError } from '../utils/errorHandler'
 import type { ApiResponse } from './authService'
 
 export interface CreateEventRequest {
@@ -59,8 +60,7 @@ export const createEvent = async (request: CreateEventRequest): Promise<CreateEv
     const accessToken = localStorage.getItem('accessToken')
     
     if (!accessToken) {
-      const errorMessage = 'Authentication required. Please login again.'
-      showToast.error(errorMessage)
+      const errorMessage = handleApiError('Authentication required. Please login again.', undefined, 'Authentication required. Please login again.')
       throw new Error(errorMessage)
     }
 
@@ -68,8 +68,7 @@ export const createEvent = async (request: CreateEventRequest): Promise<CreateEv
     const organizationUuid = localStorage.getItem('organizationUuid')
     
     if (!organizationUuid) {
-      const errorMessage = 'Organization UUID is missing. Please create or select an organization first.'
-      showToast.error(errorMessage)
+      const errorMessage = handleApiError('Organization UUID is missing. Please create or select an organization first.', undefined, 'Organization UUID is missing. Please create or select an organization first.')
       throw new Error(errorMessage)
     }
 
@@ -112,8 +111,7 @@ export const createEvent = async (request: CreateEventRequest): Promise<CreateEv
     if (!response || !response.ok) {
       // Network error or CORS error - response might not exist
       if (!response) {
-        const errorMessage = 'Cannot connect to the server. Please make sure the backend server is running.'
-        showToast.error(errorMessage)
+        const errorMessage = handleNetworkError(null)
         throw new Error(errorMessage)
       }
 
@@ -128,50 +126,30 @@ export const createEvent = async (request: CreateEventRequest): Promise<CreateEv
         } catch (jsonError) {
           // Response is not JSON, use text as error message if available
           if (responseText && responseText.trim()) {
-            showToast.error(responseText.trim())
-            throw new Error(responseText.trim())
+            const errorMessage = handleApiError(responseText.trim(), response, 'An error occurred. Please try again.')
+            throw new Error(errorMessage)
           }
         }
         
         if (errorData) {
-          // Extract error message from various possible formats
-          let errorMessage = errorData.message || errorData.detail || errorData.error || null
-          const errors = errorData.errors || []
-          
-          // Check for common error formats
-          if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
-            errorMessage = errorData.non_field_errors.join(', ')
-          } else if (!errorMessage && typeof errorData === 'object') {
-            // Try to extract from first error field
-            const errorKeys = Object.keys(errorData)
-            if (errorKeys.length > 0) {
-              const firstError = errorData[errorKeys[0]]
-              errorMessage = Array.isArray(firstError) ? firstError.join(', ') : String(firstError)
-            }
-          }
-          
-          // Use errors array if available, otherwise use extracted message
-          const errorText = errors.length > 0 ? errors.join(', ') : (errorMessage || 'An error occurred')
-          showToast.error(errorText)
-          throw new Error(errorText)
+          const errorMessage = handleApiError(errorData, response, 'An error occurred. Please try again.')
+          throw new Error(errorMessage)
         }
         
         // If we couldn't parse or extract error, show generic message only as last resort
-        const errorMessage = response.status === 500 
-          ? 'Internal server error. Please try again later.'
-          : 'An error occurred. Please try again.'
-        showToast.error(errorMessage)
+        const errorMessage = handleApiError(null, response, 'An error occurred. Please try again.')
         throw new Error(errorMessage)
       } catch (parseError) {
         // If it's already our custom error, re-throw it
-        if (parseError instanceof Error && !parseError.message.includes('Server error:')) {
+        if (parseError instanceof Error && (
+            parseError.message.includes('An error occurred') ||
+            parseError.message.includes('Cannot connect') ||
+            parseError.message.includes('Failed to')
+        )) {
           throw parseError
         }
         // Last resort: only show generic message if we truly can't extract anything
-        const errorMessage = response.status === 500
-          ? 'Internal server error. Please try again later.'
-          : 'An error occurred. Please try again.'
-        showToast.error(errorMessage)
+        const errorMessage = handleApiError(null, response, 'An error occurred. Please try again.')
         throw new Error(errorMessage)
       }
     }
@@ -188,17 +166,13 @@ export const createEvent = async (request: CreateEventRequest): Promise<CreateEv
       
       // Check if response has error status
       if (apiResponse.status === 'error') {
-        const errorMessage = apiResponse.message || 'Failed to create event'
-        const errors = apiResponse.errors || []
-        const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
-        showToast.error(errorText)
-        throw new Error(errorText)
+        const errorMessage = handleApiError(apiResponse, undefined, 'Failed to create event. Please try again.')
+        throw new Error(errorMessage)
       }
       
       // Ensure status is 'success'
       if (apiResponse.status !== 'success') {
-        const errorMessage = `Unexpected response status: ${apiResponse.status}. Expected 'success'.`
-        showToast.error('An error occurred while processing the response. Please try again.')
+        const errorMessage = handleApiError(apiResponse, undefined, 'An error occurred while processing the response. Please try again.')
         throw new Error(errorMessage)
       }
       
@@ -207,15 +181,13 @@ export const createEvent = async (request: CreateEventRequest): Promise<CreateEv
       
       // Check if data field is an empty string (backend issue)
       if (typeof responseData === 'string' && responseData === '') {
-        const errorMessage = 'Backend returned empty event data. The API response has status "success" but the "data" field is an empty string.'
-        showToast.error('Event data not returned. Please try again or contact support.')
+        const errorMessage = handleParseError('Event data not returned. Please try again or contact support.')
         throw new Error(errorMessage)
       }
       
       // Validate that data field exists and is an object
       if (!responseData || typeof responseData !== 'object') {
-        const errorMessage = `Invalid response format: event data should be an object, but received ${typeof responseData}. Value: ${JSON.stringify(responseData)}`
-        showToast.error('Invalid response format. Please try again.')
+        const errorMessage = handleParseError('Invalid response format. Please try again.')
         throw new Error(errorMessage)
       }
       
@@ -246,14 +218,15 @@ export const createEvent = async (request: CreateEventRequest): Promise<CreateEv
       }
     } catch (parseError) {
       // Check if it's our custom validation error - re-throw it
-      if (parseError instanceof Error && parseError.message.includes('Invalid response format')) {
-        showToast.error(parseError.message)
+      if (parseError instanceof Error && (
+          parseError.message.includes('Invalid response format') ||
+          parseError.message.includes('Event data not returned')
+      )) {
         throw parseError
       }
       
       // JSON parsing or other error
-      const errorMessage = 'Invalid response from server. Please try again.'
-      showToast.error(errorMessage)
+      const errorMessage = handleParseError('Invalid response from server. Please try again.')
       throw new Error(errorMessage)
     }
 
@@ -264,25 +237,27 @@ export const createEvent = async (request: CreateEventRequest): Promise<CreateEv
   } catch (error) {
     // Handle network errors (CORS, connection refused, etc.)
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      const errorMessage = 'Cannot connect to the server. Please check:\n1. Backend server is running\n2. CORS is properly configured\n3. No firewall is blocking the connection'
-      showToast.error('Connection error. Please check if the server is running.')
-      throw new Error(errorMessage)
+      if (!error.message.includes('Cannot connect')) {
+        handleNetworkError(error)
+      }
+      throw new Error(error.message || 'Network error occurred')
     }
 
     // Re-throw if it's already our custom error
     if (error instanceof Error && (
-        error.message.startsWith('Cannot connect') || 
-        error.message.startsWith('Server error') ||
-        error.message.startsWith('Invalid response') ||
-        error.message.startsWith('Authentication required') ||
-        error.message.startsWith('Organization UUID')
+        error.message.includes('Cannot connect') || 
+        error.message.includes('Invalid response') ||
+        error.message.includes('Authentication required') ||
+        error.message.includes('Organization UUID') ||
+        error.message.includes('Failed to create') ||
+        error.message.includes('Event data not returned')
     )) {
       throw error
     }
 
     // Generic error fallback
     const errorMessage = error instanceof Error ? error.message : 'Failed to create event. Please try again.'
-    showToast.error(errorMessage)
+    handleApiError(errorMessage, undefined, 'Failed to create event. Please try again.')
     throw new Error(errorMessage)
   }
 }
@@ -294,15 +269,13 @@ export const fetchEvents = async (): Promise<EventData[]> => {
   try {
     const accessToken = localStorage.getItem('accessToken')
     if (!accessToken) {
-      const errorMessage = 'Authentication required. Please login again.'
-      showToast.error(errorMessage)
+      const errorMessage = handleApiError('Authentication required. Please login again.', undefined, 'Authentication required. Please login again.')
       throw new Error(errorMessage)
     }
 
     const organizationUuid = localStorage.getItem('organizationUuid')
     if (!organizationUuid) {
-      const errorMessage = 'Organization UUID is missing. Please create or select an organization first.'
-      showToast.error(errorMessage)
+      const errorMessage = handleApiError('Organization UUID is missing. Please create or select an organization first.', undefined, 'Organization UUID is missing. Please create or select an organization first.')
       throw new Error(errorMessage)
     }
 
@@ -320,8 +293,7 @@ export const fetchEvents = async (): Promise<EventData[]> => {
 
     if (!response || !response.ok) {
       if (!response) {
-        const errorMessage = 'Cannot connect to the server. Please make sure the backend server is running.'
-        showToast.error(errorMessage)
+        const errorMessage = handleNetworkError(null)
         throw new Error(errorMessage)
       }
 
@@ -335,46 +307,30 @@ export const fetchEvents = async (): Promise<EventData[]> => {
         } catch (jsonError) {
           // Response is not JSON, use text as error message if available
           if (responseText && responseText.trim()) {
-            showToast.error(responseText.trim())
-            throw new Error(responseText.trim())
+            const errorMessage = handleApiError(responseText.trim(), response, 'An error occurred. Please try again.')
+            throw new Error(errorMessage)
           }
         }
         
         if (errorData) {
-          // Extract error message from various possible formats
-          let errorMessage = errorData.message || errorData.detail || errorData.error || null
-          const errors = errorData.errors || []
-          
-          // Check for common error formats
-          if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
-            errorMessage = errorData.non_field_errors.join(', ')
-          } else if (!errorMessage && typeof errorData === 'object') {
-            // Try to extract from first error field
-            const errorKeys = Object.keys(errorData)
-            if (errorKeys.length > 0) {
-              const firstError = errorData[errorKeys[0]]
-              errorMessage = Array.isArray(firstError) ? firstError.join(', ') : String(firstError)
-            }
-          }
-          
-          // Use errors array if available, otherwise use extracted message
-          const errorText = errors.length > 0 ? errors.join(', ') : (errorMessage || 'An error occurred')
-          showToast.error(errorText)
-          throw new Error(errorText)
+          const errorMessage = handleApiError(errorData, response, 'An error occurred. Please try again.')
+          throw new Error(errorMessage)
         }
         
         // If we couldn't parse or extract error, show generic message only as last resort
-        const errorMessage = 'An error occurred. Please try again.'
-        showToast.error(errorMessage)
+        const errorMessage = handleApiError(null, response, 'An error occurred. Please try again.')
         throw new Error(errorMessage)
       } catch (parseError) {
         // If it's already our custom error, re-throw it
-        if (parseError instanceof Error && !parseError.message.includes('Server error:')) {
+        if (parseError instanceof Error && (
+            parseError.message.includes('An error occurred') ||
+            parseError.message.includes('Cannot connect') ||
+            parseError.message.includes('Failed to')
+        )) {
           throw parseError
         }
         // Last resort: only show generic message if we truly can't extract anything
-        const errorMessage = 'An error occurred. Please try again.'
-        showToast.error(errorMessage)
+        const errorMessage = handleApiError(null, response, 'An error occurred. Please try again.')
         throw new Error(errorMessage)
       }
     }
@@ -387,16 +343,12 @@ export const fetchEvents = async (): Promise<EventData[]> => {
     }
     
     if (apiResponse.status === 'error') {
-      const errorMessage = apiResponse.message || 'Failed to fetch events'
-      const errors = apiResponse.errors || []
-      const errorText = errors.length > 0 ? errors.join(', ') : errorMessage
-      showToast.error(errorText)
-      throw new Error(errorText)
+      const errorMessage = handleApiError(apiResponse, undefined, 'Failed to fetch events. Please try again.')
+      throw new Error(errorMessage)
     }
     
     if (apiResponse.status !== 'success') {
-      const errorMessage = `Unexpected response status: ${apiResponse.status}`
-      showToast.error('An error occurred while processing the response. Please try again.')
+      const errorMessage = handleApiError(null, undefined, 'An error occurred while processing the response. Please try again.')
       throw new Error(errorMessage)
     }
     
@@ -465,9 +417,10 @@ export const fetchEvents = async (): Promise<EventData[]> => {
     return data
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      const errorMessage = 'Cannot connect to the server. Please check if the server is running.'
-      showToast.error(errorMessage)
-      throw new Error(errorMessage)
+      if (!error.message.includes('Cannot connect')) {
+        handleNetworkError(error)
+      }
+      throw new Error(error.message || 'Network error occurred')
     }
 
     if (error instanceof Error && (
@@ -481,7 +434,131 @@ export const fetchEvents = async (): Promise<EventData[]> => {
     }
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch events. Please try again.'
-    showToast.error(errorMessage)
+    handleApiError(errorMessage, undefined, 'Failed to fetch events. Please try again.')
+    throw new Error(errorMessage)
+  }
+}
+
+/**
+ * Fetch a single event by UUID
+ */
+export const fetchEvent = async (eventUuid: string): Promise<EventData> => {
+  try {
+    const accessToken = localStorage.getItem('accessToken')
+    if (!accessToken) {
+      const errorMessage = handleApiError('Authentication required. Please login again.', undefined, 'Authentication required. Please login again.')
+      throw new Error(errorMessage)
+    }
+
+    const organizationUuid = localStorage.getItem('organizationUuid')
+    if (!organizationUuid) {
+      const errorMessage = handleApiError('Organization UUID is missing. Please create or select an organization first.', undefined, 'Organization UUID is missing. Please create or select an organization first.')
+      throw new Error(errorMessage)
+    }
+
+    if (!eventUuid) {
+      const errorMessage = handleApiError('Event UUID is required.', undefined, 'Event UUID is required.')
+      throw new Error(errorMessage)
+    }
+
+    const response = await fetch(API_ENDPOINTS.EVENT.GET(eventUuid), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'X-Organization': organizationUuid,
+      },
+      credentials: 'include',
+    })
+
+    if (!response || !response.ok) {
+      if (!response) {
+        const errorMessage = handleNetworkError(null)
+        throw new Error(errorMessage)
+      }
+
+      try {
+        const responseText = await response.text()
+        let errorData: any = null
+        
+        try {
+          errorData = responseText ? JSON.parse(responseText) : null
+        } catch (jsonError) {
+          if (responseText && responseText.trim()) {
+            const errorMessage = handleApiError(responseText.trim(), response, 'An error occurred. Please try again.')
+            throw new Error(errorMessage)
+          }
+        }
+        
+        if (errorData) {
+          const errorMessage = handleApiError(errorData, response, 'An error occurred. Please try again.')
+          throw new Error(errorMessage)
+        }
+        
+        const errorMessage = handleApiError(null, response, 'An error occurred. Please try again.')
+        throw new Error(errorMessage)
+      } catch (parseError) {
+        if (parseError instanceof Error && (
+            parseError.message.includes('An error occurred') ||
+            parseError.message.includes('Cannot connect') ||
+            parseError.message.includes('Failed to')
+        )) {
+          throw parseError
+        }
+        const errorMessage = handleApiError(null, response, 'An error occurred. Please try again.')
+        throw new Error(errorMessage)
+      }
+    }
+
+    let data: ApiResponse<EventData> | EventData
+    try {
+      data = await response.json()
+    } catch {
+      const errorMessage = handleParseError('Invalid response from server. Please try again.')
+      throw new Error(errorMessage)
+    }
+
+    // Handle ApiResponse format
+    if (typeof data === 'object' && 'status' in data) {
+      const apiResponse = data as ApiResponse<EventData>
+      if (apiResponse.status === 'error') {
+        const errorMessage = handleApiError(apiResponse, undefined, 'Failed to fetch event. Please try again.')
+        throw new Error(errorMessage)
+      }
+
+      if (apiResponse.status === 'success' && apiResponse.data) {
+        return apiResponse.data
+      }
+    }
+
+    // Handle direct EventData response
+    if (typeof data === 'object' && ('uuid' in data || 'eventName' in data)) {
+      return data as EventData
+    }
+
+    throw new Error('No event data returned from server')
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      if (!error.message.includes('Cannot connect')) {
+        handleNetworkError(error)
+      }
+      throw new Error(error.message || 'Network error occurred')
+    }
+
+    if (error instanceof Error && (
+        error.message.startsWith('Cannot connect') || 
+        error.message.startsWith('Server error') ||
+        error.message.startsWith('Invalid response') ||
+        error.message.startsWith('Authentication required') ||
+        error.message.startsWith('Organization UUID') ||
+        error.message.startsWith('Event UUID') ||
+        error.message.startsWith('No event data')
+    )) {
+      throw error
+    }
+
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch event. Please try again.'
+    handleApiError(errorMessage, undefined, 'Failed to fetch event. Please try again.')
     throw new Error(errorMessage)
   }
 }

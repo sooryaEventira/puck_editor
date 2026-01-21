@@ -134,11 +134,33 @@ export const useAttendeeTableColumns = ({
       },
       {
         id: 'groups',
-        header: 'Groups',
+        header: 'Group',
         sortable: true,
-        sortAccessor: ({ attendee }) => attendee?.groups.map((g) => g.name).join(' ') || '',
+        sortAccessor: ({ attendee }) => {
+          // Sort by tags if available, otherwise by groups
+          if (attendee?.tags && attendee.tags.length > 0) {
+            return Array.isArray(attendee.tags) ? attendee.tags.join(' ') : attendee.tags
+          }
+          return attendee?.groups.map((g) => g.name).join(' ') || ''
+        },
         render: ({ attendee }) => {
           if (!attendee) return null
+          
+          // Display tags if available, otherwise display groups
+          if (attendee.tags && attendee.tags.length > 0) {
+            const tagsArray = Array.isArray(attendee.tags) ? attendee.tags : [attendee.tags]
+            return (
+              <div className="flex flex-wrap items-center gap-2">
+                {tagsArray.map((tag, idx) => (
+                  <Badge key={idx} variant="muted">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )
+          }
+          
+          // Fallback to groups if no tags
           return (
             <div className="flex flex-wrap items-center gap-2">
               {attendee.groups.slice(0, 3).map((group, idx) => (

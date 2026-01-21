@@ -8,6 +8,7 @@ import ResourceManagementPage from './resourcemanagement/ResourceManagementPage'
 import SchedulePage from './schedulesession/SchedulePage'
 import EventWebsitePage from './EventWebsitePage'
 import AttendeeManagementPage from './attendeemanagement/AttendeeManagementPage'
+import SpeakerManagementPage from './speakermanagement/SpeakerManagementPage'
 import WebsiteSettingsPage from './websitesettings/WebsiteSettingsPage'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 
@@ -25,13 +26,14 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
   onBackClick,
   userAvatarUrl
 }) => {
-  // Get eventData from context to maintain consistency across all pages
-  const { eventData } = useEventForm()
+  // Get eventData and createdEvent from context to maintain consistency across all pages
+  const { eventData, createdEvent } = useEventForm()
   
-  // Use eventData from context, fallback to props if not available
-  const eventName = eventData?.eventName || propEventName || 'Highly important conference of 2025'
+  // Prioritize createdEvent data from API (set when clicking event from dashboard), 
+  // fallback to eventData from form, then props
+  const eventName = createdEvent?.eventName || eventData?.eventName || propEventName || 'Highly important conference of 2025'
   const isDraft = propIsDraft !== undefined ? propIsDraft : true
-  const [activeSection, setActiveSection] = useState('event-hub')
+  const [activeSection, setActiveSection] = useState('event-website')
 
   // Read section from URL only on initial mount
   React.useEffect(() => {
@@ -40,6 +42,9 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
     if (section) {
       console.log('📍 Reading section from URL on mount:', section)
       setActiveSection(section)
+    } else {
+      // If no section in URL, default to event-website instead of empty event-hub page
+      setActiveSection('event-website')
     }
   }, []) // Only run on mount
 
@@ -82,6 +87,11 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
       }
     ]
   }, [])
+
+  const handleBackClick = useCallback(() => {
+    // Always go directly to dashboard when clicking back from Event Hub or any sub-section
+    onBackClick?.()
+  }, [onBackClick])
 
   const handleSidebarItemClick = useCallback((itemId: string) => {
     console.log('📍 EventHubPage - Sidebar item clicked:', itemId)
@@ -160,6 +170,16 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
             hideNavbarAndSidebar={true}
           />
         )
+      case 'speaker-management':
+        return (
+          <SpeakerManagementPage
+            eventName={eventName}
+            isDraft={isDraft}
+            onBackClick={onBackClick}
+            userAvatarUrl={userAvatarUrl}
+            hideNavbarAndSidebar={true}
+          />
+        )
       case 'analytics':
         // Placeholder for pages that haven't been implemented yet
         return (
@@ -182,13 +202,12 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
         )
       case 'event-hub':
       default:
+        // Redirect to event-website instead of showing empty Event Hub page
         return (
-          <EventHubContent
-            title="Event Hub"
-            cards={defaultCards}
-            onCardClick={(cardId) => {
-              setActiveSection(cardId)
-            }}
+          <EventWebsitePage
+            onBackClick={onBackClick}
+            userAvatarUrl={userAvatarUrl}
+            hideNavbarAndSidebar={true}
           />
         )
     }
@@ -200,7 +219,7 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
       <EventHubNavbar
         eventName={eventName}
         isDraft={isDraft}
-        onBackClick={onBackClick}
+        onBackClick={handleBackClick}
         onSearchClick={handleSearchClick}
         onNotificationClick={handleNotificationClick}
         onProfileClick={handleProfileClick}

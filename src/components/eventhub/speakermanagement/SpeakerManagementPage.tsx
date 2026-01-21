@@ -1,19 +1,19 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { useEventForm } from '../../../contexts/EventFormContext'
-import { uploadUserFile, fetchAttendees, type AttendeeData } from '../../../services/attendeeService'
+import { uploadSpeakerFile, fetchSpeakers, type SpeakerData } from '../../../services/speakerService'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
-import AttendeesTable from './AttendeesTable'
-import CreateProfileModal from './CreateProfileModal'
-import CreateGroupModal from './CreateGroupModal'
-import CreateCustomFieldModal from './CreateCustomFieldModal'
+import SpeakersTable from './SpeakersTable'
+import CreateSpeakerModal from './CreateSpeakerModal'
+import CreateGroupModal from '../attendeemanagement/CreateGroupModal'
+import CreateCustomFieldModal from '../attendeemanagement/CreateCustomFieldModal'
 import UploadModal from '../../ui/UploadModal'
-import AttendeeDetailsSlideout from './AttendeeDetailsSlideout'
-import { Attendee, AttendeeTab, Group, CustomField } from './attendeeTypes'
+import SpeakerDetailsSlideout from './SpeakerDetailsSlideout'
+import { Speaker, SpeakerTab, Group, CustomField } from './speakerTypes'
 import { defaultCards, ContentCard } from '../EventHubContent'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 
-interface AttendeeManagementPageProps {
+interface SpeakerManagementPageProps {
   eventName?: string
   isDraft?: boolean
   onBackClick?: () => void
@@ -22,7 +22,7 @@ interface AttendeeManagementPageProps {
   hideNavbarAndSidebar?: boolean
 }
 
-const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
+const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
   eventName: propEventName,
   isDraft: propIsDraft,
   onBackClick,
@@ -80,7 +80,7 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
     }
     
     // If clicking on a different card, navigate to it
-    if (itemId !== 'attendee-management') {
+    if (itemId !== 'speaker-management') {
       const isCardId = defaultCards.some((card) => card.id === itemId)
       if (isCardId && onCardClick) {
         onCardClick(itemId)
@@ -88,16 +88,16 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
     }
   }
 
-  const [attendees, setAttendees] = useState<Attendee[]>([])
+  const [speakers, setSpeakers] = useState<Speaker[]>([])
   const [groups, setGroups] = useState<Group[]>([])
   const [customFields, setCustomFields] = useState<CustomField[]>([])
-  const [activeTab, setActiveTab] = useState<AttendeeTab>('user')
+  const [activeTab, setActiveTab] = useState<SpeakerTab>('user')
   const [isCreateProfileModalOpen, setIsCreateProfileModalOpen] = useState(false)
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false)
   const [isCreateCustomFieldModalOpen, setIsCreateCustomFieldModalOpen] = useState(false)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
-  const [isAttendeeSlideoutOpen, setIsAttendeeSlideoutOpen] = useState(false)
-  const [selectedAttendee, setSelectedAttendee] = useState<Attendee | null>(null)
+  const [isSpeakerSlideoutOpen, setIsSpeakerSlideoutOpen] = useState(false)
+  const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null)
 
   const handleUpload = () => {
     setIsUploadModalOpen(true)
@@ -113,68 +113,87 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
 
     // Upload each file
     for (const file of files) {
-      await uploadUserFile(file, eventUuid)
+      console.log('📤 SpeakerManagementPage: Uploading file:', file.name)
+      try {
+        const response = await uploadSpeakerFile(file, eventUuid)
+        console.log('✅ SpeakerManagementPage: Upload response:', JSON.stringify(response, null, 2))
+      } catch (error) {
+        console.error('❌ SpeakerManagementPage: Upload error:', error)
+        throw error
+      }
     }
 
-    // Refresh attendees list after upload
-    await loadAttendees()
+    // Refresh speakers list after upload
+    await loadSpeakers()
+    
+    setIsUploadModalOpen(false)
   }
 
-  // Load attendees from API
-  const loadAttendees = async () => {
+  // Load speakers from API
+  const loadSpeakers = async () => {
     const eventUuid = createdEvent?.uuid
     
     if (!eventUuid) {
+      console.log('No event UUID available, skipping speaker load')
       return
     }
 
     try {
-      const attendeesData = await fetchAttendees(eventUuid)
+      const speakersData = await fetchSpeakers(eventUuid)
       
-      // Map API response to Attendee interface
-      const mappedAttendees: Attendee[] = attendeesData.map((attendeeData: AttendeeData) => {
-        // Handle tags - can be string, array, or undefined
-        let tags: string[] | undefined
-        if (attendeeData.tags) {
-          if (Array.isArray(attendeeData.tags)) {
-            tags = attendeeData.tags
-          } else if (typeof attendeeData.tags === 'string') {
-            // Split comma-separated tags or use as single tag
-            tags = attendeeData.tags.split(',').map(t => t.trim()).filter(t => t.length > 0)
-          }
+      // Map API response to Speaker interface
+      const mappedSpeakers: Speaker[] = speakersData.map((speakerData: SpeakerData) => {
+        // Get email from API response
+        const email = speakerData.email || ''
+        
+        // Get name from direct fields
+        let name = speakerData.name
+        if (!name && (speakerData.first_name || speakerData.last_name)) {
+          const firstName = speakerData.first_name || ''
+          const lastName = speakerData.last_name || ''
+          name = `${firstName} ${lastName}`.trim()
+        }
+        if (!name) {
+          name = 'Unknown'
         }
         
+        // Get phone number from direct field
+        const phoneNumber = speakerData.phone_number || ''
+        
         return {
-          id: attendeeData.id || attendeeData.uuid || '',
-          name: attendeeData.name || `${attendeeData.first_name || ''} ${attendeeData.last_name || ''}`.trim() || 'Unknown',
-          firstName: attendeeData.first_name,
-          lastName: attendeeData.last_name,
-          email: attendeeData.email,
-          avatarUrl: attendeeData.avatar_url,
-          bannerUrl: attendeeData.banner_url,
-          status: (attendeeData.status as Attendee['status']) || 'sent',
-          inviteCode: attendeeData.invite_code,
-          groups: attendeeData.groups || [],
-          tags: tags,
-          institute: attendeeData.institute,
-          post: attendeeData.post,
-          emailVerified: attendeeData.email_verified,
-          emailVerifiedDate: attendeeData.email_verified_date,
-          feedbackIncomplete: attendeeData.feedback_incomplete,
+          id: String(speakerData.id || speakerData.uuid || ''),
+          name: name,
+          firstName: speakerData.first_name,
+          lastName: speakerData.last_name,
+          email: email,
+          phoneNumber: phoneNumber,
+          role: speakerData.role || '',
+          avatarUrl: speakerData.avatar_url,
+          bannerUrl: undefined,
+          status: 'active' as Speaker['status'],
+          bio: undefined,
+          organization: speakerData.organization,
+          title: speakerData.title,
+          groups: [],
+          sessions: undefined,
+          socialLinks: undefined
         }
       })
 
-      setAttendees(mappedAttendees)
+      console.log('✅ SpeakerManagementPage: Mapped speakers:', mappedSpeakers)
+      setSpeakers(mappedSpeakers)
     } catch (error) {
-      // Error is already handled in fetchAttendees with toast
-      console.error('Failed to load attendees:', error)
+      // Error is already handled in fetchSpeakers with toast, but log for debugging
+      console.error('Failed to load speakers:', error)
+      // Don't re-throw to prevent unhandled promise rejection
+      // The toast notification from the service should inform the user
     }
   }
 
-  // Load attendees on mount and when event changes
+  // Load speakers on mount and when event changes
   useEffect(() => {
     if (createdEvent?.uuid) {
-      loadAttendees()
+      loadSpeakers()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createdEvent?.uuid])
@@ -188,18 +207,22 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
     lastName: string
     email: string
     organization?: string
-    role?: string
+    title?: string
+    bio?: string
     group?: string
-    description?: string
     avatarUrl?: string
   }) => {
-    const newAttendee: Attendee = {
+    const newSpeaker: Speaker = {
       id: Date.now().toString(),
       name: `${data.firstName} ${data.lastName}`,
+      firstName: data.firstName,
+      lastName: data.lastName,
       email: data.email,
       avatarUrl: data.avatarUrl,
-      status: 'sent',
-      inviteCode: undefined,
+      status: 'active',
+      organization: data.organization,
+      title: data.title,
+      bio: data.bio,
       groups: data.group
         ? [
             {
@@ -210,26 +233,26 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
           ]
         : []
     }
-    setAttendees((prev) => [...prev, newAttendee])
+    setSpeakers((prev) => [...prev, newSpeaker])
   }
 
-  const handleEditAttendee = (attendeeId: string) => {
-    const attendee = attendees.find((a) => a.id === attendeeId)
-    if (attendee) {
-      setSelectedAttendee(attendee)
-      setIsAttendeeSlideoutOpen(true)
+  const handleEditSpeaker = (speakerId: string) => {
+    const speaker = speakers.find((s) => s.id === speakerId)
+    if (speaker) {
+      setSelectedSpeaker(speaker)
+      setIsSpeakerSlideoutOpen(true)
     }
   }
 
-  const handleSaveAttendee = (updatedAttendee: Attendee) => {
-    setAttendees((prev) =>
-      prev.map((a) => (a.id === updatedAttendee.id ? updatedAttendee : a))
+  const handleSaveSpeaker = (updatedSpeaker: Speaker) => {
+    setSpeakers((prev) =>
+      prev.map((s) => (s.id === updatedSpeaker.id ? updatedSpeaker : s))
     )
-    setSelectedAttendee(null)
+    setSelectedSpeaker(null)
   }
 
-  const handleDeleteAttendee = (attendeeId: string) => {
-    setAttendees((prev) => prev.filter((a) => a.id !== attendeeId))
+  const handleDeleteSpeaker = (speakerId: string) => {
+    setSpeakers((prev) => prev.filter((s) => s.id !== speakerId))
   }
 
   const handleCreateGroup = () => {
@@ -240,7 +263,7 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
     const newGroup: Group = {
       id: Date.now().toString(),
       name: groupName,
-      attendeeCount: 0
+      speakerCount: 0
     }
     setGroups((prev) => [...prev, newGroup])
   }
@@ -315,17 +338,17 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
           {/* Sidebar */}
           <EventHubSidebar
             items={sidebarItems}
-            activeItemId="attendee-management"
+            activeItemId="speaker-management"
             onItemClick={handleSidebarItemClick}
-            isModalOpen={isCreateProfileModalOpen || isCreateGroupModalOpen || isCreateCustomFieldModalOpen || isUploadModalOpen || isAttendeeSlideoutOpen}
+            isModalOpen={isCreateProfileModalOpen || isCreateGroupModalOpen || isCreateCustomFieldModalOpen || isUploadModalOpen || isSpeakerSlideoutOpen}
           />
         </>
       )}
 
-      {/* Attendee Management Content */}
+      {/* Speaker Management Content */}
       <div className={hideNavbarAndSidebar ? "" : "md:pl-[250px]"}>
-        <AttendeesTable
-          attendees={attendees}
+        <SpeakersTable
+          speakers={speakers}
           groups={groups}
           customFields={customFields}
           activeTab={activeTab}
@@ -334,8 +357,8 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
           onCreateProfile={handleCreateProfile}
           onCreateGroup={handleCreateGroup}
           onCreateField={handleCreateField}
-          onEditAttendee={handleEditAttendee}
-          onDeleteAttendee={handleDeleteAttendee}
+          onEditSpeaker={handleEditSpeaker}
+          onDeleteSpeaker={handleDeleteSpeaker}
           onEditGroup={handleEditGroup}
           onDeleteGroup={handleDeleteGroup}
           onEditCustomField={handleEditCustomField}
@@ -347,7 +370,7 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
       </div>
 
       {/* Create Profile Modal */}
-      <CreateProfileModal
+      <CreateSpeakerModal
         isOpen={isCreateProfileModalOpen}
         onClose={() => setIsCreateProfileModalOpen(false)}
         onSave={handleSaveProfile}
@@ -372,27 +395,28 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onUpload={handleUploadFiles}
-        title="Upload attendees"
+        title="Upload speakers"
         description="XLSX files only"
         instructions={[
-          'Step 1: Download template',
-          'Step 2: Upload attendees'
+
+          'Step 1: Download template (if available)',
+          'Step 2: Fill in the data with the required columns',
+          'Step 3: Upload the Excel file'
         ]}
       />
 
-      {/* Attendee Details Slideout */}
-      <AttendeeDetailsSlideout
-        isOpen={isAttendeeSlideoutOpen}
+      {/* Speaker Details Slideout */}
+      <SpeakerDetailsSlideout
+        isOpen={isSpeakerSlideoutOpen}
         onClose={() => {
-          setIsAttendeeSlideoutOpen(false)
-          setSelectedAttendee(null)
+          setIsSpeakerSlideoutOpen(false)
+          setSelectedSpeaker(null)
         }}
-        attendee={selectedAttendee}
-        onSave={handleSaveAttendee}
+        speaker={selectedSpeaker}
+        onSave={handleSaveSpeaker}
       />
     </div>
   )
 }
 
-export default AttendeeManagementPage
-
+export default SpeakerManagementPage

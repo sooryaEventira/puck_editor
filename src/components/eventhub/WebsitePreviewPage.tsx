@@ -15,6 +15,9 @@ import SchedulePage from '../advanced/SchedulePage'
 import { Edit05, User01 } from '@untitled-ui/icons-react'
 import Input from '../ui/untitled/Input'
 import PageCreationModal, { type PageType } from '../page/PageCreationModal'
+import { fetchWebpage, type WebpageData } from '../../services/webpageService'
+import Preview from '../shared/Preview'
+import type { PageData } from '../../types'
 
 interface WebsitePreviewPageProps {
   pageId: string
@@ -31,6 +34,9 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   const { pages: websitePages } = useWebsitePages()
   const [bannerUrl, setBannerUrl] = useState<string>('')
   const [activeTab, setActiveTab] = useState<'preview' | 'settings'>('preview')
+  const [webpageData, setWebpageData] = useState<WebpageData | null>(null)
+  const [isLoadingWebpage, setIsLoadingWebpage] = useState(false)
+  const [webpageError, setWebpageError] = useState<string | null>(null)
 
   // Prioritize createdEvent data from API, fallback to eventData from form
   const displayEventName = createdEvent?.eventName || eventData?.eventName
@@ -97,6 +103,45 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     }
   }, [pageId, pages])
 
+  // Fetch webpage data when pageId is provided and event UUID is available
+  useEffect(() => {
+    const loadWebpage = async () => {
+      if (!pageId || !createdEvent?.uuid) {
+        console.log('⚠️ WebsitePreviewPage: No pageId or event UUID available, skipping webpage fetch')
+        setWebpageData(null)
+        return
+      }
+
+      // Check if pageId looks like a UUID (webpage UUID from API)
+      // If it's a simple string like 'welcome', it's likely a local page ID, not a webpage UUID
+      const isWebpageUuid = pageId.includes('-') && pageId.length > 20
+      
+      if (!isWebpageUuid) {
+        console.log('⚠️ WebsitePreviewPage: pageId does not appear to be a webpage UUID, skipping API fetch')
+        setWebpageData(null)
+        return
+      }
+
+      console.log('📡 WebsitePreviewPage: Fetching webpage:', pageId, 'for event:', createdEvent.uuid)
+      setIsLoadingWebpage(true)
+      setWebpageError(null)
+      
+      try {
+        const fetchedWebpage = await fetchWebpage(pageId, createdEvent.uuid)
+        console.log('✅ WebsitePreviewPage: Fetched webpage:', fetchedWebpage)
+        setWebpageData(fetchedWebpage)
+      } catch (error) {
+        console.error('❌ WebsitePreviewPage: Failed to load webpage:', error)
+        setWebpageError(error instanceof Error ? error.message : 'Failed to load webpage')
+        setWebpageData(null)
+      } finally {
+        setIsLoadingWebpage(false)
+      }
+    }
+
+    loadWebpage()
+  }, [pageId, createdEvent?.uuid])
+
   const handleSearchClick = () => {
     console.log('Search clicked')
   }
@@ -110,8 +155,8 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   }
 
   const handleBack = () => {
-    // Navigate back to Event Website management page
-    window.history.pushState({}, '', '/event/website')
+    // Navigate back to Event Website management page (event-hub with event-website section)
+    window.history.pushState({ section: 'event-website' }, '', '/event/hub?section=event-website')
     window.dispatchEvent(new PopStateEvent('popstate'))
     if (onBackClick) {
       onBackClick()
@@ -275,6 +320,49 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     </div>
   ), [eventData, bannerUrl, defaultSpeakers])
 
+  // Extract page data from webpage content structure
+  const extractPageData = useCallback((webpageContent: any): PageData | null => {
+    if (!webpageContent || typeof webpageContent !== 'object') {
+      return null
+    }
+
+    // The content structure is: { "pageName": { "data": { "/": { "root": {...}, "content": [...], "zones": {} } } } }
+    // We need to extract the actual page data from this nested structure
+    const pageKeys = Object.keys(webpageContent)
+    if (pageKeys.length === 0) {
+      return null
+    }
+
+    // Get the first page key (usually the page name like "welcome")
+    const pageKey = pageKeys[0]
+    const pageData = webpageContent[pageKey]
+
+    if (!pageData || !pageData.data) {
+      return null
+    }
+
+    // Get the data for the root path "/"
+    const rootPathData = pageData.data['/']
+    if (!rootPathData) {
+      return null
+    }
+
+    // Extract and return the PageData structure
+    return {
+      content: rootPathData.content || [],
+      root: rootPathData.root || {},
+      zones: rootPathData.zones || {}
+    }
+  }, [])
+
+  // Convert webpage data to PageData format
+  const webpagePageData = useMemo(() => {
+    if (!webpageData || !webpageData.content) {
+      return null
+    }
+    return extractPageData(webpageData.content)
+  }, [webpageData, extractPageData])
+
   // Dynamic component renderer based on page type
   const renderPageComponent = useMemo(() => {
     // If page type is 'schedule' and component is 'SchedulePage', render SchedulePage
@@ -368,7 +456,46 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
           {/* Content based on active tab */}
           <div className="flex-1 overflow-y-auto">
             {activeTab === 'preview' && (
-              renderPageComponent
+              <>
+                {isLoadingWebpage ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                      <p className="text-slate-600">Loading webpage...</p>
+                    </div>
+                  </div>
+                ) : webpageError ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <p className="text-red-600 mb-2">Error loading webpage</p>
+                      <p className="text-sm text-slate-600">{webpageError}</p>
+                    </div>
+                  </div>
+                ) : webpageData ? (
+                  <div className="w-full">
+                    {/* Render webpage content from API */}
+                    {webpageData.content && typeof webpageData.content === 'string' ? (
+                      // If content is HTML string, render it
+                      <div 
+                        dangerouslySetInnerHTML={{ __html: webpageData.content }}
+                        className="w-full"
+                      />
+                    ) : webpagePageData ? (
+                      // If we have valid PageData, render it using Preview component
+                      <Preview 
+                        data={webpagePageData} 
+                        isInteractive={false}
+                      />
+                    ) : (
+                      // Fallback to default template
+                      renderPageComponent
+                    )}
+                  </div>
+                ) : (
+                  // No webpage data, render default template
+                  renderPageComponent
+                )}
+              </>
             )}
 
             {activeTab === 'settings' && (

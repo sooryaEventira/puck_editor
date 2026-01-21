@@ -50,14 +50,20 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({
     try {
       const response = await sendRegistrationOtp(email.trim())
       
-      if (response.status === 'success' && onSubmit) {
-        // Only call onSubmit if API call was successful
-        onSubmit(email.trim())
+      if (response.status === 'success') {
+        // Toast notification is already shown by authService
+        // Navigate immediately to email verification page
+        // Keep button disabled during navigation (don't reset isLoading)
+        if (onSubmit) {
+          onSubmit(email.trim())
+        }
+        // Don't reset loading state - let navigation happen while button is disabled
+        return
       }
     } catch (err) {
       // Error is already handled in authService with toast
       setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.')
-    } finally {
+      // Only reset loading state on error
       setIsLoading(false)
       isSubmittingRef.current = false
     }

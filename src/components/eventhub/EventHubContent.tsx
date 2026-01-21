@@ -5,7 +5,8 @@ import {
   Users01,
   Calendar,
   BarChart07,
-  Globe01
+  Globe01,
+  Microphone01
 } from '@untitled-ui/icons-react'
 
 export interface CardItem {
@@ -49,6 +50,14 @@ export const defaultCards: ContentCard[] = [
     icon: <Users01 className="h-5 w-5" aria-hidden="true" />,
     items: [
       { label: 'Track registrations, manage check-ins, and monitor attendee engagement in real-time.' }
+    ]
+  },
+  {
+    id: 'speaker-management',
+    title: 'Speaker Management',
+    icon: <Microphone01 className="h-5 w-5" aria-hidden="true" />,
+    items: [
+      { label: 'Manage speaker profiles, sessions, and presentations for your event.' }
     ]
   },
   {

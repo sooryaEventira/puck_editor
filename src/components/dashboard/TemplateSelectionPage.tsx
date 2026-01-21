@@ -265,8 +265,8 @@ const TemplateSelectionPage: React.FC = () => {
       // Clear create-from-scratch flag to indicate default template was selected
       localStorage.removeItem('create-from-scratch')
       
-      // Navigate to Event Website page
-      window.history.pushState({}, '', '/event/website')
+      // Navigate to Event Hub with event-website section
+      window.history.pushState({ section: 'event-website' }, '', '/event/hub?section=event-website')
       window.dispatchEvent(new PopStateEvent('popstate'))
     } catch (error) {
       // Error is already handled in createWebpage with toast

@@ -13,8 +13,6 @@ interface AboutSectionProps {
 const AboutSection: React.FC<AboutSectionProps> = ({
   leftTitle = "About Event",
   leftText = "We are dedicated to providing innovative solutions that help our clients achieve their goals and drive success in their respective industries.",
-  rightTitle,
-  rightText,
   backgroundColor = "#ffffff",
   textColor = "#333333",
   padding = "3rem 2rem"
@@ -38,12 +36,20 @@ const AboutSection: React.FC<AboutSectionProps> = ({
     <>
       <style>
         {`
+          .about-section-text {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+          }
+          .about-section-title {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+          }
           @media (max-width: 768px) {
             .about-section-container {
               padding: 2rem 1rem !important;
-            }
-            .about-section-column {
-              gap: 1rem !important;
             }
           }
           @media (max-width: 480px) {
@@ -61,29 +67,27 @@ const AboutSection: React.FC<AboutSectionProps> = ({
           }
         `}
       </style>
-      <section style={containerStyle} className="w-full min-h-[250px] about-section-container">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="flex flex-col gap-6 about-section-column">
-            <h2 
-              style={titleStyle}
-              className="text-[24px] text-center font-bold mb-4 leading-tight tracking-tight about-section-title"
-              data-puck-field="leftTitle"
-              contentEditable
-              suppressContentEditableWarning={true}
-            >
-              {leftTitle}
-            </h2>
-            
-            <p 
-              style={textStyle}
-              className="text-[clamp(1rem,2.5vw,1.125rem)] leading-relaxed about-section-text max-w-3xl opacity-80"
-              data-puck-field="leftText"
-              contentEditable
-              suppressContentEditableWarning={true}
-            >
-              {leftText}
-            </p>
-          </div>
+      <section style={containerStyle} className="w-full min-h-[250px] about-section-container overflow-hidden">
+        <div className="max-w-[1200px] mx-auto flex flex-col items-center justify-center text-center gap-6 px-4">
+          <h2 
+            style={titleStyle}
+            className="text-[24px] font-bold leading-tight tracking-tight about-section-title break-words"
+            data-puck-field="leftTitle"
+            contentEditable
+            suppressContentEditableWarning={true}
+          >
+            {leftTitle}
+          </h2>
+          
+          <p 
+            style={textStyle}
+            className="text-[clamp(1rem,2.5vw,1.125rem)] leading-relaxed about-section-text max-w-3xl opacity-80 mx-auto break-words overflow-wrap-anywhere"
+            data-puck-field="leftText"
+            contentEditable
+            suppressContentEditableWarning={true}
+          >
+            {leftText}
+          </p>
         </div>
       </section>
     </>

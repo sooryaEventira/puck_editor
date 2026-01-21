@@ -5,7 +5,7 @@ import EventHubNavbar from './EventHubNavbar'
 import EventHubSidebar from './EventHubSidebar'
 import { defaultCards, ContentCard } from './EventHubContent'
 import PageCreationModal, { type PageType } from '../page/PageCreationModal'
-import { API_ENDPOINTS } from '../../config/env'
+import { fetchWebpages, type WebpageData } from '../../services/webpageService'
 import Button from '../ui/untitled/Button'
 import { 
   InfoCircle, 
@@ -37,6 +37,32 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   const [activeSubItem, setActiveSubItem] = useState('website-pages')
   const [showPageCreationModal, setShowPageCreationModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ id: string; name: string } | null>(null)
+  const [webpages, setWebpages] = useState<WebpageData[]>([])
+  const [isLoadingWebpages, setIsLoadingWebpages] = useState(false)
+
+  // Fetch webpages from backend
+  useEffect(() => {
+    const loadWebpages = async () => {
+      if (!createdEvent?.uuid) {
+        console.log('⚠️ EventWebsitePage: No event UUID available, skipping webpage fetch')
+        return
+      }
+
+      console.log('📡 EventWebsitePage: Fetching webpages for event:', createdEvent.uuid)
+      setIsLoadingWebpages(true)
+      try {
+        const fetchedWebpages = await fetchWebpages(createdEvent.uuid)
+        console.log('✅ EventWebsitePage: Fetched webpages:', fetchedWebpages)
+        setWebpages(fetchedWebpages)
+      } catch (error) {
+        console.error('❌ EventWebsitePage: Failed to load webpages:', error)
+      } finally {
+        setIsLoadingWebpages(false)
+      }
+    }
+
+    loadWebpages()
+  }, [createdEvent?.uuid])
 
   // Initialize pages based on template selection on mount
   useEffect(() => {
@@ -246,11 +272,11 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   }
 
   const handlePageAction = (pageId: string, action: string) => {
-    const page = pages.find(p => p.id === pageId)
-    if (!page) return
+    const webpage = webpages.find(w => w.uuid === pageId)
+    if (!webpage) return
 
-    // Check if this is the first page (cannot be deleted)
-    const isFirstPage = pages.length > 0 && pages[0].id === pageId
+    // Check if this is the welcome page (cannot be deleted)
+    const isFirstPage = webpage.name.toLowerCase() === 'welcome'
 
     switch (action) {
       case 'view':
@@ -269,10 +295,10 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
       case 'delete':
         if (isFirstPage) {
           // Show error or prevent deletion
-          alert('The first page cannot be deleted.')
+          alert('The welcome page cannot be deleted.')
           return
         }
-        setShowDeleteConfirm({ id: pageId, name: page.name })
+        setShowDeleteConfirm({ id: pageId, name: webpage.name })
         break
       default:
         break
@@ -285,9 +311,6 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
       setShowDeleteConfirm(null)
     }
   }
-
-  // Get first page ID to check if deletion should be disabled
-  const firstPageId = pages.length > 0 ? pages[0].id : null
 
   // Render content for embedded mode (without navbar/sidebar)
   if (hideNavbarAndSidebar) {
@@ -363,26 +386,30 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
             <div>
               {/* Pages List */}
               <div className="space-y-0 border border-slate-200 rounded-lg bg-white">
-                {pages.length === 0 ? (
+                {isLoadingWebpages ? (
+                  <div className="flex items-center justify-center py-8 text-slate-500">
+                    <p>Loading webpages...</p>
+                  </div>
+                ) : webpages.length === 0 ? (
                   <div className="flex items-center justify-center py-8 text-slate-500">
                     <p>No pages yet. Click "+ New Page" to create one.</p>
                   </div>
                 ) : (
-                  pages.map((page) => {
-                    const isFirstPage = page.id === firstPageId
+                  webpages.map((webpage) => {
+                    const isFirstPage = webpage.name.toLowerCase() === 'welcome'
                     return (
                       <div
-                        key={page.id}
+                        key={webpage.uuid}
                         className="flex items-center justify-between py-2 px-4 border-b border-slate-200 last:border-b-0 hover:bg-slate-50 transition-colors"
                       >
-                        <span className="text-sm font-medium text-slate-900">
-                          {page.name}
+                        <span className="text-sm font-medium text-slate-900 capitalize">
+                          {webpage.name}
                         </span>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="tertiary"
                             size="sm"
-                            onClick={() => handlePageAction(page.id, 'view')}
+                            onClick={() => handlePageAction(webpage.uuid, 'view')}
                             className="p-2 text-slate-400 hover:text-slate-600"
                             aria-label="View"
                             iconLeading={<Eye className="h-4 w-4" />}
@@ -390,7 +417,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                           <Button
                             variant="tertiary"
                             size="sm"
-                            onClick={() => handlePageAction(page.id, 'edit')}
+                            onClick={() => handlePageAction(webpage.uuid, 'edit')}
                             className="p-2 text-slate-400 hover:text-slate-600"
                             aria-label="Edit"
                             iconLeading={<Edit05 className="h-4 w-4" />}
@@ -398,7 +425,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                           <Button
                             variant="tertiary"
                             size="sm"
-                            onClick={() => handlePageAction(page.id, 'duplicate')}
+                            onClick={() => handlePageAction(webpage.uuid, 'duplicate')}
                             className="p-2 text-slate-400 hover:text-slate-600"
                             aria-label="Duplicate"
                             iconLeading={<Copy01 className="h-4 w-4" />}
@@ -406,7 +433,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                           <Button
                             variant="tertiary"
                             size="sm"
-                            onClick={() => handlePageAction(page.id, 'delete')}
+                            onClick={() => handlePageAction(webpage.uuid, 'delete')}
                             className={`p-2 hover:text-red-600 ${
                               isFirstPage 
                                 ? 'text-slate-300 cursor-not-allowed opacity-50' 
@@ -564,27 +591,31 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
         {activeSubItem === 'website-pages' && (
           <div>
             {/* Pages List */}
-            <div className="space-y-0 bg-slate-100 rounded-lg">
-              {pages.length === 0 ? (
+            <div className="space-y-0 border border-slate-200 rounded-lg bg-white">
+              {isLoadingWebpages ? (
+                <div className="flex items-center justify-center py-8 text-slate-500">
+                  <p>Loading webpages...</p>
+                </div>
+              ) : webpages.length === 0 ? (
                 <div className="flex items-center justify-center py-8 text-slate-500">
                   <p>No pages yet. Click "+ New Page" to create one.</p>
                 </div>
               ) : (
-                pages.map((page) => {
-                  const isFirstPage = page.id === firstPageId
+                webpages.map((webpage) => {
+                  const isFirstPage = webpage.name.toLowerCase() === 'welcome'
                   return (
                     <div
-                      key={page.id}
+                      key={webpage.uuid}
                       className="flex items-center justify-between py-2 px-4 border-b border-slate-200 last:border-b-0 hover:bg-slate-50 transition-colors"
                     >
-                      <span className="text-sm font-medium text-slate-900">
-                        {page.name}
+                      <span className="text-sm font-medium text-slate-900 capitalize">
+                        {webpage.name}
                       </span>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="tertiary"
                           size="sm"
-                          onClick={() => handlePageAction(page.id, 'view')}
+                          onClick={() => handlePageAction(webpage.uuid, 'view')}
                           className="p-2 text-slate-400 hover:text-slate-600"
                           aria-label="View"
                           iconLeading={<Eye className="h-4 w-4" />}
@@ -592,7 +623,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                         <Button
                           variant="tertiary"
                           size="sm"
-                          onClick={() => handlePageAction(page.id, 'edit')}
+                          onClick={() => handlePageAction(webpage.uuid, 'edit')}
                           className="p-2 text-slate-400 hover:text-slate-600"
                           aria-label="Edit"
                           iconLeading={<Edit05 className="h-4 w-4" />}
@@ -600,7 +631,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                         <Button
                           variant="tertiary"
                           size="sm"
-                          onClick={() => handlePageAction(page.id, 'duplicate')}
+                          onClick={() => handlePageAction(webpage.uuid, 'duplicate')}
                           className="p-2 text-slate-400 hover:text-slate-600"
                           aria-label="Duplicate"
                           iconLeading={<Copy01 className="h-4 w-4" />}
@@ -608,7 +639,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                         <Button
                           variant="tertiary"
                           size="sm"
-                          onClick={() => handlePageAction(page.id, 'delete')}
+                          onClick={() => handlePageAction(webpage.uuid, 'delete')}
                           className={`p-2 hover:text-red-600 ${
                             isFirstPage 
                               ? 'text-slate-300 cursor-not-allowed opacity-50' 
