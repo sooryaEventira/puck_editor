@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { useEventForm } from '../../../contexts/EventFormContext'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
@@ -10,6 +10,7 @@ import { Communication, Macro } from './communicationTypes'
 import type { BroadcastType } from './BroadcastTypeModal'
 import { defaultCards, ContentCard } from '../EventHubContent'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
+import { fetchCommunications } from '../../../services/communicationService'
 
 interface CommunicationPageProps {
   eventName?: string
@@ -87,13 +88,89 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
 
   const [communications, setCommunications] = React.useState<Communication[]>([])
 
+  // Load communications from API
+  const loadCommunications = async () => {
+    const eventUuid = createdEvent?.uuid
+    
+    if (!eventUuid) {
+      setCommunications([])
+      return
+    }
+
+    try {
+      const communicationsData = await fetchCommunications(eventUuid)
+      
+      // Map API response to Communication interface
+      const mappedCommunications: Communication[] = communicationsData.map((commData) => {
+        // Determine status based on API response
+        let status: Communication['status'] = 'sent'
+        if (commData.status === 'scheduled' || commData.scheduled_at) {
+          status = 'scheduled'
+        } else if (commData.status === 'draft') {
+          status = 'draft'
+        }
+
+        // Determine type based on channel
+        const type: Communication['type'] = commData.channel === 'email' ? 'email' : 'notification'
+
+        return {
+          id: String(commData.id),
+          title: commData.subject || 'Untitled',
+          userGroups: [], // TODO: Map tag_uuids to userGroups if needed
+          status: status,
+          type: type,
+          recipients: {
+            sent: commData.total_recipients || 0,
+            total: commData.total_recipients || 0
+          },
+          scheduledDate: commData.scheduled_at
+        }
+      })
+
+      setCommunications(mappedCommunications)
+    } catch (error) {
+      // Error is already handled in fetchCommunications with toast
+      // Set empty array on error to prevent UI issues
+      setCommunications([])
+    }
+  }
+
+  // Load communications on mount and when event changes
+  useEffect(() => {
+    if (createdEvent?.uuid) {
+      loadCommunications()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createdEvent?.uuid])
+
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = React.useState(false)
   const [isCreateMacroModalOpen, setIsCreateMacroModalOpen] = React.useState(false)
   const [showComposer, setShowComposer] = React.useState(false)
   const [selectedBroadcastType, setSelectedBroadcastType] = React.useState<BroadcastType | null>(null)
   const [currentDraftId, setCurrentDraftId] = React.useState<string | null>(null)
 
-  const [macros, setMacros] = React.useState<Macro[]>([])
+  const [macros, setMacros] = React.useState<Macro[]>([
+    {
+      id: 'email',
+      macro: '{{email}}',
+      column: 'Email'
+    },
+    {
+      id: 'last_name',
+      macro: '{{last_name}}',
+      column: 'Last Name'
+    },
+    {
+      id: 'first_name',
+      macro: '{{first_name}}',
+      column: 'First Name'
+    },
+    {
+      id: 'event_name',
+      macro: '{{event_name}}',
+      column: 'Event Name'
+    }
+  ])
 
   const handleCreateBroadcast = () => {
     setIsBroadcastModalOpen(true)
@@ -192,33 +269,9 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
           <BroadcastComposer
             onCancel={handleComposerCancel}
             onSave={handleComposerSave}
-            onSend={(data) => {
-                if (currentDraftId) {
-                  // Update existing draft to sent status
-                  setCommunications((prev) =>
-                    prev.map((comm) =>
-                      comm.id === currentDraftId
-                        ? {
-                            ...comm,
-                            title: data.subject,
-                            status: 'sent',
-                            // Update recipients if needed
-                          }
-                        : comm
-                    )
-                  )
-                } else {
-                  // Create new sent communication
-                  const newCommunication: Communication = {
-                    id: Date.now().toString(),
-                    title: data.subject,
-                    userGroups: [],
-                    status: 'sent',
-                    type: selectedBroadcastType === 'email' ? 'email' : 'notification',
-                    recipients: { sent: 0, total: 0 }
-                  }
-                  setCommunications((prev) => [...prev, newCommunication])
-                }
+            onSend={async (_data) => {
+                // Reload communications from API after sending
+                await loadCommunications()
                 setShowComposer(false)
                 setSelectedBroadcastType(null)
                 setCurrentDraftId(null)

@@ -1,9 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { useEventForm } from '../../../contexts/EventFormContext'
 import { uploadSpeakerFile, fetchSpeakers, type SpeakerData } from '../../../services/speakerService'
+import { fetchTags } from '../../../services/attendeeService'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import SpeakersTable from './SpeakersTable'
+import SpeakerGroupsTable from './SpeakerGroupsTable'
 import CreateSpeakerModal from './CreateSpeakerModal'
 import CreateGroupModal from '../attendeemanagement/CreateGroupModal'
 import CreateCustomFieldModal from '../attendeemanagement/CreateCustomFieldModal'
@@ -190,10 +192,46 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
     }
   }
 
+  // Load tags from API
+  const loadTags = async () => {
+    const eventUuid = createdEvent?.uuid
+    
+    if (!eventUuid) {
+      setGroups([])
+      return
+    }
+
+    try {
+      const tagsData = await fetchTags(eventUuid)
+      
+      // Map API response to Group interface
+      // Only include tags that are active (is_active !== false)
+      const mappedGroups: Group[] = tagsData
+        .filter((tag) => tag.is_active !== false) // Only include active tags
+        .map((tag) => ({
+          id: tag.uuid,
+          name: tag.name,
+          speakerCount: 0 // TODO: Calculate speaker count if available from API
+        }))
+
+      setGroups(mappedGroups)
+    } catch (error) {
+      // If it's a 404, tags endpoint might not exist yet - set empty array
+      // Other errors are already handled in fetchTags with toast
+      if (error instanceof Error && error.message.includes('not found')) {
+        setGroups([])
+      } else {
+        // For other errors, set empty array to prevent stale data
+        setGroups([])
+      }
+    }
+  }
+
   // Load speakers on mount and when event changes
   useEffect(() => {
     if (createdEvent?.uuid) {
       loadSpeakers()
+      loadTags()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createdEvent?.uuid])
@@ -259,13 +297,9 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
     setIsCreateGroupModalOpen(true)
   }
 
-  const handleSaveGroup = (groupName: string) => {
-    const newGroup: Group = {
-      id: Date.now().toString(),
-      name: groupName,
-      speakerCount: 0
-    }
-    setGroups((prev) => [...prev, newGroup])
+  const handleSaveGroup = async (_groupName?: string) => {
+    // Reload tags from API after creation
+    await loadTags()
   }
 
   const handleCreateField = () => {
@@ -347,26 +381,33 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
 
       {/* Speaker Management Content */}
       <div className={hideNavbarAndSidebar ? "" : "md:pl-[250px]"}>
-        <SpeakersTable
-          speakers={speakers}
-          groups={groups}
-          customFields={customFields}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onUpload={handleUpload}
-          onCreateProfile={handleCreateProfile}
-          onCreateGroup={handleCreateGroup}
-          onCreateField={handleCreateField}
-          onEditSpeaker={handleEditSpeaker}
-          onDeleteSpeaker={handleDeleteSpeaker}
-          onEditGroup={handleEditGroup}
-          onDeleteGroup={handleDeleteGroup}
-          onEditCustomField={handleEditCustomField}
-          onDeleteCustomField={handleDeleteCustomField}
-          onDownload={handleDownload}
-          onGridView={handleGridView}
-          onFilter={handleFilter}
-        />
+        {activeTab === 'groups' ? (
+          <SpeakerGroupsTable
+            groups={groups}
+            onCreateGroup={handleCreateGroup}
+            onEditGroup={handleEditGroup}
+            onDeleteGroup={handleDeleteGroup}
+            onFilter={handleFilter}
+            onTabChange={setActiveTab}
+          />
+        ) : (
+          <SpeakersTable
+            speakers={speakers}
+            customFields={customFields}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onUpload={handleUpload}
+            onCreateProfile={handleCreateProfile}
+            onCreateField={handleCreateField}
+            onEditSpeaker={handleEditSpeaker}
+            onDeleteSpeaker={handleDeleteSpeaker}
+            onEditCustomField={handleEditCustomField}
+            onDeleteCustomField={handleDeleteCustomField}
+            onDownload={handleDownload}
+            onGridView={handleGridView}
+            onFilter={handleFilter}
+          />
+        )}
       </div>
 
       {/* Create Profile Modal */}

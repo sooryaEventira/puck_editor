@@ -261,13 +261,15 @@ const CommunicationsTable: React.FC<CommunicationsTableProps> = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ">
         <h1 className="text-[26px] font-bold text-primary-dark ">Communication</h1>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={activeTab === 'list' ? onCreateBroadcast : onCreateMacro}
-            className="inline-flex items-center justify-center rounded-md  px-4 py-2 text-sm font-semibold text-white border border-slate-200 bg-primary shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            {activeTab === 'list' ? '+ New broadcast' : '+ New macro'}
-          </button>
+          {activeTab === 'list' && (
+            <button
+              type="button"
+              onClick={onCreateBroadcast}
+              className="inline-flex items-center justify-center rounded-md  px-4 py-2 text-sm font-semibold text-white border border-slate-200 bg-primary shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              + New broadcast
+            </button>
+          )}
         </div>
       </div>
 

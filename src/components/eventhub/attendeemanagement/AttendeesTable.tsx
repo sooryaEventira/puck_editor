@@ -4,28 +4,23 @@ import {
   type DividerLineTableSortDescriptor,
   Button
 } from '../../ui/untitled'
-import { Attendee, AttendeeTab, Group, CustomField } from './attendeeTypes'
-import type { AttendeeTableRowData, GroupTableRowData, CustomFieldTableRowData } from './attendeeTypes'
+import { Attendee, AttendeeTab, CustomField } from './attendeeTypes'
+import type { AttendeeTableRowData, CustomFieldTableRowData } from './attendeeTypes'
 import { TablePagination, useTableHeader } from '../../ui'
 import { useAttendeeTableColumns } from './AttendeeTableColumns'
-import { useGroupTableColumns } from './GroupTableColumns'
 import { useCustomFieldTableColumns } from './CustomFieldTableColumns'
 import { Download01, Grid01, Upload01 } from '@untitled-ui/icons-react'
 
 interface AttendeesTableProps {
   attendees: Attendee[]
-  groups?: Group[]
   customFields?: CustomField[]
   activeTab: AttendeeTab
   onTabChange: (tab: AttendeeTab) => void
   onUpload?: () => void
   onCreateProfile?: () => void
-  onCreateGroup?: () => void
   onCreateField?: () => void
   onEditAttendee?: (attendeeId: string) => void
   onDeleteAttendee?: (attendeeId: string) => void
-  onEditGroup?: (groupId: string) => void
-  onDeleteGroup?: (groupId: string) => void
   onEditCustomField?: (customFieldId: string) => void
   onDeleteCustomField?: (customFieldId: string) => void
   onDownload?: () => void
@@ -35,18 +30,14 @@ interface AttendeesTableProps {
 
 const AttendeesTable: React.FC<AttendeesTableProps> = ({
   attendees,
-  groups = [],
   customFields = [],
   activeTab,
   onTabChange,
   onUpload,
   onCreateProfile,
-  onCreateGroup,
   onCreateField,
   onEditAttendee,
   onDeleteAttendee,
-  onEditGroup,
-  onDeleteGroup,
   onEditCustomField,
   onDeleteCustomField,
   onDownload,
@@ -55,7 +46,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<Set<string>>(new Set())
-  const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set())
   const [selectedCustomFieldIds, setSelectedCustomFieldIds] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -90,14 +80,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
     })
   }, [searchQuery, attendees])
 
-  const filteredGroups = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return groups
-
-    return groups.filter((group) => {
-      return group.name.toLowerCase().includes(query)
-    })
-  }, [searchQuery, groups])
 
   const filteredCustomFields = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -114,10 +96,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
     [filteredAttendees]
   )
 
-  const visibleGroupIds = useMemo(
-    () => filteredGroups.map((group) => group.id),
-    [filteredGroups]
-  )
 
   const visibleCustomFieldIds = useMemo(
     () => filteredCustomFields.map((field) => field.id),
@@ -131,11 +109,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
     return filteredAttendees.slice(startIndex, endIndex)
   }, [filteredAttendees, currentPage])
 
-  const paginatedGroups = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    return filteredGroups.slice(startIndex, endIndex)
-  }, [filteredGroups, currentPage])
 
   const paginatedCustomFields = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
@@ -147,11 +120,9 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
   const totalPages = useMemo(() => {
     const totalItems = activeTab === 'user' 
       ? filteredAttendees.length 
-      : activeTab === 'groups'
-      ? filteredGroups.length
       : filteredCustomFields.length
     return Math.ceil(totalItems / itemsPerPage)
-  }, [activeTab, filteredAttendees.length, filteredGroups.length, filteredCustomFields.length])
+  }, [activeTab, filteredAttendees.length, filteredCustomFields.length])
 
   // Selection logic for attendees
   const allVisibleAttendeesSelected = useMemo(() => {
@@ -168,20 +139,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
     )
   }, [allVisibleAttendeesSelected, visibleAttendeeIds, selectedAttendeeIds])
 
-  // Selection logic for groups
-  const allVisibleGroupsSelected = useMemo(() => {
-    return (
-      visibleGroupIds.length > 0 &&
-      visibleGroupIds.every((id) => selectedGroupIds.has(id))
-    )
-  }, [visibleGroupIds, selectedGroupIds])
-
-  const partiallyGroupsSelected = useMemo(() => {
-    return (
-      !allVisibleGroupsSelected &&
-      visibleGroupIds.some((id) => selectedGroupIds.has(id))
-    )
-  }, [allVisibleGroupsSelected, visibleGroupIds, selectedGroupIds])
 
   // Selection logic for custom fields
   const allVisibleCustomFieldsSelected = useMemo(() => {
@@ -228,34 +185,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
     })
   }, [])
 
-  const handleToggleAllGroups = useCallback(
-    (checked: boolean) => {
-      setSelectedGroupIds((previous) => {
-        const next = new Set(previous)
-        visibleGroupIds.forEach((id) => {
-          if (checked) {
-            next.add(id)
-          } else {
-            next.delete(id)
-          }
-        })
-        return next
-      })
-    },
-    [visibleGroupIds]
-  )
-
-  const handleToggleGroup = useCallback((id: string, checked: boolean) => {
-    setSelectedGroupIds((previous) => {
-      const next = new Set(previous)
-      if (checked) {
-        next.add(id)
-      } else {
-        next.delete(id)
-      }
-      return next
-    })
-  }, [])
 
   const handleToggleAllCustomFields = useCallback(
     (checked: boolean) => {
@@ -291,9 +220,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
     return paginatedAttendees.map((attendee, index) => ({ attendee, index }))
   }, [paginatedAttendees])
 
-  const groupTableRows = useMemo<GroupTableRowData[]>(() => {
-    return paginatedGroups.map((group, index) => ({ group, index }))
-  }, [paginatedGroups])
 
   const customFieldTableRows = useMemo<CustomFieldTableRowData[]>(() => {
     return paginatedCustomFields.map((field, index) => ({ customField: field, index }))
@@ -309,15 +235,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
     onDeleteAttendee
   })
 
-  const groupColumns = useGroupTableColumns({
-    allVisibleSelected: allVisibleGroupsSelected,
-    partiallySelected: partiallyGroupsSelected,
-    selectedGroupIds,
-    onToggleAllVisible: handleToggleAllGroups,
-    onToggleRow: handleToggleGroup,
-    onEditGroup,
-    onDeleteGroup
-  })
 
   const customFieldColumns = useCustomFieldTableColumns({
     allVisibleSelected: allVisibleCustomFieldsSelected,
@@ -338,13 +255,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
     </div>
   )
 
-  const groupEmptyState = (
-    <div className="flex min-h-[280px] items-center justify-center px-6 py-10 text-sm text-slate-500">
-      {groups.length === 0
-        ? 'No groups have been created yet!'
-        : 'No groups match your search.'}
-    </div>
-  )
 
   const customFieldEmptyState = (
     <div className="flex min-h-[280px] items-center justify-center px-6 py-10 text-sm text-slate-500">
@@ -357,8 +267,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
   // Get search placeholder and button text based on active tab
   const searchPlaceholder = useMemo(() => {
     switch (activeTab) {
-      case 'groups':
-        return 'Search group'
       case 'custom-schedule':
         return 'Search personal schedule'
       default:
@@ -368,8 +276,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
 
   const buttonText = useMemo(() => {
     switch (activeTab) {
-      case 'groups':
-        return '+ New group'
       case 'custom-schedule':
         return '+ New field'
       default:
@@ -379,14 +285,12 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
 
   const handleCreateButton = useMemo(() => {
     switch (activeTab) {
-      case 'groups':
-        return onCreateGroup
       case 'custom-schedule':
         return onCreateField
       default:
         return onCreateProfile
     }
-  }, [activeTab, onCreateGroup, onCreateField, onCreateProfile])
+  }, [activeTab, onCreateField, onCreateProfile])
 
   const tableHeader = useTableHeader({
     tabs: [
@@ -401,7 +305,7 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
     onSearchChange: setSearchQuery,
     showFilter: true,
     onFilterClick: onFilter || (() => {}),
-    filterLabel: `Filter ${activeTab === 'groups' ? 'groups' : activeTab === 'custom-schedule' ? 'custom fields' : 'attendees'}`,
+    filterLabel: `Filter ${activeTab === 'custom-schedule' ? 'custom fields' : 'attendees'}`,
     customActions: activeTab === 'user' ? (
       <div className="flex items-center gap-2">
         <button
@@ -439,13 +343,6 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
   // Get table data, columns, and empty state based on active tab
   const getTableData = () => {
     switch (activeTab) {
-      case 'groups':
-        return {
-          data: groupTableRows,
-          columns: groupColumns,
-          emptyState: groupEmptyState,
-          getRowKey: (row: GroupTableRowData) => row.group?.id || ''
-        }
       case 'custom-schedule':
         return {
           data: customFieldTableRows,

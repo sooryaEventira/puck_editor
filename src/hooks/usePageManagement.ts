@@ -4,6 +4,7 @@ import { logger } from '../utils/logger'
 import { API_ENDPOINTS, env } from '../config/env'
 import { isPageApiAvailable, safeFetch } from '../utils/apiHelpers'
 import { useEventForm } from '../contexts/EventFormContext'
+import { fetchWebpage } from '../services/webpageService'
 
 // Function to convert HeadingBlock to Heading for compatibility
 const convertHeadingBlock = (item: any) => {
@@ -862,6 +863,117 @@ export const usePageManagement = () => {
     
     const pageId = filename.replace('.json', '')
     const serverFilename = filename.endsWith('.json') ? filename : `${filename}.json`
+    
+    // Check if pageId is a UUID (webpage UUID from API)
+    // UUIDs typically have dashes and are longer than 20 characters
+    const isWebpageUuid = pageId.includes('-') && pageId.length > 20
+    
+    // If it's a webpage UUID, fetch the webpage data to get the name
+    if (isWebpageUuid && createdEvent?.uuid) {
+      try {
+        logger.debug('loadPage: Detected webpage UUID, fetching webpage data:', pageId)
+        const webpageData = await fetchWebpage(pageId, createdEvent.uuid)
+        
+        // Extract the webpage name
+        const webpageName = webpageData.name || pageId
+        
+        // Convert webpage content to Puck format
+        // Webpage content structure: { [key]: { title, slug, data: { [slug]: { root, content, zones } } } }
+        let puckData = null
+        
+        if (webpageData.content && typeof webpageData.content === 'object') {
+          // Extract Puck data from nested structure
+          const contentKeys = Object.keys(webpageData.content)
+          if (contentKeys.length > 0) {
+            const firstKey = contentKeys[0]
+            const pageContent = webpageData.content[firstKey]
+            if (pageContent?.data) {
+              // The data object typically has a slug key like '/' or the page slug
+              const dataKeys = Object.keys(pageContent.data)
+              if (dataKeys.length > 0) {
+                puckData = pageContent.data[dataKeys[0]]
+              }
+            }
+          }
+        }
+        
+        // If we still don't have valid Puck data, use default template
+        if (!puckData || !puckData.content) {
+          logger.warn('loadPage: Webpage content is not in expected format, using default template')
+          puckData = getDefaultTemplateData(webpageName, displayEventData)
+        }
+        
+        // Clean any duplicates before setting
+        const cleanedData = cleanDuplicateComponents(puckData)
+        
+        // Update HeroSection banner if needed
+        const bannerUrl = localStorage.getItem('event-form-banner')
+        if (bannerUrl && cleanedData?.content) {
+          const heroSection = cleanedData.content.find((item: any) => item.type === 'HeroSection')
+          if (heroSection) {
+            heroSection.props.backgroundImage = bannerUrl
+          }
+        }
+        
+        // Ensure pageTitle is set to the webpage name
+        if (!cleanedData.root) {
+          cleanedData.root = { props: {} }
+        }
+        if (!cleanedData.root.props) {
+          cleanedData.root.props = {}
+        }
+        cleanedData.root.props.pageTitle = webpageName
+        
+        // Set the page data
+        setCurrentData(cleanedData)
+        setCurrentPage(pageId)
+        setCurrentPageName(webpageName)
+        setShowPageManager(false)
+        
+        // Cache the data
+        const cachedDataKey = `puck-page-${pageId}`
+        localStorage.setItem(cachedDataKey, JSON.stringify(cleanedData))
+        
+        // Add to pages array if not already there
+        // Check for existing page by ID or by name (case-insensitive) to avoid duplicates
+        setPages(prevPages => {
+          const pageExistsById = prevPages.some(p => p.id === pageId)
+          const pageExistsByName = prevPages.some(p => 
+            p.name.toLowerCase() === webpageName.toLowerCase()
+          )
+          
+          if (pageExistsById) {
+            // Update existing page with same ID
+            return prevPages.map(p => 
+              p.id === pageId 
+                ? { ...p, name: webpageName, lastModified: new Date().toISOString() }
+                : p
+            )
+          } else if (pageExistsByName) {
+            // Update existing page with same name (case-insensitive) but different ID
+            // This handles the case where we have "Welcome" but webpage has "welcome"
+            return prevPages.map(p => 
+              p.name.toLowerCase() === webpageName.toLowerCase()
+                ? { ...p, id: pageId, name: webpageName, filename: serverFilename, lastModified: new Date().toISOString() }
+                : p
+            )
+          } else {
+            // New page, add it
+            return [...prevPages, {
+              id: pageId,
+              name: webpageName,
+              filename: serverFilename,
+              lastModified: new Date().toISOString()
+            }]
+          }
+        })
+        
+        return cleanedData
+      } catch (error) {
+        logger.error('loadPage: Error fetching webpage data:', error)
+        // Fall through to normal loading logic
+      }
+    }
     
     // Check if we're creating from scratch and loading page1
     const isCreateFromScratch = localStorage.getItem('create-from-scratch') === 'true'

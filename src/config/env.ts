@@ -88,6 +88,16 @@ export const API_ENDPOINTS = {
     UPLOAD_USER: `${env.AUTH_API_URL}${ADMIN_API_BASE}attendees/upload-excel/`,
     LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}attendees/?event_uuid=${eventUuid}`,
   },
+  // Tags/Groups endpoints
+  TAGS: {
+    CREATE: `${env.AUTH_API_URL}${ADMIN_API_BASE}tags`,
+    LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}tags?event_uuid=${eventUuid}`,
+  },
+  // Communication endpoints
+  COMMUNICATION: {
+    SEND: `${env.AUTH_API_URL}${ADMIN_API_BASE}event-communications/`,
+    LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}event-communications/?event_uuid=${eventUuid}`,
+  },
   // Speaker Management endpoints
   SPEAKER_MANAGEMENT: {
     UPLOAD_SPEAKER: `${env.AUTH_API_URL}${ADMIN_API_BASE}speakers/import/`,

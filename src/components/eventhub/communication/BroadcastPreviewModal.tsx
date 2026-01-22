@@ -7,6 +7,7 @@ interface BroadcastPreviewModalProps {
   onSend: () => void
   subject: string
   message: string
+  isSending?: boolean
 }
 
 const BroadcastPreviewModal: React.FC<BroadcastPreviewModalProps> = ({
@@ -14,7 +15,8 @@ const BroadcastPreviewModal: React.FC<BroadcastPreviewModalProps> = ({
   onClose,
   onSend,
   subject,
-  message
+  message,
+  isSending = false
 }) => {
   return (
     <Modal
@@ -52,9 +54,10 @@ const BroadcastPreviewModal: React.FC<BroadcastPreviewModalProps> = ({
           <button
             type="button"
             onClick={onSend}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            disabled={isSending}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Send
+            {isSending ? 'Sending...' : 'Send'}
           </button>
         </div>
       </div>

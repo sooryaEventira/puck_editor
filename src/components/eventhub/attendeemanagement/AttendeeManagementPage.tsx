@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { useEventForm } from '../../../contexts/EventFormContext'
-import { uploadUserFile, fetchAttendees, type AttendeeData } from '../../../services/attendeeService'
+import { uploadUserFile, fetchAttendees, fetchTags, type AttendeeData } from '../../../services/attendeeService'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import AttendeesTable from './AttendeesTable'
+import GroupsTable from './GroupsTable'
 import CreateProfileModal from './CreateProfileModal'
 import CreateGroupModal from './CreateGroupModal'
 import CreateCustomFieldModal from './CreateCustomFieldModal'
@@ -171,10 +172,46 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
     }
   }
 
+  // Load tags from API
+  const loadTags = async () => {
+    const eventUuid = createdEvent?.uuid
+    
+    if (!eventUuid) {
+      setGroups([])
+      return
+    }
+
+    try {
+      const tagsData = await fetchTags(eventUuid)
+      
+      // Map API response to Group interface
+      // Only include tags that are active (is_active === true)
+      const mappedGroups: Group[] = tagsData
+        .filter((tag) => tag.is_active !== false) // Only include active tags
+        .map((tag) => ({
+          id: tag.uuid,
+          name: tag.name,
+          attendeeCount: 0 // TODO: Calculate attendee count if available from API
+        }))
+
+      setGroups(mappedGroups)
+    } catch (error) {
+      // If it's a 404, tags endpoint might not exist yet - set empty array
+      // Other errors are already handled in fetchTags with toast
+      if (error instanceof Error && error.message.includes('not found')) {
+        setGroups([])
+      } else {
+        // For other errors, set empty array to prevent stale data
+        setGroups([])
+      }
+    }
+  }
+
   // Load attendees on mount and when event changes
   useEffect(() => {
     if (createdEvent?.uuid) {
       loadAttendees()
+      loadTags()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createdEvent?.uuid])
@@ -236,13 +273,12 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
     setIsCreateGroupModalOpen(true)
   }
 
-  const handleSaveGroup = (groupName: string) => {
-    const newGroup: Group = {
-      id: Date.now().toString(),
-      name: groupName,
-      attendeeCount: 0
-    }
-    setGroups((prev) => [...prev, newGroup])
+  const handleSaveGroup = async (_groupName?: string) => {
+    // Refresh tags list from API after successful creation
+    // The createTag function already handles the API call and shows success/error toasts
+    // We just need to refresh the list here
+    // Note: groupName parameter is kept for interface compatibility but not used
+    await loadTags()
   }
 
   const handleCreateField = () => {
@@ -324,26 +360,33 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
 
       {/* Attendee Management Content */}
       <div className={hideNavbarAndSidebar ? "" : "md:pl-[250px]"}>
-        <AttendeesTable
-          attendees={attendees}
-          groups={groups}
-          customFields={customFields}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onUpload={handleUpload}
-          onCreateProfile={handleCreateProfile}
-          onCreateGroup={handleCreateGroup}
-          onCreateField={handleCreateField}
-          onEditAttendee={handleEditAttendee}
-          onDeleteAttendee={handleDeleteAttendee}
-          onEditGroup={handleEditGroup}
-          onDeleteGroup={handleDeleteGroup}
-          onEditCustomField={handleEditCustomField}
-          onDeleteCustomField={handleDeleteCustomField}
-          onDownload={handleDownload}
-          onGridView={handleGridView}
-          onFilter={handleFilter}
-        />
+        {activeTab === 'groups' ? (
+          <GroupsTable
+            groups={groups}
+            onCreateGroup={handleCreateGroup}
+            onEditGroup={handleEditGroup}
+            onDeleteGroup={handleDeleteGroup}
+            onFilter={handleFilter}
+            onTabChange={setActiveTab}
+          />
+        ) : (
+          <AttendeesTable
+            attendees={attendees}
+            customFields={customFields}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onUpload={handleUpload}
+            onCreateProfile={handleCreateProfile}
+            onCreateField={handleCreateField}
+            onEditAttendee={handleEditAttendee}
+            onDeleteAttendee={handleDeleteAttendee}
+            onEditCustomField={handleEditCustomField}
+            onDeleteCustomField={handleDeleteCustomField}
+            onDownload={handleDownload}
+            onGridView={handleGridView}
+            onFilter={handleFilter}
+          />
+        )}
       </div>
 
       {/* Create Profile Modal */}

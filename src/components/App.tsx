@@ -5,8 +5,7 @@ import { usePublish } from '../hooks/usePublish'
 import { useAppHandlers } from '../hooks/useAppHandlers'
 import { PageManager, PageNameDialog, PageCreationModal } from './page'
 import { EventHubNavbar } from './eventhub'
-import { EventFormProvider, useEventForm } from '../contexts/EventFormContext'
-import { logger } from '../utils/logger'
+import { useEventForm } from '../contexts/EventFormContext'
 import { setupPuckStyling } from '../utils/puckStyling'
 import { showToast } from '../utils/toast'
 import { verifyRegistrationOtp, createPassword, createOrganization, signIn } from '../services/authService'
@@ -55,8 +54,6 @@ const App: React.FC = () => {
   const [showLeftSidebar] = useState(true)
   const [showRightSidebar] = useState(true)
   
-  logger.debug('🔄 App component rendering, currentView:', currentView);
-  
   const {
     currentData,
     setCurrentData,
@@ -104,18 +101,14 @@ const App: React.FC = () => {
     if (cardId === 'schedule-session') {
       // Navigate to schedule management view
       setCurrentView('schedule')
-      logger.debug('📍 Navigating to schedule page from Event Hub card')
     } else if (cardId === 'communications') {
       // Navigate to communication page
       setCurrentView('communication')
-      logger.debug('📍 Navigating to communication page from Event Hub card')
     } else if (cardId === 'resource-management') {
       // Navigate to resource management page
       setCurrentView('resource-management')
-      logger.debug('📍 Navigating to resource management page from Event Hub card')
     } else {
       // Handle other card IDs (attendee-management, analytics, website-settings)
-      logger.debug(`📍 Card clicked: ${cardId}`)
       // TODO: Implement navigation for other card types when their pages are created
     }
   }
@@ -123,20 +116,17 @@ const App: React.FC = () => {
   // Custom back to editor handler
   const handleBackToEditor = () => {
     setCurrentView('editor')
-    logger.debug('📍 Navigating back to editor')
   }
 
   // Custom back to event hub handler
   const handleBackToEventHub = () => {
     setCurrentView('events')
-    logger.debug('📍 Navigating back to event hub')
   }
 
   // Custom back to dashboard handler
   const handleBackToDashboard = () => {
     setCurrentView('dashboard')
     window.history.pushState({}, '', '/dashboard')
-    logger.debug('📍 Navigating back to dashboard')
   }
 
   // Helper function to check if user has an organization
@@ -194,7 +184,6 @@ const App: React.FC = () => {
       } else {
         // User doesn't have organization - redirect to eventspace setup
         setShowEventspaceSetup(true)
-        logger.debug('⚠️ User logged in without organization, redirecting to eventspace setup')
       }
     } catch (error) {
       // Error is already handled in authService with toast
@@ -216,13 +205,6 @@ const App: React.FC = () => {
   const handleEmailVerification = async (code: string) => {
     setIsVerifyingOtp(true)
     setOtpVerificationError(null)
-
-    // Log OTP for debugging
-    console.log('🔐 [OTP Verification] OTP entered:', {
-      email: registrationEmail,
-      otp: code,
-      otpLength: code.length
-    })
 
     try {
       // Call the verify OTP API
@@ -311,8 +293,6 @@ const App: React.FC = () => {
       
       // Show success message
       showToast.success('Organization created successfully!')
-      
-      logger.debug('✅ Organization created, navigating to dashboard')
     } catch (error) {
       // Error is already handled in authService with toast
       // Set local error state for UI display
@@ -370,7 +350,6 @@ const App: React.FC = () => {
       // If authenticated but no organization, show eventspace setup
       if (!hasOrg && !showEventspaceSetup && !showCreatePassword && !showEmailVerification && !showRegistration) {
         setShowEventspaceSetup(true)
-        logger.debug('⚠️ Authenticated user without organization detected, showing eventspace setup')
       }
     }
   }, [isAuthenticated, showEventspaceSetup, showCreatePassword, showEmailVerification, showRegistration])
@@ -419,8 +398,6 @@ const App: React.FC = () => {
         const pageIdMatch = pathWithoutQuery.match(/\/event\/website\/editor\/(.+)/)
         const pageId = pageIdMatch ? pageIdMatch[1] : 'welcome'
         
-        logger.debug('📍 Editor route detected:', pageId)
-        
         // Only switch to editor view if not already in editor view
         if (currentViewRef.current !== 'editor') {
           setCurrentView('editor')
@@ -430,19 +407,17 @@ const App: React.FC = () => {
         // Load the page data - ensure it loads even if page is not in pages array
         const pageFilename = pageId.endsWith('.json') ? pageId : `${pageId}.json`
         loadPageRef.current(pageFilename)
-          .catch((error) => {
-            logger.debug('Failed to load page from editor route:', error)
+          .catch(() => {
+            // Error loading page
           })
       } else if (path.startsWith('/event/hub')) {
         // Navigate to Event Hub page
-        logger.debug('📍 Event Hub route detected, switching to events view')
         if (currentViewRef.current !== 'events') {
           setCurrentView('events')
         }
       } else if (path.startsWith('/event/website/preview/') || path.startsWith('/event/website')) {
         // If navigating to preview or website management, switch to dashboard view
         // DashboardLayout will handle showing the correct page
-        logger.debug('📍 Preview/Website route detected, switching to dashboard view')
         if (currentViewRef.current !== 'dashboard') {
           setCurrentView('dashboard')
         }
@@ -472,7 +447,6 @@ const App: React.FC = () => {
     
     const handleNavigateToScheduleEvent = () => {
       setCurrentView('schedule')
-      logger.debug('📍 Navigating to schedule page via event')
     }
 
     window.addEventListener('navigate-to-schedule', handleNavigateToScheduleEvent)
@@ -570,42 +544,40 @@ const App: React.FC = () => {
   }
 
   // Render Dashboard
+  // NOTE: EventFormProvider is already in main.tsx, so we don't need to wrap here
+  // Having two providers creates separate context instances, causing event context to be lost
   if (currentView === 'dashboard') {
     const organizationName = localStorage.getItem('organizationName') || 'Web Summit'
     const userEmail = localStorage.getItem('userEmail') || ''
     
     return (
-      <EventFormProvider>
-        <Suspense fallback={<LoadingFallback />}>
-          <DashboardLayout
-            organizationName={organizationName}
-            title="Web Submit Events"
-            userAvatarUrl=""
-            userEmail={userEmail}
-            onSidebarItemClick={(itemId) => {
-              // Handle navigation to different sections
-              if (itemId === 'events') {
-                setCurrentView('events')
-              }
-              // Add other navigation handlers as needed
-            }}
-            onSearchClick={() => {}}
-            onNotificationClick={() => {}}
-            onProfileClick={handleProfileClick}
-            onLogout={handleLogout}
-            onNewEventClick={() => {}}
-            onEditEvent={(_eventId) => {}}
-            onSortEvents={(_column) => {}}
-          />
-        </Suspense>
-      </EventFormProvider>
+      <Suspense fallback={<LoadingFallback />}>
+        <DashboardLayout
+          organizationName={organizationName}
+          title="Web Submit Events"
+          userAvatarUrl=""
+          userEmail={userEmail}
+          onSidebarItemClick={(itemId) => {
+            // Handle navigation to different sections
+            if (itemId === 'events') {
+              setCurrentView('events')
+            }
+            // Add other navigation handlers as needed
+          }}
+          onSearchClick={() => {}}
+          onNotificationClick={() => {}}
+          onProfileClick={handleProfileClick}
+          onLogout={handleLogout}
+          onNewEventClick={() => {}}
+          onEditEvent={(_eventId) => {}}
+          onSortEvents={(_column) => {}}
+        />
+      </Suspense>
     )
   }
 
   // Render Events Page (Event Hub)
   if (currentView === 'events') {
-    logger.debug('📍 Rendering Event Hub Page');
-    
     return (
       <Suspense fallback={<LoadingFallback />}>
         <EventHubPage
@@ -621,8 +593,6 @@ const App: React.FC = () => {
 
   // Render Schedule Page
   if (currentView === 'schedule') {
-    logger.debug('📍 Rendering Schedule Page');
-    
     return (
       <Suspense fallback={<LoadingFallback />}>
         <SchedulePage
@@ -639,8 +609,6 @@ const App: React.FC = () => {
 
   // Render Communication Page
   if (currentView === 'communication') {
-    logger.debug('📍 Rendering Communication Page');
-    
     return (
       <Suspense fallback={<LoadingFallback />}>
         <CommunicationPage
@@ -656,8 +624,6 @@ const App: React.FC = () => {
 
   // Render Resource Management Page
   if (currentView === 'resource-management') {
-    logger.debug('📍 Rendering Resource Management Page');
-    
     return (
       <Suspense fallback={<LoadingFallback />}>
         <ResourceManagementPage

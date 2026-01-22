@@ -4,29 +4,24 @@ import {
   type DividerLineTableSortDescriptor,
   Button
 } from '../../ui/untitled'
-import { Speaker, SpeakerTab, Group, CustomField } from './speakerTypes'
+import { Speaker, SpeakerTab, CustomField } from './speakerTypes'
 import type { SpeakerTableRowData } from './speakerTypes'
-import type { GroupTableRowData, CustomFieldTableRowData } from '../attendeemanagement/attendeeTypes'
+import type { CustomFieldTableRowData } from '../attendeemanagement/attendeeTypes'
 import { TablePagination, useTableHeader } from '../../ui'
 import { useSpeakerTableColumns } from './SpeakerTableColumns'
-import { useGroupTableColumns } from '../attendeemanagement/GroupTableColumns'
 import { useCustomFieldTableColumns } from '../attendeemanagement/CustomFieldTableColumns'
 import { Download01, Grid01, Upload01 } from '@untitled-ui/icons-react'
 
 interface SpeakersTableProps {
   speakers: Speaker[]
-  groups?: Group[]
   customFields?: CustomField[]
   activeTab: SpeakerTab
   onTabChange: (tab: SpeakerTab) => void
   onUpload?: () => void
   onCreateProfile?: () => void
-  onCreateGroup?: () => void
   onCreateField?: () => void
   onEditSpeaker?: (speakerId: string) => void
   onDeleteSpeaker?: (speakerId: string) => void
-  onEditGroup?: (groupId: string) => void
-  onDeleteGroup?: (groupId: string) => void
   onEditCustomField?: (customFieldId: string) => void
   onDeleteCustomField?: (customFieldId: string) => void
   onDownload?: () => void
@@ -36,18 +31,14 @@ interface SpeakersTableProps {
 
 const SpeakersTable: React.FC<SpeakersTableProps> = ({
   speakers,
-  groups = [],
   customFields = [],
   activeTab,
   onTabChange,
   onUpload,
   onCreateProfile,
-  onCreateGroup,
   onCreateField,
   onEditSpeaker,
   onDeleteSpeaker,
-  onEditGroup,
-  onDeleteGroup,
   onEditCustomField,
   onDeleteCustomField,
   onDownload,
@@ -56,7 +47,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSpeakerIds, setSelectedSpeakerIds] = useState<Set<string>>(new Set())
-  const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set())
   const [selectedCustomFieldIds, setSelectedCustomFieldIds] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -87,14 +77,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
     })
   }, [searchQuery, speakers])
 
-  const filteredGroups = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return groups
-
-    return groups.filter((group) => {
-      return group.name.toLowerCase().includes(query)
-    })
-  }, [searchQuery, groups])
 
   const filteredCustomFields = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -111,10 +93,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
     [filteredSpeakers]
   )
 
-  const visibleGroupIds = useMemo(
-    () => filteredGroups.map((group) => group.id),
-    [filteredGroups]
-  )
 
   const visibleCustomFieldIds = useMemo(
     () => filteredCustomFields.map((field) => field.id),
@@ -128,11 +106,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
     return filteredSpeakers.slice(startIndex, endIndex)
   }, [filteredSpeakers, currentPage])
 
-  const paginatedGroups = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    return filteredGroups.slice(startIndex, endIndex)
-  }, [filteredGroups, currentPage])
 
   const paginatedCustomFields = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
@@ -144,11 +117,9 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
   const totalPages = useMemo(() => {
     const totalItems = activeTab === 'user' 
       ? filteredSpeakers.length 
-      : activeTab === 'groups'
-      ? filteredGroups.length
       : filteredCustomFields.length
     return Math.ceil(totalItems / itemsPerPage)
-  }, [activeTab, filteredSpeakers.length, filteredGroups.length, filteredCustomFields.length])
+  }, [activeTab, filteredSpeakers.length, filteredCustomFields.length])
 
   // Selection logic for speakers
   const allVisibleSpeakersSelected = useMemo(() => {
@@ -165,20 +136,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
     )
   }, [allVisibleSpeakersSelected, visibleSpeakerIds, selectedSpeakerIds])
 
-  // Selection logic for groups
-  const allVisibleGroupsSelected = useMemo(() => {
-    return (
-      visibleGroupIds.length > 0 &&
-      visibleGroupIds.every((id) => selectedGroupIds.has(id))
-    )
-  }, [visibleGroupIds, selectedGroupIds])
-
-  const partiallyGroupsSelected = useMemo(() => {
-    return (
-      !allVisibleGroupsSelected &&
-      visibleGroupIds.some((id) => selectedGroupIds.has(id))
-    )
-  }, [allVisibleGroupsSelected, visibleGroupIds, selectedGroupIds])
 
   // Selection logic for custom fields
   const allVisibleCustomFieldsSelected = useMemo(() => {
@@ -225,34 +182,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
     })
   }, [])
 
-  const handleToggleAllGroups = useCallback(
-    (checked: boolean) => {
-      setSelectedGroupIds((previous) => {
-        const next = new Set(previous)
-        visibleGroupIds.forEach((id) => {
-          if (checked) {
-            next.add(id)
-          } else {
-            next.delete(id)
-          }
-        })
-        return next
-      })
-    },
-    [visibleGroupIds]
-  )
-
-  const handleToggleGroup = useCallback((id: string, checked: boolean) => {
-    setSelectedGroupIds((previous) => {
-      const next = new Set(previous)
-      if (checked) {
-        next.add(id)
-      } else {
-        next.delete(id)
-      }
-      return next
-    })
-  }, [])
 
   const handleToggleAllCustomFields = useCallback(
     (checked: boolean) => {
@@ -288,15 +217,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
     return paginatedSpeakers.map((speaker, index) => ({ speaker, index }))
   }, [paginatedSpeakers])
 
-  const groupTableRows = useMemo(() => {
-    return paginatedGroups.map((group, index) => ({ 
-      group: {
-        ...group,
-        attendeeCount: group.speakerCount
-      } as any, 
-      index 
-    }))
-  }, [paginatedGroups])
 
   const customFieldTableRows = useMemo<CustomFieldTableRowData[]>(() => {
     return paginatedCustomFields.map((field, index) => ({ customField: field, index }))
@@ -312,15 +232,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
     onDeleteSpeaker
   })
 
-  const groupColumns = useGroupTableColumns({
-    allVisibleSelected: allVisibleGroupsSelected,
-    partiallySelected: partiallyGroupsSelected,
-    selectedGroupIds,
-    onToggleAllVisible: handleToggleAllGroups,
-    onToggleRow: handleToggleGroup,
-    onEditGroup,
-    onDeleteGroup
-  })
 
   const customFieldColumns = useCustomFieldTableColumns({
     allVisibleSelected: allVisibleCustomFieldsSelected,
@@ -341,13 +252,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
     </div>
   )
 
-  const groupEmptyState = (
-    <div className="flex min-h-[280px] items-center justify-center px-6 py-10 text-sm text-slate-500">
-      {groups.length === 0
-        ? 'No groups have been created yet!'
-        : 'No groups match your search.'}
-    </div>
-  )
 
   const customFieldEmptyState = (
     <div className="flex min-h-[280px] items-center justify-center px-6 py-10 text-sm text-slate-500">
@@ -360,8 +264,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
   // Get search placeholder and button text based on active tab
   const searchPlaceholder = useMemo(() => {
     switch (activeTab) {
-      case 'groups':
-        return 'Search group'
       case 'custom-schedule':
         return 'Search personal schedule'
       default:
@@ -371,8 +273,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
 
   const buttonText = useMemo(() => {
     switch (activeTab) {
-      case 'groups':
-        return '+ New group'
       case 'custom-schedule':
         return '+ New field'
       default:
@@ -382,14 +282,12 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
 
   const handleCreateButton = useMemo(() => {
     switch (activeTab) {
-      case 'groups':
-        return onCreateGroup
       case 'custom-schedule':
         return onCreateField
       default:
         return onCreateProfile
     }
-  }, [activeTab, onCreateGroup, onCreateField, onCreateProfile])
+  }, [activeTab, onCreateField, onCreateProfile])
 
   const tableHeader = useTableHeader({
     tabs: [
@@ -404,7 +302,7 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
     onSearchChange: setSearchQuery,
     showFilter: true,
     onFilterClick: onFilter || (() => {}),
-    filterLabel: `Filter ${activeTab === 'groups' ? 'groups' : activeTab === 'custom-schedule' ? 'custom fields' : 'speakers'}`,
+    filterLabel: `Filter ${activeTab === 'custom-schedule' ? 'custom fields' : 'speakers'}`,
     customActions: activeTab === 'user' ? (
       <div className="flex items-center gap-2">
         <button
@@ -442,13 +340,6 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
   // Get table data, columns, and empty state based on active tab
   const getTableData = () => {
     switch (activeTab) {
-      case 'groups':
-        return {
-          data: groupTableRows,
-          columns: groupColumns,
-          emptyState: groupEmptyState,
-          getRowKey: (row: GroupTableRowData) => row.group?.id || ''
-        }
       case 'custom-schedule':
         return {
           data: customFieldTableRows,

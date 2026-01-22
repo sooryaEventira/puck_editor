@@ -76,10 +76,17 @@ export const EventFormProvider: React.FC<{ children: ReactNode }> = ({ children 
   }
 
   const setCreatedEvent = (event: CreateEventResponseData) => {
+    // Update state first
     setCreatedEventState(event)
-    localStorage.setItem('created-event', JSON.stringify(event))
-    // Also store the UUID separately for easy access
-    localStorage.setItem('currentEventUuid', event.uuid)
+    
+    // Then update localStorage synchronously to ensure consistency
+    try {
+      localStorage.setItem('created-event', JSON.stringify(event))
+      // Also store the UUID separately for easy access
+      localStorage.setItem('currentEventUuid', event.uuid)
+    } catch (error) {
+      // Error writing to localStorage
+    }
   }
 
   const clearCreatedEvent = () => {

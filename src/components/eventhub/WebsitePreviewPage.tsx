@@ -37,9 +37,15 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   const [webpageData, setWebpageData] = useState<WebpageData | null>(null)
   const [isLoadingWebpage, setIsLoadingWebpage] = useState(false)
   const [webpageError, setWebpageError] = useState<string | null>(null)
+  const abortControllerRef = React.useRef<AbortController | null>(null)
+  const isFetchingRef = React.useRef(false)
 
   // Prioritize createdEvent data from API, fallback to eventData from form
-  const displayEventName = createdEvent?.eventName || eventData?.eventName
+  // Use useMemo to ensure we always get the latest value and prevent stale reads
+  const displayEventName = useMemo(() => {
+    const name = createdEvent?.eventName || eventData?.eventName
+    return name
+  }, [createdEvent?.eventName, createdEvent?.uuid, eventData?.eventName])
   const displayStartDate = createdEvent?.startDate || eventData?.startDate
   const displayLocation = createdEvent?.location || eventData?.location
   
@@ -76,10 +82,9 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
         const dataUrl = reader.result as string
         setBannerUrl(dataUrl)
         localStorage.setItem('event-form-banner', dataUrl)
-        console.log('✅ WebsitePreviewPage: Banner loaded from eventData File')
       }
       reader.onerror = () => {
-        console.error('❌ Error reading banner file')
+        // Error reading banner file
       }
       reader.readAsDataURL(eventData.banner)
     } else {
@@ -87,9 +92,6 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
       const storedBanner = localStorage.getItem('event-form-banner')
       if (storedBanner) {
         setBannerUrl(storedBanner)
-        console.log('✅ WebsitePreviewPage: Banner loaded from localStorage')
-      } else {
-        console.log('⚠️ WebsitePreviewPage: No banner found in eventData or localStorage')
       }
     }
   }, [eventData])
@@ -105,10 +107,20 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
 
   // Fetch webpage data when pageId is provided and event UUID is available
   useEffect(() => {
+    // Abort any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
     const loadWebpage = async () => {
+      // Prevent duplicate calls
+      if (isFetchingRef.current) {
+        return
+      }
+
       if (!pageId || !createdEvent?.uuid) {
-        console.log('⚠️ WebsitePreviewPage: No pageId or event UUID available, skipping webpage fetch')
         setWebpageData(null)
+        setWebpageError(null)
         return
       }
 
@@ -117,41 +129,89 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
       const isWebpageUuid = pageId.includes('-') && pageId.length > 20
       
       if (!isWebpageUuid) {
-        console.log('⚠️ WebsitePreviewPage: pageId does not appear to be a webpage UUID, skipping API fetch')
         setWebpageData(null)
+        setWebpageError(null)
         return
       }
 
-      console.log('📡 WebsitePreviewPage: Fetching webpage:', pageId, 'for event:', createdEvent.uuid)
+      // Create new abort controller for this request
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+      isFetchingRef.current = true
+
       setIsLoadingWebpage(true)
       setWebpageError(null)
       
       try {
         const fetchedWebpage = await fetchWebpage(pageId, createdEvent.uuid)
-        console.log('✅ WebsitePreviewPage: Fetched webpage:', fetchedWebpage)
+        
+        // Check if request was aborted
+        if (abortController.signal.aborted) {
+          return
+        }
+        
+        // Validate that the webpage belongs to the current event
+        if (fetchedWebpage.event && fetchedWebpage.event !== createdEvent.uuid) {
+          const errorMessage = `This webpage belongs to a different event. Please select the correct event to view this webpage.`
+          setWebpageError(errorMessage)
+          setWebpageData(null)
+          // Redirect back to event website page after a short delay
+          setTimeout(() => {
+            window.history.pushState({}, '', '/event/website')
+            window.dispatchEvent(new PopStateEvent('popstate'))
+          }, 2000)
+          return
+        }
+        
         setWebpageData(fetchedWebpage)
       } catch (error) {
-        console.error('❌ WebsitePreviewPage: Failed to load webpage:', error)
-        setWebpageError(error instanceof Error ? error.message : 'Failed to load webpage')
+        // Don't handle errors if request was aborted
+        if (abortController.signal.aborted) {
+          return
+        }
+        
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load webpage'
+        setWebpageError(errorMessage)
         setWebpageData(null)
+        
+        // If it's a 404 error, redirect back to event website page after a delay
+        if (error instanceof Error && error.message.includes('not found')) {
+          setTimeout(() => {
+            window.history.pushState({}, '', '/event/website')
+            window.dispatchEvent(new PopStateEvent('popstate'))
+          }, 3000)
+        }
       } finally {
-        setIsLoadingWebpage(false)
+        if (!abortController.signal.aborted) {
+          setIsLoadingWebpage(false)
+        }
+        isFetchingRef.current = false
+        abortControllerRef.current = null
       }
     }
 
     loadWebpage()
+
+    // Cleanup: abort request if component unmounts or dependencies change
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
+      isFetchingRef.current = false
+    }
   }, [pageId, createdEvent?.uuid])
 
   const handleSearchClick = () => {
-    console.log('Search clicked')
+    // TODO: Implement search functionality
   }
 
   const handleNotificationClick = () => {
-    console.log('Notification clicked')
+    // TODO: Implement notification functionality
   }
 
   const handleProfileClick = () => {
-    console.log('Profile clicked')
+    // TODO: Implement profile functionality
   }
 
   const handleBack = () => {
@@ -177,7 +237,6 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   }
 
   const handleAddPage = () => {
-    console.log('Add page clicked')
     // TODO: Implement add page functionality
   }
 
@@ -186,7 +245,6 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   }
 
   const handlePageTypeSelect = (pageType: PageType) => {
-    console.log('Selected page type:', pageType)
     // TODO: Implement page creation based on selected type
     setIsPageModalOpen(false)
   }
@@ -227,20 +285,6 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     }
   ]
 
-  // Debug: Log when preview tab is active
-  useEffect(() => {
-    if (activeTab === 'preview') {
-      console.log('✅ WebsitePreviewPage: Rendering new template with components:', [
-        'HeroSection',
-        'AboutSection',
-        'SpeakersSection',
-        'RegistrationCTA',
-        'Sponsors',
-        'FAQAccordion',
-        'ContactFooter'
-      ])
-    }
-  }, [activeTab])
 
   // Get current page data
   const currentPageData = websitePages.find(p => p.id === currentPage)
@@ -382,6 +426,7 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     <div className="h-screen overflow-hidden bg-white flex flex-col">
       {/* Navbar */}
       <EventHubNavbar
+        key={createdEvent?.uuid || 'no-event'} // Force re-render when event changes
         eventName={displayEventName || 'Highly important conference of 2025'}
         isDraft={true}
         onBackClick={handleBack}

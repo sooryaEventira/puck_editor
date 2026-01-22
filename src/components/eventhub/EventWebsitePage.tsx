@@ -33,7 +33,11 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   const { pages, addPage, deletePage, duplicatePage, initializePages } = useWebsitePages()
 
   // Prioritize createdEvent data from API, fallback to eventData from form
-  const displayEventName = createdEvent?.eventName || eventData?.eventName
+  // Use useMemo to ensure we always get the latest value and prevent stale reads
+  const displayEventName = useMemo(() => {
+    const name = createdEvent?.eventName || eventData?.eventName
+    return name
+  }, [createdEvent?.eventName, createdEvent?.uuid, eventData?.eventName])
   const [activeSubItem, setActiveSubItem] = useState('website-pages')
   const [showPageCreationModal, setShowPageCreationModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ id: string; name: string } | null>(null)
@@ -44,18 +48,17 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   useEffect(() => {
     const loadWebpages = async () => {
       if (!createdEvent?.uuid) {
-        console.log('⚠️ EventWebsitePage: No event UUID available, skipping webpage fetch')
+        // Clear webpages when event UUID is not available to prevent stale data
+        setWebpages([])
         return
       }
 
-      console.log('📡 EventWebsitePage: Fetching webpages for event:', createdEvent.uuid)
       setIsLoadingWebpages(true)
       try {
         const fetchedWebpages = await fetchWebpages(createdEvent.uuid)
-        console.log('✅ EventWebsitePage: Fetched webpages:', fetchedWebpages)
         setWebpages(fetchedWebpages)
       } catch (error) {
-        console.error('❌ EventWebsitePage: Failed to load webpages:', error)
+        // Error is handled by errorHandler
       } finally {
         setIsLoadingWebpages(false)
       }
@@ -95,15 +98,15 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   }, [pages, deletePage])
 
   const handleSearchClick = () => {
-    console.log('Search clicked')
+    // TODO: Implement search functionality
   }
 
   const handleNotificationClick = () => {
-    console.log('Notification clicked')
+    // TODO: Implement notification functionality
   }
 
   const handleProfileClick = () => {
-    console.log('Profile clicked')
+    // TODO: Implement profile functionality
   }
 
   // Create sidebar items - Event Hub has sub-items, Event Website does not
@@ -146,12 +149,44 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   }
 
   const handlePreview = () => {
-    console.log('Preview clicked')
+    // Navigate to preview of the first webpage
+    if (webpages.length > 0) {
+      const firstWebpage = webpages[0]
+      window.history.pushState({}, '', `/event/website/preview/${firstWebpage.uuid}`)
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    }
   }
 
   const handlePublishWebsite = () => {
-    console.log('Publish website clicked')
+    // TODO: Implement publish website functionality
   }
+
+  // Reusable header buttons component to avoid duplication
+  const renderHeaderButtons = () => (
+    <div className="flex items-center gap-3 flex-nowrap overflow-visible">
+      <Button
+        variant="secondary"
+        size="md"
+        onClick={handlePreview}
+        iconLeading={<Eye className="h-4 w-4" />}
+      >
+        Preview
+      </Button>
+      <Button
+              variant="primary"
+              size="sm"
+              onClick={handlePublishWebsite}
+              data-modal-button="true"
+              className="bg-[#6938EF] hover:bg-[#5925DC] text-white text-xs !min-w-[100px]"
+              style={{ whiteSpace: 'nowrap', paddingTop: '10px', paddingBottom: '10px', minHeight: '38px' }}
+            >
+              <span className="flex items-center gap-1.5 pl-3">
+                <Globe01 className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>Publish</span>
+              </span>
+            </Button>
+    </div>
+  )
 
   const handleNewPage = () => {
     setShowPageCreationModal(true)
@@ -264,10 +299,10 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
       //   window.history.pushState({}, '', `/event/website/editor/${pageId}`)
       //   window.dispatchEvent(new PopStateEvent('popstate'))
       // } else {
-      //   console.error('Failed to save schedule page')
+      //   // Handle error
       // }
     } catch (error) {
-      console.error('Error creating schedule page:', error)
+      // Error handled silently
     }
   }
 
@@ -290,7 +325,8 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
         window.dispatchEvent(new PopStateEvent('popstate'))
         break
       case 'duplicate':
-        duplicatePage(pageId)
+        // TODO: Implement backend API call to duplicate webpage
+        // duplicatePage(pageId) // This is for local pages, not backend webpages
         break
       case 'delete':
         if (isFirstPage) {
@@ -305,10 +341,14 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
     }
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (showDeleteConfirm) {
-      deletePage(showDeleteConfirm.id)
+      // TODO: Implement backend API call to delete webpage
+      // deletePage(showDeleteConfirm.id) // This is for local pages, not backend webpages
+      // For now, remove from local state and refresh the list
+      setWebpages(prev => prev.filter(w => w.uuid !== showDeleteConfirm.id))
       setShowDeleteConfirm(null)
+      // TODO: Call backend API to delete webpage: deleteWebpage(showDeleteConfirm.id, createdEvent?.uuid)
     }
   }
 
@@ -320,27 +360,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 w-full">
             <h1 className="text-[26px] font-bold text-primary-dark">Event Website</h1>
-            <div className="flex items-center gap-3 flex-nowrap overflow-visible">
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={handlePreview}
-                iconLeading={<Eye className="h-4 w-4" />}
-              >
-                Preview
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handlePublishWebsite}
-                iconLeading={<Globe01 className="h-3.5 w-3.5 flex-shrink-0" />}
-                data-modal-button="true"
-                className="bg-[#6938EF] hover:bg-[#5925DC] text-white text-xs !min-w-[140px] px-8"
-                style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
-              >
-                Publish
-              </Button>
-            </div>
+            {renderHeaderButtons()}
           </div>
 
           {/* Tabs */}
@@ -503,6 +523,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
     <div className="h-screen overflow-hidden bg-white">
       {/* Navbar */}
       <EventHubNavbar
+        key={createdEvent?.uuid || 'no-event'} // Force re-render when event changes
         eventName={displayEventName || 'Highly important conference of 2025'}
         isDraft={true}
         onBackClick={onBackClick}
@@ -524,29 +545,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 w-full">
           <h1 className="text-[26px] font-bold text-primary-dark">Event Website</h1>
-          <div className="flex items-center gap-3 flex-nowrap overflow-visible">
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={handlePreview}
-              iconLeading={<Eye className="h-4 w-4" />}
-            >
-              Preview
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handlePublishWebsite}
-              data-modal-button="true"
-              className="bg-[#6938EF] hover:bg-[#5925DC] text-white text-xs !min-w-[100px]"
-              style={{ whiteSpace: 'nowrap', paddingTop: '10px', paddingBottom: '10px', minHeight: '38px' }}
-            >
-              <span className="flex items-center gap-1.5 pl-3">
-                <Globe01 className="h-3.5 w-3.5 flex-shrink-0" />
-                <span>Publish</span>
-              </span>
-            </Button>
-          </div>
+          {renderHeaderButtons()}
         </div>
 
         {/* Tabs */}

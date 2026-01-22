@@ -91,7 +91,14 @@ const PageSidebar: React.FC<PageSidebarProps> = ({
       {[...pages]
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }))
         .map((page) => {
-          const isActive = page.id === currentPage || page.name === currentPageName
+          // Check if page is active by ID or by name (case-insensitive)
+          // This handles cases where:
+          // 1. Page ID matches currentPage (exact match)
+          // 2. Page name matches currentPageName (case-insensitive, handles "Welcome" vs "welcome")
+          // 3. UUID-based pages where ID differs but name matches
+          const isActive = 
+            page.id === currentPage || 
+            (currentPageName && page.name.toLowerCase() === currentPageName.toLowerCase())
           return (
             <button
               key={page.id}

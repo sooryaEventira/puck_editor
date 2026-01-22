@@ -40,7 +40,38 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   onEditEvent,
   onSortEvents
 }) => {
-  const { setCreatedEvent } = useEventForm()
+  const { setCreatedEvent, createdEvent } = useEventForm()
+  // Use ref to store latest createdEvent so checkRoute always has access to current value
+  // without causing the effect to re-run when event changes
+  const createdEventRef = React.useRef(createdEvent)
+  
+  // Update ref immediately when createdEvent changes (synchronously during render)
+  // This ensures the ref is always up-to-date before any navigation happens
+  // CRITICAL: This must happen synchronously, not in useEffect, to prevent race conditions
+  if (createdEventRef.current?.uuid !== createdEvent?.uuid) {
+    const oldEvent = createdEventRef.current
+    createdEventRef.current = createdEvent
+    console.log('🔄 DashboardLayout: createdEventRef updated synchronously:', {
+      oldUuid: oldEvent?.uuid,
+      oldName: oldEvent?.eventName,
+      newUuid: createdEvent?.uuid,
+      newName: createdEvent?.eventName,
+      timestamp: new Date().toISOString()
+    })
+  }
+  
+  // Also verify in effect and log for debugging
+  React.useEffect(() => {
+    if (createdEventRef.current?.uuid !== createdEvent?.uuid) {
+      console.warn('⚠️ DashboardLayout: Ref and context out of sync! Updating ref in effect:', {
+        refUuid: createdEventRef.current?.uuid,
+        contextUuid: createdEvent?.uuid,
+        timestamp: new Date().toISOString()
+      })
+      createdEventRef.current = createdEvent
+    }
+  }, [createdEvent])
+  
   const [activeItemId, setActiveItemId] = useState('events')
   const [searchValue, setSearchValue] = useState('')
   const [dateRange, setDateRange] = useState<DateRange>({ start: null, end: null })
@@ -55,6 +86,34 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   useEffect(() => {
     const checkRoute = () => {
       const path = window.location.pathname
+      // Read latest event from ref (always current, doesn't cause re-renders)
+      // Also verify it matches context to catch any sync issues
+      const currentEvent = createdEventRef.current
+      const contextEvent = createdEvent
+      
+      // If ref and context are out of sync, use context (more authoritative)
+      const eventToUse = (currentEvent?.uuid === contextEvent?.uuid) ? currentEvent : contextEvent
+      
+      if (currentEvent?.uuid !== contextEvent?.uuid) {
+        console.warn('⚠️ DashboardLayout: Ref and context mismatch in checkRoute!', {
+          refUuid: currentEvent?.uuid,
+          refName: currentEvent?.eventName,
+          contextUuid: contextEvent?.uuid,
+          contextName: contextEvent?.eventName,
+          using: eventToUse?.uuid
+        })
+        // Update ref to match context
+        createdEventRef.current = contextEvent
+      }
+      
+      // Log what event we're using for debugging
+      console.log('🔍 DashboardLayout: checkRoute called:', {
+        path,
+        eventUuid: eventToUse?.uuid,
+        eventName: eventToUse?.eventName,
+        timestamp: new Date().toISOString()
+      })
+      
       // Don't handle editor routes here - they're handled by App.tsx
       if (path.startsWith('/event/website/editor/')) {
         return
@@ -69,12 +128,33 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         // Extract pageId from path: /event/website/preview/:pageId
         const pageIdMatch = path.match(/\/event\/website\/preview\/(.+)/)
         const pageId = pageIdMatch ? pageIdMatch[1] : 'welcome'
-        setPreviewPageId(pageId)
-        setShowPreviewPage(true)
-        setShowEventWebsitePage(false)
-        setShowTemplatePage(false)
-        setShowNewEventForm(false)
+        // Only show preview if we have a valid event context
+        // Use eventToUse which is guaranteed to be in sync
+        if (eventToUse?.uuid) {
+          console.log('✅ DashboardLayout: Showing preview page for event:', eventToUse.uuid, eventToUse.eventName)
+          setPreviewPageId(pageId)
+          setShowPreviewPage(true)
+          setShowEventWebsitePage(false)
+          setShowTemplatePage(false)
+          setShowNewEventForm(false)
+        } else {
+          console.warn('⚠️ DashboardLayout: No event context for preview, redirecting to dashboard')
+          setShowPreviewPage(false)
+          setPreviewPageId('')
+          window.history.pushState({}, '', '/dashboard')
+          window.dispatchEvent(new PopStateEvent('popstate'))
+        }
       } else if (path === '/event/website') {
+        // Ensure we have event context before showing event website page
+        // Use eventToUse which is guaranteed to be in sync
+        if (eventToUse?.uuid) {
+          console.log('✅ DashboardLayout: Showing event website page for event:', eventToUse.uuid, eventToUse.eventName)
+        } else {
+          console.warn('⚠️ DashboardLayout: No event context for /event/website, redirecting to dashboard')
+          window.history.pushState({}, '', '/dashboard')
+          window.dispatchEvent(new PopStateEvent('popstate'))
+          return
+        }
         setShowEventWebsitePage(true)
         setShowTemplatePage(false)
         setShowNewEventForm(false)
@@ -106,18 +186,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       setShowNewEventForm(true)
     }
 
-    // Check route periodically (in case of programmatic navigation)
-    const interval = setInterval(checkRoute, 100)
-
     window.addEventListener('popstate', handleLocationChange)
     window.addEventListener('open-event-form', handleOpenForm)
 
     return () => {
-      clearInterval(interval)
       window.removeEventListener('popstate', handleLocationChange)
       window.removeEventListener('open-event-form', handleOpenForm)
     }
-  }, [])
+  }, []) // Only run on mount - checkRoute reads latest event from ref, not from closure
   
   // Events data - fetched from API
   const [events, setEvents] = useState<Event[]>([])
@@ -287,20 +363,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const prevPathRef = useRef<string>(window.location.pathname)
 
   // Refresh events when navigating back to dashboard
+  // IMPORTANT: Only refresh when actually on dashboard, NOT when navigating between event pages
   useEffect(() => {
     const checkAndRefresh = () => {
       const currentPath = window.location.pathname
       const prevPath = prevPathRef.current
 
-      // Check if we're navigating back to dashboard from event creation flow
-      const isNavigatingToDashboard = (currentPath === '/dashboard' || currentPath === '/') && 
-                                       (prevPath.startsWith('/event/create') || prevPath.startsWith('/event/website'))
-      
-      // Check if we're on dashboard and not showing other pages
+      // Only refresh events if we're actually on the dashboard page
+      // Do NOT refresh when navigating between /event/website, /event/website/preview, etc.
       const isOnDashboard = (currentPath === '/dashboard' || currentPath === '/') && 
                             !showTemplatePage && !showEventWebsitePage && !showPreviewPage && !showNewEventForm
 
-      if (isNavigatingToDashboard || (isOnDashboard && prevPath !== currentPath)) {
+      // Only refresh if we're on dashboard AND we came from somewhere else
+      // This prevents unnecessary refreshes when navigating between event pages
+      if (isOnDashboard && prevPath !== currentPath && 
+          (prevPath.startsWith('/event/create') || prevPath.startsWith('/event/website') || prevPath.startsWith('/event/hub'))) {
+        console.log('🔄 DashboardLayout: Refreshing events list (navigated back to dashboard)')
         loadEvents()
       }
 
@@ -425,6 +503,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   const handleEventRowClick = async (event: Event) => {
     try {
+      console.log('🔄 DashboardLayout: Switching to event:', event.id, event.name)
+      console.log('📊 DashboardLayout: Current createdEvent before switch:', {
+        uuid: createdEvent?.uuid,
+        eventName: createdEvent?.eventName,
+        refUuid: createdEventRef.current?.uuid,
+        refName: createdEventRef.current?.eventName
+      })
+      
       // Fetch event details by UUID (assuming event.id is the UUID)
       const eventData = await fetchEvent(event.id)
       
@@ -433,15 +519,45 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       const createdEventData: CreateEventResponseData = {
         ...eventData
       }
+      
+      console.log('✅ DashboardLayout: Event data fetched:', {
+        uuid: createdEventData.uuid,
+        eventName: createdEventData.eventName
+      })
         
-      // Set event in context
+      // Set event in context - this updates both state and localStorage synchronously
+      // IMPORTANT: This must happen BEFORE navigation to ensure context is updated
       setCreatedEvent(createdEventData)
+      
+      // Immediately update the ref synchronously (don't wait for effect)
+      createdEventRef.current = createdEventData
+      console.log('✅ DashboardLayout: Event context and ref updated to:', {
+        uuid: createdEventData.uuid,
+        eventName: createdEventData.eventName,
+        refUuid: createdEventRef.current?.uuid,
+        refName: createdEventRef.current?.eventName
+      })
+      
+      // Verify localStorage was updated
+      const storedEvent = localStorage.getItem('created-event')
+      if (storedEvent) {
+        const parsed = JSON.parse(storedEvent)
+        if (parsed.uuid !== createdEventData.uuid) {
+          console.error('❌ DashboardLayout: localStorage mismatch! Expected:', createdEventData.uuid, 'Got:', parsed.uuid)
+        } else {
+          console.log('✅ DashboardLayout: localStorage verified - matches context')
+        }
+      }
+      
+      // Small delay to ensure context update propagates before navigation
+      // This prevents race conditions when switching events quickly
+      await new Promise(resolve => setTimeout(resolve, 100))
       
       // Navigate to event website page
       window.history.pushState({}, '', '/event/website')
       window.dispatchEvent(new PopStateEvent('popstate'))
     } catch (error) {
-      console.error('Failed to load event:', error)
+      console.error('❌ DashboardLayout: Failed to load event:', error)
       // Error is already handled in fetchEvent with toast
     }
   }
@@ -452,7 +568,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <WebsitePreviewPage
         pageId={previewPageId}
         onBackClick={() => {
-          window.history.pushState({ section: 'event-website' }, '', '/event/hub?section=event-website')
+          // Clear preview state first
+          setShowPreviewPage(false)
+          setPreviewPageId('')
+          // Navigate back to event website page - preserve event context
+          window.history.pushState({}, '', '/event/website')
           window.dispatchEvent(new PopStateEvent('popstate'))
         }}
         userAvatarUrl={userAvatarUrl}

@@ -179,9 +179,6 @@ export const fetchWebpages = async (eventUuid: string): Promise<WebpageData[]> =
     }
 
     const url = API_ENDPOINTS.WEBPAGE.LIST(eventUuid)
-    console.log('📡 fetchWebpages: Fetching from URL:', url)
-    console.log('📡 fetchWebpages: Event UUID:', eventUuid)
-    console.log('📡 fetchWebpages: Organization UUID:', organizationUuid)
     
     const response = await fetch(url, {
       method: 'GET',
@@ -192,8 +189,6 @@ export const fetchWebpages = async (eventUuid: string): Promise<WebpageData[]> =
       },
       credentials: 'include',
     })
-    
-    console.log('📡 fetchWebpages: Response status:', response.status, response.statusText)
 
     if (!response || !response.ok) {
       if (!response) {
@@ -237,17 +232,13 @@ export const fetchWebpages = async (eventUuid: string): Promise<WebpageData[]> =
     let data: any
     try {
       const responseText = await response.text()
-      console.log('📡 fetchWebpages: Raw response text:', responseText.substring(0, 500))
       
       if (!responseText || responseText.trim() === '') {
-        console.log('⚠️ fetchWebpages: Empty response, returning empty array')
         return []
       }
       
       data = JSON.parse(responseText)
-      console.log('📡 fetchWebpages: Parsed response data:', data)
     } catch (parseError) {
-      console.error('❌ fetchWebpages: Failed to parse response:', parseError)
       const errorMessage = handleParseError('Invalid response from server. Please try again.')
       throw new Error(errorMessage)
     }
@@ -264,31 +255,25 @@ export const fetchWebpages = async (eventUuid: string): Promise<WebpageData[]> =
     // Case 1: ApiResponse format with data field
     if (data.status === 'success' && data.data) {
       responseData = data.data
-      console.log('✅ fetchWebpages: Found data in ApiResponse format')
     }
     // Case 2: Direct array response
     else if (Array.isArray(data)) {
       responseData = data
-      console.log('✅ fetchWebpages: Found direct array response')
     }
     // Case 3: Object with data field (no status)
     else if (data.data && Array.isArray(data.data)) {
       responseData = data.data
-      console.log('✅ fetchWebpages: Found data in data field')
     }
     // Case 4: Object with results field
     else if (data.results && Array.isArray(data.results)) {
       responseData = data.results
-      console.log('✅ fetchWebpages: Found data in results field')
     }
     // Case 5: Direct data field (no status, might be object)
     else if (data.data) {
       responseData = data.data
-      console.log('✅ fetchWebpages: Found data field (non-array)')
     }
     // Case 6: Empty or null
     else {
-      console.log('⚠️ fetchWebpages: No data found in response, returning empty array')
       return []
     }
 
@@ -296,9 +281,7 @@ export const fetchWebpages = async (eventUuid: string): Promise<WebpageData[]> =
     let webpages: WebpageData[]
     if (Array.isArray(responseData)) {
       webpages = responseData
-      console.log('✅ fetchWebpages: Returning', webpages.length, 'webpages')
     } else {
-      console.log('⚠️ fetchWebpages: Response data is not an array, returning empty array')
       return []
     }
 
@@ -353,10 +336,6 @@ export const fetchWebpage = async (webpageUuid: string, eventUuid: string): Prom
     }
 
     const url = API_ENDPOINTS.WEBPAGE.GET(webpageUuid, eventUuid)
-    console.log('📡 fetchWebpage: Fetching from URL:', url)
-    console.log('📡 fetchWebpage: Webpage UUID:', webpageUuid)
-    console.log('📡 fetchWebpage: Event UUID:', eventUuid)
-    console.log('📡 fetchWebpage: Organization UUID:', organizationUuid)
     
     const response = await fetch(url, {
       method: 'GET',
@@ -367,8 +346,6 @@ export const fetchWebpage = async (webpageUuid: string, eventUuid: string): Prom
       },
       credentials: 'include',
     })
-    
-    console.log('📡 fetchWebpage: Response status:', response.status, response.statusText)
 
     if (!response || !response.ok) {
       if (!response) {
@@ -412,7 +389,6 @@ export const fetchWebpage = async (webpageUuid: string, eventUuid: string): Prom
     let data: any
     try {
       const responseText = await response.text()
-      console.log('📡 fetchWebpage: Raw response text:', responseText.substring(0, 500))
       
       if (!responseText || responseText.trim() === '') {
         const errorMessage = handleParseError('Empty response from server. Please try again.')
@@ -420,9 +396,7 @@ export const fetchWebpage = async (webpageUuid: string, eventUuid: string): Prom
       }
       
       data = JSON.parse(responseText)
-      console.log('📡 fetchWebpage: Parsed response data:', data)
     } catch (parseError) {
-      console.error('❌ fetchWebpage: Failed to parse response:', parseError)
       const errorMessage = handleParseError('Invalid response from server. Please try again.')
       throw new Error(errorMessage)
     }
@@ -439,17 +413,14 @@ export const fetchWebpage = async (webpageUuid: string, eventUuid: string): Prom
     // Case 1: ApiResponse format with data field
     if (data.status === 'success' && data.data) {
       webpageData = data.data
-      console.log('✅ fetchWebpage: Found data in ApiResponse format')
     }
     // Case 2: Direct object response
     else if (data && typeof data === 'object' && data.uuid) {
       webpageData = data
-      console.log('✅ fetchWebpage: Found direct object response')
     }
     // Case 3: Object with data field (no status)
     else if (data.data && typeof data.data === 'object' && data.data.uuid) {
       webpageData = data.data
-      console.log('✅ fetchWebpage: Found data in data field')
     }
     // Case 4: Empty or null
     else {
@@ -462,7 +433,6 @@ export const fetchWebpage = async (webpageUuid: string, eventUuid: string): Prom
       throw new Error(errorMessage)
     }
 
-    console.log('✅ fetchWebpage: Returning webpage data')
     return webpageData
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('fetch')) {

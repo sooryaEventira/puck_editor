@@ -512,10 +512,43 @@ export const EditorView: React.FC<EditorViewProps> = ({
             }))
             
             // Ensure current page is included if not already in the list
-            const currentPageExists = pagesForSidebar.some(p => p.id === currentPage || p.name === currentPageName)
+            // Use case-insensitive comparison to avoid duplicates like "Welcome" vs "welcome"
+            const currentPageExists = pagesForSidebar.some(p => 
+              p.id === currentPage || 
+              (currentPageName && p.name.toLowerCase() === currentPageName.toLowerCase())
+            )
             if (!currentPageExists && currentPage && currentPageName) {
               pagesForSidebar.push({ id: currentPage, name: currentPageName })
             }
+            
+            // Remove duplicates based on case-insensitive name matching
+            // If we have duplicates with same name (case-insensitive), prefer the one with UUID (longer ID)
+            const uniquePagesForSidebar = pagesForSidebar.reduce((acc, page) => {
+              const existingIndex = acc.findIndex(p => 
+                p.name.toLowerCase() === page.name.toLowerCase()
+              )
+              
+              if (existingIndex === -1) {
+                // No duplicate found, add the page
+                acc.push(page)
+              } else {
+                // Duplicate found - prefer the one with UUID (longer ID) or current page
+                const existing = acc[existingIndex]
+                const isCurrentPage = page.id === currentPage
+                const isExistingCurrentPage = existing.id === currentPage
+                const pageHasUuid = page.id.includes('-') && page.id.length > 20
+                const existingHasUuid = existing.id.includes('-') && existing.id.length > 20
+                
+                if (isCurrentPage || (pageHasUuid && !existingHasUuid && !isExistingCurrentPage)) {
+                  // Replace with current page or UUID-based page
+                  acc[existingIndex] = page
+                }
+                // Otherwise keep the existing one
+              }
+              
+              return acc
+            }, [] as typeof pagesForSidebar)
+            pagesForSidebar = uniquePagesForSidebar
             
             return (
               <div className="absolute inset-y-0 left-0 w-[280px] border-r border-slate-200 bg-white z-[1000]">
@@ -552,7 +585,13 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   }}
                   onAddPage={editorMode === 'blank' ? () => setShowNewPageCreationModal(true) : undefined}
                   onManagePages={onManagePages}
-                  onBackClick={handleBackToTemplateSelection}
+                  onBackClick={() => {
+                    // Navigate to website preview page for the current page
+                    if (currentPage) {
+                      window.history.pushState({}, '', `/event/website/preview/${currentPage}`)
+                      window.dispatchEvent(new PopStateEvent('popstate'))
+                    }
+                  }}
                   editorMode={editorMode}
                 />
               </div>

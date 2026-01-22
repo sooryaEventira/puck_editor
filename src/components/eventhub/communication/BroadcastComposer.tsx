@@ -18,6 +18,10 @@ import Button from '../../ui/untitled/Button'
 import type { Macro } from './communicationTypes'
 import BroadcastPreviewModal from './BroadcastPreviewModal'
 import { ScheduleBroadcastModal } from './ScheduleBroadcastModal'
+import { useEventForm } from '../../../contexts/EventFormContext'
+import { fetchTags } from '../../../services/attendeeService'
+import { sendCommunication } from '../../../services/communicationService'
+import { showToast } from '../../../utils/toast'
 
 interface BroadcastComposerProps {
   onCancel: () => void
@@ -44,6 +48,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
   const [message, setMessage] = useState(initialMessage)
   const [isEditing, setIsEditing] = useState(true)
   const [selectedMacro, setSelectedMacro] = useState<string>('')
+  const [showMacroDropdown, setShowMacroDropdown] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [selectedColor, setSelectedColor] = useState('#000000')
   const [showContextualToolbar, setShowContextualToolbar] = useState(false)
@@ -53,17 +58,23 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
   const [isUnderline, setIsUnderline] = useState(false)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [isSending, setIsSending] = useState(false)
   
   // Settings Tab State
   const [matchLogic, setMatchLogic] = useState<'ANY' | 'ALL'>('ANY')
   const [filters, setFilters] = useState([
     { id: '1', field: 'Group', operator: 'is', value: 'Speakers' }
   ])
+  const [tags, setTags] = useState<Array<{ uuid: string; name: string }>>([])
+  
+  // Get event context for fetching tags
+  const { createdEvent } = useEventForm()
 
   const colorPickerButtonRef = useRef<HTMLButtonElement>(null)
   const colorPickerPopupRef = useRef<HTMLDivElement>(null)
   const contextualToolbarRef = useRef<HTMLDivElement>(null)
   const savedSelectionRef = useRef<Range | null>(null)
+  const macroDropdownRef = useRef<HTMLDivElement>(null)
 
   const editorRef = useRef<HTMLDivElement>(null)
 
@@ -74,14 +85,45 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
     }
   }, []) // Only run once on mount
 
+  // Load tags from API
+  useEffect(() => {
+    const loadTags = async () => {
+      const eventUuid = createdEvent?.uuid
+      
+      if (!eventUuid) {
+        setTags([])
+        return
+      }
+
+      try {
+        const tagsData = await fetchTags(eventUuid)
+        // Map tags to include only active ones
+        const activeTags = tagsData
+          .filter((tag) => tag.is_active !== false)
+          .map((tag) => ({
+            uuid: tag.uuid,
+            name: tag.name
+          }))
+        setTags(activeTags)
+      } catch (error) {
+        // Error is already handled in fetchTags with toast
+        // Set empty array on error to prevent UI issues
+        setTags([])
+      }
+    }
+
+    loadTags()
+  }, [createdEvent?.uuid])
+
   const colors = [
     ['#000000', '#1E3A8A', '#166534', '#374151', '#6B7280', '#9CA3AF', '#FFFFFF'],
     ['#10B981', '#3B82F6', '#7F56D9', '#EC4899', '#EF4444', '#F59E0B']
   ]
 
-  const handleInsertMacro = () => {
-    if (selectedMacro && editorRef.current) {
-      const macroText = `{{${selectedMacro}}}`
+  const handleInsertMacro = (macroValue?: string) => {
+    const macroToInsert = macroValue || selectedMacro
+    if (macroToInsert && editorRef.current) {
+      const macroText = `{{${macroToInsert}}}`
       
       editorRef.current.focus()
       
@@ -111,6 +153,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
 
       setMessage(editorRef.current.innerHTML)
       setSelectedMacro('')
+      setShowMacroDropdown(false)
     }
   }
 
@@ -350,13 +393,20 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
           !contextualToolbarRef.current?.contains(target)) {
         setShowContextualToolbar(false)
       }
+
+      // Close macro dropdown if clicking outside
+      if (showMacroDropdown && 
+          macroDropdownRef.current &&
+          !macroDropdownRef.current.contains(target)) {
+        setShowMacroDropdown(false)
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showColorPicker, showContextualToolbar])
+  }, [showColorPicker, showContextualToolbar, showMacroDropdown])
 
   const handleColorSelect = (color: string, e?: React.MouseEvent) => {
     console.log('🎨 handleColorSelect called with color:', color)
@@ -813,20 +863,28 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                       onMouseDown={(e) => {
                         // Stop propagation and ensure focus
                         e.stopPropagation()
+                        // Capture the element reference before setTimeout
+                        const target = e.currentTarget
                         // Use setTimeout to ensure focus happens after any other handlers
                         setTimeout(() => {
-                          e.currentTarget.focus()
+                          if (target) {
+                            target.focus()
+                          }
                         }, 0)
                       }}
                       onClick={(e) => {
                         // Stop propagation and ensure focus
                         e.stopPropagation()
-                        e.currentTarget.focus()
+                        const target = e.currentTarget
+                        if (target) {
+                          target.focus()
+                        }
                       }}
                       onFocus={(e) => {
                         // Ensure input maintains focus
-                        if (document.activeElement !== e.target) {
-                          e.target.focus()
+                        const target = e.target as HTMLInputElement
+                        if (target && document.activeElement !== target) {
+                          target.focus()
                         }
                       }}
                       tabIndex={0}
@@ -862,27 +920,41 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                 {/* Formatting Toolbar */}
                 <div className="flex flex-wrap items-center gap-1.5  border-slate-200 pb-3">
                   {/* Insert Macro Dropdown */}
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onMouseDown={(e) => {
-                        e.preventDefault()
-                        // Toggle dropdown - in real implementation, this would show a dropdown menu
-                        const macro = macros[0]
-                        if (macro) {
-                            setSelectedMacro(macro.macro.replace(/[{}]/g, ''))
-                            handleInsertMacro()
-                        }
-                    }}
-                    iconTrailing={
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    }
-                  >
-                    {'{ }'} Insert
-                  </Button>
+                  <div className="relative" ref={macroDropdownRef}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setShowMacroDropdown(!showMacroDropdown)}
+                      iconTrailing={
+                        <svg className={`h-4 w-4 transition-transform ${showMacroDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      }
+                    >
+                      {'{ }'} Insert
+                    </Button>
+                    
+                    {/* Dropdown Menu */}
+                    {showMacroDropdown && macros.length > 0 && (
+                      <div className="absolute left-0 top-full z-50 mt-1 max-h-60 w-50 overflow-y-auto rounded-md border border-slate-200 bg-white shadow-lg">
+                        {macros.map((macro) => {
+                          const macroValue = macro.macro.replace(/[{}]/g, '')
+                          return (
+                            <button
+                              key={macro.id}
+                              type="button"
+                              onClick={() => handleInsertMacro(macroValue)}
+                              className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none transition-colors"
+                            >
+                              {/* <div className="font-medium">{macro.column}</div> */}
+                              <div className="text-xs text-slate-500">{macro.macro}</div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Font Selection */}
                   <select
@@ -1385,10 +1457,11 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                       }}
                       className="w-full sm:flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
-                      <option value="Speakers">Speakers</option>
-                      <option value="Attendees">Attendees</option>
-                      <option value="Sponsors">Sponsors</option>
-                      <option value="VIP">VIP</option>
+                      {tags.map((tag) => (
+                        <option key={tag.uuid} value={tag.name}>
+                          {tag.name}
+                        </option>
+                      ))}
                     </select>
 
                     <Button
@@ -1414,14 +1487,71 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
       <BroadcastPreviewModal
         isOpen={showPreviewModal}
         onClose={() => setShowPreviewModal(false)}
-        onSend={() => {
-            if (onSend) {
-                onSend({ subject, message })
+        onSend={async () => {
+          if (!createdEvent?.uuid) {
+            showToast.error('Event UUID is required. Please select an event first.')
+            return
+          }
+
+          if (!subject.trim()) {
+            showToast.error('Subject is required.')
+            return
+          }
+
+          // Get message from editor if available, otherwise use state
+          const messageContent = editorRef.current?.innerHTML || message
+          if (!messageContent.trim()) {
+            showToast.error('Message is required.')
+            return
+          }
+
+          // Get tag UUIDs from selected filters in Settings tab
+          // Only include filters where field is 'Group' and operator is 'is' (not 'is_not')
+          const tagUuids: string[] = []
+          filters.forEach((filter) => {
+            if (filter.field === 'Group' && filter.operator === 'is' && filter.value) {
+              // Find the tag UUID by matching the tag name
+              const tag = tags.find((t) => t.name === filter.value)
+              if (tag) {
+                // Avoid duplicates
+                if (!tagUuids.includes(tag.uuid)) {
+                  tagUuids.push(tag.uuid)
+                }
+              }
             }
+          })
+
+          if (tagUuids.length === 0) {
+            showToast.error('Please select at least one group/tag for recipients in the Settings tab.')
+            return
+          }
+
+          setIsSending(true)
+          try {
+            await sendCommunication({
+              event_uuid: createdEvent.uuid,
+              subject: subject.trim(),
+              message: messageContent.trim(),
+              channel: type === 'email' ? 'email' : 'push-notification',
+              tag_uuids: tagUuids,
+            })
+
+            // Call the onSend callback if provided (for parent component handling)
+            if (onSend) {
+              onSend({ subject, message: messageContent })
+            }
+
             setShowPreviewModal(false)
+          } catch (error) {
+            // Error is already handled by sendCommunication with toast
+            // Don't close modal on error so user can retry
+          } finally {
+            setIsSending(false)
+          }
         }}
         subject={subject}
         message={message}
+        isSending={isSending}
       />
 
       <ScheduleBroadcastModal

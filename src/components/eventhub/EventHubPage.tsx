@@ -31,7 +31,11 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
   
   // Prioritize createdEvent data from API (set when clicking event from dashboard), 
   // fallback to eventData from form, then props
-  const eventName = createdEvent?.eventName || eventData?.eventName || propEventName || 'Highly important conference of 2025'
+  // Use useMemo to ensure we always get the latest value and prevent stale reads
+  const eventName = useMemo(() => {
+    const name = createdEvent?.eventName || eventData?.eventName || propEventName || 'Highly important conference of 2025'
+    return name
+  }, [createdEvent?.eventName, createdEvent?.uuid, eventData?.eventName, propEventName])
   const isDraft = propIsDraft !== undefined ? propIsDraft : true
   const [activeSection, setActiveSection] = useState('event-website')
 
@@ -40,7 +44,6 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
     const urlParams = new URLSearchParams(window.location.search)
     const section = urlParams.get('section')
     if (section) {
-      console.log('📍 Reading section from URL on mount:', section)
       setActiveSection(section)
     } else {
       // If no section in URL, default to event-website instead of empty event-hub page
@@ -48,23 +51,15 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
     }
   }, []) // Only run on mount
 
-  // Debug: Log when activeSection changes
-  React.useEffect(() => {
-    console.log('🔄 activeSection changed to:', activeSection)
-  }, [activeSection])
-
   const handleSearchClick = () => {
-    console.log('Search clicked')
     // TODO: Implement search functionality
   }
 
   const handleNotificationClick = () => {
-    console.log('Notification clicked')
     // TODO: Implement notification functionality
   }
 
   const handleProfileClick = () => {
-    console.log('Profile clicked')
     // TODO: Implement profile functionality
   }
 
@@ -94,11 +89,8 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
   }, [onBackClick])
 
   const handleSidebarItemClick = useCallback((itemId: string) => {
-    console.log('📍 EventHubPage - Sidebar item clicked:', itemId)
-    
     // Handle top-level menu items
     if (itemId === 'event-hub' || itemId === 'event-website' || itemId === 'overview') {
-      console.log('📍 Setting activeSection to:', itemId)
       setActiveSection(itemId)
       // Update URL to reflect the change
       const newUrl = itemId === 'event-hub' ? '/event/hub' : `/event/hub?section=${itemId}`
@@ -109,17 +101,13 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
     // Check if this is a card ID and set it as active section
     const isCardId = defaultCards.some((card) => card.id === itemId)
     if (isCardId) {
-      console.log('📍 Card ID detected, setting active section to:', itemId)
       setActiveSection(itemId)
       // Update URL to reflect the change
       window.history.pushState({ section: itemId }, '', `/event/hub?section=${itemId}`)
-    } else {
-      console.log('⚠️ Not a card ID, ignoring:', itemId)
     }
   }, [])
 
   const renderContent = () => {
-    console.log('🎨 renderContent called with activeSection:', activeSection)
     switch (activeSection) {
       case 'communications':
         return (
@@ -217,6 +205,7 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
     <div className="h-screen overflow-hidden bg-white">
       {/* Navbar - Uses eventData from context for consistency */}
       <EventHubNavbar
+        key={createdEvent?.uuid || 'no-event'} // Force re-render when event changes
         eventName={eventName}
         isDraft={isDraft}
         onBackClick={handleBackClick}
