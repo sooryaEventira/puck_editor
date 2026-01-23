@@ -75,6 +75,10 @@ const AboutSection: React.FC<AboutSectionProps> = ({
             data-puck-field="leftTitle"
             contentEditable
             suppressContentEditableWarning={true}
+            onInput={(e) => {
+              // Let Puck handle the input event - don't interfere
+              // Puck automatically listens to input events on data-puck-field elements
+            }}
           >
             {leftTitle}
           </h2>
@@ -85,6 +89,10 @@ const AboutSection: React.FC<AboutSectionProps> = ({
             data-puck-field="leftText"
             contentEditable
             suppressContentEditableWarning={true}
+            onInput={(e) => {
+              // Let Puck handle the input event - don't interfere
+              // Puck automatically listens to input events on data-puck-field elements
+            }}
           >
             {leftText}
           </p>

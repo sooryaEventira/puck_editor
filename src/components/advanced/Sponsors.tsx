@@ -5,6 +5,7 @@ interface Sponsor {
   name: string
   logo?: string
   logoUrl?: string
+  link?: string
 }
 
 interface SponsorsProps {
@@ -62,23 +63,45 @@ const Sponsors: React.FC<SponsorsProps> = ({
           {title}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
-          {sponsors.map((sponsor, index) => (
-            <div key={sponsor.id} className="flex items-center justify-center">
-              {sponsor.logoUrl || sponsor.logo ? (
-                <img
-                  src={sponsor.logoUrl || sponsor.logo}
-                  alt={sponsor.name}
-                  className="max-w-full max-h-32 object-contain"
-                  onError={(e) => {
-                    // Hide image and show placeholder instead
-                    const target = e.target as HTMLImageElement
-                    target.style.display = 'none'
-                  }}
-                />
-              ) : null}
-              {(!sponsor.logoUrl && !sponsor.logo) && getDefaultLogo(index)}
-            </div>
-          ))}
+          {sponsors.map((sponsor, index) => {
+            const SponsorContent = () => (
+              <>
+                {sponsor.logoUrl || sponsor.logo ? (
+                  <img
+                    src={sponsor.logoUrl || sponsor.logo}
+                    alt={sponsor.name}
+                    className="max-w-full max-h-32 object-contain"
+                    onError={(e) => {
+                      // Hide image and show placeholder instead
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                    }}
+                  />
+                ) : null}
+                {(!sponsor.logoUrl && !sponsor.logo) && getDefaultLogo(index)}
+              </>
+            )
+
+            if (sponsor.link) {
+              return (
+                <a
+                  key={sponsor.id}
+                  href={sponsor.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center transition-opacity hover:opacity-80 cursor-pointer"
+                >
+                  <SponsorContent />
+                </a>
+              )
+            }
+
+            return (
+              <div key={sponsor.id} className="flex items-center justify-center">
+                <SponsorContent />
+              </div>
+            )
+          })}
         </div>
       </div>
     </section>

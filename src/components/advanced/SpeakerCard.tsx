@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react'
 import { SpeakerCardProps } from '../../types'
 
-const SpeakerCard = ({ photo, uploadedImage, name, designation }: SpeakerCardProps) => {
+const SpeakerCard = ({ photo, uploadedImage, name, designation, profileLink }: SpeakerCardProps) => {
   // Extract actual values from Puck's React elements or direct values
   const photoValue = (photo && typeof photo === 'object' && 'props' in photo && photo.props && 'value' in photo.props) 
     ? photo.props.value 
@@ -79,76 +79,178 @@ const SpeakerCard = ({ photo, uploadedImage, name, designation }: SpeakerCardPro
   
   // Debug logging removed for cleaner console
   
+  // Detect if we're in preview mode (not editor mode)
+  const [isPreviewMode, setIsPreviewMode] = React.useState(false);
+  
+  useEffect(() => {
+    const checkPreviewMode = () => {
+      // Check if we're in an iframe (common for preview)
+      const inIframe = window.self !== window.top;
+      
+      // Check for Puck editor UI elements (sidebar, etc.)
+      const hasPuckEditor = document.querySelector('[class*="puck__sidebar"]') !== null ||
+                           document.querySelector('[class*="Puck"]') !== null ||
+                           document.querySelector('[class*="puck"]') !== null;
+      
+      // Check URL for preview indicators
+      const urlHasPreview = window.location.href.includes('preview') || 
+                           window.location.search.includes('preview') ||
+                           window.location.pathname.includes('preview');
+      
+      // If we're in an iframe or URL has preview, it's preview mode
+      // If we don't have Puck editor UI and we're not in an iframe, check more carefully
+      if (inIframe || urlHasPreview) {
+        setIsPreviewMode(true);
+      } else if (!hasPuckEditor) {
+        // No Puck editor UI found, likely preview mode
+        setIsPreviewMode(true);
+      } else {
+        setIsPreviewMode(false);
+      }
+    };
+    
+    // Check immediately
+    checkPreviewMode();
+    
+    // Also check after a short delay to catch dynamic rendering
+    const timeout = setTimeout(checkPreviewMode, 100);
+    
+    return () => clearTimeout(timeout);
+  }, []);
+  
+  // Handle click on photo to navigate to profile
+  const handlePhotoClick = (e: React.MouseEvent) => {
+    if (profileLink) {
+      const target = e.target as HTMLElement;
+      const isFileInput = target.tagName === 'INPUT' || target.closest('input[type="file"]');
+      
+      // Don't navigate if clicking file input
+      if (!isFileInput) {
+        window.open(profileLink, '_blank', 'noopener,noreferrer');
+      }
+    }
+  };
+  
+  // Handle name click - navigate to profile
+  const handleNameClick = (e: React.MouseEvent) => {
+    if (profileLink) {
+      // In preview mode, always navigate
+      if (isPreviewMode) {
+        window.open(profileLink, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      
+      // In editor mode, check if user is selecting text
+      const selection = window.getSelection();
+      const hasTextSelection = selection && selection.toString().length > 0;
+      
+      // If no text is selected, navigate to profile
+      if (!hasTextSelection) {
+        window.open(profileLink, '_blank', 'noopener,noreferrer');
+      }
+    }
+  };
+
   return (
     <div className="rounded-xl border border-gray-200 shadow-sm bg-white overflow-hidden">
       {/* Photo Section */}
-      <div className="w-full h-[220px] overflow-hidden rounded-t-lg relative bg-gray-100 flex items-center justify-center">
-        {imageSrc ? (
-          <img 
-            src={imageSrc} 
-            alt={nameValue}
-            className="w-full h-full block"
-            style={{
-              objectFit: 'contain' as const,
-              objectPosition: 'center center',
-              width: '100%',
-              height: '250px',
-              display: 'block'
-            }}
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-        ) : (
-          <div className="text-gray-500 text-sm">No image</div>
-        )}
-        {/* File upload input */}
-        <div
-          className="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-xs opacity-0 transition-opacity duration-200 cursor-pointer rounded-lg z-10 hover:opacity-100"
-        >
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="absolute inset-0 opacity-0 cursor-pointer"
-          />
-          <span>Click to upload image</span>
+      <div 
+        className={`w-full h-[220px] overflow-hidden rounded-t-lg relative bg-gray-100 flex items-center justify-center ${profileLink ? 'cursor-pointer transition-opacity hover:opacity-90' : ''}`}
+        onClick={handlePhotoClick}
+      >
+          {imageSrc ? (
+            <img 
+              src={imageSrc} 
+              alt={nameValue}
+              className="w-full h-full block"
+              style={{
+                objectFit: 'contain' as const,
+                objectPosition: 'center center',
+                width: '100%',
+                height: '250px',
+                display: 'block'
+              }}
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="text-gray-500 text-sm">No image</div>
+          )}
+          {/* File upload input - only in editor mode */}
+          {!isPreviewMode && (
+            <div
+              className="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-xs opacity-0 transition-opacity duration-200 cursor-pointer rounded-lg z-10 hover:opacity-100"
+            >
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+              <span>Click to upload image</span>
+            </div>
+          )}
+          
+          {/* ContentEditable field for uploaded image (hidden but functional) */}
+          <div
+            contentEditable
+            suppressContentEditableWarning={true}
+            data-puck-field="uploadedImage"
+            className="absolute -top-[9999px] -left-[9999px] w-px h-px opacity-0 pointer-events-none"
+          >
+            {uploadedImageValue}
+          </div>
+          
+          {/* Inline editable overlay for image URL - only in editor mode */}
+          {!isPreviewMode && (
+            <div
+              contentEditable
+              suppressContentEditableWarning={true}
+              data-puck-field="photo"
+              className="absolute top-2.5 left-2.5 right-2.5 bg-black/70 text-white text-[10px] px-2 py-1 rounded opacity-0 transition-opacity duration-200 cursor-pointer z-[11] hover:opacity-100"
+            >
+              {photo}
+            </div>
+          )}
         </div>
-        
-        {/* ContentEditable field for uploaded image (hidden but functional) */}
-        <div
-          contentEditable
-          suppressContentEditableWarning={true}
-          data-puck-field="uploadedImage"
-          className="absolute -top-[9999px] -left-[9999px] w-px h-px opacity-0 pointer-events-none"
-        >
-          {uploadedImageValue}
-        </div>
-        
-        {/* Inline editable overlay for image URL */}
-        <div
-          contentEditable
-          suppressContentEditableWarning={true}
-          data-puck-field="photo"
-          className="absolute top-2.5 left-2.5 right-2.5 bg-black/70 text-white text-[10px] px-2 py-1 rounded opacity-0 transition-opacity duration-200 cursor-pointer z-[11] hover:opacity-100"
-        >
-          {photo}
-        </div>
-      </div>
       
       {/* Text Section */}
       <div className="p-4">
-        <div 
-          className="font-semibold text-lg block mb-1 text-gray-900"
-          contentEditable
-          suppressContentEditableWarning={true}
-          data-puck-field="name"
-        >
-          {name}
-        </div>
+        {profileLink && isPreviewMode ? (
+          // In preview mode, use a link
+          <a
+            href={profileLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-lg block mb-1 text-gray-900 cursor-pointer transition-colors hover:text-blue-600"
+          >
+            {name}
+          </a>
+        ) : (
+          // In editor mode, use contentEditable with click handler for navigation
+          <div 
+            className={`font-semibold text-lg block mb-1 text-gray-900 ${profileLink ? 'cursor-pointer transition-colors hover:text-blue-600' : ''}`}
+            contentEditable={!isPreviewMode}
+            suppressContentEditableWarning={true}
+            data-puck-field="name"
+            onClick={handleNameClick}
+            onMouseDown={(e) => {
+              // Allow text selection on mousedown
+              // Only prevent navigation if user is starting to select text
+              const selection = window.getSelection();
+              if (selection && selection.rangeCount > 0) {
+                // User might be selecting, don't interfere
+                return;
+              }
+            }}
+          >
+            {name}
+          </div>
+        )}
         <div 
           className="text-gray-500 text-sm leading-snug"
-          contentEditable
+          contentEditable={!isPreviewMode}
           suppressContentEditableWarning={true}
           data-puck-field="designation"
         >

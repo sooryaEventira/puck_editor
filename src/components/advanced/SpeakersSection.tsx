@@ -5,6 +5,7 @@ interface Speaker {
   name: string
   title: string
   image: string
+  profileLink?: string
 }
 
 interface SpeakersSectionProps {
@@ -54,6 +55,7 @@ const SpeakersSection: React.FC<SpeakersSectionProps> = ({
                 designation={speaker.title}
                 photo={speaker.image}
                 uploadedImage=""
+                profileLink={speaker.profileLink}
               />
             </div>
           ))}

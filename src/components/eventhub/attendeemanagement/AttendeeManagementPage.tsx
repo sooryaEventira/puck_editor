@@ -13,6 +13,7 @@ import AttendeeDetailsSlideout from './AttendeeDetailsSlideout'
 import { Attendee, AttendeeTab, Group, CustomField } from './attendeeTypes'
 import { defaultCards, ContentCard } from '../EventHubContent'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
+import attendeeSpeakerTemplate from '../../../assets/excel/Attendee Speaker template.xlsx?url'
 
 interface AttendeeManagementPageProps {
   eventName?: string
@@ -99,9 +100,21 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [isAttendeeSlideoutOpen, setIsAttendeeSlideoutOpen] = useState(false)
   const [selectedAttendee, setSelectedAttendee] = useState<Attendee | null>(null)
+  const [isLoadingAttendees, setIsLoadingAttendees] = useState(false)
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false)
 
   const handleUpload = () => {
     setIsUploadModalOpen(true)
+  }
+
+  const handleDownloadTemplate = () => {
+    // Create a temporary anchor element to trigger download
+    const link = document.createElement('a')
+    link.href = attendeeSpeakerTemplate
+    link.download = 'Attendee Speaker template.xlsx'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const handleUploadFiles = async (files: File[]) => {
@@ -129,6 +142,7 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
       return
     }
 
+    setIsLoadingAttendees(true)
     try {
       const attendeesData = await fetchAttendees(eventUuid)
       
@@ -169,6 +183,8 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
     } catch (error) {
       // Error is already handled in fetchAttendees with toast
       console.error('Failed to load attendees:', error)
+    } finally {
+      setIsLoadingAttendees(false)
     }
   }
 
@@ -181,6 +197,7 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
       return
     }
 
+    setIsLoadingGroups(true)
     try {
       const tagsData = await fetchTags(eventUuid)
       
@@ -204,6 +221,8 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
         // For other errors, set empty array to prevent stale data
         setGroups([])
       }
+    } finally {
+      setIsLoadingGroups(false)
     }
   }
 
@@ -368,6 +387,7 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
             onDeleteGroup={handleDeleteGroup}
             onFilter={handleFilter}
             onTabChange={setActiveTab}
+            isLoading={isLoadingGroups}
           />
         ) : (
           <AttendeesTable
@@ -376,6 +396,7 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
             activeTab={activeTab}
             onTabChange={setActiveTab}
             onUpload={handleUpload}
+            isLoading={isLoadingAttendees}
             onCreateProfile={handleCreateProfile}
             onCreateField={handleCreateField}
             onEditAttendee={handleEditAttendee}
@@ -421,6 +442,7 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
           'Step 1: Download template',
           'Step 2: Upload attendees'
         ]}
+        onDownloadTemplate={handleDownloadTemplate}
       />
 
       {/* Attendee Details Slideout */}

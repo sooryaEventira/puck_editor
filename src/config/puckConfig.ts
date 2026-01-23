@@ -1128,6 +1128,11 @@ export const config = {
               type: 'text' as const,
               label: 'Image URL',
               placeholder: 'https://example.com/photo.jpg'
+            },
+            profileLink: {
+              type: 'text' as const,
+              label: 'Profile Link',
+              placeholder: 'https://example.com/profile'
             }
           }
         },
@@ -1297,27 +1302,16 @@ export const config = {
            fields: {
              leftTitle: {
                type: 'text' as const,
-               label: 'Left Column Title',
+               label: 'Title',
                placeholder: 'Our Mission',
                contentEditable: true
              },
              leftText: {
-               type: 'text' as const,
-               label: 'Left Column Text',
+               type: 'textarea' as const,
+               label: 'Text',
                placeholder: 'We are dedicated to providing innovative solutions...',
-               contentEditable: true
-             },
-             rightTitle: {
-               type: 'text' as const,
-               label: 'Right Column Title',
-               placeholder: 'Our Vision',
-               contentEditable: true
-             },
-             rightText: {
-               type: 'text' as const,
-               label: 'Right Column Text',
-               placeholder: 'To be the leading provider of cutting-edge technology...',
-               contentEditable: true
+               contentEditable: true,
+               rows: 6
              },
              backgroundColor: {
                type: 'text' as const,
@@ -1338,8 +1332,6 @@ export const config = {
            defaultProps: {
              leftTitle: 'Our Mission',
              leftText: 'We are dedicated to providing innovative solutions that help our clients achieve their goals and drive success in their respective industries.',
-             rightTitle: 'Our Vision',
-             rightText: 'To be the leading provider of cutting-edge technology solutions, empowering businesses to thrive in the digital age.',
              backgroundColor: '#ffffff',
              textColor: '#333333',
              padding: '3rem 2rem'
@@ -1885,6 +1877,11 @@ export const config = {
               type: 'text' as const,
               label: 'Logo URL',
               placeholder: 'https://example.com/logo.png'
+            },
+            link: {
+              type: 'text' as const,
+              label: 'Link',
+              placeholder: 'https://example.com'
             }
           }
         },

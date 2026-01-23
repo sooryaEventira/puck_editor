@@ -88,6 +88,7 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
   }
 
   const [communications, setCommunications] = React.useState<Communication[]>([])
+  const [isLoadingCommunications, setIsLoadingCommunications] = React.useState(false)
 
   // Load communications from API
   const loadCommunications = async () => {
@@ -98,6 +99,7 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
       return
     }
 
+    setIsLoadingCommunications(true)
     try {
       const [communicationsData, tagsData] = await Promise.all([
         fetchCommunications(eventUuid),
@@ -177,6 +179,8 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
       // Error is already handled in fetchCommunications with toast
       // Set empty array on error to prevent UI issues
       setCommunications([])
+    } finally {
+      setIsLoadingCommunications(false)
     }
   }
 
@@ -332,6 +336,7 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
             onCreateBroadcast={handleCreateBroadcast}
             onCreateMacro={handleCreateMacro}
             onEditCommunication={handleEditCommunication}
+            isLoading={isLoadingCommunications}
             onEditMacro={(macroId) => {
               console.log('Edit macro:', macroId)
               // TODO: Implement edit macro functionality

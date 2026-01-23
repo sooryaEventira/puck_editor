@@ -35,6 +35,30 @@ const HeroSection = ({
     })
   }, [buttons])
 
+  // Sync with backgroundImage prop changes - clear uploadedImageUrl when prop changes
+  // This ensures prop updates (e.g., from localStorage or saved page data) are reflected
+  useEffect(() => {
+    if (backgroundImage && backgroundImage !== uploadedImageUrl) {
+      // If backgroundImage prop is provided and different from uploaded, use the prop
+      // This allows banner updates from parent (EditorView) to display correctly
+      // Only keep uploadedImageUrl if it's a data URL (user manually uploaded) AND prop is not a data URL
+      // Otherwise, always use the prop (which comes from saved page data, localStorage, or API)
+      if (uploadedImageUrl && uploadedImageUrl.startsWith('data:') && !backgroundImage.startsWith('data:')) {
+        // If we have a manually uploaded image (data URL) but prop is not a data URL, 
+        // keep uploaded (user manually uploaded in this session)
+        console.log('🖼️ HeroSection - Keeping manually uploaded image (data URL)')
+        return
+      }
+      // Clear uploadedImageUrl so prop takes precedence
+      // This ensures saved banners, localStorage banners, and API banners are displayed
+      setUploadedImageUrl('')
+      console.log('🖼️ HeroSection - Syncing with backgroundImage prop:', backgroundImage.substring(0, 50) + '...')
+    } else if (!backgroundImage && uploadedImageUrl) {
+      // If prop is cleared but we have uploaded, keep uploaded
+      console.log('🖼️ HeroSection - Keeping uploaded image (prop is empty)')
+    }
+  }, [backgroundImage, uploadedImageUrl])
+
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]

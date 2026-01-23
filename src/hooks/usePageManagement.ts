@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Page } from '../types'
 import { logger } from '../utils/logger'
-import { API_ENDPOINTS, env } from '../config/env'
-import { isPageApiAvailable, safeFetch } from '../utils/apiHelpers'
+import { API_ENDPOINTS } from '../config/env'
+import { isPageApiAvailable } from '../utils/apiHelpers'
 import { useEventForm } from '../contexts/EventFormContext'
 import { fetchWebpage } from '../services/webpageService'
 
@@ -553,12 +553,26 @@ export const usePageManagement = () => {
       return data
     }
     
+    // First, remove SchedulePage from non-schedule pages
+    // SchedulePage should only appear on pages with pageType='schedule'
+    let contentToClean = [...data.content]
+    const pageType = data?.root?.props?.pageType
+    const isSchedulePage = pageType === 'schedule'
+    
+    if (!isSchedulePage) {
+      const hasSchedulePage = contentToClean.some((item: any) => item.type === 'SchedulePage')
+      if (hasSchedulePage) {
+        console.log('🔄 cleanDuplicateComponents - Removing SchedulePage from non-schedule page')
+        contentToClean = contentToClean.filter((item: any) => item.type !== 'SchedulePage')
+      }
+    }
+    
     // Track seen component IDs and positions to avoid duplicates
     const seenIds = new Set<string>()
     const cleanedContent: any[] = []
     let duplicatesRemoved = 0
     
-    data.content.forEach((item: any, index: number) => {
+    contentToClean.forEach((item: any, index: number) => {
       // Use ID if available, otherwise create a unique identifier
       const itemId = item.props?.id || `${item.type}-${index}-${JSON.stringify(item.props).substring(0, 50)}`
       
@@ -604,7 +618,7 @@ export const usePageManagement = () => {
     // Check for duplicates by type if no IDs
     if (duplicatesRemoved > 0) {
       console.log('🧹 Cleaned', duplicatesRemoved, 'duplicate components')
-      console.log('📊 Original types:', data.content.map((c: any) => c.type))
+      console.log('📊 Original types:', contentToClean.map((c: any) => c.type))
       console.log('📊 Cleaned types:', cleanedContent.map((c: any) => c.type))
       
       // Count PricingPlans specifically
@@ -770,160 +784,20 @@ export const usePageManagement = () => {
       return
     }
 
+    // Note: GET_PAGES and GET_PAGE endpoints are not used - webpages are loaded via fetchWebpages() instead
+    // This function is kept for backward compatibility but doesn't fetch from server
+    // Pages are loaded from localStorage cache or via fetchWebpage() for UUID-based pages
+    // The actual webpage list is managed in EventWebsitePage via fetchWebpages() from webpageService
     try {
-      const response = await safeFetch(API_ENDPOINTS.GET_PAGES)
+      // Skip server fetch - pages are loaded via fetchWebpages() in EventWebsitePage
+      logger.debug('loadPages: Pages are loaded via fetchWebpages() in EventWebsitePage, not using GET_PAGES endpoint')
+      return
       
-      if (!response || !response.ok) {
-        logger.debug('Page API not available, using local storage')
-        return
-      }
-      
-      const result = await response.json()
-      
-      if (result.success) {
-        // Load page data for each page to get the actual pageTitle
-        const pageListPromises = result.pages.map(async (page: any) => {
-          let pageName = page.filename.replace('.json', '')
-          const pageIdFromFilename = page.filename.replace('.json', '')
-          
-          // Try to load the actual page data to get the pageTitle
-          try {
-            const pageResponse = await fetch(API_ENDPOINTS.GET_PAGE(page.filename))
-            if (pageResponse.ok) {
-              const pageResult = await pageResponse.json()
-              if (pageResult.success && pageResult.data?.root?.props) {
-                const pageTitle = pageResult.data.root.props.pageTitle || pageResult.data.root.props.title
-                if (pageTitle) {
-                  pageName = pageTitle
-                }
-              }
-            }
-          } catch (error) {
-            // If loading fails, fall back to filename-based extraction
-            logger.debug('Could not load page data for', page.filename, error)
-          }
-          
-          const cachedData = getCachedPageData(pageIdFromFilename)
-          const cachedTitle = getPageTitleFromData(cachedData)
-
-          if (cachedTitle) {
-            const trimmedCachedTitle = cachedTitle.trim()
-            if (trimmedCachedTitle && trimmedCachedTitle !== pageName) {
-              pageName = trimmedCachedTitle
-            }
-          }
-
-          // Prefer cached local title if available (handles unsaved renames)
-          if (!pageName || pageName === page.filename.replace('.json', '')) {
-            if (cachedTitle) {
-              pageName = cachedTitle
-            }
-          }
-
-          // Fallback to filename-based extraction if no pageTitle found
-          if (!pageName || pageName === page.filename.replace('.json', '')) {
-            if (pageName.startsWith('page-data-')) {
-              pageName = pageName.replace('page-data-', '').replace(/-/g, ' ')
-            }
-            if (pageName.startsWith('page-')) {
-              pageName = pageName.replace('page-', '').replace(/-/g, ' ')
-              // Remove timestamp pattern (digits at the end)
-              pageName = pageName.replace(/-\d+$/, '').replace(/-/g, ' ')
-            }
-            // Capitalize first letter
-            pageName = pageName.charAt(0).toUpperCase() + pageName.slice(1)
-          }
-          
-          return {
-            id: page.filename.replace('.json', ''),
-            name: pageName,
-            filename: page.filename,
-            lastModified: page.modified
-          }
-        })
-        
-        const pageList = await Promise.all(pageListPromises)
-        
-        // Merge with existing pages to preserve pages that might not be on server yet
-        setPages(prevPages => {
-          logger.debug('loadPages: Merging pages. Prev pages:', prevPages.map(p => `${p.name} (${p.id})`), 'Server pages:', pageList.map((p: Page) => `${p.name} (${p.id})`))
-          
-          // Start with all existing pages - preserve everything
-          const mergedMap = new Map<string, Page>()
-          
-          // Add all existing pages first (preserve them) - this is critical!
-          // Pages that haven't been saved to server yet will be preserved
-          prevPages.forEach(page => {
-            mergedMap.set(page.id, page)
-          })
-          
-          // Add/update with server pages (by ID)
-          // This will update existing pages with server data, but won't remove pages not on server
-          pageList.forEach((serverPage: Page) => {
-            // If we already have a page with this ID, update it with server data
-            // If not, add it as a new page from server
-            if (mergedMap.has(serverPage.id)) {
-              // Update existing page with server data (might have updated name, etc.)
-              mergedMap.set(serverPage.id, serverPage)
-            } else {
-              // New page from server, add it
-              mergedMap.set(serverPage.id, serverPage)
-            }
-          })
-          
-          // Also check for pages with same name but different ID (handle ID mismatches)
-          pageList.forEach((serverPage: Page) => {
-            const existingWithSameName = Array.from(mergedMap.values()).find(
-              p => p.name === serverPage.name && p.id !== serverPage.id
-            )
-            if (existingWithSameName) {
-              // If server page has newer data, update but keep the existing ID
-              // This prevents duplicates when IDs don't match
-              mergedMap.set(existingWithSameName.id, { ...serverPage, id: existingWithSameName.id })
-            }
-          })
-          
-          // Convert to array, remove duplicates, and sort
-          const mergedPages = Array.from(mergedMap.values())
-          const uniquePages = mergedPages.filter((page, index, self) => 
-            self.findIndex(p => p.id === page.id) === index
-          )
-          
-          const sortedPageList = uniquePages.sort((a, b) => {
-            return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
-          })
-          
-          // Filter out welcome pages if in create-from-scratch mode
-          const urlParams = new URLSearchParams(window.location.search)
-          const isCreateFromScratch = urlParams.get('mode') === 'blank' || 
-                                       localStorage.getItem('create-from-scratch') === 'true'
-          
-          let finalPageList = sortedPageList
-          if (isCreateFromScratch) {
-            finalPageList = sortedPageList.filter(page => {
-              const pageNameLower = page.name.toLowerCase()
-              const pageIdLower = page.id.toLowerCase()
-              return pageNameLower !== 'welcome' && pageIdLower !== 'welcome'
-            })
-            // Ensure page1 exists
-            const hasPage1 = finalPageList.some(p => p.id === 'page1' || p.filename === 'page1.json')
-            if (!hasPage1) {
-              finalPageList = [{
-                id: 'page1',
-                name: 'Page 1',
-                filename: 'page1.json',
-                lastModified: new Date().toISOString()
-              }, ...finalPageList]
-            }
-          }
-          
-          logger.debug('loadPages: Final merged pages:', finalPageList.map(p => `${p.name} (${p.id})`))
-          return finalPageList
-        })
-      } else {
-        // Don't clear pages on error - preserve existing pages
-        logger.warn('loadPages: Server returned unsuccessful response, preserving existing pages')
-      }
+      // OLD CODE REMOVED - GET_PAGES and GET_PAGE endpoints don't exist (commented out in env.ts)
+      // Pages are now loaded via:
+      // 1. fetchWebpages() in EventWebsitePage.tsx (for listing all webpages)
+      // 2. fetchWebpage() in usePageManagement.ts (for loading individual UUID-based pages)
+      // 3. localStorage cache (for non-UUID pages)
     } catch (error) {
       logger.error('Error loading pages:', error)
       // Don't clear pages on error - preserve existing pages
@@ -982,11 +856,38 @@ export const usePageManagement = () => {
         const cleanedData = cleanDuplicateComponents(puckData)
         
         // Update HeroSection banner if needed
+        // Priority: localStorage banner > saved page banner > default
         const bannerUrl = localStorage.getItem('event-form-banner')
-        if (bannerUrl && cleanedData?.content) {
+        if (cleanedData?.content) {
           const heroSection = cleanedData.content.find((item: any) => item.type === 'HeroSection')
           if (heroSection) {
-            heroSection.props.backgroundImage = bannerUrl
+            const savedBanner = heroSection.props.backgroundImage || ''
+            const hasDefaultImage = savedBanner.includes('unsplash.com/photo-1540575467063')
+            
+            // Use localStorage banner if it exists (it's the most current)
+            // Otherwise, preserve the saved banner from the page data
+            // Only override if saved banner is default image
+            if (bannerUrl) {
+              // Always use localStorage banner if available (it's the source of truth)
+              heroSection.props.backgroundImage = bannerUrl
+              console.log('🖼️ loadPage (UUID) - Using banner from localStorage')
+            } else if (savedBanner && !hasDefaultImage) {
+              // Preserve saved banner if it exists and is not default
+              // Also save it to localStorage for consistency
+              localStorage.setItem('event-form-banner', savedBanner)
+              console.log('🖼️ loadPage (UUID) - Preserving saved banner from page data:', savedBanner.substring(0, 50) + '...')
+            } else if (hasDefaultImage) {
+              // If saved banner is default, try to get from createdEvent
+              if (createdEvent?.banner) {
+                let bannerFromApi = createdEvent.banner
+                if (bannerFromApi.startsWith('http://')) {
+                  bannerFromApi = bannerFromApi.replace('http://', 'https://')
+                }
+                heroSection.props.backgroundImage = bannerFromApi
+                localStorage.setItem('event-form-banner', bannerFromApi)
+                console.log('🖼️ loadPage (UUID) - Using banner from createdEvent API')
+              }
+            }
           }
         }
         
@@ -1129,15 +1030,72 @@ export const usePageManagement = () => {
       // Clean any duplicates before setting
       const cleanedInitialData = cleanDuplicateComponents(initialData)
       
-      // Update HeroSection banner BEFORE setting data if banner exists in localStorage
+      // Remove SchedulePage from non-schedule pages
+      // SchedulePage should only appear on pages with pageType='schedule'
+      if (cleanedInitialData?.content) {
+        const pageType = cleanedInitialData?.root?.props?.pageType
+        const isSchedulePage = pageType === 'schedule'
+        
+        if (!isSchedulePage) {
+          const hasSchedulePage = cleanedInitialData.content.some((item: any) => item.type === 'SchedulePage')
+          if (hasSchedulePage) {
+            console.log('🔄 Removing SchedulePage from non-schedule page:', pageId)
+            cleanedInitialData.content = cleanedInitialData.content.filter((item: any) => item.type !== 'SchedulePage')
+          }
+        }
+      }
+      
+      // Update HeroSection banner BEFORE setting data
+      // Priority: API banner (HTTPS) > localStorage (HTTPS) > saved page banner > localStorage (data URL) > API banner (fallback)
       const bannerUrl = localStorage.getItem('event-form-banner')
-      if (bannerUrl && cleanedInitialData?.content) {
+      const apiBanner = createdEvent?.banner
+      let processedApiBanner = apiBanner
+      if (processedApiBanner && processedApiBanner.startsWith('http://')) {
+        processedApiBanner = processedApiBanner.replace('http://', 'https://')
+      }
+      
+      if (cleanedInitialData?.content) {
         const heroSection = cleanedInitialData.content.find((item: any) => item.type === 'HeroSection')
         if (heroSection) {
-          const hasDefaultImage = heroSection.props.backgroundImage?.includes('unsplash.com/photo-1540575467063')
-          if (hasDefaultImage || heroSection.props.backgroundImage !== bannerUrl) {
-            console.log('🖼️ loadPage - Updating HeroSection banner before setting data')
-            heroSection.props.backgroundImage = bannerUrl
+          const savedBanner = heroSection.props.backgroundImage || ''
+          const hasDefaultImage = savedBanner.includes('unsplash.com/photo-1540575467063')
+          
+          let finalBanner: string | null = null
+          
+          // Priority 1: API banner (if it's an HTTPS URL - the correct uploaded banner)
+          if (processedApiBanner && processedApiBanner.startsWith('https://')) {
+            finalBanner = processedApiBanner
+            localStorage.setItem('event-form-banner', finalBanner)
+            console.log('🖼️ loadPage - Using banner from createdEvent API (HTTPS URL)')
+          }
+          // Priority 2: localStorage banner (if it's an HTTPS URL, not a data URL)
+          else if (bannerUrl && bannerUrl.startsWith('https://')) {
+            finalBanner = bannerUrl
+            console.log('🖼️ loadPage - Using banner from localStorage (HTTPS URL)')
+          }
+          // Priority 3: Saved page banner (if it's not default and not empty)
+          else if (savedBanner && !hasDefaultImage && savedBanner !== '') {
+            finalBanner = savedBanner
+            // If it's an HTTPS URL, sync to localStorage
+            if (savedBanner.startsWith('https://')) {
+              localStorage.setItem('event-form-banner', savedBanner)
+            }
+            console.log('🖼️ loadPage - Preserving saved banner from page data:', savedBanner.substring(0, 50) + '...')
+          }
+          // Priority 4: localStorage banner (even if data URL - fallback)
+          else if (bannerUrl) {
+            finalBanner = bannerUrl
+            console.log('🖼️ loadPage - Using banner from localStorage (data URL fallback)')
+          }
+          // Priority 5: API banner (even if not HTTPS - final fallback)
+          else if (processedApiBanner) {
+            finalBanner = processedApiBanner
+            localStorage.setItem('event-form-banner', finalBanner)
+            console.log('🖼️ loadPage - Using banner from createdEvent API (fallback)')
+          }
+          
+          if (finalBanner) {
+            heroSection.props.backgroundImage = finalBanner
           }
         }
       }
@@ -1157,23 +1115,9 @@ export const usePageManagement = () => {
           updateHeroSectionWithEventData()
         }, 150)
       
-      // Try to load from server in background and update if successful
-      fetch(API_ENDPOINTS.GET_PAGE(serverFilename))
-        .then(response => {
-          if (response.ok) {
-            return response.json()
-          }
-          return null
-        })
-        .then(result => {
-          if (result && result.success && result.data) {
-            logger.debug('loadPage: Server data loaded, updating page data')
-            applyServerDataForPage(pageId, result.data)
-          }
-        })
-        .catch(error => {
-          logger.debug('loadPage: Server load failed (using cached/default data):', error)
-        })
+      // Note: GET_PAGE endpoint is not used - webpages are loaded via fetchWebpage() for UUID-based pages
+      // For non-UUID pages, we use cached/default data
+      // Server fetch removed - pages are loaded via fetchWebpages() in EventWebsitePage
       
       return initialData
     }
@@ -1194,6 +1138,21 @@ export const usePageManagement = () => {
         
         // Clean any duplicates before setting
         const cleanedCachedData = cleanDuplicateComponents(initialData)
+        
+        // Remove SchedulePage from non-schedule pages
+        // SchedulePage should only appear on pages with pageType='schedule'
+        if (cleanedCachedData?.content) {
+          const pageType = cleanedCachedData?.root?.props?.pageType
+          const isSchedulePage = pageType === 'schedule'
+          
+          if (!isSchedulePage) {
+            const hasSchedulePage = cleanedCachedData.content.some((item: any) => item.type === 'SchedulePage')
+            if (hasSchedulePage) {
+              console.log('🔄 Removing SchedulePage from non-schedule cached page:', pageId)
+              cleanedCachedData.content = cleanedCachedData.content.filter((item: any) => item.type !== 'SchedulePage')
+            }
+          }
+        }
         
         // Update HeroSection banner BEFORE setting data if banner exists in localStorage
         const bannerUrl = localStorage.getItem('event-form-banner')
@@ -1234,92 +1193,68 @@ export const usePageManagement = () => {
       }
     }
     
-    // If no cached data, try to load from server with timeout
+    // If no cached data, use default template
+    // Note: GET_PAGE endpoint is not used - webpages are loaded via fetchWebpage() for UUID-based pages
     if (!initialData) {
       try {
-        logger.debug('Loading from server:', API_ENDPOINTS.GET_PAGE(serverFilename))
-        console.log('📡 Loading page from server:', serverFilename)
+        logger.debug('No cached data found, using default template for:', serverFilename)
+        console.log('📡 No cached data, using default template for:', serverFilename)
         
-        // Create a timeout promise
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Request timeout')), 1000) // 1 second timeout
-        })
+        // Use default template data instead of fetching from non-existent GET_PAGE endpoint
+        const pageName = pageId === 'welcome' ? 'Welcome' : pageId.replace('page-', '').replace(/-/g, ' ')
+        const defaultData = getDefaultTemplateData(pageName, eventData)
         
-        // Race between fetch and timeout
-        const response = await Promise.race([
-          fetch(API_ENDPOINTS.GET_PAGE(serverFilename)),
-          timeoutPromise
-        ]) as Response
+        // Clean any duplicates before setting
+        const cleanedData = cleanDuplicateComponents(defaultData)
         
-        logger.debug('Server response status:', response.status)
-        
-        if (response.ok) {
-          const result = await response.json()
-          logger.debug('Server response data:', result)
+        // Remove SchedulePage from non-schedule pages
+        // SchedulePage should only appear on pages with pageType='schedule'
+        if (cleanedData?.content) {
+          const pageType = cleanedData?.root?.props?.pageType
+          const isSchedulePage = pageType === 'schedule'
           
-          if (result.success) {
-            // Check if server data has the correct template structure
-            if (!hasCorrectTemplateStructure(result.data)) {
-              console.warn('⚠️ Server data does not match expected template structure, replacing with default template')
-              const pageName = getPageTitleFromData(result.data) || pageId === 'welcome' ? 'Welcome' : pageId.replace('page-', '').replace(/-/g, ' ')
-              const defaultData = getDefaultTemplateData(pageName, eventData)
-              applyServerDataForPage(pageId, defaultData)
-            } else {
-              // Remove ScheduleSection from welcome page
-              let cleanedData = result.data
-              if (pageId === 'welcome' && cleanedData.content) {
-                cleanedData = {
-                  ...cleanedData,
-                  content: cleanedData.content.filter((item: any) => item.type !== 'ScheduleSection')
-                }
-              }
-              applyServerDataForPage(pageId, cleanedData)
+          if (!isSchedulePage) {
+            const hasSchedulePage = cleanedData.content.some((item: any) => item.type === 'SchedulePage')
+            if (hasSchedulePage) {
+              console.log('🔄 Removing SchedulePage from non-schedule default template:', pageId)
+              cleanedData.content = cleanedData.content.filter((item: any) => item.type !== 'SchedulePage')
             }
-            setCurrentPage(pageId)
-            
-            // Get page name from the loaded data
-            const pageTitle = getPageTitleFromData(result.data)
-            
-            if (pageTitle) {
-              // Page not in array, but we have a title - add it to the array
-              logger.debug('loadPage: Page not in array, adding it with title:', pageTitle)
-              setCurrentPageName(pageTitle)
-              
-              // Add the page to the pages array so it shows in the sidebar
-              setPages(prevPages => {
-                const pageExists = prevPages.some(p => p.id === pageId || p.filename === serverFilename)
-                if (!pageExists) {
-                  const newPage: Page = {
-                    id: pageId,
-                    name: pageTitle,
-                    filename: serverFilename,
-                    lastModified: new Date().toISOString()
-                  }
-                  logger.debug('loadPage: Adding page to array:', newPage)
-                  return [...prevPages, newPage]
-                }
-                return prevPages
-              })
-            } else {
-              // Fallback: try to extract name from pageId
-              const fallbackName = pageId.replace('page-data-', '').replace(/-/g, ' ')
-              logger.debug('loadPage: Using fallback name:', fallbackName)
-              setCurrentPageName(fallbackName)
-            }
-            
-            setShowPageManager(false)
-            return result.data
-          } else {
-            logger.error('Server returned error:', result.error)
-            // Fall through to fallback logic
           }
-        } else {
-          logger.warn('Server response not ok:', response.status, response.statusText)
-          // Fall through to fallback logic
         }
+        
+        // Update HeroSection banner if needed
+        const bannerUrl = localStorage.getItem('event-form-banner')
+        if (bannerUrl && cleanedData?.content) {
+          const heroSection = cleanedData.content.find((item: any) => item.type === 'HeroSection')
+          if (heroSection) {
+            const savedBanner = heroSection.props.backgroundImage || ''
+            const hasDefaultImage = savedBanner.includes('unsplash.com/photo-1540575467063')
+            
+            if (bannerUrl && (hasDefaultImage || !savedBanner || savedBanner !== bannerUrl)) {
+              heroSection.props.backgroundImage = bannerUrl
+              console.log('🖼️ loadPage (default) - Using banner from localStorage')
+            } else if (savedBanner && !hasDefaultImage) {
+              localStorage.setItem('event-form-banner', savedBanner)
+              console.log('🖼️ loadPage (default) - Preserving saved banner from template')
+            }
+          }
+        }
+        
+        // Apply the default data
+        applyServerDataForPage(pageId, cleanedData)
+        setCurrentPage(pageId)
+        setCurrentPageName(pageName)
+        setShowPageManager(false)
+        
+        // Update HeroSection with banner after setting data
+        setTimeout(() => {
+          updateHeroSectionWithEventData()
+        }, 150)
+        
+        return cleanedData
       } catch (error) {
-        logger.error('Error loading page from server (will use fallback):', error)
-        // Fall through to fallback logic
+        logger.error('Error creating default template (fallback):', error)
+        // Fall through to return null
       }
       
       // Fallback: If server load failed, create default template page
@@ -1339,6 +1274,21 @@ export const usePageManagement = () => {
         // Remove ScheduleSection from welcome page
         if (pageId === 'welcome' && cleanedDefaultData?.content) {
           cleanedDefaultData.content = cleanedDefaultData.content.filter((item: any) => item.type !== 'ScheduleSection')
+        }
+        
+        // Remove SchedulePage from non-schedule pages
+        // SchedulePage should only appear on pages with pageType='schedule'
+        if (cleanedDefaultData?.content) {
+          const pageType = cleanedDefaultData?.root?.props?.pageType
+          const isSchedulePage = pageType === 'schedule'
+          
+          if (!isSchedulePage) {
+            const hasSchedulePage = cleanedDefaultData.content.some((item: any) => item.type === 'SchedulePage')
+            if (hasSchedulePage) {
+              console.log('🔄 Removing SchedulePage from non-schedule default template:', pageId)
+              cleanedDefaultData.content = cleanedDefaultData.content.filter((item: any) => item.type !== 'SchedulePage')
+            }
+          }
         }
         
         // Update HeroSection banner BEFORE setting data if banner exists in localStorage
@@ -1460,28 +1410,9 @@ export const usePageManagement = () => {
       setShowPageManager(false)
       setShowPageNameDialog(false) // Don't show the dialog
       
-      // Save to server asynchronously - IMPORTANT: Save immediately so it's on server
-      fetch(API_ENDPOINTS.SAVE_PAGE, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          data: newPageData,
-          filename: `${newPageId}.json`
-        })
-      }).then((response) => {
-        if (response.ok) {
-          logger.debug('createNewPage: Page saved successfully to server:', `${newPageId}.json`)
-          // Don't reload pages immediately - the page is already in the array
-          // This prevents overwriting pages that might not be on server yet
-          // loadPages() will be called later when needed (e.g., on publish)
-        } else {
-          logger.error('createNewPage: Failed to save page to server:', response.status)
-        }
-      }).catch(error => {
-        logger.error('Error saving new page:', error)
-      })
+      // Note: SAVE_PAGE endpoint is not used - pages are saved via createOrUpdateWebpage() in webpageService
+      // Pages are saved when user clicks the Save button in the editor
+      logger.debug('createNewPage: Page created locally, will be saved via Save button:', `${newPageId}.json`)
       
       return updatedPages
     })
@@ -1511,22 +1442,9 @@ export const usePageManagement = () => {
         }
       }
       
-      // Save asynchronously without blocking
-      fetch(API_ENDPOINTS.SAVE_PAGE, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          data: updatedData,
-          filename: `${newPageId}.json`
-        })
-      }).then(() => {
-        // Reload pages to sync with server
-        loadPages()
-      }).catch(error => {
-        logger.error('Error saving new page:', error)
-      })
+      // Note: SAVE_PAGE endpoint is not used - pages are saved via createOrUpdateWebpage() in webpageService
+      // Pages are saved when user clicks the Save button in the editor
+      logger.debug('confirmNewPage: Page updated locally, will be saved via Save button:', `${newPageId}.json`)
       
       return updatedData
     })
@@ -1734,26 +1652,9 @@ export const usePageManagement = () => {
       return updatedPages
     })
     
-    try {
-      const response = await fetch(API_ENDPOINTS.SAVE_PAGE, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          data: newPageData,
-          filename: `${pageId}.json`
-        })
-      })
-      
-      if (response.ok) {
-        // Don't call loadPages() immediately as it might overwrite existing pages
-        // The page is already added to the pages array above
-        // The pages array already contains all pages including Page 1, Page 2, and the new template page
-      }
-    } catch (error) {
-      logger.error('Error saving template page:', error)
-    }
+    // Note: SAVE_PAGE endpoint is not used - pages are saved via createOrUpdateWebpage() in webpageService
+    // Pages are saved when user clicks the Save button in the editor
+    logger.debug('createPageFromTemplate: Page created locally, will be saved via Save button:', `${pageId}.json`)
     
     return { pageId, pageName, newPageData }
   }
@@ -1825,84 +1726,38 @@ export const usePageManagement = () => {
       }
       
       // Normal flow: Load pages from server (only if NOT creating from scratch)
-      await loadPages()
-      
-      // Try to load page1 if it exists, otherwise create it (only for template mode)
       try {
-        const response = await fetch(API_ENDPOINTS.GET_PAGE('page1.json'))
-        if (response.ok) {
-          const result = await response.json()
-          if (result.success) {
-            setCurrentData(result.data)
-            setCurrentPage('page1')
-            const pageTitle = result.data?.root?.props?.pageTitle || result.data?.root?.props?.title || 'Page 1'
-            setCurrentPageName(pageTitle)
-            
-            // Ensure page1 is in the pages array (use actual pageTitle from data, which may be renamed)
-            setPages(prevPages => {
-              logger.debug('initializePage: Ensuring page1 exists. Current pages:', prevPages.map(p => `${p.name} (${p.id})`))
-              const pageExists = prevPages.some(p => p.id === 'page1' || p.filename === 'page1.json')
-              if (!pageExists) {
-                // Use the actual pageTitle from the loaded data (which may be renamed)
-                const updated = [...prevPages, {
-                  id: 'page1',
-                  name: pageTitle, // Use actual title, which may be renamed
-                  filename: 'page1.json',
-                  lastModified: new Date().toISOString()
-                }]
-                logger.debug('initializePage: Added page1. Updated pages:', updated.map(p => `${p.name} (${p.id})`))
-                return updated
-              } else {
-                // Update the name if it has changed (page was renamed)
-                const page1Index = prevPages.findIndex(p => p.id === 'page1' || p.filename === 'page1.json')
-                if (page1Index >= 0 && prevPages[page1Index].name !== pageTitle) {
-                  const updated = [...prevPages]
-                  updated[page1Index] = { ...updated[page1Index], name: pageTitle }
-                  logger.debug('initializePage: Updated page1 name. Updated pages:', updated.map(p => `${p.name} (${p.id})`))
-                  return updated
-                }
-              }
-              logger.debug('initializePage: page1 already exists')
-              return prevPages
-            })
+        await loadPages()
+        
+        // Note: GET_PAGE endpoint is not used - webpages are loaded via fetchWebpages() in EventWebsitePage
+        // For page1 initialization, we use the default template data that was already set
+        // No need to fetch from server as pages are managed via WEBPAGE API endpoints
+        logger.debug('initializePage: Using default template data for page1 (pages loaded via fetchWebpages)')
+        
+        // Ensure page1 is in the pages array
+        setPages(prevPages => {
+          logger.debug('initializePage: Ensuring page1 exists. Current pages:', prevPages.map(p => `${p.name} (${p.id})`))
+          const pageExists = prevPages.some(p => p.id === 'page1' || p.filename === 'page1.json')
+          if (!pageExists) {
+            const updated = [...prevPages, {
+              id: 'page1',
+              name: 'Page 1',
+              filename: 'page1.json',
+              lastModified: new Date().toISOString()
+            }]
+            logger.debug('initializePage: Added page1. Updated pages:', updated.map(p => `${p.name} (${p.id})`))
+            return updated
           }
-        } else {
-          // Page1 doesn't exist, create it with template data
+          logger.debug('initializePage: page1 already exists')
+          return prevPages
+        })
+        
+        // If page1 data wasn't set yet, use default
+        if (!currentData || !currentData.content || currentData.content.length === 0) {
           const page1Data = defaultPage1Data
           setCurrentData(page1Data)
           setCurrentPage('page1')
           setCurrentPageName('Page 1')
-          
-          // Add page1 to pages array immediately so it shows in sidebar
-          setPages(prevPages => {
-            const pageExists = prevPages.some(p => p.id === 'page1' || p.filename === 'page1.json')
-            if (!pageExists) {
-              return [...prevPages, {
-                id: 'page1',
-                name: 'Page 1',
-                filename: 'page1.json',
-                lastModified: new Date().toISOString()
-              }]
-            }
-            return prevPages
-          })
-          
-          // Save page1 to server
-          try {
-            await fetch(API_ENDPOINTS.SAVE_PAGE, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                data: page1Data,
-                filename: 'page1.json'
-              })
-            })
-            await loadPages()
-          } catch (error) {
-            logger.error('Error creating page1:', error)
-          }
         }
       } catch (error) {
         logger.error('Error initializing page1:', error)

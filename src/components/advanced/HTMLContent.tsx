@@ -68,11 +68,23 @@ const HTMLContent: React.FC<HTMLContentProps> = ({ htmlContent, id }) => {
     if (!contentRef.current) return;
     
     const newHTML = contentRef.current.innerHTML;
-    const htmlField = document.querySelector('[data-puck-field="htmlContent"]') as HTMLElement;
-    if (htmlField) {
-      htmlField.textContent = newHTML;
-      const inputEvent = new Event('input', { bubbles: true });
-      htmlField.dispatchEvent(inputEvent);
+    // Find the hidden field that Puck uses to track this component's data
+    // We need to find the field within this component's scope, not globally
+    const hiddenField = document.querySelector(`[data-puck-field="htmlContent"]`) as HTMLElement;
+    
+    if (hiddenField) {
+      // Update the hidden field's innerHTML (not textContent) to preserve HTML structure
+      hiddenField.innerHTML = newHTML;
+      
+      // Trigger input event to notify Puck of the change
+      const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+      hiddenField.dispatchEvent(inputEvent);
+      
+      // Also trigger change event as a fallback
+      const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+      hiddenField.dispatchEvent(changeEvent);
+    } else {
+      console.warn('HTMLContent: Could not find hidden field with data-puck-field="htmlContent"');
     }
   };
 

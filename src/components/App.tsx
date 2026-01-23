@@ -711,14 +711,18 @@ const EditorViewWithNavbar: React.FC<{
   createNewPage: () => void
   handleProfileClick: () => void
 }> = (props) => {
-  const { eventData } = useEventForm()
+  const { eventData, createdEvent } = useEventForm()
   const userAvatarUrl = localStorage.getItem('userAvatarUrl') || ''
+  
+  // Prioritize createdEvent from API (has correct UUID), fallback to eventData from form
+  const displayEventName = createdEvent?.eventName || eventData?.eventName || 'Highly important conference of 2025'
   
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Global Navbar - EventHubNavbar */}
       <EventHubNavbar
-        eventName={eventData?.eventName || 'Highly important conference of 2025'}
+        key={createdEvent?.uuid || 'no-event'} // Force re-render when event changes
+        eventName={displayEventName}
         isDraft={true}
         onBackClick={props.handleBackToDashboard}
         onSearchClick={() => {}}

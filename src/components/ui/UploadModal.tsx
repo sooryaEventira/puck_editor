@@ -241,7 +241,13 @@ const UploadModal: React.FC<UploadModalProps> = ({
             {/* Template Download Section - Only show if enabled */}
             {showTemplate && (
               <div className="flex w-full flex-col items-start justify-start gap-2 self-stretch">
-                <div className="relative flex w-full items-start justify-start gap-1 overflow-hidden rounded-xl border border-[#E9EAEB] bg-white p-4 outline outline-1 outline-[#E9EAEB] outline-offset-[-1px]">
+                <div 
+                  className={`relative flex w-full items-start justify-start gap-1 overflow-hidden rounded-xl border border-[#E9EAEB] bg-white p-4 outline outline-1 outline-[#E9EAEB] outline-offset-[-1px] ${onDownloadTemplate ? 'cursor-pointer hover:bg-slate-50 transition-colors' : ''}`}
+                  onClick={onDownloadTemplate ? (e) => {
+                    e.stopPropagation()
+                    onDownloadTemplate()
+                  } : undefined}
+                >
                   <div className="flex flex-1 items-start justify-start gap-3">
                     {/* XLSX Icon */}
                     <div className="relative h-10 w-10 flex-shrink-0">
@@ -261,7 +267,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
                           {templateLabel}
                         </div>
                         <div className="inline-flex w-full items-center justify-start gap-2 self-stretch">
-                          <span className="text-sm font-normal leading-5 text-[#535862]" style={{ fontFamily: 'Inter' }}>
+                          <span className={`text-sm font-normal leading-5 ${onDownloadTemplate ? 'text-[#5925DC] hover:underline cursor-pointer' : 'text-[#535862]'}`} style={{ fontFamily: 'Inter' }}>
                             Download template
                           </span>
                         </div>

@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useEventForm } from '../../contexts/EventFormContext'
 import { createOrUpdateWebpage, type CreateWebpageRequest } from '../../services/webpageService'
 import { showToast } from '../../utils/toast'
 
 interface PuckPropertySidebarSaveButtonProps {
-  currentData: any
+  getCurrentData: () => any // Function to get latest data from Puck
   currentPage: string
   currentPageName: string
   onSaveSuccess?: () => void
 }
 
 const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps> = ({
-  currentData,
+  getCurrentData,
   currentPage,
   currentPageName,
   onSaveSuccess
@@ -19,6 +19,7 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
   const { createdEvent } = useEventForm()
   const [isSaving, setIsSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
+  const buttonInjectedRef = useRef(false) // Track if button has been successfully injected
 
   useEffect(() => {
     let isUpdating = false
@@ -136,9 +137,7 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
         return
       }
 
-      console.log('[PuckPropertySidebarSaveButton] Found property sidebar:', propertySidebar)
-
-      // Check if button already exists
+      // Check if button already exists - do this early to avoid unnecessary work
       const existingSaveButton = propertySidebar.querySelector('[data-puck-save-button]')
       if (existingSaveButton && existingSaveButton.isConnected) {
         // Update button state if needed
@@ -152,6 +151,7 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
           button.style.opacity = '1'
           button.style.cursor = 'pointer'
         }
+        buttonInjectedRef.current = true // Mark as injected
         isUpdating = false
         return
       }
@@ -189,8 +189,8 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
         min-width: 80px !important;
         max-width: 120px !important;
         padding: 6px 12px !important;
-        background:rgb(124, 140, 165) !important;
-        color: white !important;
+        background: #F5F5DC !important;
+        color: #333 !important;
         border: none !important;
         border-radius: 4px !important;
         font-size: 12px !important;
@@ -201,7 +201,7 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
         align-items: center !important;
         justify-content: center !important;
         gap: 4px !important;
-        box-shadow: 0 1px 2px rgba(59, 130, 246, 0.2) !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
         visibility: visible !important;
         opacity: 1 !important;
       `
@@ -209,12 +209,12 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
       // Add hover styles
       saveButton.addEventListener('mouseenter', () => {
         if (!isSaving) {
-          saveButton.style.background = '#2563eb'
+          saveButton.style.background = '#E8E8D3' // Darker beige on hover
         }
       })
       saveButton.addEventListener('mouseleave', () => {
         if (!isSaving) {
-          saveButton.style.background = '#3b82f6'
+          saveButton.style.background = '#F5F5DC' // Back to beige
         }
       })
 
@@ -297,7 +297,9 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
         propertySidebar.insertBefore(saveButtonContainer, propertySidebar.firstChild)
       }
       
+      // Only log when button is actually injected (not on every check)
       console.log('[PuckPropertySidebarSaveButton] Save button injected successfully')
+      buttonInjectedRef.current = true // Mark as successfully injected
 
       // Handle save click
       saveButton.addEventListener('click', async (e) => {
@@ -332,18 +334,48 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
     timeoutIds.push(setTimeout(tryInject, 1000))
     timeoutIds.push(setTimeout(tryInject, 2000))
 
-    // Watch for sidebar changes
-    const observer = new MutationObserver(() => {
-      findAndInjectSaveButton()
+    // Watch for sidebar changes (only if button not yet injected, or watch more selectively)
+    const observer = new MutationObserver((mutations) => {
+      // Only check if button not injected, or if mutations might affect the sidebar
+      if (!buttonInjectedRef.current) {
+        findAndInjectSaveButton()
+      } else {
+        // If button is injected, only check if mutations are in the sidebar area
+        const hasRelevantMutation = mutations.some(mutation => {
+          const target = mutation.target as HTMLElement
+          return target.closest('[class*="Sidebar"], [class*="puck__property-panel"]') !== null
+        })
+        if (hasRelevantMutation) {
+          findAndInjectSaveButton()
+        }
+      }
     })
 
+    // Observe only the document body, but we'll filter mutations
     observer.observe(document.body, {
       childList: true,
       subtree: true,
     })
 
-    // Periodic check (less frequent to avoid performance issues)
-    const intervalId = setInterval(findAndInjectSaveButton, 1000)
+    // Periodic check (less frequent once button is injected)
+    // Use a dynamic interval that adjusts based on button state
+    let intervalDelay = 1000 // Start with 1 second
+    const intervalId = setInterval(() => {
+      // If button already injected, check less frequently (every 5 seconds)
+      if (buttonInjectedRef.current) {
+        intervalDelay = 5000 // Update delay for next iteration
+        // Only check periodically to ensure button is still there
+        const existingButton = document.querySelector('[data-puck-save-button]')
+        if (!existingButton || !existingButton.isConnected) {
+          buttonInjectedRef.current = false // Reset flag if button was removed
+          intervalDelay = 1000 // Reset to 1 second
+          findAndInjectSaveButton()
+        }
+      } else {
+        intervalDelay = 1000
+        findAndInjectSaveButton()
+      }
+    }, 1000) // Always check every 1 second, but logic inside adjusts behavior
 
     return () => {
       // Clear all timeouts
@@ -351,7 +383,7 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
       clearInterval(intervalId)
       observer.disconnect()
     }
-  }, [currentData, currentPage, currentPageName, isSaving])
+  }, [currentPage, currentPageName, isSaving, getCurrentData])
 
   const handleSave = async () => {
     if (!createdEvent?.uuid) {
@@ -368,6 +400,9 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
     setSaveStatus('saving')
 
     try {
+      // Get the latest data from Puck (includes inline edits)
+      const currentData = getCurrentData()
+      
       // Serialize current Puck data
       const puckData = {
         content: currentData?.content || [],
@@ -448,17 +483,17 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
         saveButton.setAttribute('disabled', 'true')
         saveButton.style.opacity = '0.6'
         saveButton.style.cursor = 'not-allowed'
-        saveButton.style.background = '#3b82f6'
+        saveButton.style.background = '#E8E8D3' // Darker beige when saving
       } else {
         if (saveStatus === 'success') {
           buttonText.textContent = 'Saved!'
-          saveButton.style.background = '#10b981'
+          saveButton.style.background = '#10b981' // Keep green for success
         } else if (saveStatus === 'error') {
           buttonText.textContent = 'Error - Try Again'
-          saveButton.style.background = '#ef4444'
+          saveButton.style.background = '#ef4444' // Keep red for error
         } else {
           buttonText.textContent = 'Save'
-          saveButton.style.background = '#3b82f6'
+          saveButton.style.background = '#F5F5DC' // Beige for normal state
         }
         spinner.style.display = 'none'
         saveButton.removeAttribute('disabled')

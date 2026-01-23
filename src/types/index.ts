@@ -172,6 +172,7 @@ export interface SpeakerCardProps {
   uploadedImage: string | React.ReactElement
   name: string | React.ReactElement
   designation: string | React.ReactElement
+  profileLink?: string
 }
 
 export interface NavigationProps {

@@ -26,6 +26,7 @@ interface AttendeesTableProps {
   onDownload?: () => void
   onGridView?: () => void
   onFilter?: () => void
+  isLoading?: boolean
 }
 
 const AttendeesTable: React.FC<AttendeesTableProps> = ({
@@ -42,7 +43,8 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
   onDeleteCustomField,
   onDownload,
   onGridView,
-  onFilter
+  onFilter,
+  isLoading = false
 }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<Set<string>>(new Set())
@@ -361,6 +363,23 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
   }
 
   const tableData = getTableData()
+
+  // Loading state - check after all hooks
+  if (isLoading) {
+    return (
+      <div className="space-y-8 px-4 pb-12 pt-8 md:px-10 lg:px-16">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-[26px] font-bold text-primary-dark">Attendee Management</h1>
+        </div>
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#6938EF] mb-4"></div>
+            <p className="text-slate-600">Loading attendees...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8 px-4 pb-12 pt-8 md:px-10 lg:px-16">

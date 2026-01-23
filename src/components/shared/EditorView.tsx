@@ -154,7 +154,9 @@ export const EditorView: React.FC<EditorViewProps> = ({
   useEffect(() => {
     // Add a small delay to ensure data is fully loaded
     const timer = setTimeout(() => {
+      // Try multiple sources for banner
       const bannerUrl = localStorage.getItem('event-form-banner')
+      const apiBanner = createdEvent?.banner
       if (!currentData?.content) {
         console.log('🖼️ EditorView useEffect - No content')
         return
@@ -172,11 +174,59 @@ export const EditorView: React.FC<EditorViewProps> = ({
       const eventDate = formatEventDate(createdEvent?.startDate || eventData?.startDate)
       const subtitle = location ? `${location} | ${eventDate}` : (eventDate || 'Location | Date')
 
-      const currentBanner = heroSection.props.backgroundImage
+      const currentBanner = heroSection.props.backgroundImage || ''
       const hasDefaultImage = currentBanner?.includes('unsplash.com/photo-1540575467063')
       
+      // Process API banner URL if needed
+      let processedApiBanner = apiBanner
+      if (processedApiBanner && processedApiBanner.startsWith('http://')) {
+        processedApiBanner = processedApiBanner.replace('http://', 'https://')
+      }
+      
+      // Banner priority: API banner (if HTTPS URL) > localStorage (if HTTPS URL) > saved page banner > localStorage (data URL) > createdEvent.banner > default
+      // This ensures API HTTPS URLs take precedence over localStorage data URLs
+      let finalBannerUrl: string | null = null
+      
+      // Priority 1: API banner (if it's an HTTPS URL - the correct uploaded banner)
+      if (processedApiBanner && processedApiBanner.startsWith('https://')) {
+        finalBannerUrl = processedApiBanner
+        localStorage.setItem('event-form-banner', finalBannerUrl)
+        console.log('🖼️ EditorView useEffect - Using banner from createdEvent API (HTTPS URL)')
+      }
+      // Priority 2: localStorage banner (if it's an HTTPS URL, not a data URL)
+      else if (bannerUrl && bannerUrl.startsWith('https://')) {
+        finalBannerUrl = bannerUrl
+        console.log('🖼️ EditorView useEffect - Using banner from localStorage (HTTPS URL)')
+      }
+      // Priority 3: Saved page banner (if it's not default and not empty)
+      else if (currentBanner && !hasDefaultImage && currentBanner !== '') {
+        finalBannerUrl = currentBanner
+        // If it's an HTTPS URL, sync to localStorage
+        if (currentBanner.startsWith('https://')) {
+          localStorage.setItem('event-form-banner', currentBanner)
+        }
+        console.log('🖼️ EditorView useEffect - Using saved banner from page data')
+      }
+      // Priority 4: localStorage banner (even if data URL - fallback)
+      else if (bannerUrl) {
+        finalBannerUrl = bannerUrl
+        console.log('🖼️ EditorView useEffect - Using banner from localStorage (data URL fallback)')
+      }
+      // Priority 5: API banner (even if not HTTPS - final fallback)
+      else if (processedApiBanner) {
+        finalBannerUrl = processedApiBanner
+        localStorage.setItem('event-form-banner', finalBannerUrl)
+        console.log('🖼️ EditorView useEffect - Using banner from createdEvent API (fallback)')
+      }
+      
       // Check if any update is needed
-      const needsBannerUpdate = bannerUrl && (hasDefaultImage || currentBanner !== bannerUrl)
+      // Always update if finalBannerUrl exists and is different from current, or if current is default/empty
+      const needsBannerUpdate = finalBannerUrl && (
+        hasDefaultImage || 
+        !currentBanner || 
+        currentBanner !== finalBannerUrl ||
+        (currentBanner === '' && finalBannerUrl !== '')
+      )
       const needsTitleUpdate = heroSection.props.title !== eventName
       const needsSubtitleUpdate = heroSection.props.subtitle !== subtitle
       const needsUpdate = needsBannerUpdate || needsTitleUpdate || needsSubtitleUpdate
@@ -184,6 +234,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
       console.log('🖼️ EditorView useEffect - Checking updates:', {
         hasBannerInStorage: !!bannerUrl,
         currentBanner: currentBanner?.substring(0, 50) + '...',
+        finalBannerUrl: finalBannerUrl ? (finalBannerUrl.substring(0, 50) + '...') : 'NONE',
         hasDefaultImage,
         needsBannerUpdate,
         needsTitleUpdate,
@@ -202,7 +253,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
               ...item,
               props: {
                 ...item.props,
-                ...(bannerUrl && (hasDefaultImage || item.props.backgroundImage !== bannerUrl) ? { backgroundImage: bannerUrl } : {}),
+                ...(finalBannerUrl && (hasDefaultImage || !item.props.backgroundImage || item.props.backgroundImage !== finalBannerUrl) ? { backgroundImage: finalBannerUrl } : {}),
                 ...(needsTitleUpdate ? { title: eventName } : {}),
                 ...(needsSubtitleUpdate ? { subtitle: subtitle } : {})
               }
@@ -222,7 +273,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
     }, 100) // Small delay to ensure data is loaded
 
     return () => clearTimeout(timer)
-  }, [currentData, currentPage, eventData, onChange])
+  }, [currentData, currentPage, eventData, createdEvent, onChange])
 
   const handleBackButtonClick = () => {
     setShowCustomSidebar(prev => !prev)
@@ -819,16 +870,98 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   // Update the ref with the latest data (including zones)
                   latestDataRef.current = data
                   
-                  // ALWAYS preserve banner image from localStorage if HeroSection exists
+                  // Remove SchedulePage from non-schedule pages
+                  // SchedulePage should only appear on pages with pageType='schedule'
+                  if (data?.content) {
+                    const pageType = data?.root?.props?.pageType
+                    const isSchedulePage = pageType === 'schedule'
+                    
+                    if (!isSchedulePage) {
+                      const hasSchedulePage = data.content.some((item: any) => item.type === 'SchedulePage')
+                      if (hasSchedulePage) {
+                        console.log('🔄 EditorView onChange - Removing SchedulePage from non-schedule page')
+                        data = {
+                          ...data,
+                          content: data.content.filter((item: any) => item.type !== 'SchedulePage')
+                        }
+                        latestDataRef.current = data
+                      }
+                    }
+                  }
+                  
+                  // ALWAYS preserve banner image - Priority: API banner (HTTPS) > localStorage (HTTPS) > saved page banner > localStorage (data URL) > API banner (fallback)
                   const bannerUrl = localStorage.getItem('event-form-banner')
-                  if (bannerUrl && data?.content) {
+                  const apiBanner = createdEvent?.banner
+                  let processedApiBanner = apiBanner
+                  if (processedApiBanner && processedApiBanner.startsWith('http://')) {
+                    processedApiBanner = processedApiBanner.replace('http://', 'https://')
+                  }
+                  
+                  if (data?.content) {
                     const heroSection = data.content.find((item: any) => item.type === 'HeroSection')
                     if (heroSection) {
-                      // Always use banner from localStorage if it exists, regardless of current value
-                      const hasDefaultImage = heroSection.props.backgroundImage?.includes('unsplash.com/photo-1540575467063')
-                      if (bannerUrl && (hasDefaultImage || heroSection.props.backgroundImage !== bannerUrl)) {
-                        console.log('🖼️ EditorView onChange - Updating HeroSection backgroundImage from localStorage')
-                        heroSection.props.backgroundImage = bannerUrl
+                      const currentBanner = heroSection.props.backgroundImage || ''
+                      const hasDefaultImage = currentBanner.includes('unsplash.com/photo-1540575467063')
+                      
+                      // Determine which banner to use - prioritize API HTTPS URLs over localStorage data URLs
+                      let finalBanner: string | null = null
+                      
+                      // Priority 1: API banner (if it's an HTTPS URL - the correct uploaded banner)
+                      if (processedApiBanner && processedApiBanner.startsWith('https://')) {
+                        finalBanner = processedApiBanner
+                        localStorage.setItem('event-form-banner', finalBanner)
+                        console.log('🖼️ EditorView onChange - Using banner from createdEvent API (HTTPS URL)')
+                      }
+                      // Priority 2: localStorage banner (if it's an HTTPS URL, not a data URL)
+                      else if (bannerUrl && bannerUrl.startsWith('https://')) {
+                        finalBanner = bannerUrl
+                        console.log('🖼️ EditorView onChange - Using banner from localStorage (HTTPS URL)')
+                      }
+                      // Priority 3: Saved page banner (if it's not default and not empty)
+                      else if (currentBanner && !hasDefaultImage && currentBanner !== '') {
+                        finalBanner = currentBanner
+                        // If it's an HTTPS URL, sync to localStorage
+                        if (currentBanner.startsWith('https://')) {
+                          localStorage.setItem('event-form-banner', currentBanner)
+                        }
+                        console.log('🖼️ EditorView onChange - Using saved banner from page data')
+                      }
+                      // Priority 4: localStorage banner (even if data URL - fallback)
+                      else if (bannerUrl) {
+                        finalBanner = bannerUrl
+                        console.log('🖼️ EditorView onChange - Using banner from localStorage (data URL fallback)')
+                      }
+                      // Priority 5: API banner (even if not HTTPS - final fallback)
+                      else if (processedApiBanner) {
+                        finalBanner = processedApiBanner
+                        localStorage.setItem('event-form-banner', finalBanner)
+                        console.log('🖼️ EditorView onChange - Using banner from createdEvent API (fallback)')
+                      }
+                      
+                      // Update if we have a banner and it's different
+                      // Create a new object to ensure React/Puck detects the change
+                      if (finalBanner && (hasDefaultImage || !currentBanner || currentBanner !== finalBanner)) {
+                        console.log('🖼️ EditorView onChange - Updating HeroSection backgroundImage:', finalBanner.substring(0, 50) + '...')
+                        // Create new content array with updated heroSection to ensure proper re-render
+                        const updatedContent = data.content.map((item: any) => {
+                          if (item.type === 'HeroSection') {
+                            return {
+                              ...item,
+                              props: {
+                                ...item.props,
+                                backgroundImage: finalBanner
+                              }
+                            }
+                          }
+                          return item
+                        })
+                        // Create new data object to trigger re-render
+                        data = {
+                          ...data,
+                          content: updatedContent
+                        }
+                        // Update the ref with the new data
+                        latestDataRef.current = data
                       }
                     }
                   }
@@ -839,7 +972,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
               />
             </PuckDataContext.Provider>
             <PuckPropertySidebarSaveButton
-              currentData={currentData}
+              getCurrentData={() => latestDataRef.current || currentData}
               currentPage={currentPage}
               currentPageName={currentPageName}
               onSaveSuccess={() => {

@@ -14,6 +14,7 @@ import SpeakerDetailsSlideout from './SpeakerDetailsSlideout'
 import { Speaker, SpeakerTab, Group, CustomField } from './speakerTypes'
 import { defaultCards, ContentCard } from '../EventHubContent'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
+import attendeeSpeakerTemplate from '../../../assets/excel/Attendee Speaker template.xlsx?url'
 
 interface SpeakerManagementPageProps {
   eventName?: string
@@ -100,9 +101,21 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [isSpeakerSlideoutOpen, setIsSpeakerSlideoutOpen] = useState(false)
   const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null)
+  const [isLoadingSpeakers, setIsLoadingSpeakers] = useState(false)
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false)
 
   const handleUpload = () => {
     setIsUploadModalOpen(true)
+  }
+
+  const handleDownloadTemplate = () => {
+    // Create a temporary anchor element to trigger download
+    const link = document.createElement('a')
+    link.href = attendeeSpeakerTemplate
+    link.download = 'Attendee Speaker template.xlsx'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const handleUploadFiles = async (files: File[]) => {
@@ -140,6 +153,7 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
       return
     }
 
+    setIsLoadingSpeakers(true)
     try {
       const speakersData = await fetchSpeakers(eventUuid)
       
@@ -189,6 +203,8 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
       console.error('Failed to load speakers:', error)
       // Don't re-throw to prevent unhandled promise rejection
       // The toast notification from the service should inform the user
+    } finally {
+      setIsLoadingSpeakers(false)
     }
   }
 
@@ -201,6 +217,7 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
       return
     }
 
+    setIsLoadingGroups(true)
     try {
       const tagsData = await fetchTags(eventUuid)
       
@@ -224,6 +241,8 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
         // For other errors, set empty array to prevent stale data
         setGroups([])
       }
+    } finally {
+      setIsLoadingGroups(false)
     }
   }
 
@@ -389,10 +408,12 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
             onDeleteGroup={handleDeleteGroup}
             onFilter={handleFilter}
             onTabChange={setActiveTab}
+            isLoading={isLoadingGroups}
           />
         ) : (
           <SpeakersTable
             speakers={speakers}
+            isLoading={isLoadingSpeakers}
             customFields={customFields}
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -439,11 +460,11 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
         title="Upload speakers"
         description="XLSX files only"
         instructions={[
-
-          'Step 1: Download template (if available)',
+          'Step 1: Download template',
           'Step 2: Fill in the data with the required columns',
           'Step 3: Upload the Excel file'
         ]}
+        onDownloadTemplate={handleDownloadTemplate}
       />
 
       {/* Speaker Details Slideout */}

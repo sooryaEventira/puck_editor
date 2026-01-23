@@ -33,3 +33,9 @@ declare module '*.svg' {
   export default value
 }
 
+// Excel file imports
+declare module '*.xlsx' {
+  const value: string
+  export default value
+}
+
