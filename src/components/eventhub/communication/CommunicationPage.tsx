@@ -11,6 +11,7 @@ import type { BroadcastType } from './BroadcastTypeModal'
 import { defaultCards, ContentCard } from '../EventHubContent'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 import { fetchCommunications } from '../../../services/communicationService'
+import { fetchTags } from '../../../services/attendeeService'
 
 interface CommunicationPageProps {
   eventName?: string
@@ -98,10 +99,36 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
     }
 
     try {
-      const communicationsData = await fetchCommunications(eventUuid)
+      const [communicationsData, tagsData] = await Promise.all([
+        fetchCommunications(eventUuid),
+        fetchTags(eventUuid).catch(() => []) // Fetch tags, return empty array on error
+      ])
+      
+      // Console log the API response
+      console.log('=== Communication List API Response ===')
+      console.log('Communications Data:', JSON.stringify(communicationsData, null, 2))
+      console.log('Tags Data:', JSON.stringify(tagsData, null, 2))
+      console.log('========================================')
+      
+      // Create a map of tag UUID to tag name for quick lookup
+      const tagMap = new Map<string, string>()
+      tagsData.forEach((tag) => {
+        if (tag.is_active !== false) {
+          tagMap.set(tag.uuid, tag.name)
+        }
+      })
       
       // Map API response to Communication interface
       const mappedCommunications: Communication[] = communicationsData.map((commData) => {
+        // Log each communication item
+        console.log('Processing Communication:', {
+          id: commData.id,
+          subject: commData.subject,
+          tag_uuids: commData.tag_uuids,
+          total_recipients: commData.total_recipients,
+          status: commData.status,
+          channel: commData.channel
+        })
         // Determine status based on API response
         let status: Communication['status'] = 'sent'
         if (commData.status === 'scheduled' || commData.scheduled_at) {
@@ -113,20 +140,38 @@ const CommunicationPage: React.FC<CommunicationPageProps> = ({
         // Determine type based on channel
         const type: Communication['type'] = commData.channel === 'email' ? 'email' : 'notification'
 
+        // Map tag_uuids to userGroups
+        const userGroups = (commData.tag_uuids || [])
+          .map((tagUuid) => {
+            const tagName = tagMap.get(tagUuid)
+            return tagName
+              ? {
+                  id: tagUuid,
+                  name: tagName,
+                  variant: 'primary' as const
+                }
+              : null
+          })
+          .filter((group): group is NonNullable<typeof group> => group !== null)
+
         return {
           id: String(commData.id),
           title: commData.subject || 'Untitled',
-          userGroups: [], // TODO: Map tag_uuids to userGroups if needed
+          userGroups: userGroups,
           status: status,
           type: type,
           recipients: {
             sent: commData.total_recipients || 0,
-            total: commData.total_recipients || 0
+            total: commData.total_recipients || 0 // TODO: Update when API provides separate sent/total counts
           },
           scheduledDate: commData.scheduled_at
         }
       })
 
+      console.log('=== Mapped Communications ===')
+      console.log('Mapped Communications:', JSON.stringify(mappedCommunications, null, 2))
+      console.log('==============================')
+      
       setCommunications(mappedCommunications)
     } catch (error) {
       // Error is already handled in fetchCommunications with toast

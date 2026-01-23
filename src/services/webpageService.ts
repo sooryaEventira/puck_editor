@@ -47,6 +47,20 @@ export interface WebpageData {
   updated_date: string
 }
 
+export const createOrUpdateWebpage = async (
+  webpageUuid: string | null,
+  eventUuid: string,
+  request: CreateWebpageRequest
+): Promise<CreateWebpageResponseData | WebpageData> => {
+  if (webpageUuid) {
+    // Update existing webpage
+    return await updateWebpage(webpageUuid, eventUuid, request)
+  } else {
+    // Create new webpage
+    return await createWebpage(request)
+  }
+}
+
 export const createWebpage = async (request: CreateWebpageRequest): Promise<CreateWebpageResponseData> => {
   try {
     const accessToken = localStorage.getItem('accessToken')
@@ -307,6 +321,132 @@ export const fetchWebpages = async (eventUuid: string): Promise<WebpageData[]> =
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch webpages. Please try again.'
     handleApiError(errorMessage, undefined, 'Failed to fetch webpages. Please try again.')
+    throw new Error(errorMessage)
+  }
+}
+
+export const updateWebpage = async (
+  webpageUuid: string,
+  eventUuid: string,
+  request: CreateWebpageRequest
+): Promise<WebpageData> => {
+  try {
+    const accessToken = localStorage.getItem('accessToken')
+    if (!accessToken) {
+      const errorMessage = handleApiError('Authentication required. Please login again.', undefined, 'Authentication required. Please login again.')
+      throw new Error(errorMessage)
+    }
+
+    const organizationUuid = localStorage.getItem('organizationUuid')
+    if (!organizationUuid) {
+      const errorMessage = handleApiError('Organization UUID is missing. Please create or select an organization first.', undefined, 'Organization UUID is missing. Please create or select an organization first.')
+      throw new Error(errorMessage)
+    }
+
+    if (!webpageUuid) {
+      const errorMessage = handleApiError('Webpage UUID is required.', undefined, 'Webpage UUID is required.')
+      throw new Error(errorMessage)
+    }
+
+    // Use PATCH method for updating existing webpage
+    // URL format: {{admin_url}}webpages/{{webpage_uuid}}/
+    const url = `${API_ENDPOINTS.WEBPAGE.GET(webpageUuid, eventUuid).split('?')[0]}/`
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'X-Organization': organizationUuid,
+      },
+      credentials: 'include',
+      body: JSON.stringify(request),
+    })
+
+    if (!response || !response.ok) {
+      if (!response) {
+        const errorMessage = handleNetworkError(null)
+        throw new Error(errorMessage)
+      }
+
+      try {
+        const responseText = await response.text()
+        let errorData: any = null
+        
+        try {
+          errorData = responseText ? JSON.parse(responseText) : null
+        } catch (jsonError) {
+          if (responseText && responseText.trim()) {
+            const errorMessage = handleApiError(responseText.trim(), response, 'An error occurred. Please try again.')
+            throw new Error(errorMessage)
+          }
+        }
+        
+        if (errorData) {
+          const errorMessage = handleApiError(errorData, response, 'An error occurred. Please try again.')
+          throw new Error(errorMessage)
+        }
+        
+        const errorMessage = handleApiError(null, response, 'An error occurred. Please try again.')
+        throw new Error(errorMessage)
+      } catch (parseError) {
+        if (parseError instanceof Error && (
+            parseError.message.includes('An error occurred') ||
+            parseError.message.includes('Cannot connect') ||
+            parseError.message.includes('Failed to')
+        )) {
+          throw parseError
+        }
+        const errorMessage = handleApiError(null, response, 'An error occurred. Please try again.')
+        throw new Error(errorMessage)
+      }
+    }
+
+    let data: ApiResponse<WebpageData>
+    try {
+      data = await response.json()
+    } catch (parseError) {
+      const errorMessage = handleParseError('Invalid response from server. Please try again.')
+      throw new Error(errorMessage)
+    }
+
+    if (data.status === 'error') {
+      const errorMessage = handleApiError(data, undefined, 'Failed to update webpage. Please try again.')
+      throw new Error(errorMessage)
+    }
+
+    if (data.status === 'success') {
+      showToast.success(data.message || 'Webpage updated successfully')
+    }
+
+    if (!data.data) {
+      throw new Error('No data returned from server')
+    }
+
+    return data.data
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      if (!error.message.includes('Cannot connect')) {
+        handleNetworkError(error)
+      }
+      throw new Error(error.message || 'Network error occurred')
+    }
+
+    if (error instanceof Error && (
+        error.message.includes('Cannot connect') || 
+        error.message.includes('Invalid response') ||
+        error.message.includes('Authentication required') ||
+        error.message.includes('Organization UUID') ||
+        error.message.includes('Event UUID') ||
+        error.message.includes('Webpage UUID') ||
+        error.message.includes('No data returned') ||
+        error.message.includes('Failed to')
+    )) {
+      throw error
+    }
+
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update webpage. Please try again.'
+    handleApiError(errorMessage, undefined, 'Failed to update webpage. Please try again.')
     throw new Error(errorMessage)
   }
 }

@@ -415,6 +415,12 @@ const App: React.FC = () => {
         if (currentViewRef.current !== 'events') {
           setCurrentView('events')
         }
+      } else if (path === '/event/create/template') {
+        // Navigate to Template Selection page - switch to dashboard view
+        // DashboardLayout will handle showing the TemplateSelectionPage
+        if (currentViewRef.current !== 'dashboard') {
+          setCurrentView('dashboard')
+        }
       } else if (path.startsWith('/event/website/preview/') || path.startsWith('/event/website')) {
         // If navigating to preview or website management, switch to dashboard view
         // DashboardLayout will handle showing the correct page
@@ -598,7 +604,7 @@ const App: React.FC = () => {
         <SchedulePage
           eventName="Highly important conference of 2025"
           isDraft={true}
-          onBackClick={handleBackToEventHub}
+          onBackClick={handleBackToDashboard}
           userAvatarUrl=""
           scheduleName="Schedule 1"
           onCardClick={handleEventHubCardClick}
@@ -614,7 +620,7 @@ const App: React.FC = () => {
         <CommunicationPage
           eventName="Highly important conference of 2025"
           isDraft={true}
-          onBackClick={handleBackToEventHub}
+          onBackClick={handleBackToDashboard}
           userAvatarUrl=""
           onCardClick={handleEventHubCardClick}
         />
@@ -629,7 +635,7 @@ const App: React.FC = () => {
         <ResourceManagementPage
           eventName="Highly important conference of 2025"
           isDraft={true}
-          onBackClick={handleBackToEventHub}
+          onBackClick={handleBackToDashboard}
           userAvatarUrl=""
           onCardClick={handleEventHubCardClick}
         />
@@ -665,6 +671,7 @@ const App: React.FC = () => {
       handleAddComponent={handleAddComponent}
       setShowPreview={setShowPreview}
       handleBackToEditor={handleBackToEditor}
+      handleBackToDashboard={handleBackToDashboard}
       createPageFromTemplate={createPageFromTemplate}
       createNewPage={createNewPage}
       handleProfileClick={handleProfileClick}
@@ -699,6 +706,7 @@ const EditorViewWithNavbar: React.FC<{
   handleAddComponent: (componentType: string, props?: any) => void
   setShowPreview: (show: boolean) => void
   handleBackToEditor: () => void
+  handleBackToDashboard: () => void
   createPageFromTemplate: (templateType: string) => Promise<any>
   createNewPage: () => void
   handleProfileClick: () => void
@@ -712,7 +720,7 @@ const EditorViewWithNavbar: React.FC<{
       <EventHubNavbar
         eventName={eventData?.eventName || 'Highly important conference of 2025'}
         isDraft={true}
-        onBackClick={props.handleBackToEditor}
+        onBackClick={props.handleBackToDashboard}
         onSearchClick={() => {}}
         onNotificationClick={() => {}}
         onProfileClick={props.handleProfileClick}

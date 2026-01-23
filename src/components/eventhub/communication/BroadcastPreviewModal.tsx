@@ -8,6 +8,7 @@ interface BroadcastPreviewModalProps {
   subject: string
   message: string
   isSending?: boolean
+  recipients?: string[] // Array of selected group/tag names
 }
 
 const BroadcastPreviewModal: React.FC<BroadcastPreviewModalProps> = ({
@@ -16,7 +17,8 @@ const BroadcastPreviewModal: React.FC<BroadcastPreviewModalProps> = ({
   onSend,
   subject,
   message,
-  isSending = false
+  isSending = false,
+  recipients = []
 }) => {
   return (
     <Modal
@@ -41,6 +43,23 @@ const BroadcastPreviewModal: React.FC<BroadcastPreviewModalProps> = ({
               dangerouslySetInnerHTML={{ __html: message }}
             />
           </div>
+          {recipients.length > 0 && (
+            <div className="border-t border-slate-200 pt-4">
+              <div className="mb-2">
+                <span className="font-bold text-slate-900">Recipients: </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {recipients.map((recipient, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+                  >
+                    {recipient}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         
         <div className="flex justify-end gap-3">

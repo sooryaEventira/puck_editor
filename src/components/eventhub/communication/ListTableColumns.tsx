@@ -78,15 +78,21 @@ export const useListTableColumns = ({
       },
       {
         id: 'userGroups',
-        header: 'User Groups',
+        header: 'Groups',
         sortable: true,
         sortAccessor: ({ communication }) => communication?.userGroups.map((g) => g.name).join(' ') || '',
         render: ({ communication }) => {
           if (!communication) return null
+          
+          // Display all groups that were selected when sending the mail
+          if (communication.userGroups.length === 0) {
+            return <span className="text-sm text-slate-400">No groups</span>
+          }
+          
           return (
             <div className="flex flex-wrap items-center gap-2">
-              {communication.userGroups.slice(0, 3).map((group, idx) => (
-                <Badge key={idx} variant={getUserGroupVariant(group.variant)}>
+              {communication.userGroups.slice(0, 3).map((group) => (
+                <Badge key={group.id} variant={getUserGroupVariant(group.variant)}>
                   {group.name}
                 </Badge>
               ))}
@@ -153,7 +159,7 @@ export const useListTableColumns = ({
         render: ({ communication }) => {
           if (!communication) return null
           return (
-            <span className="text-sm text-slate-600">
+            <span className="text-sm font-medium text-green-600">
               {communication.recipients.sent}/{communication.recipients.total}
             </span>
           )

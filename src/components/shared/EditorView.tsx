@@ -14,6 +14,7 @@ import { NavigationProvider } from '../../contexts/NavigationContext'
 import { useEventForm } from '../../contexts/EventFormContext'
 import { useWebsitePages } from '../../contexts/WebsitePagesContext'
 import { Page } from '../../types'
+import PuckPropertySidebarSaveButton from './PuckPropertySidebarSaveButton'
 
 // Context to provide current data to custom fields
 const PuckDataContext = createContext<any>(null)
@@ -259,6 +260,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
 
   const handleBackToTemplateSelection = () => {
     // Navigate to template selection page
+    // App.tsx will handle switching to dashboard view, then DashboardLayout will show TemplateSelectionPage
     window.history.pushState({}, '', '/event/create/template')
     window.dispatchEvent(new PopStateEvent('popstate'))
   }
@@ -505,50 +507,84 @@ export const EditorView: React.FC<EditorViewProps> = ({
       ) : (
         <NavigationProvider onNavigateToEditor={onNavigateToEditor} onAddComponent={onAddComponent}>
           {showCustomSidebar && (() => {
-            // Use website pages from context, convert to sidebar format
-            let pagesForSidebar = websitePages.map(page => ({
-              id: page.id,
-              name: page.name
-            }))
+            // In create-from-scratch mode, use pages from usePageManagement (only page1)
+            // Do NOT use websitePages from context as it may contain backend pages
+            let pagesForSidebar: Array<{ id: string; name: string }>
             
-            // Ensure current page is included if not already in the list
-            // Use case-insensitive comparison to avoid duplicates like "Welcome" vs "welcome"
-            const currentPageExists = pagesForSidebar.some(p => 
-              p.id === currentPage || 
-              (currentPageName && p.name.toLowerCase() === currentPageName.toLowerCase())
-            )
-            if (!currentPageExists && currentPage && currentPageName) {
-              pagesForSidebar.push({ id: currentPage, name: currentPageName })
-            }
-            
-            // Remove duplicates based on case-insensitive name matching
-            // If we have duplicates with same name (case-insensitive), prefer the one with UUID (longer ID)
-            const uniquePagesForSidebar = pagesForSidebar.reduce((acc, page) => {
-              const existingIndex = acc.findIndex(p => 
-                p.name.toLowerCase() === page.name.toLowerCase()
-              )
+            if (editorMode === 'blank') {
+              // Create-from-scratch mode: Use pages from usePageManagement (should only have page1)
+              // Filter out any "welcome" pages that might have been loaded
+              pagesForSidebar = pages
+                .filter(page => {
+                  const pageNameLower = page.name.toLowerCase()
+                  const pageIdLower = page.id.toLowerCase()
+                  // Exclude welcome pages (case-insensitive)
+                  const isWelcome = pageNameLower === 'welcome' || pageIdLower === 'welcome'
+                  if (isWelcome) {
+                    console.log('🚫 Filtering out welcome page from sidebar:', page.name, page.id)
+                  }
+                  return !isWelcome
+                })
+                .map(page => ({
+                  id: page.id,
+                  name: page.name
+                }))
               
-              if (existingIndex === -1) {
-                // No duplicate found, add the page
-                acc.push(page)
-              } else {
-                // Duplicate found - prefer the one with UUID (longer ID) or current page
-                const existing = acc[existingIndex]
-                const isCurrentPage = page.id === currentPage
-                const isExistingCurrentPage = existing.id === currentPage
-                const pageHasUuid = page.id.includes('-') && page.id.length > 20
-                const existingHasUuid = existing.id.includes('-') && existing.id.length > 20
-                
-                if (isCurrentPage || (pageHasUuid && !existingHasUuid && !isExistingCurrentPage)) {
-                  // Replace with current page or UUID-based page
-                  acc[existingIndex] = page
+              console.log('📋 Pages for sidebar (create-from-scratch mode):', pagesForSidebar.map(p => p.name))
+              
+              // Ensure current page (page1) is included if it's not welcome
+              const currentPageExists = pagesForSidebar.some(p => 
+                p.id === currentPage || 
+                (currentPageName && p.name.toLowerCase() === currentPageName.toLowerCase())
+              )
+              if (!currentPageExists && currentPage && currentPageName) {
+                const currentPageNameLower = currentPageName.toLowerCase()
+                const currentPageIdLower = currentPage.toLowerCase()
+                // Only add if it's not a welcome page
+                if (currentPageNameLower !== 'welcome' && currentPageIdLower !== 'welcome') {
+                  pagesForSidebar.push({ id: currentPage, name: currentPageName })
                 }
-                // Otherwise keep the existing one
+              }
+            } else {
+              // Template mode: Use website pages from context
+              pagesForSidebar = websitePages.map(page => ({
+                id: page.id,
+                name: page.name
+              }))
+              
+              // Ensure current page is included if not already in the list
+              const currentPageExists = pagesForSidebar.some(p => 
+                p.id === currentPage || 
+                (currentPageName && p.name.toLowerCase() === currentPageName.toLowerCase())
+              )
+              if (!currentPageExists && currentPage && currentPageName) {
+                pagesForSidebar.push({ id: currentPage, name: currentPageName })
               }
               
-              return acc
-            }, [] as typeof pagesForSidebar)
-            pagesForSidebar = uniquePagesForSidebar
+              // Remove duplicates based on case-insensitive name matching
+              const uniquePagesForSidebar = pagesForSidebar.reduce((acc, page) => {
+                const existingIndex = acc.findIndex(p => 
+                  p.name.toLowerCase() === page.name.toLowerCase()
+                )
+                
+                if (existingIndex === -1) {
+                  acc.push(page)
+                } else {
+                  const existing = acc[existingIndex]
+                  const isCurrentPage = page.id === currentPage
+                  const isExistingCurrentPage = existing.id === currentPage
+                  const pageHasUuid = page.id.includes('-') && page.id.length > 20
+                  const existingHasUuid = existing.id.includes('-') && existing.id.length > 20
+                  
+                  if (isCurrentPage || (pageHasUuid && !existingHasUuid && !isExistingCurrentPage)) {
+                    acc[existingIndex] = page
+                  }
+                }
+                
+                return acc
+              }, [] as typeof pagesForSidebar)
+              pagesForSidebar = uniquePagesForSidebar
+            }
             
             return (
               <div className="absolute inset-y-0 left-0 w-[280px] border-r border-slate-200 bg-white z-[1000]">
@@ -586,10 +622,15 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   onAddPage={editorMode === 'blank' ? () => setShowNewPageCreationModal(true) : undefined}
                   onManagePages={onManagePages}
                   onBackClick={() => {
-                    // Navigate to website preview page for the current page
-                    if (currentPage) {
-                      window.history.pushState({}, '', `/event/website/preview/${currentPage}`)
-                      window.dispatchEvent(new PopStateEvent('popstate'))
+                    // If in create-from-scratch mode, navigate back to TemplateSelectionPage
+                    if (editorMode === 'blank') {
+                      handleBackToTemplateSelection()
+                    } else {
+                      // Otherwise, navigate to website preview page for the current page
+                      if (currentPage) {
+                        window.history.pushState({}, '', `/event/website/preview/${currentPage}`)
+                        window.dispatchEvent(new PopStateEvent('popstate'))
+                      }
                     }
                   }}
                   editorMode={editorMode}
@@ -797,6 +838,15 @@ export const EditorView: React.FC<EditorViewProps> = ({
                 }}
               />
             </PuckDataContext.Provider>
+            <PuckPropertySidebarSaveButton
+              currentData={currentData}
+              currentPage={currentPage}
+              currentPageName={currentPageName}
+              onSaveSuccess={() => {
+                // Optional: Reload pages or update state after save
+                console.log('Page saved successfully')
+              }}
+            />
             <PuckHeaderButtons
               onPreviewToggle={onPreviewToggle}
               onPublish={() => {

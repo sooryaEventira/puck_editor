@@ -283,11 +283,50 @@ export const usePageManagement = () => {
     banner: eventData?.banner // Banner might still be in eventData as File
   } : eventData
   
-  const defaultPage1Data = getDefaultTemplateData('Page 1', displayEventData)
+  // Check if we're creating from scratch at initialization
+  // Check both localStorage flag and URL parameter (mode=blank)
+  const isCreateFromScratchMode = typeof window !== 'undefined' && (
+    localStorage.getItem('create-from-scratch') === 'true' ||
+    (window.location.search && new URLSearchParams(window.location.search).get('mode') === 'blank')
+  )
+  
+  // Initialize with empty data if creating from scratch, otherwise use template
+  const getInitialData = () => {
+    if (isCreateFromScratchMode) {
+      // Return empty Puck data structure for create-from-scratch mode
+      return {
+        content: [],
+        root: {
+          props: {
+            title: 'Page 1',
+            pageTitle: 'Page 1'
+          }
+        },
+        zones: {}
+      }
+    }
+    return getDefaultTemplateData('Page 1', displayEventData)
+  }
+  
+  const defaultPage1Data = getInitialData()
   const [currentData, setCurrentData] = useState<any>(defaultPage1Data)
   const [currentPage, setCurrentPage] = useState('page1')
   const [currentPageName, setCurrentPageName] = useState('Page 1')
-  const [pages, setPages] = useState<Page[]>([])
+  
+  // Initialize pages array - only page1 if creating from scratch
+  const getInitialPages = (): Page[] => {
+    if (isCreateFromScratchMode) {
+      return [{
+        id: 'page1',
+        name: 'Page 1',
+        filename: 'page1.json',
+        lastModified: new Date().toISOString()
+      }]
+    }
+    return []
+  }
+  
+  const [pages, setPages] = useState<Page[]>(getInitialPages())
   const [showPageManager, setShowPageManager] = useState(false)
   const [showPageNameDialog, setShowPageNameDialog] = useState(false)
 
@@ -719,6 +758,18 @@ export const usePageManagement = () => {
       return
     }
 
+    // Check if we're in create-from-scratch mode (check URL param as flag may be cleared)
+    const urlParams = new URLSearchParams(window.location.search)
+    const isCreateFromScratchMode = urlParams.get('mode') === 'blank' || 
+                                     localStorage.getItem('create-from-scratch') === 'true'
+    
+    // If in create-from-scratch mode, skip loading backend pages
+    // Pages should only come from Puck's internal state
+    if (isCreateFromScratchMode) {
+      logger.debug('loadPages: Skipping backend page load - create-from-scratch mode')
+      return
+    }
+
     try {
       const response = await safeFetch(API_ENDPOINTS.GET_PAGES)
       
@@ -842,8 +893,32 @@ export const usePageManagement = () => {
             return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
           })
           
-          logger.debug('loadPages: Final merged pages:', sortedPageList.map(p => `${p.name} (${p.id})`))
-          return sortedPageList
+          // Filter out welcome pages if in create-from-scratch mode
+          const urlParams = new URLSearchParams(window.location.search)
+          const isCreateFromScratch = urlParams.get('mode') === 'blank' || 
+                                       localStorage.getItem('create-from-scratch') === 'true'
+          
+          let finalPageList = sortedPageList
+          if (isCreateFromScratch) {
+            finalPageList = sortedPageList.filter(page => {
+              const pageNameLower = page.name.toLowerCase()
+              const pageIdLower = page.id.toLowerCase()
+              return pageNameLower !== 'welcome' && pageIdLower !== 'welcome'
+            })
+            // Ensure page1 exists
+            const hasPage1 = finalPageList.some(p => p.id === 'page1' || p.filename === 'page1.json')
+            if (!hasPage1) {
+              finalPageList = [{
+                id: 'page1',
+                name: 'Page 1',
+                filename: 'page1.json',
+                lastModified: new Date().toISOString()
+              }, ...finalPageList]
+            }
+          }
+          
+          logger.debug('loadPages: Final merged pages:', finalPageList.map(p => `${p.name} (${p.id})`))
+          return finalPageList
         })
       } else {
         // Don't clear pages on error - preserve existing pages
@@ -1685,64 +1760,74 @@ export const usePageManagement = () => {
 
   useEffect(() => {
     const initializePage = async () => {
-      // Check if we're creating from scratch
-      const isCreateFromScratch = localStorage.getItem('create-from-scratch') === 'true'
+      // Check if we're creating from scratch (check both localStorage and URL param)
+      const urlParams = new URLSearchParams(window.location.search)
+      const isCreateFromScratch = urlParams.get('mode') === 'blank' || 
+                                   localStorage.getItem('create-from-scratch') === 'true'
       const emptyPage1DataStr = localStorage.getItem('create-from-scratch-page1')
       
-      // Load pages from server first
-      await loadPages()
-      
-      // If creating from scratch, use empty Page1 data
-      if (isCreateFromScratch && emptyPage1DataStr) {
+      // If creating from scratch, skip backend page loading and use clean state
+      if (isCreateFromScratch) {
         try {
-          const emptyPage1Data = JSON.parse(emptyPage1DataStr)
+          // Use empty Page1 data from localStorage if available, otherwise use current empty state
+          const emptyPage1Data = emptyPage1DataStr ? JSON.parse(emptyPage1DataStr) : {
+            content: [],
+            root: {
+              props: {
+                title: 'Page 1',
+                pageTitle: 'Page 1'
+              }
+            },
+            zones: {}
+          }
+          
           setCurrentData(emptyPage1Data)
           setCurrentPage('page1')
           setCurrentPageName('Page 1')
           
-          // Add page1 to pages array immediately so it shows in sidebar
-          setPages(prevPages => {
-            const pageExists = prevPages.some(p => p.id === 'page1' || p.filename === 'page1.json')
-            if (!pageExists) {
-              return [...prevPages, {
-                id: 'page1',
-                name: 'Page 1',
-                filename: 'page1.json',
-                lastModified: new Date().toISOString()
-              }]
-            }
-            return prevPages
-          })
+          // Set pages array to ONLY page1 (no backend pages)
+          // Filter out any welcome pages that might exist
+          setPages([{
+            id: 'page1',
+            name: 'Page 1',
+            filename: 'page1.json',
+            lastModified: new Date().toISOString()
+          }])
           
-          // Save empty page1 to server
+          // Clear WebsitePagesContext localStorage to remove any cached welcome pages
           try {
-            await fetch(API_ENDPOINTS.SAVE_PAGE, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                data: emptyPage1Data,
-                filename: 'page1.json'
-              })
-            })
-            await loadPages()
+            const websitePagesStorage = localStorage.getItem('website-pages')
+            if (websitePagesStorage) {
+              const cachedPages = JSON.parse(websitePagesStorage)
+              // Remove welcome pages from cache
+              const filteredPages = cachedPages.filter((p: any) => 
+                p.name?.toLowerCase() !== 'welcome' && p.id?.toLowerCase() !== 'welcome'
+              )
+              if (filteredPages.length !== cachedPages.length) {
+                localStorage.setItem('website-pages', JSON.stringify(filteredPages))
+                logger.debug('initializePage: Removed welcome pages from WebsitePagesContext cache')
+              }
+            }
           } catch (error) {
-            logger.error('Error saving empty page1:', error)
+            logger.error('initializePage: Error clearing WebsitePagesContext cache:', error)
           }
           
           // Clear the flags after using them
           localStorage.removeItem('create-from-scratch')
           localStorage.removeItem('create-from-scratch-page1')
           
-          return
+          logger.debug('initializePage: Initialized clean editor state for create-from-scratch mode')
+          return // Exit early - don't load backend pages
         } catch (error) {
-          logger.error('Error parsing empty page1 data:', error)
+          logger.error('initializePage: Error parsing empty page1 data:', error)
           // Fall through to normal initialization
         }
       }
       
-      // Try to load page1 if it exists, otherwise create it
+      // Normal flow: Load pages from server (only if NOT creating from scratch)
+      await loadPages()
+      
+      // Try to load page1 if it exists, otherwise create it (only for template mode)
       try {
         const response = await fetch(API_ENDPOINTS.GET_PAGE('page1.json'))
         if (response.ok) {
@@ -1782,7 +1867,7 @@ export const usePageManagement = () => {
             })
           }
         } else {
-          // Page1 doesn't exist, create it
+          // Page1 doesn't exist, create it with template data
           const page1Data = defaultPage1Data
           setCurrentData(page1Data)
           setCurrentPage('page1')
@@ -1839,6 +1924,53 @@ export const usePageManagement = () => {
     
     initializePage()
   }, [])
+
+  // Continuously filter out welcome pages when in create-from-scratch mode
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const isCreateFromScratch = urlParams.get('mode') === 'blank' || 
+                                 localStorage.getItem('create-from-scratch') === 'true'
+    
+    if (isCreateFromScratch) {
+      // Filter out any welcome pages that might have been added
+      setPages(prevPages => {
+        const hasWelcome = prevPages.some(page => {
+          const pageNameLower = page.name.toLowerCase()
+          const pageIdLower = page.id.toLowerCase()
+          return pageNameLower === 'welcome' || pageIdLower === 'welcome'
+        })
+        
+        // Only update if welcome pages exist
+        if (!hasWelcome) {
+          return prevPages
+        }
+        
+        const filtered = prevPages.filter(page => {
+          const pageNameLower = page.name.toLowerCase()
+          const pageIdLower = page.id.toLowerCase()
+          return pageNameLower !== 'welcome' && pageIdLower !== 'welcome'
+        })
+        
+        // Ensure page1 exists
+        const hasPage1 = filtered.some(p => p.id === 'page1' || p.filename === 'page1.json')
+        if (!hasPage1) {
+          return [{
+            id: 'page1',
+            name: 'Page 1',
+            filename: 'page1.json',
+            lastModified: new Date().toISOString()
+          }, ...filtered]
+        }
+        
+        logger.debug('Filtered out welcome pages from pages array:', {
+          before: prevPages.map(p => p.name),
+          after: filtered.map(p => p.name)
+        })
+        
+        return filtered
+      })
+    }
+  }, []) // Only run once on mount - check URL on mount
 
   return {
     currentData,

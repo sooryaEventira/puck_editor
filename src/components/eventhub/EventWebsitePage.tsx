@@ -69,19 +69,46 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
 
   // Initialize pages based on template selection on mount
   useEffect(() => {
-    // Check if pages are already initialized
+    // Check if we're creating from scratch (check URL param as flag may be cleared)
+    const urlParams = new URLSearchParams(window.location.search)
+    const isFromScratch = urlParams.get('mode') === 'blank' || 
+                          localStorage.getItem('create-from-scratch') === 'true'
+    
+    // If creating from scratch, clear WebsitePagesContext and don't initialize
+    // Pages should come from Puck's internal state (page1) only
+    if (isFromScratch) {
+      // Clear any existing pages in WebsitePagesContext (especially welcome pages)
+      if (pages.length > 0) {
+        pages.forEach(page => {
+          // Delete all pages, especially welcome pages
+          if (page.name?.toLowerCase() === 'welcome' || page.id?.toLowerCase() === 'welcome') {
+            deletePage(page.id)
+          } else {
+            deletePage(page.id)
+          }
+        })
+      }
+      
+      // Clear WebsitePagesContext localStorage cache
+      try {
+        localStorage.removeItem('website-pages')
+      } catch (error) {
+        console.error('Error clearing website-pages cache:', error)
+      }
+      
+      // Initialize with only page1 for scratch mode
+      if (pages.length === 0) {
+        initializePages('scratch')
+      }
+      return
+    }
+
+    // Check if pages are already initialized (for template mode)
     if (pages.length > 0) return
 
-    // Check if we're creating from scratch
-    const isFromScratch = localStorage.getItem('create-from-scratch') === 'true'
-    
-    if (isFromScratch) {
-      initializePages('scratch')
-    } else {
-      // Default template - create Welcome page
-      initializePages('default-template')
-    }
-  }, [pages.length, initializePages])
+    // Default template - create Welcome page
+    initializePages('default-template')
+  }, [pages.length, initializePages, deletePage])
 
   // Remove Schedule pages - only keep Welcome page
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import {
   Bold01,
   Italic01,
@@ -114,6 +114,20 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
 
     loadTags()
   }, [createdEvent?.uuid])
+
+  // Extract selected recipients (tag names) from filters
+  const selectedRecipients = useMemo(() => {
+    const recipientNames: string[] = []
+    filters.forEach((filter) => {
+      if (filter.field === 'Group' && filter.operator === 'is' && filter.value) {
+        // Avoid duplicates
+        if (!recipientNames.includes(filter.value)) {
+          recipientNames.push(filter.value)
+        }
+      }
+    })
+    return recipientNames
+  }, [filters])
 
   const colors = [
     ['#000000', '#1E3A8A', '#166534', '#374151', '#6B7280', '#9CA3AF', '#FFFFFF'],
@@ -1393,6 +1407,8 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                 type="button"
                 variant="secondary"
                 size="sm"
+                disabled={filters.length >= tags.length}
+                title={filters.length >= tags.length ? `Maximum ${tags.length} filter(s) allowed (one per group)` : undefined}
                 onClick={() => setFilters([...filters, { id: Date.now().toString(), field: 'Group', operator: 'is', value: '' }])}
                 iconLeading={<Plus className="h-4 w-4" />}
               >
@@ -1409,7 +1425,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                     onChange={(e) => setMatchLogic(e.target.value as 'ANY' | 'ALL')}
                     className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-medium text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
-                    <option value="ANY">ANY</option>
+                    {/* <option value="ANY">ANY</option> */}
                     <option value="ALL">ALL</option>
                   </select>
                   <span>of the following filters</span>
@@ -1432,7 +1448,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                       className="w-full sm:w-auto sm:min-w-[140px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
                       <option value="Group">Group</option>
-                      <option value="Status">Message Status</option>                
+                      {/* <option value="Status">Message Status</option>                 */}
                     </select>
 
                     <select
@@ -1445,7 +1461,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                       className="w-full sm:w-[80px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
                       <option value="is">is</option>
-                      <option value="is_not">is not</option>
+                      {/* <option value="is_not">is not</option> */}
                     </select>
 
                     <select
@@ -1457,11 +1473,30 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
                       }}
                       className="w-full sm:flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
-                      {tags.map((tag) => (
-                        <option key={tag.uuid} value={tag.name}>
-                          {tag.name}
-                        </option>
-                      ))}
+                      {tags.length === 0 ? (
+                        <option value="">No groups available</option>
+                      ) : (
+                        <>
+                          <option value="">Select a group...</option>
+                          {tags
+                            .filter((tag) => {
+                              // Get all selected tag values from other filters (excluding current filter)
+                              const selectedInOtherFilters = filters
+                                .filter((f, i) => i !== index && f.value && f.value.trim() !== '')
+                                .map((f) => f.value)
+                              
+                              // Show tag if:
+                              // 1. It's the currently selected tag in this filter (so user can see their selection)
+                              // 2. OR it's not selected in any other filter
+                              return tag.name === filter.value || !selectedInOtherFilters.includes(tag.name)
+                            })
+                            .map((tag) => (
+                              <option key={tag.uuid} value={tag.name}>
+                                {tag.name}
+                              </option>
+                            ))}
+                        </>
+                      )}
                     </select>
 
                     <Button
@@ -1552,6 +1587,7 @@ const BroadcastComposer: React.FC<BroadcastComposerProps> = ({
         subject={subject}
         message={message}
         isSending={isSending}
+        recipients={selectedRecipients}
       />
 
       <ScheduleBroadcastModal
