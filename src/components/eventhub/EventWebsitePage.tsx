@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { useEventForm } from '../../contexts/EventFormContext'
 import { useWebsitePages } from '../../contexts/WebsitePagesContext'
 import EventHubNavbar from './EventHubNavbar'
@@ -45,27 +45,48 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   const [isLoadingWebpages, setIsLoadingWebpages] = useState(false)
 
   // Fetch webpages from backend
-  useEffect(() => {
-    const loadWebpages = async () => {
-      if (!createdEvent?.uuid) {
-        // Clear webpages when event UUID is not available to prevent stale data
-        setWebpages([])
-        return
-      }
+  const loadWebpages = useCallback(async () => {
+    if (!createdEvent?.uuid) {
+      // Clear webpages when event UUID is not available to prevent stale data
+      setWebpages([])
+      return
+    }
 
-      setIsLoadingWebpages(true)
-      try {
-        const fetchedWebpages = await fetchWebpages(createdEvent.uuid)
-        setWebpages(fetchedWebpages)
-      } catch (error) {
-        // Error is handled by errorHandler
-      } finally {
-        setIsLoadingWebpages(false)
+    setIsLoadingWebpages(true)
+    try {
+      console.log('📋 [EventWebsitePage] Fetching webpages for event:', createdEvent.uuid)
+      const fetchedWebpages = await fetchWebpages(createdEvent.uuid)
+      console.log('📋 [EventWebsitePage] Fetched webpages:', fetchedWebpages.length, 'pages')
+      console.log('📋 [EventWebsitePage] Webpage names:', fetchedWebpages.map(w => w.name))
+      setWebpages(fetchedWebpages)
+    } catch (error) {
+      console.error('❌ [EventWebsitePage] Error fetching webpages:', error)
+      // Error is handled by errorHandler
+    } finally {
+      setIsLoadingWebpages(false)
+    }
+  }, [createdEvent?.uuid])
+
+  useEffect(() => {
+    loadWebpages()
+  }, [loadWebpages])
+
+  // Listen for webpage-saved events to refresh the list
+  useEffect(() => {
+    const handleWebpageSaved = (event: CustomEvent) => {
+      const { eventUuid } = event.detail
+      // Only refresh if it's for the current event
+      if (eventUuid === createdEvent?.uuid) {
+        console.log('🔄 [EventWebsitePage] Webpage saved, refreshing list...')
+        loadWebpages()
       }
     }
 
-    loadWebpages()
-  }, [createdEvent?.uuid])
+    window.addEventListener('webpage-saved', handleWebpageSaved as EventListener)
+    return () => {
+      window.removeEventListener('webpage-saved', handleWebpageSaved as EventListener)
+    }
+  }, [createdEvent?.uuid, loadWebpages])
 
   // Initialize pages based on template selection on mount
   useEffect(() => {

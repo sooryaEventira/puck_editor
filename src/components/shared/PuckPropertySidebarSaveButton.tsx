@@ -464,12 +464,15 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
       console.log('💾 [Website Page Save] Is existing webpage (UUID):', !!webpageUuid)
       console.log('💾 [Website Page Save] Webpage UUID:', webpageUuid)
 
+      // Get the actual page name from root.props.pageTitle if available, otherwise use currentPageName
+      const actualPageName = currentData?.root?.props?.pageTitle?.trim() || currentPageName.trim() || 'Untitled Page'
+      
       const request: CreateWebpageRequest = {
         event_uuid: createdEvent.uuid,
-        name: currentPageName,
+        name: actualPageName,
         content: {
           [pageId]: {
-            title: currentPageName,
+            title: actualPageName,
             slug: slug,
             data: {
               [slug]: puckData
@@ -477,6 +480,8 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
           }
         }
       }
+      console.log('💾 [Website Page Save] Using page name:', actualPageName)
+      console.log('💾 [Website Page Save] Source:', currentData?.root?.props?.pageTitle ? 'root.props.pageTitle' : 'currentPageName')
       console.log('💾 [Website Page Save] Request payload:', {
         event_uuid: request.event_uuid,
         name: request.name,
@@ -500,16 +505,29 @@ const PuckPropertySidebarSaveButton: React.FC<PuckPropertySidebarSaveButtonProps
       
       console.log('📤 [Website Page Save] Sending request to API...')
       const startTime = Date.now()
-      const response = await createOrUpdateWebpage(webpageUuid, createdEvent.uuid, request)
+      const response =       await createOrUpdateWebpage(webpageUuid, createdEvent.uuid, request)
       const duration = Date.now() - startTime
       console.log('✅ [Website Page Save] API call completed successfully')
       console.log('✅ [Website Page Save] Response:', response)
       console.log('✅ [Website Page Save] Duration:', duration + 'ms')
+      console.log('✅ [Website Page Save] Saved webpage UUID:', response?.uuid || webpageUuid)
+      console.log('✅ [Website Page Save] Saved webpage name:', response?.name || actualPageName)
 
       setSaveStatus('success')
       console.log('✅ [Website Page Save] Save status set to success')
-      showToast.success(`Page "${currentPageName}" saved successfully!`)
+      showToast.success(`Page "${actualPageName}" saved successfully!`)
       console.log('✅ [Website Page Save] Success toast shown')
+      
+      // Refresh the webpage list by triggering a page reload or context update
+      // Dispatch a custom event that EventWebsitePage can listen to
+      window.dispatchEvent(new CustomEvent('webpage-saved', { 
+        detail: { 
+          uuid: response?.uuid || webpageUuid,
+          name: actualPageName,
+          eventUuid: createdEvent.uuid
+        } 
+      }))
+      console.log('✅ [Website Page Save] Dispatched webpage-saved event to refresh listing')
       
       if (onSaveSuccess) {
         console.log('✅ [Website Page Save] Calling onSaveSuccess callback')

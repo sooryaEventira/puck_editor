@@ -15,7 +15,7 @@ import SchedulePage from '../advanced/SchedulePage'
 import { Edit05, User01 } from '@untitled-ui/icons-react'
 import Input from '../ui/untitled/Input'
 import PageCreationModal, { type PageType } from '../page/PageCreationModal'
-import { fetchWebpage, type WebpageData } from '../../services/webpageService'
+import { fetchWebpage, fetchWebpages, type WebpageData } from '../../services/webpageService'
 import Preview from '../shared/Preview'
 import type { PageData } from '../../types'
 
@@ -39,6 +39,12 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   const [webpageError, setWebpageError] = useState<string | null>(null)
   const abortControllerRef = React.useRef<AbortController | null>(null)
   const isFetchingRef = React.useRef(false)
+  const lastFetchedPageRef = React.useRef<string | null>(null)
+  const currentPageRef = React.useRef<string | null>(null)
+  
+  // Fetch actual webpages from backend for sidebar
+  const [webpages, setWebpages] = useState<WebpageData[]>([])
+  const [isLoadingWebpages, setIsLoadingWebpages] = useState(false)
 
   // Prioritize createdEvent data from API, fallback to eventData from form
   // Use useMemo to ensure we always get the latest value and prevent stale reads
@@ -49,13 +55,76 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   const displayStartDate = createdEvent?.startDate || eventData?.startDate
   const displayLocation = createdEvent?.location || eventData?.location
   
-  // Convert WebsitePage format to PageSidebar format
-  const pages = websitePages.map(page => ({
-    id: page.id,
-    name: page.name
-  }))
+  // Fetch webpages from backend for sidebar
+  useEffect(() => {
+    const loadWebpages = async () => {
+      if (!createdEvent?.uuid) {
+        setWebpages([])
+        return
+      }
+
+      setIsLoadingWebpages(true)
+      try {
+        console.log('📋 [WebsitePreviewPage] Fetching webpages for sidebar...')
+        const fetchedWebpages = await fetchWebpages(createdEvent.uuid)
+        console.log('📋 [WebsitePreviewPage] Fetched webpages:', fetchedWebpages.length, 'pages')
+        console.log('📋 [WebsitePreviewPage] Webpage names:', fetchedWebpages.map(w => w.name))
+        setWebpages(fetchedWebpages)
+      } catch (error) {
+        console.error('❌ [WebsitePreviewPage] Error fetching webpages:', error)
+        setWebpages([])
+      } finally {
+        setIsLoadingWebpages(false)
+      }
+    }
+
+    loadWebpages()
+  }, [createdEvent?.uuid])
+
+  // Listen for webpage-saved events to refresh the list
+  useEffect(() => {
+    const handleWebpageSaved = (event: CustomEvent) => {
+      const { eventUuid } = event.detail
+      if (eventUuid === createdEvent?.uuid) {
+        console.log('🔄 [WebsitePreviewPage] Webpage saved, refreshing sidebar...')
+        // Reload webpages
+        const loadWebpages = async () => {
+          if (!createdEvent?.uuid) return
+          try {
+            const fetchedWebpages = await fetchWebpages(createdEvent.uuid)
+            setWebpages(fetchedWebpages)
+          } catch (error) {
+            console.error('❌ [WebsitePreviewPage] Error refreshing webpages:', error)
+          }
+        }
+        loadWebpages()
+      }
+    }
+
+    window.addEventListener('webpage-saved', handleWebpageSaved as EventListener)
+    return () => {
+      window.removeEventListener('webpage-saved', handleWebpageSaved as EventListener)
+    }
+  }, [createdEvent?.uuid])
+
+  // Convert fetched webpages to PageSidebar format (use backend data, not context)
+  const pages = useMemo(() => {
+    const mappedPages = webpages.map(webpage => ({
+      id: webpage.uuid, // Use UUID from backend
+      name: webpage.name
+    }))
+    console.log('📋 [WebsitePreviewPage] Pages array updated:', mappedPages.length, 'pages:', mappedPages.map(p => p.name))
+    return mappedPages
+  }, [webpages])
   
-  const [currentPage, setCurrentPage] = useState(pageId || (pages.length > 0 ? pages[0].id : 'welcome'))
+  const [currentPage, setCurrentPage] = useState<string | null>(null)
+  
+  // Initialize ref with initial currentPage value (only once)
+  React.useEffect(() => {
+    if (currentPageRef.current === null && currentPage) {
+      currentPageRef.current = currentPage
+    }
+  }, []) // Only run once on mount
   const [isPageModalOpen, setIsPageModalOpen] = useState(false)
   
   // Settings form state
@@ -96,16 +165,48 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     }
   }, [eventData])
 
-  // Update current page when pageId changes or when pages are loaded
+  // Track if page selection was manual (from sidebar click) vs automatic (from URL)
+  const manualSelectionRef = React.useRef(false)
+
+  // Keep ref in sync with currentPage state
   useEffect(() => {
-    if (pageId) {
+    currentPageRef.current = currentPage
+  }, [currentPage])
+
+  // Initialize currentPage from pageId or first page when pages are loaded
+  useEffect(() => {
+    // Skip if this is a manual selection (handled by handlePageSelect)
+    if (manualSelectionRef.current) {
+      manualSelectionRef.current = false
+      return
+    }
+
+    // If we already have a currentPage, don't override it unless pageId changed
+    if (currentPage) {
+      // Only update if pageId from URL is different and valid
+      if (pageId && pageId !== currentPage && pages.some(p => p.id === pageId)) {
+        console.log('📋 [WebsitePreviewPage] Updating current page from URL pageId:', pageId)
+        setCurrentPage(pageId)
+        currentPageRef.current = pageId
+      }
+      return
+    }
+
+    // No currentPage set yet - initialize it
+    if (pageId && pages.some(p => p.id === pageId)) {
+      // pageId from URL should be a UUID from the backend
+      console.log('📋 [WebsitePreviewPage] Setting current page from URL pageId:', pageId)
       setCurrentPage(pageId)
-    } else if (pages.length > 0 && !currentPage) {
+      currentPageRef.current = pageId
+    } else if (pages.length > 0) {
+      // If no pageId in URL, use first page from fetched webpages
+      console.log('📋 [WebsitePreviewPage] Setting current page to first page:', pages[0].id, pages[0].name)
       setCurrentPage(pages[0].id)
+      currentPageRef.current = pages[0].id
     }
   }, [pageId, pages])
 
-  // Fetch webpage data when pageId is provided and event UUID is available
+  // Fetch webpage data when currentPage changes and event UUID is available
   useEffect(() => {
     // Abort any ongoing request
     if (abortControllerRef.current) {
@@ -113,24 +214,58 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     }
 
     const loadWebpage = async () => {
-      // Prevent duplicate calls
-      if (isFetchingRef.current) {
-        return
-      }
-
-      if (!pageId || !createdEvent?.uuid) {
-        setWebpageData(null)
-        setWebpageError(null)
-        return
-      }
-
-      // Check if pageId looks like a UUID (webpage UUID from API)
-      // If it's a simple string like 'welcome', it's likely a local page ID, not a webpage UUID
-      const isWebpageUuid = pageId.includes('-') && pageId.length > 20
+      // Use ref to get the latest currentPage value (avoids stale closure issues)
+      // Always prioritize currentPage (from sidebar selection) over pageId (from URL)
+      // This ensures sidebar clicks work correctly and state is consistent
+      const latestCurrentPage = currentPageRef.current || currentPage
+      const pageToLoad = latestCurrentPage || pageId
       
-      if (!isWebpageUuid) {
+      if (!pageToLoad || !createdEvent?.uuid) {
+        console.log('⚠️ [WebsitePreviewPage] Cannot load webpage:', { 
+          currentPage, 
+          pageId, 
+          pageToLoad, 
+          hasEventUuid: !!createdEvent?.uuid 
+        })
         setWebpageData(null)
         setWebpageError(null)
+        return
+      }
+
+      // Skip if we're already fetching the same page
+      if (isFetchingRef.current && lastFetchedPageRef.current === pageToLoad) {
+        console.log('⏸️ [WebsitePreviewPage] Already fetching this page, skipping duplicate call')
+        return
+      }
+
+      // Only skip if we have data for this exact page
+      if (lastFetchedPageRef.current === pageToLoad && webpageData && webpageData.uuid === pageToLoad) {
+        console.log('⏸️ [WebsitePreviewPage] Already have data for this page, skipping fetch')
+        return
+      }
+
+      console.log('📥 [WebsitePreviewPage] Loading webpage data for:', pageToLoad)
+      console.log('📥 [WebsitePreviewPage] Source:', latestCurrentPage ? 'currentPage (sidebar)' : 'pageId (URL)')
+      console.log('📥 [WebsitePreviewPage] Current state:', { 
+        currentPage, 
+        currentPageRef: currentPageRef.current,
+        latestCurrentPage: latestCurrentPage,
+        pageId, 
+        pageToLoad 
+      })
+      console.log('📥 [WebsitePreviewPage] Last fetched page:', lastFetchedPageRef.current)
+
+      // Check if pageToLoad looks like a real UUID from API (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+      // Real UUIDs are 36 characters with dashes in specific positions and all hex characters
+      const isRealUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pageToLoad)
+      
+      // Locally generated IDs (like page-page-2-1769232008926) are NOT real UUIDs
+      // They should not trigger a fetch - they need to be saved first to get a real UUID
+      if (!isRealUuid) {
+        console.log('⚠️ [WebsitePreviewPage] Page ID is not a real UUID, cannot fetch:', pageToLoad)
+        console.log('⚠️ [WebsitePreviewPage] This page needs to be saved first to get a UUID from the server')
+        setWebpageData(null)
+        setWebpageError('This page has not been saved yet. Please save it in the editor first.')
         return
       }
 
@@ -143,7 +278,20 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
       setWebpageError(null)
       
       try {
-        const fetchedWebpage = await fetchWebpage(pageId, createdEvent.uuid)
+        console.log('📥 [WebsitePreviewPage] Fetching webpage from API:', pageToLoad)
+        const fetchedWebpage = await fetchWebpage(pageToLoad, createdEvent.uuid)
+        console.log('✅ [WebsitePreviewPage] Webpage fetched successfully:', {
+          uuid: fetchedWebpage.uuid,
+          name: fetchedWebpage.name,
+          slug: fetchedWebpage.slug,
+          hasContent: !!fetchedWebpage.content,
+          contentKeys: fetchedWebpage.content ? Object.keys(fetchedWebpage.content) : []
+        })
+        
+        // Log the full content structure for debugging
+        if (fetchedWebpage.content) {
+          console.log('📦 [WebsitePreviewPage] Full content structure:', JSON.stringify(fetchedWebpage.content, null, 2))
+        }
         
         // Check if request was aborted
         if (abortController.signal.aborted) {
@@ -164,6 +312,9 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
         }
         
         setWebpageData(fetchedWebpage)
+        lastFetchedPageRef.current = pageToLoad
+        console.log('✅ [WebsitePreviewPage] Webpage data set, should trigger render')
+        console.log('✅ [WebsitePreviewPage] Last fetched page updated to:', pageToLoad)
       } catch (error) {
         // Don't handle errors if request was aborted
         if (abortController.signal.aborted) {
@@ -200,7 +351,7 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
       }
       isFetchingRef.current = false
     }
-  }, [pageId, createdEvent?.uuid])
+  }, [currentPage, pageId, createdEvent?.uuid])
 
   const handleSearchClick = () => {
     // TODO: Implement search functionality
@@ -231,9 +382,47 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   }, [currentPage])
 
   const handlePageSelect = (pageId: string) => {
+    console.log('📋 [WebsitePreviewPage] ==========================================')
+    console.log('📋 [WebsitePreviewPage] Page selected from sidebar:', pageId)
+    console.log('📋 [WebsitePreviewPage] Current page before selection:', currentPage)
+    console.log('📋 [WebsitePreviewPage] Available pages:', pages.map(p => ({ id: p.id, name: p.name })))
+    
+    // Don't do anything if clicking the same page
+    if (pageId === currentPage) {
+      console.log('📋 [WebsitePreviewPage] Same page selected, skipping')
+      return
+    }
+    
+    // Find the page to verify it exists
+    const selectedPage = pages.find(p => p.id === pageId)
+    if (!selectedPage) {
+      console.error('❌ [WebsitePreviewPage] Selected page not found in pages list:', pageId)
+      return
+    }
+    console.log('📋 [WebsitePreviewPage] Selected page found:', selectedPage)
+    
+    // Mark this as a manual selection to prevent URL sync from overriding it
+    manualSelectionRef.current = true
+    
+    // Update current page state and ref immediately
     setCurrentPage(pageId)
-    // Update URL without navigation
-    window.history.pushState({}, '', `/event/website/preview/${pageId}`)
+    currentPageRef.current = pageId
+    console.log('📋 [WebsitePreviewPage] currentPage state updated to:', pageId)
+    console.log('📋 [WebsitePreviewPage] currentPageRef updated to:', pageId)
+    
+    // Update URL to match the selected page
+    const newUrl = `/event/website/preview/${pageId}`
+    console.log('📋 [WebsitePreviewPage] Updating URL to:', newUrl)
+    window.history.pushState({}, '', newUrl)
+    
+    // Clear previous webpage data and reset fetch tracking to force reload
+    setWebpageData(null)
+    setWebpageError(null)
+    lastFetchedPageRef.current = null
+    console.log('📋 [WebsitePreviewPage] Cleared previous data, reset fetch tracking')
+    
+    console.log('📋 [WebsitePreviewPage] Page selection complete, useEffect should trigger fetch')
+    console.log('📋 [WebsitePreviewPage] ==========================================')
   }
 
   const handleAddPage = () => {
@@ -286,11 +475,17 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   ]
 
 
-  // Get current page data
-  const currentPageData = websitePages.find(p => p.id === currentPage)
+  // Get current page data from fetched webpages (not context)
+  const currentPageData = webpages.find(w => w.uuid === currentPage)
   const currentPageName = currentPageData?.name || 'Welcome'
-  const pageType = currentPageData?.type
-  const pageComponent = currentPageData?.component
+  const pageType = (currentPageData as any)?.type
+  const pageComponent = (currentPageData as any)?.component
+  console.log('📋 [WebsitePreviewPage] Current page data:', { 
+    currentPage, 
+    currentPageName, 
+    found: !!currentPageData,
+    totalWebpages: webpages.length
+  })
 
   // Render default template components
   const defaultTemplateJSX = useMemo(() => (
@@ -365,47 +560,162 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
   ), [eventData, bannerUrl, defaultSpeakers])
 
   // Extract page data from webpage content structure
-  const extractPageData = useCallback((webpageContent: any): PageData | null => {
+  // When we fetch a webpage by UUID, the content structure is: { "pageId": { "title": "...", "slug": "...", "data": { "slug": { "root": {...}, "content": [...], "zones": {} } } } }
+  // Each webpage should have exactly ONE key in its content (the pageId used when saving)
+  const extractPageData = useCallback((webpageContent: any, targetPageId?: string, targetPageName?: string, webpageSlug?: string): PageData | null => {
     if (!webpageContent || typeof webpageContent !== 'object') {
+      console.log('⚠️ [WebsitePreviewPage] extractPageData: Invalid content', webpageContent)
       return null
     }
 
-    // The content structure is: { "pageName": { "data": { "/": { "root": {...}, "content": [...], "zones": {} } } } }
-    // We need to extract the actual page data from this nested structure
     const pageKeys = Object.keys(webpageContent)
+    console.log('📦 [WebsitePreviewPage] extractPageData: Content structure keys:', pageKeys)
+    console.log('📦 [WebsitePreviewPage] extractPageData: Looking for page:', { targetPageId, targetPageName, webpageSlug })
+
     if (pageKeys.length === 0) {
+      console.log('⚠️ [WebsitePreviewPage] extractPageData: No page keys found')
       return null
     }
 
-    // Get the first page key (usually the page name like "welcome")
-    const pageKey = pageKeys[0]
-    const pageData = webpageContent[pageKey]
+    // Since each webpage fetched by UUID should have exactly one key, we can use the first key directly
+    // However, we'll still try to match if multiple keys exist (shouldn't happen but handle gracefully)
+    let pageKey: string | null = null
+    let pageData: any = null
+
+    // If there's only one key, use it directly (most common case)
+    if (pageKeys.length === 1) {
+      pageKey = pageKeys[0]
+      pageData = webpageContent[pageKey]
+      console.log('📦 [WebsitePreviewPage] extractPageData: Single key found, using directly:', pageKey)
+    } else {
+      // Multiple keys (shouldn't happen, but handle it)
+      // Try to match by UUID first
+      if (targetPageId && pageKeys.includes(targetPageId)) {
+        pageKey = targetPageId
+        pageData = webpageContent[targetPageId]
+        console.log('📦 [WebsitePreviewPage] extractPageData: Matched by UUID:', targetPageId)
+      } 
+      // Try to match by webpage slug
+      else if (webpageSlug && pageKeys.includes(webpageSlug)) {
+        pageKey = webpageSlug
+        pageData = webpageContent[webpageSlug]
+        console.log('📦 [WebsitePreviewPage] extractPageData: Matched by webpage slug:', webpageSlug)
+      }
+      // Try to match by slug derived from page name
+      else if (targetPageName) {
+        const targetSlug = targetPageName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        if (pageKeys.includes(targetSlug)) {
+          pageKey = targetSlug
+          pageData = webpageContent[targetSlug]
+          console.log('📦 [WebsitePreviewPage] extractPageData: Matched by name-derived slug:', targetSlug)
+        }
+      }
+      // Try to find by checking the slug inside each page's data
+      if (!pageKey) {
+        for (const key of pageKeys) {
+          const candidatePageData = webpageContent[key]
+          if (candidatePageData?.slug) {
+            const candidateSlug = candidatePageData.slug.toLowerCase()
+            const normalizedTargetSlug = targetPageName?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || webpageSlug?.toLowerCase()
+            if (normalizedTargetSlug && candidateSlug.includes(normalizedTargetSlug) || normalizedTargetSlug?.includes(candidateSlug)) {
+              pageKey = key
+              pageData = candidatePageData
+              console.log('📦 [WebsitePreviewPage] extractPageData: Matched by internal slug:', candidateSlug, 'using key:', key)
+              break
+            }
+          }
+        }
+      }
+      // Fallback: use first key
+      if (!pageKey) {
+        pageKey = pageKeys[0]
+        pageData = webpageContent[pageKey]
+        console.log('⚠️ [WebsitePreviewPage] extractPageData: No match found, using first key:', pageKey)
+      }
+    }
+
+    console.log('📦 [WebsitePreviewPage] extractPageData: Selected page key:', pageKey)
 
     if (!pageData || !pageData.data) {
+      console.log('⚠️ [WebsitePreviewPage] extractPageData: No pageData or data found', pageData)
       return null
     }
 
-    // Get the data for the root path "/"
-    const rootPathData = pageData.data['/']
-    if (!rootPathData) {
+    // The data structure is: { "slug": { "root": {...}, "content": [...], "zones": {} } }
+    // Get the slug key (usually the page name slug like "about", "home", etc.)
+    const dataKeys = Object.keys(pageData.data)
+    console.log('📦 [WebsitePreviewPage] extractPageData: Data keys:', dataKeys)
+    
+    if (dataKeys.length === 0) {
+      console.log('⚠️ [WebsitePreviewPage] extractPageData: No data keys found')
+      return null
+    }
+
+    // Get the data for the slug (usually the first key)
+    const slugKey = dataKeys[0]
+    const slugData = pageData.data[slugKey]
+    console.log('📦 [WebsitePreviewPage] extractPageData: Slug key:', slugKey)
+    console.log('📦 [WebsitePreviewPage] extractPageData: Slug data:', {
+      hasContent: !!slugData?.content,
+      contentLength: slugData?.content?.length || 0,
+      hasRoot: !!slugData?.root,
+      hasZones: !!slugData?.zones
+    })
+
+    if (!slugData) {
+      console.log('⚠️ [WebsitePreviewPage] extractPageData: No slug data found')
       return null
     }
 
     // Extract and return the PageData structure
-    return {
-      content: rootPathData.content || [],
-      root: rootPathData.root || {},
-      zones: rootPathData.zones || {}
+    const extractedData = {
+      content: slugData.content || [],
+      root: slugData.root || {},
+      zones: slugData.zones || {}
     }
-  }, [])
+    
+    console.log('✅ [WebsitePreviewPage] extractPageData: Successfully extracted', {
+      contentCount: extractedData.content.length,
+      hasRoot: !!extractedData.root,
+      rootProps: extractedData.root?.props
+    })
+    
+    return extractedData
+  }, [currentPage, currentPageName])
 
   // Convert webpage data to PageData format
   const webpagePageData = useMemo(() => {
     if (!webpageData || !webpageData.content) {
+      console.log('⚠️ [WebsitePreviewPage] webpagePageData: No webpageData or content', {
+        hasWebpageData: !!webpageData,
+        hasContent: !!webpageData?.content
+      })
       return null
     }
-    return extractPageData(webpageData.content)
-  }, [webpageData, extractPageData])
+    
+    console.log('📦 [WebsitePreviewPage] Extracting page data from webpage:', {
+      uuid: webpageData.uuid,
+      name: webpageData.name,
+      slug: webpageData.slug,
+      currentPage,
+      currentPageName
+    })
+    
+    // Pass currentPage, currentPageName, and webpage slug to help extractPageData find the correct page
+    const extracted = extractPageData(webpageData.content, currentPage, currentPageName || webpageData.name, webpageData.slug)
+    
+    if (!extracted) {
+      console.error('❌ [WebsitePreviewPage] Failed to extract page data from webpage content')
+    } else {
+      console.log('✅ [WebsitePreviewPage] Successfully extracted page data:', {
+        contentCount: extracted.content?.length || 0,
+        hasRoot: !!extracted.root,
+        rootProps: extracted.root?.props
+      })
+    }
+    
+    return extracted
+  }, [webpageData, extractPageData, currentPage, currentPageName])
 
   // Dynamic component renderer based on page type
   const renderPageComponent = useMemo(() => {
@@ -441,9 +751,12 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
         {/* PageSidebar */}
         <PageSidebar
           pages={pages}
-          currentPage={currentPage}
+          currentPage={currentPage || undefined}
           currentPageName={currentPageName}
-          onPageSelect={handlePageSelect}
+          onPageSelect={(pageId) => {
+            console.log('📋 [WebsitePreviewPage] PageSidebar onPageSelect called with:', pageId)
+            handlePageSelect(pageId)
+          }}
           onAddPage={handleAddPage}
           onManagePages={handleManagePages}
           onBackClick={handleBack}
