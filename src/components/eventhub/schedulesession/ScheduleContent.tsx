@@ -6,6 +6,7 @@ import UploadModal from '../../ui/UploadModal'
 import ScheduleGrid from './ScheduleGrid'
 import SessionCreationModal from './SessionCreationModal'
 import { SavedSession } from './sessionTypes'
+import sessionTemplate from '../../../assets/excel/Session templates.xlsx?url'
 
 interface ScheduleContentProps {
   scheduleName?: string
@@ -91,6 +92,16 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
     setIsUploadModalOpen(false)
   }
 
+  const handleDownloadTemplate = () => {
+    // Create a temporary anchor element to trigger download
+    const link = document.createElement('a')
+    link.href = sessionTemplate
+    link.download = 'Session template.xlsx'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <main className="relative w-full bg-white px-4 pb-10 pt-8 md:px-8">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -163,6 +174,9 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
         isOpen={isUploadModalOpen}
         onClose={handleCloseModal}
         onAttachFiles={handleAttachFiles}
+        onDownloadTemplate={handleDownloadTemplate}
+        showTemplate={true}
+        templateLabel="Session Template"
       />
 
       {/* Session Creation Modal */}

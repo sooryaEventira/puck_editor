@@ -297,7 +297,7 @@ const CommunicationsTable: React.FC<CommunicationsTableProps> = ({
         headerActions={tableHeader.actions}
         data={tableRows}
         columns={columns}
-        getRowKey={(row) => row.communication?.id || row.macro?.id || ''}
+        getRowKey={(row, index) => row.communication?.id || row.macro?.id || `row-${index}`}
         emptyState={emptyState}
         sortDescriptor={sortDescriptors[activeTab]}
         onSortChange={handleSortChange}

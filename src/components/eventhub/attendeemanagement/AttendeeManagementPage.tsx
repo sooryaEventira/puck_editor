@@ -211,6 +211,12 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
           attendeeCount: 0 // TODO: Calculate attendee count if available from API
         }))
 
+      if (import.meta.env.DEV) {
+        console.log('👥 [AttendeeManagement] Groups mapped from tags:', {
+          count: mappedGroups.length,
+          groups: mappedGroups.map((g) => ({ id: g.id, name: g.name }))
+        })
+      }
       setGroups(mappedGroups)
     } catch (error) {
       // If it's a 404, tags endpoint might not exist yet - set empty array

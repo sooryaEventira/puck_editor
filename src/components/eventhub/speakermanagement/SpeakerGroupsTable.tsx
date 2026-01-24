@@ -224,7 +224,7 @@ const SpeakerGroupsTable: React.FC<SpeakerGroupsTableProps> = ({
         headerActions={tableHeader.actions}
         data={groupTableRows}
         columns={groupColumns}
-        getRowKey={(row: GroupTableRowData) => row.group?.id || ''}
+        getRowKey={(row: GroupTableRowData, index: number) => row.group?.id || `group-${index}`}
         emptyState={groupEmptyState}
         sortDescriptor={sortDescriptor}
         onSortChange={handleSortChange}

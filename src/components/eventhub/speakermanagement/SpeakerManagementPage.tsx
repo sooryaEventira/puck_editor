@@ -231,6 +231,12 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
           speakerCount: 0 // TODO: Calculate speaker count if available from API
         }))
 
+      if (import.meta.env.DEV) {
+        console.log('👥 [SpeakerManagement] Groups mapped from tags:', {
+          count: mappedGroups.length,
+          groups: mappedGroups.map((g) => ({ id: g.id, name: g.name }))
+        })
+      }
       setGroups(mappedGroups)
     } catch (error) {
       // If it's a 404, tags endpoint might not exist yet - set empty array

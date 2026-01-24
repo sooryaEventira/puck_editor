@@ -329,6 +329,13 @@ export const createTag = async (request: CreateTagRequest): Promise<CreateTagRes
       is_active: request.is_active !== undefined ? request.is_active : true
     }
 
+    if (import.meta.env.DEV) {
+      console.log('🏷️ [createTag] Creating tag:', {
+        url: API_ENDPOINTS.TAGS.CREATE,
+        requestBody
+      })
+    }
+
     const response = await fetch(API_ENDPOINTS.TAGS.CREATE, {
       method: 'POST',
       headers: {
@@ -379,28 +386,53 @@ export const createTag = async (request: CreateTagRequest): Promise<CreateTagRes
       }
     }
 
-    let data: ApiResponse<CreateTagResponseData>
+    let data: any
     try {
-      data = await response.json()
+      // Log raw response text for debugging (then parse)
+      const rawText = await response.text()
+      if (import.meta.env.DEV) {
+        console.log('🏷️ [createTag] Response:', {
+          ok: response.ok,
+          status: response.status,
+          statusText: response.statusText,
+          rawText
+        })
+      }
+      data = rawText ? JSON.parse(rawText) : {}
     } catch (parseError) {
       const errorMessage = handleParseError('Invalid response from server. Please try again.')
       throw new Error(errorMessage)
     }
 
-    if (data.status === 'error') {
+    // ApiResponse format
+    if (data?.status === 'error') {
       const errorMessage = handleApiError(data, undefined, 'Failed to create tag. Please try again.')
       throw new Error(errorMessage)
     }
 
-    if (data.status === 'success') {
+    if (data?.status === 'success') {
       showToast.success(data.message || 'Tag created successfully')
     }
 
-    if (!data.data) {
-      throw new Error('No data returned from server')
+    // If backend returns ApiResponse { status, data }
+    if (data?.data) {
+      if (import.meta.env.DEV) {
+        console.log('🏷️ [createTag] Created tag (parsed):', data.data)
+      }
+      return data.data as CreateTagResponseData
     }
 
-    return data.data
+    if (import.meta.env.DEV) {
+      console.log('🏷️ [createTag] Created tag (non-ApiResponse):', data)
+    }
+
+    // If backend returns a direct object (common DRF create response)
+    if (data && typeof data === 'object' && (data.uuid || data.id || data.name)) {
+      showToast.success('Tag created successfully')
+      return data as CreateTagResponseData
+    }
+
+    throw new Error('No data returned from server')
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('fetch')) {
       if (!error.message.includes('Cannot connect')) {
@@ -455,6 +487,9 @@ export const fetchTags = async (eventUuid: string): Promise<TagData[]> => {
     }
 
     const url = API_ENDPOINTS.TAGS.LIST(eventUuid)
+    if (import.meta.env.DEV) {
+      console.log('🏷️ [fetchTags] Requesting tags:', { eventUuid, url })
+    }
     
     const response = await fetch(url, {
       method: 'GET',
@@ -523,6 +558,15 @@ export const fetchTags = async (eventUuid: string): Promise<TagData[]> => {
       const errorMessage = handleParseError('Invalid response from server. Please try again.')
       throw new Error(errorMessage)
     }
+    if (import.meta.env.DEV) {
+      console.log('🏷️ [fetchTags] Raw response shape:', {
+        hasStatus: typeof data?.status !== 'undefined',
+        keys: data && typeof data === 'object' ? Object.keys(data) : null,
+        hasResultsArray: Array.isArray(data?.results),
+        hasDataResultsArray: Array.isArray(data?.data?.results),
+        hasDataArray: Array.isArray(data?.data)
+      })
+    }
 
     // Handle ApiResponse format (with status field)
     if (data.status === 'error') {
@@ -532,32 +576,77 @@ export const fetchTags = async (eventUuid: string): Promise<TagData[]> => {
 
     // Extract data from various possible response structures
     let responseData: any = null
-    
-    // Case 1: ApiResponse format with data field
-    if (data.status === 'success' && data.data) {
-      responseData = data.data
+
+    /**
+     * Common backend shapes we need to support:
+     * 1) ApiResponse: { status: 'success', data: Tag[] }
+     * 2) ApiResponse + pagination: { status: 'success', data: { count, results: Tag[] } }
+     * 3) DRF pagination: { count, results: Tag[] }
+     * 4) Direct array: Tag[]
+     * 5) Legacy: { data: Tag[] } or { data: { results: Tag[] } }
+     */
+
+    // ApiResponse wrapper
+    if (data?.status === 'success') {
+      if (Array.isArray(data.data)) {
+        responseData = data.data
+      } else if (Array.isArray(data?.data?.results)) {
+        responseData = data.data.results
+      } else if (Array.isArray(data?.results)) {
+        // sometimes results sits alongside status
+        responseData = data.results
+      }
     }
-    // Case 2: Direct array response
-    else if (Array.isArray(data)) {
+
+    // Direct array response
+    if (!responseData && Array.isArray(data)) {
       responseData = data
     }
-    // Case 3: Object with data field (no status)
-    else if (data.data && Array.isArray(data.data)) {
+
+    // Legacy object with data array
+    if (!responseData && Array.isArray(data?.data)) {
       responseData = data.data
     }
-    // Case 4: Empty or null
-    else {
+
+    // DRF-style pagination
+    if (!responseData && Array.isArray(data?.results)) {
+      responseData = data.results
+    }
+
+    // Nested pagination inside data { data: { results: [] } }
+    if (!responseData && Array.isArray(data?.data?.results)) {
+      responseData = data.data.results
+    }
+
+    if (!responseData) {
+      if (import.meta.env.DEV) {
+        console.warn('🏷️ [fetchTags] Could not extract tags array from response:', data)
+      }
       return []
     }
 
-    // Ensure responseData is an array
-    let tags: TagData[]
-    if (Array.isArray(responseData)) {
-      tags = responseData
-    } else {
+    // Ensure responseData is an array (handle paginated objects captured earlier)
+    if (!Array.isArray(responseData)) {
       return []
     }
 
+    const tagsRaw = responseData as any[]
+    const tags = tagsRaw
+      .map((t) => ({
+        // normalize common API shapes
+        uuid: t?.uuid ?? t?.id ?? '',
+        name: t?.name ?? t?.title ?? '',
+        description: t?.description ?? '',
+        is_active: t?.is_active ?? t?.isActive ?? true
+      }))
+      .filter((t) => Boolean(t.uuid) && Boolean(t.name)) as TagData[]
+
+    if (import.meta.env.DEV) {
+      console.log('🏷️ [fetchTags] Parsed tags:', {
+        count: tags.length,
+        tags: tags.map((t) => ({ uuid: t.uuid, name: t.name, is_active: t.is_active }))
+      })
+    }
     return tags
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('fetch')) {

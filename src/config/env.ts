@@ -90,8 +90,9 @@ export const API_ENDPOINTS = {
   },
   // Tags/Groups endpoints
   TAGS: {
-    CREATE: `${env.AUTH_API_URL}${ADMIN_API_BASE}tags`,
-    LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}tags?event_uuid=${eventUuid}`,
+    CREATE: `${env.AUTH_API_URL}${ADMIN_API_BASE}tags/`,
+    // LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}tags?event_uuid=${eventUuid}`,
+    LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}user-tags/?event_uuid=${eventUuid}`,
   },
   // Communication endpoints
   COMMUNICATION: {

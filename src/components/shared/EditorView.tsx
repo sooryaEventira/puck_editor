@@ -15,6 +15,7 @@ import { useEventForm } from '../../contexts/EventFormContext'
 import { useWebsitePages } from '../../contexts/WebsitePagesContext'
 import { Page } from '../../types'
 import PuckPropertySidebarSaveButton from './PuckPropertySidebarSaveButton'
+import { fetchWebpages, type WebpageData } from '../../services/webpageService'
 
 // Context to provide current data to custom fields
 const PuckDataContext = createContext<any>(null)
@@ -65,6 +66,10 @@ export const EditorView: React.FC<EditorViewProps> = ({
 }) => {
   // Get pages from WebsitePagesContext
   const { pages: websitePages } = useWebsitePages()
+
+  // In template mode, use backend webpages for sidebar (avoid local "Welcome" artifacts)
+  const [sidebarWebpages, setSidebarWebpages] = useState<WebpageData[]>([])
+  const [isLoadingSidebarWebpages, setIsLoadingSidebarWebpages] = useState(false)
   
   // Initially show default COMPONENTS sidebar, canvas, and property sidebar with Page 1
   // Custom sidebar only appears after "Create from scratch" is selected
@@ -138,6 +143,33 @@ export const EditorView: React.FC<EditorViewProps> = ({
 
   // Get eventData and createdEvent from context
   const { eventData, createdEvent } = useEventForm()
+
+  // Fetch webpages list for sidebar when in template mode
+  useEffect(() => {
+    const loadSidebarWebpages = async () => {
+      if (editorMode === 'blank') {
+        setSidebarWebpages([])
+        return
+      }
+      if (!createdEvent?.uuid) {
+        setSidebarWebpages([])
+        return
+      }
+
+      setIsLoadingSidebarWebpages(true)
+      try {
+        const fetched = await fetchWebpages(createdEvent.uuid)
+        setSidebarWebpages(fetched)
+      } catch (error) {
+        console.error('❌ EditorView: Failed to fetch webpages for sidebar:', error)
+        setSidebarWebpages([])
+      } finally {
+        setIsLoadingSidebarWebpages(false)
+      }
+    }
+
+    loadSidebarWebpages()
+  }, [createdEvent?.uuid, editorMode])
 
   // Helper function to format event date
   const formatEventDate = (startDate?: string): string => {
@@ -597,11 +629,22 @@ export const EditorView: React.FC<EditorViewProps> = ({
                 }
               }
             } else {
-              // Template mode: Use website pages from context
-              pagesForSidebar = websitePages.map(page => ({
-                id: page.id,
-                name: page.name
+              // Template mode: Prefer backend webpages list (accurate for current event)
+              pagesForSidebar = sidebarWebpages.map(w => ({
+                id: w.uuid,
+                name: w.name
               }))
+
+              // Fallback (if backend list not yet available): use local websitePages context
+              if (pagesForSidebar.length === 0 && !isLoadingSidebarWebpages) {
+                pagesForSidebar = websitePages.map(page => ({ id: page.id, name: page.name }))
+              }
+
+              // Never show a phantom Welcome page unless it's actually the current page
+              pagesForSidebar = pagesForSidebar.filter(p => {
+                const isWelcome = p.name.toLowerCase() === 'welcome' || p.id.toLowerCase() === 'welcome'
+                return !isWelcome || p.id === currentPage
+              })
               
               // Ensure current page is included if not already in the list
               const currentPageExists = pagesForSidebar.some(p => 
@@ -654,17 +697,9 @@ export const EditorView: React.FC<EditorViewProps> = ({
                     window.dispatchEvent(new PopStateEvent('popstate'))
                     
                     try {
-                      // Try to find the page in website pages
-                      const websitePage = websitePages.find(p => p.id === pageId)
-                      if (websitePage) {
-                        // Try to load the page data
-                        const filename = pageId.endsWith('.json') ? pageId : `${pageId}.json`
-                        await onPageSelect(filename)
-                      } else {
-                        // Page not in array, but try to load it anyway using the pageId
-                        const filename = pageId.endsWith('.json') ? pageId : `${pageId}.json`
-                        await onPageSelect(filename)
-                      }
+                      // Always load by pageId; UUIDs are handled by usePageManagement.loadPage()
+                      const filename = pageId.endsWith('.json') ? pageId : `${pageId}.json`
+                      await onPageSelect(filename)
                     } catch (error) {
                       // Error loading page - silently fail
                       console.error('Error loading page:', error)
