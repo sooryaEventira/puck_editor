@@ -4,6 +4,7 @@ import { HelpCircle } from '@untitled-ui/icons-react'
 import { Modal } from '../ui'
 
 export type PageType = 
+  | 'scratch'
   | 'attendee'
   | 'schedule'
   | 'html-general'
@@ -23,6 +24,7 @@ interface PageTypeOption {
 }
 
 const pageTypes: PageTypeOption[] = [
+  { id: 'scratch', title: 'Create from scratch', description: 'Create a custom page from scratch.' },
   { id: 'attendee', title: 'Attendee page', description: 'List out users' },
   { id: 'schedule', title: 'Schedule page', description: 'Create sessions' },
   { id: 'html-general', title: 'HTML/General page', description: 'Create welcome page, venue, etc.' },

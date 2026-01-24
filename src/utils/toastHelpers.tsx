@@ -4,7 +4,7 @@ import { EmailVerifiedToast } from '../components/ui/EmailVerifiedToast'
 
 export const showEmailVerifiedToast = () => {
   toast.custom((t) => <EmailVerifiedToast t={t} />, {
-    duration: 4000,
+    duration: 2500,
     position: 'top-right',
   })
 }

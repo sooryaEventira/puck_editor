@@ -221,18 +221,16 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
         Preview
       </Button>
       <Button
-              variant="primary"
-              size="sm"
-              onClick={handlePublishWebsite}
-              data-modal-button="true"
-              className="bg-[#6938EF] hover:bg-[#5925DC] text-white text-xs !min-w-[100px]"
-              style={{ whiteSpace: 'nowrap', paddingTop: '10px', paddingBottom: '10px', minHeight: '38px' }}
-            >
-              <span className="flex items-center gap-1.5 pl-3">
-                <Globe01 className="h-3.5 w-3.5 flex-shrink-0" />
-                <span>Publish</span>
-              </span>
-            </Button>
+        variant="primary"
+        size="md"
+        onClick={handlePublishWebsite}
+        data-custom-publish-button="true"
+        className="bg-[#6938EF] hover:bg-[#5925DC] text-white whitespace-nowrap"
+        iconLeading={<Globe01 className="h-4 w-4 flex-shrink-0" />}
+        aria-label="Publish"
+      >
+        Publish
+      </Button>
     </div>
   )
 
@@ -243,6 +241,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   // Get page name from PageType
   const getPageNameFromType = (pageType: PageType): string => {
     const pageTypeNames: Record<PageType, string> = {
+      'scratch': 'Create from scratch',
       'attendee': 'Attendee page',
       'schedule': 'Schedule',
       'html-general': 'HTML/General page',
@@ -261,6 +260,29 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   const handlePageTypeSelect = async (pageType: PageType) => {
     setShowPageCreationModal(false)
     
+    // Create from scratch (blank editor)
+    if (pageType === 'scratch') {
+      const emptyPage1Data = {
+        content: [],
+        root: {
+          props: {
+            title: 'Page 1',
+            pageTitle: 'Page 1'
+          }
+        },
+        zones: {}
+      }
+
+      localStorage.setItem('create-from-scratch-page1', JSON.stringify(emptyPage1Data))
+      localStorage.setItem('create-from-scratch', 'true')
+      // Track where scratch flow started (for back navigation behavior)
+      localStorage.setItem('create-from-scratch-origin', 'event-website')
+
+      window.history.pushState({}, '', '/event/website/editor/page1?mode=blank')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+      return
+    }
+
     const pageName = getPageNameFromType(pageType)
     const pageId = `page-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     

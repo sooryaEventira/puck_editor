@@ -94,6 +94,25 @@ export const API_ENDPOINTS = {
     // LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}tags?event_uuid=${eventUuid}`,
     LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}user-tags/?event_uuid=${eventUuid}`,
   },
+  // Schedule session tags (creatable multiselect in ScheduleDetailsSlideout)
+  // Uses legacy tags endpoints as requested:
+  // - POST {{admin_url}}tags/
+  // - GET  {{admin_url}}tags/?event_uuid={{event_uuid}}
+  SCHEDULE_TAGS: {
+    CREATE: `${env.AUTH_API_URL}${ADMIN_API_BASE}tags/`,
+    LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}tags/?event_uuid=${eventUuid}`,
+  },
+  // Schedule endpoints
+  SCHEDULES: {
+    CREATE: `${env.AUTH_API_URL}${ADMIN_API_BASE}schedules/`,
+    LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}schedules/?event_uuid=${eventUuid}`,
+  },
+  // Sessions endpoints (schedule grid + bulk import)
+  SESSIONS: {
+    LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}sessions/?event_uuid=${eventUuid}`,
+    BULK_IMPORT: (scheduleUuid: string) =>
+      `${env.AUTH_API_URL}${ADMIN_API_BASE}sessions/schedules/${scheduleUuid}/bulk-import/`,
+  },
   // Communication endpoints
   COMMUNICATION: {
     SEND: `${env.AUTH_API_URL}${ADMIN_API_BASE}event-communications/`,

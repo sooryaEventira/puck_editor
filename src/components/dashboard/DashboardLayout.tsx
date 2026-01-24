@@ -8,8 +8,9 @@ import EventWebsitePage from '../eventhub/EventWebsitePage'
 import WebsitePreviewPage from '../eventhub/WebsitePreviewPage'
 import { type Event } from './EventsTable'
 import type { DateRange } from '../ui/untitled'
-import { fetchEvents, fetchEvent, type EventData, type CreateEventResponseData } from '../../services/eventService'
+import { deleteEvent, fetchEvents, fetchEvent, type EventData, type CreateEventResponseData } from '../../services/eventService'
 import { useEventForm } from '../../contexts/EventFormContext'
+import { showToast } from '../../utils/toast'
 
 interface DashboardLayoutProps {
   organizationName?: string
@@ -354,6 +355,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
   }
 
+  const handleDeleteEvent = async (eventId: string) => {
+    const target = events.find((e) => e.id === eventId)
+    const confirmed = window.confirm(
+      `Delete event "${target?.name ?? 'this event'}"? This action cannot be undone.`
+    )
+    if (!confirmed) return
+
+    try {
+      await deleteEvent(eventId)
+      setEvents((prev) => prev.filter((e) => e.id !== eventId))
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to delete event. Please try again.'
+      showToast.error(msg)
+    }
+  }
+
   // Fetch events on mount
   useEffect(() => {
     loadEvents()
@@ -659,6 +676,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             onEditEvent={onEditEvent}
+            onDeleteEvent={handleDeleteEvent}
             onEventRowClick={handleEventRowClick}
             onSortEvents={onSortEvents}
             events={filteredEvents}

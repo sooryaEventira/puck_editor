@@ -562,3 +562,98 @@ export const fetchEvent = async (eventUuid: string): Promise<EventData> => {
     throw new Error(errorMessage)
   }
 }
+
+/**
+ * Delete an event by UUID
+ * Endpoint: {{admin_url}}event/{{event_uuid}}/
+ */
+export const deleteEvent = async (eventUuid: string): Promise<void> => {
+  try {
+    const accessToken = localStorage.getItem('accessToken')
+    if (!accessToken) {
+      const errorMessage = handleApiError(
+        'Authentication required. Please login again.',
+        undefined,
+        'Authentication required. Please login again.'
+      )
+      throw new Error(errorMessage)
+    }
+
+    const organizationUuid = localStorage.getItem('organizationUuid')
+    if (!organizationUuid) {
+      const errorMessage = handleApiError(
+        'Organization UUID is missing. Please create or select an organization first.',
+        undefined,
+        'Organization UUID is missing. Please create or select an organization first.'
+      )
+      throw new Error(errorMessage)
+    }
+
+    if (!eventUuid) {
+      const errorMessage = handleApiError('Event UUID is required.', undefined, 'Event UUID is required.')
+      throw new Error(errorMessage)
+    }
+
+    const response = await fetch(API_ENDPOINTS.EVENT.GET(eventUuid), {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'X-Organization': organizationUuid,
+      },
+      credentials: 'include',
+    })
+
+    if (!response || !response.ok) {
+      if (!response) {
+        const errorMessage = handleNetworkError(null)
+        throw new Error(errorMessage)
+      }
+
+      try {
+        const responseText = await response.text()
+        let errorData: any = null
+
+        try {
+          errorData = responseText ? JSON.parse(responseText) : null
+        } catch {
+          if (responseText && responseText.trim()) {
+            const errorMessage = handleApiError(responseText.trim(), response, 'Failed to delete event.')
+            throw new Error(errorMessage)
+          }
+        }
+
+        if (errorData) {
+          const errorMessage = handleApiError(errorData, response, 'Failed to delete event.')
+          throw new Error(errorMessage)
+        }
+
+        const errorMessage = handleApiError(null, response, 'Failed to delete event.')
+        throw new Error(errorMessage)
+      } catch (parseError) {
+        if (parseError instanceof Error) {
+          throw parseError
+        }
+        const errorMessage = handleParseError('Failed to delete event. Please try again.')
+        throw new Error(errorMessage)
+      }
+    }
+
+    showToast.success('Event deleted successfully')
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      if (!error.message.includes('Cannot connect')) {
+        handleNetworkError(error)
+      }
+      throw new Error(error.message || 'Network error occurred')
+    }
+
+    if (error instanceof Error) {
+      throw error
+    }
+
+    const errorMessage = 'Failed to delete event. Please try again.'
+    handleApiError(errorMessage, undefined, errorMessage)
+    throw new Error(errorMessage)
+  }
+}

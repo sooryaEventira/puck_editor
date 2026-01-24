@@ -13,7 +13,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <EventFormProvider>
         <WebsitePagesProvider>
           <App />
-          <Toaster />
+          <Toaster
+            position="top-right"
+            // Avoid overlapping fixed headers (e.g. TemplateSelectionPage)
+            containerStyle={{ top: 80, right: 16 }}
+            toastOptions={{
+              // Default duration; specific toasts can still override
+              duration: 2500,
+            }}
+          />
         </WebsitePagesProvider>
       </EventFormProvider>
     </ErrorBoundary>

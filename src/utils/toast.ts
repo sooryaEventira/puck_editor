@@ -11,7 +11,7 @@ export const showToast = {
    */
   success: (message: string) => {
     toast.success(message, {
-      duration: 4000,
+      duration: 2000,
       position: 'top-right',
       style: {
         background: '#10b981',
@@ -27,7 +27,7 @@ export const showToast = {
    */
   error: (message: string) => {
     toast.error(message, {
-      duration: 5000,
+      duration: 3500,
       position: 'top-right',
       style: {
         background: '#ef4444',
@@ -43,7 +43,7 @@ export const showToast = {
    */
   warning: (message: string) => {
     toast(message, {
-      duration: 4000,
+      duration: 2500,
       position: 'top-right',
       icon: '⚠️',
       style: {
@@ -60,7 +60,7 @@ export const showToast = {
    */
   info: (message: string) => {
     toast(message, {
-      duration: 4000,
+      duration: 2500,
       position: 'top-right',
       icon: 'ℹ️',
       style: {

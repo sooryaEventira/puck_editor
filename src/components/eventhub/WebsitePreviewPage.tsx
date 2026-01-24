@@ -617,7 +617,7 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
           if (candidatePageData?.slug) {
             const candidateSlug = candidatePageData.slug.toLowerCase()
             const normalizedTargetSlug = targetPageName?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || webpageSlug?.toLowerCase()
-            if (normalizedTargetSlug && candidateSlug.includes(normalizedTargetSlug) || normalizedTargetSlug?.includes(candidateSlug)) {
+            if (normalizedTargetSlug && (candidateSlug.includes(normalizedTargetSlug) || normalizedTargetSlug.includes(candidateSlug))) {
               pageKey = key
               pageData = candidatePageData
               console.log('📦 [WebsitePreviewPage] extractPageData: Matched by internal slug:', candidateSlug, 'using key:', key)
@@ -651,8 +651,20 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
       return null
     }
 
-    // Get the data for the slug (usually the first key)
-    const slugKey = dataKeys[0]
+    // Choose the correct slug key (avoid "first key" bugs when multiple slugs exist)
+    const normalizedWebpageSlug = webpageSlug?.toLowerCase()
+    const normalizedPageSlug = typeof pageData.slug === 'string' ? pageData.slug.toLowerCase() : undefined
+    const normalizedTargetSlug = targetPageName?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+
+    let slugKey: string = dataKeys[0]
+    if (normalizedWebpageSlug && dataKeys.includes(normalizedWebpageSlug)) {
+      slugKey = normalizedWebpageSlug
+    } else if (normalizedPageSlug && dataKeys.includes(normalizedPageSlug)) {
+      slugKey = normalizedPageSlug
+    } else if (normalizedTargetSlug && dataKeys.includes(normalizedTargetSlug)) {
+      slugKey = normalizedTargetSlug
+    }
+
     const slugData = pageData.data[slugKey]
     console.log('📦 [WebsitePreviewPage] extractPageData: Slug key:', slugKey)
     console.log('📦 [WebsitePreviewPage] extractPageData: Slug data:', {
@@ -702,15 +714,21 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
     })
     
     // Pass currentPage, currentPageName, and webpage slug to help extractPageData find the correct page
-    const extracted = extractPageData(webpageData.content, currentPage, currentPageName || webpageData.name, webpageData.slug)
+    const extracted = extractPageData(
+      webpageData.content,
+      currentPage ?? undefined,
+      currentPageName || webpageData.name,
+      webpageData.slug
+    )
     
     if (!extracted) {
       console.error('❌ [WebsitePreviewPage] Failed to extract page data from webpage content')
     } else {
+      const rootPropsKeys = extracted.root?.props ? Object.keys(extracted.root.props) : []
       console.log('✅ [WebsitePreviewPage] Successfully extracted page data:', {
         contentCount: extracted.content?.length || 0,
         hasRoot: !!extracted.root,
-        rootProps: extracted.root?.props
+        rootPropsKeys
       })
     }
     
@@ -751,7 +769,7 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
         {/* PageSidebar */}
         <PageSidebar
           pages={pages}
-          currentPage={currentPage || undefined}
+          currentPage={currentPage ?? ''}
           currentPageName={currentPageName}
           onPageSelect={(pageId) => {
             console.log('📋 [WebsitePreviewPage] PageSidebar onPageSelect called with:', pageId)
@@ -775,7 +793,7 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
                 <Edit05 className="h-4 w-4" />
                 Edit
               </button>
-              <button
+              {/* <button
                 onClick={handleNewPage}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#6938EF] hover:bg-[#5925DC] transition-colors"
               >
@@ -783,7 +801,7 @@ const WebsitePreviewPage: React.FC<WebsitePreviewPageProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 New page
-              </button>
+              </button> */}
             </div>
           </div>
 

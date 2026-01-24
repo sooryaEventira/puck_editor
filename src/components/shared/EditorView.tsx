@@ -407,6 +407,13 @@ export const EditorView: React.FC<EditorViewProps> = ({
   const handlePageCreationSelect = (pageType: PageType) => {
     // Handle different page types
     switch (pageType) {
+      case 'scratch':
+        // Create from scratch - load empty editor
+        setShowCustomSidebar(false)
+        if (onCreateNewPage) {
+          onCreateNewPage()
+        }
+        break
       case 'html-general':
         // For HTML/General page, create from scratch
         setShowCustomSidebar(false)
@@ -766,7 +773,15 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   onBackClick={() => {
                     // If in create-from-scratch mode, navigate back to TemplateSelectionPage
                     if (editorMode === 'blank') {
-                      handleBackToTemplateSelection()
+                      const origin = localStorage.getItem('create-from-scratch-origin')
+                      if (origin === 'event-website') {
+                        // scratch started from Event Website listing
+                        window.history.pushState({}, '', '/event/website')
+                        window.dispatchEvent(new PopStateEvent('popstate'))
+                      } else {
+                        // default: scratch started from TemplateSelection page
+                        handleBackToTemplateSelection()
+                      }
                     } else {
                       // Otherwise, navigate to website preview page for the current page
                       if (currentPage) {

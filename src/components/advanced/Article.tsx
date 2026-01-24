@@ -62,6 +62,35 @@ const Article: React.FC<ArticleProps> = ({
     }
   }
 
+  // Normalize common non-direct image URLs (e.g. Unsplash photo page URLs) into an image src.
+  const normalizeImageSrc = (raw: string): string => {
+    const url = raw?.trim()
+    if (!url) return ''
+
+    try {
+      const u = new URL(url)
+
+      // Unsplash photo page URLs are HTML. Convert them to a direct image source URL.
+      // Example: https://unsplash.com/photos/mailbox-and-sign-for-strawberry-hill-farm-TQSvFz7NHuo
+      if (u.hostname.endsWith('unsplash.com')) {
+        const match = u.pathname.match(/\/photos\/([^/?#]+)/)
+        if (match) {
+          const slug = match[1]
+          const photoId = slug.split('-').pop()
+          if (photoId) {
+            // Source endpoint serves the image via redirect and works well in <img src="...">
+            return `https://source.unsplash.com/${photoId}/1600x900`
+          }
+        }
+      }
+
+      return url
+    } catch {
+      // If it's not a valid URL (or relative), leave it unchanged
+      return url
+    }
+  }
+
   // Render a section based on its type
   const renderSection = (section: ArticleSection, index: number) => {
     switch (section.type) {
@@ -104,7 +133,8 @@ const Article: React.FC<ArticleProps> = ({
 
       case 'image': {
         const imageUrlValue = getStringValue(section.imageUrl)
-        if (!imageUrlValue) return null
+        const normalizedSrc = normalizeImageSrc(imageUrlValue)
+        if (!normalizedSrc) return null
         
         const imageHeight = section.imageHeight || '400px'
         
@@ -115,9 +145,14 @@ const Article: React.FC<ArticleProps> = ({
             style={{ height: imageHeight }}
           >
             <img
-              src={imageUrlValue}
+              src={normalizedSrc}
               alt="Article image"
               className="w-full h-full object-cover"
+              // If the previous URL errored, it may have hidden the img element.
+              // Reset visibility on successful load so changing Image URL works.
+              onLoad={(e) => {
+                e.currentTarget.style.display = ''
+              }}
               onError={(e) => {
                 e.currentTarget.style.display = 'none'
               }}

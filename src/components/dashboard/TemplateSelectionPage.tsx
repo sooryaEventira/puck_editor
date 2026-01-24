@@ -294,6 +294,8 @@ const TemplateSelectionPage: React.FC = () => {
     
     // Set flag to indicate we're creating from scratch (this will trigger custom sidebar)
     localStorage.setItem('create-from-scratch', 'true')
+    // Track where scratch flow started (for back navigation behavior)
+    localStorage.setItem('create-from-scratch-origin', 'template-selection')
     
     // Navigate to editor with Page1 and mode=blank query param
     window.history.pushState({}, '', '/event/website/editor/page1?mode=blank')

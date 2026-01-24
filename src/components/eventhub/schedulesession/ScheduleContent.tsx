@@ -11,6 +11,7 @@ import sessionTemplate from '../../../assets/excel/Session templates.xlsx?url'
 interface ScheduleContentProps {
   scheduleName?: string
   onUpload?: () => void
+  onUploadFiles?: (files: File[]) => Promise<void> | void
   onAddSession?: (parentSessionId?: string, creationType?: 'template' | 'scratch') => void
   onBack?: () => void
   sessions?: SavedSession[] | any[] // Allow any[] for Puck compatibility
@@ -21,6 +22,7 @@ interface ScheduleContentProps {
 const ScheduleContent: React.FC<ScheduleContentProps> = ({
   scheduleName = 'Schedule 1',
   onUpload,
+  onUploadFiles,
   onAddSession,
   onBack,
   sessions = [],
@@ -83,12 +85,6 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
   }
 
   const handleCloseModal = () => {
-    setIsUploadModalOpen(false)
-  }
-
-  const handleAttachFiles = (files: File[]) => {
-    console.log('Files attached:', files)
-    // Handle file upload logic here
     setIsUploadModalOpen(false)
   }
 
@@ -173,7 +169,8 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={handleCloseModal}
-        onAttachFiles={handleAttachFiles}
+        onUpload={onUploadFiles}
+        multiple={false}
         onDownloadTemplate={handleDownloadTemplate}
         showTemplate={true}
         templateLabel="Session Template"

@@ -10,6 +10,7 @@ import { SavedSchedule } from './sessionTypes'
 import { useTableHeader, TablePagination } from '../../ui'
 import NewTagModal from './NewTagModal'
 import UploadModal from '../../ui/UploadModal'
+import { showToast } from '../../../utils/toast'
 
 type TableRowData = {
   schedule: SavedSchedule
@@ -19,7 +20,7 @@ type TableRowData = {
 interface SavedSchedulesTableProps {
   schedules: SavedSchedule[]
   onCreateSchedule: () => void
-  onUpload?: () => void
+  onUploadSessions?: (files: File[], scheduleId: string) => Promise<void> | void
   onEditSchedule?: (scheduleId: string) => void
   onManageSession?: (scheduleId: string) => void
 }
@@ -27,7 +28,7 @@ interface SavedSchedulesTableProps {
 const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
   schedules,
   onCreateSchedule,
-  onUpload,
+  onUploadSessions,
   onEditSchedule,
   onManageSession
 }) => {
@@ -232,17 +233,25 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
 
   const handleUploadClick = () => {
     setIsUploadModalOpen(true)
-    onUpload?.()
   }
 
   const handleCloseUploadModal = () => {
     setIsUploadModalOpen(false)
   }
 
-  const handleAttachFiles = (files: File[]) => {
-    console.log('Files attached:', files)
-    // TODO: Implement file upload logic
-    setIsUploadModalOpen(false)
+  const handleUploadFiles = async (files: File[]) => {
+    const selected = Array.from(selectedScheduleIds)
+    if (selected.length !== 1) {
+      showToast.error('Select exactly one schedule to upload sessions.')
+      return
+    }
+
+    if (!onUploadSessions) {
+      showToast.error('Upload is not configured.')
+      return
+    }
+
+    await onUploadSessions(files, selected[0])
   }
 
   return (
@@ -300,7 +309,8 @@ const SavedSchedulesTable: React.FC<SavedSchedulesTableProps> = ({
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={handleCloseUploadModal}
-        onAttachFiles={handleAttachFiles}
+        onUpload={handleUploadFiles}
+        multiple={false}
       />
     </div>
   )

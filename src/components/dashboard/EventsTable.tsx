@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react'
-import { Edit05 } from '@untitled-ui/icons-react'
+import { Edit05, Trash03 } from '@untitled-ui/icons-react'
 import { DividerLineTable, type DividerLineTableColumn, type DividerLineTableSortDescriptor } from '../ui/untitled'
 import { TablePagination } from '../ui/TablePagination'
 
@@ -17,6 +17,7 @@ export interface Event {
 interface EventsTableProps {
   events?: Event[]
   onEditClick?: (eventId: string) => void
+  onDeleteClick?: (eventId: string) => void
   onRowClick?: (event: Event) => void
   onSort?: (column: string) => void
   searchValue?: string
@@ -50,6 +51,7 @@ const AttendanceTypeBadge: React.FC<{ type: 'Online' | 'Offline' | 'Hybrid' }> =
 const EventsTable: React.FC<EventsTableProps> = ({
   events = [],
   onEditClick,
+  onDeleteClick,
   onRowClick,
   onSort,
   searchValue = ''
@@ -159,18 +161,35 @@ const EventsTable: React.FC<EventsTableProps> = ({
         sortable: false,
         align: 'right',
         render: (item) => (
-          <button
-            type="button"
-            onClick={() => onEditClick?.(item.id)}
-            className="text-[#6938EF] hover:text-[#5925DC] transition-colors"
-            aria-label={`Edit ${item.name}`}
-          >
-            <Edit05 className="h-4 w-5 text-[#A4A7AE]" />
-          </button>
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onEditClick?.(item.id)
+              }}
+              className="text-[#6938EF] hover:text-[#5925DC] transition-colors"
+              aria-label={`Edit ${item.name}`}
+            >
+              <Edit05 className="h-4 w-5 text-[#A4A7AE]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onDeleteClick?.(item.id)
+              }}
+              className="text-slate-500 hover:text-rose-600 transition-colors"
+              aria-label={`Delete ${item.name}`}
+            >
+              <Trash03 className="h-4 w-4" strokeWidth={1.8} />
+            </button>
+          </div>
         )
       }
     ],
-    [onEditClick]
+    [onDeleteClick, onEditClick]
   )
 
   return (

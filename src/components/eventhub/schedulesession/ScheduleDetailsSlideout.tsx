@@ -4,6 +4,8 @@ import Slideout from '../../ui/untitled/Slideout'
 import Input from '../../ui/untitled/Input'
 import Button from '../../ui/untitled/Button'
 import CreatableMultiSelect, { CreatableMultiSelectOption } from '../../ui/untitled/CreatableMultiSelect'
+import { useEventForm } from '../../../contexts/EventFormContext'
+import { API_ENDPOINTS } from '../../../config/env'
 
 interface ScheduleDetails {
   title: string
@@ -33,6 +35,7 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
   availableTags = [],
   availableLocations = []
 }) => {
+  const { createdEvent } = useEventForm()
   const [details, setDetails] = useState<ScheduleDetails>({
     title: '',
     tags: [],
@@ -41,6 +44,7 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
   })
   const [tagOptions, setTagOptions] = useState<CreatableMultiSelectOption[]>([])
   const [locationOptions, setLocationOptions] = useState<CreatableMultiSelectOption[]>([])
+  const [isLoadingTags, setIsLoadingTags] = useState(false)
 
   // Convert available tags/locations to options format
   useEffect(() => {
@@ -56,6 +60,74 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
     }))
     setLocationOptions(locationsFromSchedules)
   }, [availableTags, availableLocations])
+
+  // Fetch tags for this event from API (GET {{admin_url}}tags/?event_uuid={{event_uuid}})
+  useEffect(() => {
+    const loadTags = async () => {
+      if (!isOpen) return
+      const eventUuid = createdEvent?.uuid
+      if (!eventUuid) return
+
+      const accessToken = localStorage.getItem('accessToken')
+      const organizationUuid = localStorage.getItem('organizationUuid')
+      if (!accessToken || !organizationUuid) return
+
+      setIsLoadingTags(true)
+      try {
+        const url = API_ENDPOINTS.SCHEDULE_TAGS.LIST(eventUuid)
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'X-Organization': organizationUuid
+          },
+          credentials: 'include'
+        })
+
+        if (!response.ok) {
+          // If list endpoint not found / no tags yet, just keep existing options
+          setIsLoadingTags(false)
+          return
+        }
+
+        const data = await response.json()
+
+        // Support common response shapes (ApiResponse, DRF pagination, direct array)
+        const extractArray = (payload: any): any[] => {
+          if (!payload) return []
+          if (Array.isArray(payload)) return payload
+          if (payload.status === 'success' && Array.isArray(payload.data)) return payload.data
+          if (payload.status === 'success' && Array.isArray(payload.data?.results)) return payload.data.results
+          if (Array.isArray(payload.results)) return payload.results
+          if (Array.isArray(payload.data?.results)) return payload.data.results
+          if (Array.isArray(payload.data)) return payload.data
+          return []
+        }
+
+        const items = extractArray(data)
+        const names = items
+          .map((t: any) => t?.name)
+          .filter((n: any) => typeof n === 'string' && n.trim().length > 0) as string[]
+
+        setTagOptions((prev) => {
+          const merged = [...prev]
+          for (const name of names) {
+            const value = name.toLowerCase().replace(/\s+/g, '-')
+            const exists = merged.some((opt) => opt.value === value || opt.label === name)
+            if (!exists) merged.push({ value, label: name })
+          }
+          return merged
+        })
+      } catch (e) {
+        // keep UI usable even if request fails
+      } finally {
+        setIsLoadingTags(false)
+      }
+    }
+
+    loadTags()
+  }, [isOpen, createdEvent?.uuid])
 
 
   useEffect(() => {
@@ -132,17 +204,65 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
     handleFieldChange('location', locationValues)
   }
 
-  const handleCreateTag = (inputValue: string) => {
+  const handleCreateTag = async (inputValue: string) => {
     const newTag: CreatableMultiSelectOption = {
       value: inputValue.toLowerCase().replace(/\s+/g, '-'),
       label: inputValue
     }
-    // Add to options if not already present
-    setTagOptions(prev => {
-      const exists = prev.some(opt => opt.value === newTag.value || opt.label === newTag.label)
+
+    // Optimistically add to options + selection
+    setTagOptions((prev) => {
+      const exists = prev.some((opt) => opt.value === newTag.value || opt.label === newTag.label)
       if (exists) return prev
       return [...prev, newTag]
     })
+    setDetails((prev) => ({
+      ...prev,
+      tags: prev.tags.includes(inputValue) ? prev.tags : [...prev.tags, inputValue]
+    }))
+
+    // Persist to API (POST {{admin_url}}tags/)
+    const eventUuid = createdEvent?.uuid
+    const accessToken = localStorage.getItem('accessToken')
+    const organizationUuid = localStorage.getItem('organizationUuid')
+    if (!eventUuid || !accessToken || !organizationUuid) {
+      return
+    }
+
+    try {
+      const response = await fetch(API_ENDPOINTS.SCHEDULE_TAGS.CREATE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'X-Organization': organizationUuid
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          event_uuid: eventUuid,
+          name: inputValue.trim(),
+          description: '',
+          is_active: true
+        })
+      })
+
+      // If creation fails, keep it locally (still useful for schedule details)
+      if (!response.ok) {
+        return
+      }
+
+      // After success, refresh list once so options match backend
+      // (reuses the GET effect next open; this is just an immediate sync)
+      const data = await response.json().catch(() => null)
+      const createdName = data?.data?.name || data?.name || inputValue
+      setTagOptions((prev) => {
+        const value = createdName.toLowerCase().replace(/\s+/g, '-')
+        const exists = prev.some((opt) => opt.value === value || opt.label === createdName)
+        return exists ? prev : [...prev, { value, label: createdName }]
+      })
+    } catch (e) {
+      // ignore network issues here; UI already has the tag optimistically
+    }
   }
 
   const handleCreateLocation = (inputValue: string) => {
@@ -216,6 +336,7 @@ const ScheduleDetailsSlideout: React.FC<ScheduleDetailsSlideoutProps> = ({
                 value={selectedTags}
                 onChange={handleTagsChange}
                 onCreateOption={handleCreateTag}
+                isDisabled={isLoadingTags}
               />
             </div>
 

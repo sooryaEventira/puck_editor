@@ -14,6 +14,7 @@ interface DashboardContentProps {
   onDateRangeChange?: (range: DateRange) => void
   onFilterClick?: () => void
   onEditEvent?: (eventId: string) => void
+  onDeleteEvent?: (eventId: string) => void
   onEventRowClick?: (event: Event) => void
   onSortEvents?: (column: string) => void
   totalEvents?: number
@@ -31,6 +32,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   onDateRangeChange,
   onFilterClick,
   onEditEvent,
+  onDeleteEvent,
   onEventRowClick,
   onSortEvents,
   totalEvents,
@@ -75,6 +77,7 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       <EventsTable
         events={events}
         onEditClick={onEditEvent}
+        onDeleteClick={onDeleteEvent}
         onRowClick={onEventRowClick}
         onSort={onSortEvents}
         searchValue={searchValue}

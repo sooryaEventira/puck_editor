@@ -10,13 +10,11 @@ import {
   HeroSection, HeroVideo, HeroSplitScreen, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer, RegistrationCTA, Sponsors, ContactFooter, EventNumbers, SpeakerHighlight, SessionHighlight, SessionHighlightKeynote, SessionHighlightWorkshop, VenueBlock, SplitVenueBlock, HotelPartners, VenueDirections, LocationFloorPlan, GridBlock, Article, Table
 } from '../components/advanced'
 import ScheduleContent from '../components/eventhub/schedulesession/ScheduleContent'
-import RegistrationCTA from '../components/advanced/RegistrationCTA'
-import Sponsors from '../components/advanced/Sponsors'
-import ContactFooter from '../components/advanced/ContactFooter'
 import TwoColumnContent from '../components/advanced/TwoColumnContent'
 import FeedbackForm from '../components/advanced/FeedbackForm'
 import ImageSimple from '../components/advanced/ImageSimple'
 import CustomButtonField from '../components/fields/CustomButtonField'
+import ArticleSectionsField from '../components/fields/ArticleSectionsField'
 import SchedulesSectionField from '../components/fields/SchedulesSectionField'
 import PdfSelectField from '../components/fields/PdfSelectField'
 import SessionSelectField from '../components/fields/SessionSelectField'
@@ -3705,93 +3703,15 @@ export const config = {
       label: "📰 Article",
       fields: {
         sections: {
-          type: 'array' as const,
+          type: 'custom' as const,
           label: 'Sections',
-          arrayFields: {
-            type: {
-              type: 'select' as const,
-              label: 'Section Type',
-              options: [
-                { label: 'Heading', value: 'heading' },
-                { label: 'Paragraph', value: 'paragraph' },
-                { label: 'Image', value: 'image' },
-                { label: 'Links', value: 'links' }
-              ]
-            },
-            // Heading section fields
-            heading: {
-              type: 'text' as const,
-              label: 'Heading Text',
-              placeholder: 'The Art of Structured Content',
-              contentEditable: true
-            },
-            // Paragraph section fields
-            paragraph: {
-              type: 'textarea' as const,
-              label: 'Paragraph Text',
-              placeholder: 'Enter your paragraph content here...',
-              contentEditable: true
-            },
-            // Image section fields
-            imageUrl: {
-              type: 'text' as const,
-              label: 'Image URL',
-              placeholder: 'https://example.com/image.jpg'
-            },
-            imageHeight: {
-              type: 'text' as const,
-              label: 'Image Height',
-              placeholder: '400px'
-            },
-            // Links section fields
-            links: {
-              type: 'array' as const,
-              label: 'Links',
-              arrayFields: {
-                label: {
-                  type: 'text' as const,
-                  label: 'Label',
-                  placeholder: 'Learn More',
-                  contentEditable: true
-                },
-                url: {
-                  type: 'text' as const,
-                  label: 'URL',
-                  placeholder: 'https://example.com or /page-path'
-                },
-                openInNewTab: {
-                  type: 'radio' as const,
-                  label: 'Open in New Tab',
-                  options: [
-                    { label: 'Yes', value: true },
-                    { label: 'No', value: false }
-                  ]
-                }
-              },
-              getItemSummary: (item: any, index: number) => {
-                return item?.label || `Link ${index + 1}`
-              }
-            },
-            linkDisplayStyle: {
-              type: 'select' as const,
-              label: 'Link Display Style',
-              options: [
-                { label: 'Vertical List', value: 'list' },
-                { label: 'Inline Buttons', value: 'buttons' }
-              ]
-            }
+          render: (props: any) => {
+            return React.createElement(ArticleSectionsField, {
+              ...props,
+              value: props.value || [],
+              onChange: props.onChange
+            })
           },
-          getItemSummary: (item: any, index: number) => {
-            const typeLabels: Record<string, string> = {
-              heading: 'Heading',
-              paragraph: 'Paragraph',
-              image: 'Image',
-              links: 'Links'
-            }
-            const typeLabel = typeLabels[item?.type] || 'Section'
-            const content = item?.heading || item?.paragraph?.substring(0, 30) || item?.imageUrl || `${item?.links?.length || 0} link(s)`
-            return `${typeLabel}: ${content}${content.length >= 30 ? '...' : ''}`
-          }
         },
         backgroundColor: {
           type: 'select' as const,
