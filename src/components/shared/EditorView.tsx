@@ -144,6 +144,62 @@ export const EditorView: React.FC<EditorViewProps> = ({
   // Get eventData and createdEvent from context
   const { eventData, createdEvent } = useEventForm()
 
+  /**
+   * Ensure we always have an "event-form-banner" value available.
+   * In template mode this is often already present (because preview pages load it),
+   * but in create-from-scratch mode users may add HeroSection later by dragging it.
+   * We normalize banner sources:
+   * - createdEvent.banner (URL string) preferred (normalize http->https)
+   * - eventData.banner (File/Blob) fallback -> convert to dataURL
+   */
+  const lastBannerStoredRef = useRef<string | null>(null)
+  const lastBannerBlobRef = useRef<Blob | null>(null)
+  useEffect(() => {
+    // Prefer API banner URL if present
+    let apiBanner = createdEvent?.banner
+    if (apiBanner && apiBanner.startsWith('http://')) {
+      apiBanner = apiBanner.replace('http://', 'https://')
+    }
+
+    // If we have a good https banner from API, store it (and mark initialized)
+    if (apiBanner && apiBanner.startsWith('https://')) {
+      const current = localStorage.getItem('event-form-banner')
+      if (!current || !current.startsWith('https://') || current !== apiBanner) {
+        localStorage.setItem('event-form-banner', apiBanner)
+      }
+      lastBannerStoredRef.current = apiBanner
+      return
+    }
+
+    // Otherwise, if banner is a File/Blob (create event flow), convert to data URL once
+    const bannerFile = (eventData as any)?.banner
+    if (bannerFile instanceof Blob) {
+      // Avoid re-reading the same blob repeatedly
+      if (lastBannerBlobRef.current === bannerFile) {
+        return
+      }
+      lastBannerBlobRef.current = bannerFile
+
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = typeof reader.result === 'string' ? reader.result : null
+        if (dataUrl) {
+          // Only set if there's nothing yet, or existing is also a dataURL
+          const existing = localStorage.getItem('event-form-banner')
+          if (!existing || existing.startsWith('data:')) {
+            localStorage.setItem('event-form-banner', dataUrl)
+            lastBannerStoredRef.current = dataUrl
+          }
+        }
+      }
+      reader.onerror = () => {
+        // noop
+      }
+      reader.readAsDataURL(bannerFile)
+      return
+    }
+  }, [createdEvent?.banner, (eventData as any)?.banner])
+
   // Fetch webpages list for sidebar when in template mode
   useEffect(() => {
     const loadSidebarWebpages = async () => {
