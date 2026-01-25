@@ -666,6 +666,16 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         count: items.length,
         sample: items[0]
       })
+      const hasBackendParentLinks = items.some((s: any) =>
+        Boolean(
+          s?.parent_session_uuid ??
+            s?.parentSessionUuid ??
+            s?.parent_id ??
+            s?.parentId ??
+            s?.parent_session_id ??
+            s?.parentSessionId
+        )
+      )
 
       const mappedSessions = items
         .map((s: any) => {
@@ -945,80 +955,78 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         return total
       }
 
-      // Attach children using Excel mapping
+      // Attach children using Excel mapping (fallback only when backend doesn't provide parent references)
       let excelMatchedExact = 0
       let excelMatchedRelaxed1 = 0
       let excelMatchedRelaxed2 = 0
       let excelLinked = 0
-      for (const item of deduped as any[]) {
-        const dateKey = item.session?.date ? (item.session.date as Date).toISOString().slice(0, 10) : 'unknown-day'
-        const startKey = `${item.session.startTime} ${item.session.startPeriod || 'AM'}`
-        const endKey = `${item.session.endTime} ${item.session.endPeriod || 'AM'}`
-        const sig = buildSessionSignature({
-          dateKey,
-          title: item.session.title,
-          location: item.session.location ?? '',
-          startTime: item.session.startTime,
-          startPeriod: item.session.startPeriod || 'AM',
-          endTime: item.session.endTime,
-          endPeriod: item.session.endPeriod || 'AM'
-        })
-        let excel = excelBySig.get(sig)
-        if (excel) {
-          excelMatchedExact += 1
-        } else {
-          const relax1 = `${dateKey}||${String(item.session.title).trim()}||${startKey}||${endKey}`
-          excel = excelByRelaxed1.get(relax1)
+      if (!hasBackendParentLinks && excelMapEntries.length > 0) {
+        for (const item of deduped as any[]) {
+          const dateKey = item.session?.date ? (item.session.date as Date).toISOString().slice(0, 10) : 'unknown-day'
+          const startKey = `${item.session.startTime} ${item.session.startPeriod || 'AM'}`
+          const endKey = `${item.session.endTime} ${item.session.endPeriod || 'AM'}`
+          const sig = buildSessionSignature({
+            dateKey,
+            title: item.session.title,
+            location: item.session.location ?? '',
+            startTime: item.session.startTime,
+            startPeriod: item.session.startPeriod || 'AM',
+            endTime: item.session.endTime,
+            endPeriod: item.session.endPeriod || 'AM'
+          })
+          let excel = excelBySig.get(sig)
           if (excel) {
-            excelMatchedRelaxed1 += 1
+            excelMatchedExact += 1
           } else {
-            const relax2 = `${dateKey}||${String(item.session.title).trim()}||${startKey}`
-            excel = excelByRelaxed2.get(relax2)
-            if (excel) excelMatchedRelaxed2 += 1
-          }
-        }
-        if (!excel) continue
-
-        // Enforce correct model from Excel (source of truth):
-        // - Parent row: must not have parentId
-        // - Child row: must have parentId when parent exists
-        item.session.sessionType = excel.sessionType
-        if (excel.sessionType === 'parent') {
-          item.session.parentId = undefined
-        }
-
-        if (excel.sessionType === 'child' && excel.parentTitle) {
-          const parentKey = `${dateKey}::${String(excel.parentTitle).trim()}`
-          const candidates = parentsByDayTitle.get(parentKey) ?? []
-          // Excel is the source of truth for parent linkage.
-          // Parent "overall duration" is expanded later to include children, so DO NOT require
-          // the child's time to be inside the parent's current time range here.
-          //
-          // If multiple parents have the same title on the same day (duplicate imports),
-          // pick the closest parent whose start is <= child start; otherwise fallback to first.
-          const childStart = timeToMinutes(item.session.startTime, item.session.startPeriod || 'AM')
-          let chosen: SavedSession | undefined
-          let bestStart = -1
-          for (const p of candidates) {
-            const ps = timeToMinutes(p.startTime, p.startPeriod || 'AM')
-            if (ps <= childStart && ps > bestStart) {
-              bestStart = ps
-              chosen = p
+            const relax1 = `${dateKey}||${String(item.session.title).trim()}||${startKey}||${endKey}`
+            excel = excelByRelaxed1.get(relax1)
+            if (excel) {
+              excelMatchedRelaxed1 += 1
+            } else {
+              const relax2 = `${dateKey}||${String(item.session.title).trim()}||${startKey}`
+              excel = excelByRelaxed2.get(relax2)
+              if (excel) excelMatchedRelaxed2 += 1
             }
           }
-          const parent = chosen ?? candidates[0]
+          if (!excel) continue
 
-          if (parent) {
-            item.session.parentId = parent.id
-            excelLinked += 1
-          } else {
-            // If parent not found, render as standalone parent
-            item.session.sessionType = 'parent'
+          // Enforce correct model from Excel (source of truth):
+          // - Parent row: must not have parentId
+          // - Child row: must have parentId when parent exists
+          item.session.sessionType = excel.sessionType
+          if (excel.sessionType === 'parent') {
             item.session.parentId = undefined
           }
+
+          if (excel.sessionType === 'child' && excel.parentTitle) {
+            const parentKey = `${dateKey}::${String(excel.parentTitle).trim()}`
+            const candidates = parentsByDayTitle.get(parentKey) ?? []
+            // Excel is the source of truth for parent linkage.
+            // If multiple parents have the same title on the same day (duplicate imports),
+            // pick the closest parent whose start is <= child start; otherwise fallback to first.
+            const childStart = timeToMinutes(item.session.startTime, item.session.startPeriod || 'AM')
+            let chosen: SavedSession | undefined
+            let bestStart = -1
+            for (const p of candidates) {
+              const ps = timeToMinutes(p.startTime, p.startPeriod || 'AM')
+              if (ps <= childStart && ps > bestStart) {
+                bestStart = ps
+                chosen = p
+              }
+            }
+            const parent = chosen ?? candidates[0]
+
+            if (parent) {
+              item.session.parentId = parent.id
+              excelLinked += 1
+            } else {
+              // If parent not found, render as standalone parent
+              item.session.sessionType = 'parent'
+              item.session.parentId = undefined
+            }
+          }
         }
-      }
-      if (excelMapEntries.length > 0) {
+
         console.log('🧷 [Sessions] Excel match stats:', {
           excelMatchedExact,
           excelMatchedRelaxed1,
@@ -1027,11 +1035,11 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         })
       }
 
-      const hasExcelMap = excelMapEntries.length > 0
+      const hasExcelMap = !hasBackendParentLinks && excelMapEntries.length > 0
 
       // If we have an Excel map, do NOT run any heuristic inference that can override the true mapping.
       // (The backend list response doesn't carry parent references, so Excel is the only truth.)
-      if (!hasExcelMap) {
+      if (!hasExcelMap && !hasBackendParentLinks) {
         // 1) Prefer exact parent-title mapping (matches Excel rule) when API provides parent titles
         // 2) If no parent title is present, fall back to "last parent" inference using session_type ordering.
         const groupKeyFor = (scheduleUuid: string | null, date?: Date) => {
@@ -1120,9 +1128,9 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         }
       }
 
-      // Final safety pass (requested behavior):
-      // - For any remaining "child" without a valid parent, attach it to a containing parent by time.
-      // - If no containing parent exists, convert it to standalone "parent".
+      // Final safety pass:
+      // - If a child has no valid parent, do NOT guess by time when backend provides explicit links
+      //   (time-guessing can attach children to wrong parents). Render it as standalone parent instead.
       const minutesToTimePeriodLocal = (minutesTotal: number): { time: string; period: 'AM' | 'PM' } => {
         const m = ((minutesTotal % (24 * 60)) + (24 * 60)) % (24 * 60)
         const hours24 = Math.floor(m / 60)
@@ -1152,6 +1160,7 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         })
       })
 
+      const allowTimeParenting = !hasBackendParentLinks && !hasExcelMap
       let timeAttachedCount = 0
       let orphanToParentCount = 0
       for (const item of deduped) {
@@ -1167,6 +1176,14 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         }
 
         if (!item.session.parentId) {
+          if (!allowTimeParenting) {
+            // orphan child -> standalone parent
+            item.session.sessionType = 'parent'
+            item.session.parentId = undefined
+            orphanToParentCount += 1
+            continue
+          }
+
           const cs = timeToMinutes(item.session.startTime, item.session.startPeriod || 'AM')
           let ce = timeToMinutes(item.session.endTime, item.session.endPeriod || 'AM')
           if (ce < cs) ce += 24 * 60
@@ -1217,43 +1234,6 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
         return { parents, children, childrenWithParent, childrenWithoutParent }
       })()
       console.log('📊 [Sessions] final type summary:', summary)
-
-      // Expand parent start/end to cover children (overall duration), as requested.
-      const childrenByParent: Record<string, SavedSession[]> = {}
-      for (const item of deduped) {
-        if (item.session.parentId) {
-          childrenByParent[item.session.parentId] = childrenByParent[item.session.parentId] ?? []
-          childrenByParent[item.session.parentId].push(item.session)
-        }
-      }
-      Object.entries(childrenByParent).forEach(([parentId, kids]) => {
-        const parent = parentsByIdGlobal.get(parentId)
-        if (!parent) return
-        const ps = timeToMinutes(parent.startTime, parent.startPeriod || 'AM')
-        let pe = timeToMinutes(parent.endTime, parent.endPeriod || 'AM')
-        if (pe < ps) pe += 24 * 60
-
-        let minStart = ps
-        let maxEnd = pe
-        for (const child of kids) {
-          const cs = timeToMinutes(child.startTime, child.startPeriod || 'AM')
-          let ce = timeToMinutes(child.endTime, child.endPeriod || 'AM')
-          if (ce < cs) ce += 24 * 60
-          if (cs < minStart) minStart = cs
-          if (ce > maxEnd) maxEnd = ce
-        }
-
-        if (minStart !== ps) {
-          const t = minutesToTimePeriodLocal(minStart)
-          parent.startTime = t.time
-          parent.startPeriod = t.period
-        }
-        if (maxEnd !== pe) {
-          const t = minutesToTimePeriodLocal(maxEnd)
-          parent.endTime = t.time
-          parent.endPeriod = t.period
-        }
-      })
 
       console.log('🧩 [Sessions] LIST mapped sessions:', {
         count: mappedSessions.length,

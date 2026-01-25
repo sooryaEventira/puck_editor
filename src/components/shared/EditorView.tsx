@@ -68,8 +68,31 @@ export const EditorView: React.FC<EditorViewProps> = ({
   const { pages: websitePages } = useWebsitePages()
 
   // In template mode, use backend webpages for sidebar (avoid local "Welcome" artifacts)
-  const [sidebarWebpages, setSidebarWebpages] = useState<WebpageData[]>([])
+  const [sidebarWebpages, setSidebarWebpages] = useState<WebpageData[]>(() => {
+    // Hydrate from per-event cache so sidebar doesn't "vanish" on remount/navigation
+    try {
+      const eventUuid = localStorage.getItem('currentEventUuid')
+      if (!eventUuid) return []
+      const raw = localStorage.getItem(`sidebar-webpages-${eventUuid}`)
+      if (!raw) return []
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? (parsed as WebpageData[]) : []
+    } catch {
+      return []
+    }
+  })
   const [isLoadingSidebarWebpages, setIsLoadingSidebarWebpages] = useState(false)
+  const sidebarWebpagesEventUuidRef = useRef<string | null>(null)
+  const sidebarWebpagesRequestIdRef = useRef(0)
+
+  const getScratchOrigin = () => {
+    const eventUuid = createdEvent?.uuid ?? localStorage.getItem('currentEventUuid')
+    if (eventUuid) {
+      const scoped = localStorage.getItem(`create-from-scratch-origin-${eventUuid}`)
+      if (scoped) return scoped
+    }
+    return localStorage.getItem('create-from-scratch-origin')
+  }
   
   // Initially show default COMPONENTS sidebar, canvas, and property sidebar with Page 1
   // Custom sidebar only appears after "Create from scratch" is selected
@@ -200,26 +223,63 @@ export const EditorView: React.FC<EditorViewProps> = ({
     }
   }, [createdEvent?.banner, (eventData as any)?.banner])
 
-  // Fetch webpages list for sidebar when in template mode
+  // Fetch webpages list for sidebar.
+  // In template mode: always fetch.
+  // In create-from-scratch mode: fetch only when origin is event website (so existing pages are visible).
   useEffect(() => {
     const loadSidebarWebpages = async () => {
-      if (editorMode === 'blank') {
+      const origin = getScratchOrigin()
+      const shouldFetchInBlank = editorMode === 'blank' && origin === 'event-website'
+      if (editorMode === 'blank' && !shouldFetchInBlank) {
         setSidebarWebpages([])
         return
       }
-      if (!createdEvent?.uuid) {
+      const eventUuidToFetch = createdEvent?.uuid ?? localStorage.getItem('currentEventUuid')
+      if (!eventUuidToFetch) {
         setSidebarWebpages([])
         return
       }
 
+      const requestId = ++sidebarWebpagesRequestIdRef.current
+
+      // Prime from cache immediately for this event (prevents temporary disappearance)
+      try {
+        const raw = localStorage.getItem(`sidebar-webpages-${eventUuidToFetch}`)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSidebarWebpages(parsed as WebpageData[])
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      // Only clear when the event actually changes (prevents the sidebar flashing to Page 1/Page 2
+      // when you click an unsaved page and a new fetch starts for the SAME event).
+      if (sidebarWebpagesEventUuidRef.current !== eventUuidToFetch) {
+        setSidebarWebpages([])
+        sidebarWebpagesEventUuidRef.current = eventUuidToFetch
+      }
+
       setIsLoadingSidebarWebpages(true)
       try {
-        const fetched = await fetchWebpages(createdEvent.uuid)
+        const fetched = await fetchWebpages(eventUuidToFetch)
+        // Ignore out-of-order responses
+        if (requestId !== sidebarWebpagesRequestIdRef.current) return
         setSidebarWebpages(fetched)
+        // Cache per-event for fast hydration on remount
+        try {
+          localStorage.setItem(`sidebar-webpages-${eventUuidToFetch}`, JSON.stringify(fetched))
+        } catch {
+          // ignore
+        }
       } catch (error) {
         console.error('❌ EditorView: Failed to fetch webpages for sidebar:', error)
+        if (requestId !== sidebarWebpagesRequestIdRef.current) return
         setSidebarWebpages([])
       } finally {
+        if (requestId !== sidebarWebpagesRequestIdRef.current) return
         setIsLoadingSidebarWebpages(false)
       }
     }
@@ -658,38 +718,70 @@ export const EditorView: React.FC<EditorViewProps> = ({
             let pagesForSidebar: Array<{ id: string; name: string }>
             
             if (editorMode === 'blank') {
-              // Create-from-scratch mode: Use pages from usePageManagement (should only have page1)
-              // Filter out any "welcome" pages that might have been loaded
-              pagesForSidebar = pages
-                .filter(page => {
-                  const pageNameLower = page.name.toLowerCase()
-                  const pageIdLower = page.id.toLowerCase()
-                  // Exclude welcome pages (case-insensitive)
+              const origin = getScratchOrigin()
+
+              // If scratch flow started from Event Website, show real backend pages + any local (unsaved) pages.
+              if (origin === 'event-website') {
+                pagesForSidebar = sidebarWebpages
+                  .filter((w) => {
+                    const name = String(w.name ?? '').toLowerCase()
+                    return name !== 'welcome'
+                  })
+                  .map(w => ({ id: w.uuid, name: w.name }))
+                // IMPORTANT: do NOT fall back to WebsitePagesContext here (it is stored under a global key and
+                // can contain pages from other events). If backend pages haven't loaded yet, we'll still
+                // show local unsaved pages below.
+
+                // Merge in local pages from usePageManagement (includes newly created unsaved pages)
+                for (const p of pages) {
+                  const pageNameLower = p.name.toLowerCase()
+                  const pageIdLower = p.id.toLowerCase()
                   const isWelcome = pageNameLower === 'welcome' || pageIdLower === 'welcome'
-                  if (isWelcome) {
-                    console.log('🚫 Filtering out welcome page from sidebar:', page.name, page.id)
+                  if (isWelcome) continue
+                  if (!pagesForSidebar.some(x => x.id === p.id)) {
+                    pagesForSidebar.push({ id: p.id, name: p.name })
                   }
-                  return !isWelcome
-                })
-                .map(page => ({
-                  id: page.id,
-                  name: page.name
-                }))
-              
-              console.log('📋 Pages for sidebar (create-from-scratch mode):', pagesForSidebar.map(p => p.name))
-              
-              // Ensure current page (page1) is included if it's not welcome
-              const currentPageExists = pagesForSidebar.some(p => 
-                p.id === currentPage || 
-                (currentPageName && p.name.toLowerCase() === currentPageName.toLowerCase())
-              )
-              if (!currentPageExists && currentPage && currentPageName) {
-                const currentPageNameLower = currentPageName.toLowerCase()
-                const currentPageIdLower = currentPage.toLowerCase()
-                // Only add if it's not a welcome page
-                if (currentPageNameLower !== 'welcome' && currentPageIdLower !== 'welcome') {
-                  pagesForSidebar.push({ id: currentPage, name: currentPageName })
                 }
+
+                // Deduplicate by name (case-insensitive). Prefer backend UUID entries over local scratch ids.
+                const isUuid = (id: string) =>
+                  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+                pagesForSidebar = pagesForSidebar.reduce((acc, page) => {
+                  const key = page.name.toLowerCase()
+                  const existingIndex = acc.findIndex(p => p.name.toLowerCase() === key)
+                  if (existingIndex === -1) {
+                    acc.push(page)
+                  } else {
+                    const existing = acc[existingIndex]
+                    const pageIsUuid = isUuid(page.id)
+                    const existingIsUuid = isUuid(existing.id)
+                    const pageIsCurrent = page.id === currentPage
+                    const existingIsCurrent = existing.id === currentPage
+
+                    // Prefer current page; otherwise prefer UUID
+                    if (pageIsCurrent && !existingIsCurrent) {
+                      acc[existingIndex] = page
+                    } else if (!existingIsCurrent && pageIsUuid && !existingIsUuid) {
+                      acc[existingIndex] = page
+                    }
+                  }
+                  return acc
+                }, [] as typeof pagesForSidebar)
+              } else {
+                // TemplateSelection scratch flow: ONLY local scratch pages (no backend pages)
+                pagesForSidebar = pages
+                  .filter(page => {
+                    const pageNameLower = page.name.toLowerCase()
+                    const pageIdLower = page.id.toLowerCase()
+                    const isWelcome = pageNameLower === 'welcome' || pageIdLower === 'welcome'
+                    if (isWelcome) {
+                      console.log('🚫 Filtering out welcome page from sidebar:', page.name, page.id)
+                    }
+                    // Keep only local scratch ids: "page1" or "page-<...>"
+                    const isLocalScratchId = page.id === 'page1' || page.id.startsWith('page-')
+                    return !isWelcome && isLocalScratchId
+                  })
+                  .map(page => ({ id: page.id, name: page.name }))
               }
             } else {
               // Template mode: Prefer backend webpages list (accurate for current event)
@@ -754,15 +846,24 @@ export const EditorView: React.FC<EditorViewProps> = ({
                     if (pageId === currentPage) {
                       return
                     }
-                    
-                    // Navigate to editor for the selected page
-                    window.history.pushState({}, '', `/event/website/editor/${pageId}`)
-                    window.dispatchEvent(new PopStateEvent('popstate'))
-                    
+
                     try {
                       // Always load by pageId; UUIDs are handled by usePageManagement.loadPage()
                       const filename = pageId.endsWith('.json') ? pageId : `${pageId}.json`
                       await onPageSelect(filename)
+
+                      // Navigate to editor for the selected page.
+                      // IMPORTANT: preserve create-from-scratch mode (`?mode=blank`) so the sidebar keeps
+                      // the Add Page button and doesn't switch into template mode.
+                      const url = new URL(window.location.href)
+                      url.pathname = `/event/website/editor/${pageId}`
+                      if (editorMode === 'blank') {
+                        url.searchParams.set('mode', 'blank')
+                      } else {
+                        url.searchParams.delete('mode')
+                      }
+                      window.history.pushState({}, '', `${url.pathname}${url.search}`)
+                      window.dispatchEvent(new PopStateEvent('popstate'))
                     } catch (error) {
                       // Error loading page - silently fail
                       console.error('Error loading page:', error)
@@ -773,7 +874,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   onBackClick={() => {
                     // If in create-from-scratch mode, navigate back to TemplateSelectionPage
                     if (editorMode === 'blank') {
-                      const origin = localStorage.getItem('create-from-scratch-origin')
+                      const origin = getScratchOrigin()
                       if (origin === 'event-website') {
                         // scratch started from Event Website listing
                         window.history.pushState({}, '', '/event/website')

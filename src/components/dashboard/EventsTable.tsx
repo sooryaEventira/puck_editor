@@ -162,7 +162,7 @@ const EventsTable: React.FC<EventsTableProps> = ({
         align: 'right',
         render: (item) => (
           <div className="flex items-center justify-end gap-3">
-            <button
+            {/* <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation()
@@ -172,7 +172,7 @@ const EventsTable: React.FC<EventsTableProps> = ({
               aria-label={`Edit ${item.name}`}
             >
               <Edit05 className="h-4 w-5 text-[#A4A7AE]" />
-            </button>
+            </button> */}
 
             <button
               type="button"

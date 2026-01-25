@@ -277,6 +277,15 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
       localStorage.setItem('create-from-scratch', 'true')
       // Track where scratch flow started (for back navigation behavior)
       localStorage.setItem('create-from-scratch-origin', 'event-website')
+      // Also store origin per-event to avoid cross-event/refresh issues
+      try {
+        const eventUuid = createdEvent?.uuid ?? localStorage.getItem('currentEventUuid')
+        if (eventUuid) {
+          localStorage.setItem(`create-from-scratch-origin-${eventUuid}`, 'event-website')
+        }
+      } catch {
+        // ignore
+      }
 
       window.history.pushState({}, '', '/event/website/editor/page1?mode=blank')
       window.dispatchEvent(new PopStateEvent('popstate'))

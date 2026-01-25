@@ -14,6 +14,9 @@ interface SessionContainerProps {
   parallelSessions: SavedSession[]
   isExpanded: boolean
   onToggleExpand: () => void
+  getNestedParallelSessions?: (parentId: string) => SavedSession[]
+  isSessionExpanded?: (sessionId: string) => boolean
+  onToggleSessionExpand?: (sessionId: string) => void
   onAddParallelSession?: (parentSessionId: string) => void
   formatTime: (time: string, period: string) => string
   formatTimeRange: (session: SavedSession) => string
@@ -27,6 +30,9 @@ const SessionContainer: React.FC<SessionContainerProps> = ({
   parallelSessions,
   isExpanded,
   onToggleExpand,
+  getNestedParallelSessions,
+  isSessionExpanded,
+  onToggleSessionExpand,
   onAddParallelSession,
   formatTime,
   formatTimeRange,
@@ -42,6 +48,176 @@ const SessionContainer: React.FC<SessionContainerProps> = ({
   const hasParallelSessions = parallelSessions.length > 0
   const showAddButton = !hasParallelSessions && onAddParallelSession
   const showExpandButton = hasParallelSessions
+
+  const getChildren = React.useCallback(
+    (parentId: string) => {
+      const kids = getNestedParallelSessions?.(parentId) ?? []
+      return kids
+    },
+    [getNestedParallelSessions]
+  )
+
+  const renderNestedSessions = React.useCallback(
+    (parent: SavedSession, depth: number) => {
+      const children = getChildren(parent.id)
+      if (children.length === 0) return null
+
+      const expanded =
+        (isSessionExpanded ? isSessionExpanded(parent.id) : true) ||
+        // Always show first level of children when the top container is expanded
+        depth === 1
+
+      if (!expanded) return null
+
+      return (
+        <div className={depth === 1 ? 'mt-2 space-y-2' : 'mt-2 space-y-2'}>
+          {children.map((child) => {
+            const hasMore = getChildren(child.id).length > 0
+            const childExpanded = isSessionExpanded ? isSessionExpanded(child.id) : true
+
+            // We allow children to be outside parent's time range (Excel parent link may not be time-contained)
+            const _isValid = isTimeValid(child, parent)
+            if (!_isValid) {
+              // keep silent (do not spam console)
+            }
+
+            return (
+              <div key={child.id} className="relative">
+                {/* Vertical guideline */}
+                <div
+                  className="absolute top-0 bottom-0 w-0.5 bg-slate-300"
+                  style={{ left: `${16 + (depth - 1) * 20}px` }}
+                ></div>
+
+                {/* Child Session Card */}
+                <div
+                  className="border border-slate-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow"
+                  style={{ marginLeft: `${24 + (depth - 1) * 20}px` }}
+                >
+                  <div className="p-3">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/40"
+                        />
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className="cursor-move text-slate-400 hover:text-slate-600">
+                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M7 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM7 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM7 14a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 14a2 2 0 1 1 0 4 2 2 0 0 1 0-4z" />
+                            </svg>
+                          </div>
+                          <h3 className="font-semibold text-slate-900 text-sm">{child.title}</h3>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {hasMore && onToggleSessionExpand && (
+                          <button
+                            type="button"
+                            onClick={() => onToggleSessionExpand(child.id)}
+                            className="p-1 text-slate-400 hover:text-slate-600 rounded"
+                            aria-label={childExpanded ? 'Collapse' : 'Expand'}
+                          >
+                            {childExpanded ? (
+                              <ChevronUp className="h-3.5 w-3.5" />
+                            ) : (
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="p-1 text-slate-400 hover:text-slate-600 rounded"
+                          aria-label="More options"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Metadata Row */}
+                    <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                          <Calendar className="h-3 w-3" />
+                          {formatTimeRange(child)}
+                        </span>
+
+                        {child.location && (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                            </svg>
+                            {getLocationLabel(child.location)}
+                          </span>
+                        )}
+
+                        {child.sessionType && (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                            {child.sessionType === 'keynote' ? (
+                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                />
+                              </svg>
+                            ) : (
+                              <User01 className="h-3 w-3" />
+                            )}
+                            {getSessionTypeLabel(child.sessionType)}
+                          </span>
+                        )}
+                      </div>
+
+                      {onAddParallelSession && (
+                        <button
+                          type="button"
+                          onClick={() => onAddParallelSession?.(parent.id)}
+                          className="p-1 text-slate-400 hover:text-primary rounded border border-slate-300 flex-shrink-0 transition-colors"
+                          aria-label="Add parallel session"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                        <Attachment01 className="h-3 w-3" />
+                        {child.attachments?.length || 0}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recursive grandchildren */}
+                {hasMore && childExpanded && renderNestedSessions(child, depth + 1)}
+              </div>
+            )
+          })}
+        </div>
+      )
+    },
+    [getChildren, isSessionExpanded, isTimeValid, onAddParallelSession, onToggleSessionExpand, formatTimeRange, getLocationLabel, getSessionTypeLabel]
+  )
 
   // Measure container height and sync time column
   const measureHeight = React.useCallback(() => {
@@ -310,121 +486,8 @@ const SessionContainer: React.FC<SessionContainerProps> = ({
           </div>
         </div>
 
-        {/* Parallel Sessions - Compact, nested design */}
-        {hasParallelSessions && isExpanded && (
-          <div className="mt-2 space-y-2" key="parallel-sessions">
-            {parallelSessions.map((parallelSession) => {
-              const isValid = isTimeValid(parallelSession, session)
-              if (!isValid) {
-                console.warn(`Parallel session ${parallelSession.id} time is not within parent session time`)
-              }
-              
-              return (
-                <div key={parallelSession.id} className="relative">
-                  {/* Short vertical guideline */}
-                  <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-slate-300 ml-4"></div>
-                  
-                  {/* Parallel Session Card - Compact */}
-                  <div className="ml-6 border border-slate-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
-                    <div className="p-3">
-                      {/* Header - Compact */}
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2 flex-1">
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/40"
-                          />
-                          <div className="flex items-center gap-2 flex-1">
-                            <div className="cursor-move text-slate-400 hover:text-slate-600">
-                              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M7 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM7 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM7 14a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 14a2 2 0 1 1 0 4 2 2 0 0 1 0-4z" />
-                              </svg>
-                            </div>
-                            <h3 className="font-semibold text-slate-900 text-sm">{parallelSession.title}</h3>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-center gap-1">
-                          <button
-                            type="button"
-                            className="p-1 text-slate-400 hover:text-slate-600 rounded"
-                            aria-label="More options"
-                          >
-                            <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Metadata Row - Compact */}
-                      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {/* Time Badge */}
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                            <Calendar className="h-3 w-3" />
-                            {formatTimeRange(parallelSession)}
-                          </span>
-                          
-                          {/* Location Badge */}
-                          {parallelSession.location && (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              {getLocationLabel(parallelSession.location)}
-                            </span>
-                          )}
-                          
-                          {/* Session Type Badge */}
-                          {parallelSession.sessionType && (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                              {parallelSession.sessionType === 'keynote' ? (
-                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                              ) : (
-                                <User01 className="h-3 w-3" />
-                              )}
-                              {getSessionTypeLabel(parallelSession.sessionType)}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* + Button - Always show for parallel sessions */}
-                        {onAddParallelSession && (
-                          <button
-                            type="button"
-                            onClick={() => onAddParallelSession?.(session.id)}
-                            className="p-1 text-slate-400 hover:text-primary rounded border border-slate-300 flex-shrink-0 transition-colors"
-                            aria-label="Add parallel session"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Description - Compact */}
-                      {parallelSession.sections && parallelSession.sections.length > 0 && parallelSession.sections[0].description && (
-                        <p className="text-xs text-slate-600 mb-2 leading-relaxed line-clamp-2">
-                          {parallelSession.sections[0].description}
-                        </p>
-                      )}
-
-                      {/* Footer - Attachment Badge */}
-                      <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                          <Attachment01 className="h-3 w-3" />
-                          {parallelSession.attachments?.length || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
+        {/* Parallel Sessions - Nested design (supports multi-level) */}
+        {hasParallelSessions && isExpanded && renderNestedSessions(session, 1)}
       </div>
     </div>
   )
@@ -455,9 +518,11 @@ const ScheduleGrid: React.FC<ScheduleGridProps> = ({
   const { parentSessions, parallelSessionsMap } = useMemo(() => {
     const parents: SavedSession[] = []
     const parallelMap: { [parentId: string]: SavedSession[] } = {}
+    const idSet = new Set(filteredSessions.map((s) => s.id))
     
     filteredSessions.forEach(session => {
-      if (session.parentId) {
+      // Only treat as child if its parent exists in this list; otherwise render as top-level.
+      if (session.parentId && idSet.has(session.parentId)) {
         if (!parallelMap[session.parentId]) {
           parallelMap[session.parentId] = []
         }
@@ -540,12 +605,11 @@ const ScheduleGrid: React.FC<ScheduleGridProps> = ({
 
   // Validate parallel session time is within parent session time
   const isTimeValid = (parallelSession: SavedSession, parentSession: SavedSession): boolean => {
-    const parentStart = timeToMinutes(parentSession.startTime, parentSession.startPeriod || 'AM')
-    const parentEnd = timeToMinutes(parentSession.endTime, parentSession.endPeriod || 'AM')
-    const parallelStart = timeToMinutes(parallelSession.startTime, parallelSession.startPeriod || 'AM')
-    const parallelEnd = timeToMinutes(parallelSession.endTime, parallelSession.endPeriod || 'AM')
-    
-    return parallelStart >= parentStart && parallelEnd <= parentEnd
+    // We allow children to be outside parent's time range (Excel parent linkage is title-based).
+    // Keeping this always true avoids false warnings/spam.
+    void parentSession
+    void parallelSession
+    return true
   }
 
   const formatTime = (time: string, period: string) => {
@@ -592,6 +656,18 @@ const ScheduleGrid: React.FC<ScheduleGridProps> = ({
                 parallelSessions={parallelSessions}
                 isExpanded={isExpanded}
                 onToggleExpand={() => toggleExpand(session.id)}
+                getNestedParallelSessions={(parentId) => {
+                  const kids = parallelSessionsMap[parentId] || []
+                  // Ensure stable chronological ordering within the parent
+                  return [...kids].sort((a, b) => {
+                    const am = timeToMinutes(a.startTime, a.startPeriod || 'AM')
+                    const bm = timeToMinutes(b.startTime, b.startPeriod || 'AM')
+                    if (am !== bm) return am - bm
+                    return String(a.title).localeCompare(String(b.title))
+                  })
+                }}
+                isSessionExpanded={(id) => expandedSessions.has(id)}
+                onToggleSessionExpand={toggleExpand}
                 onAddParallelSession={onAddParallelSession}
                 formatTime={formatTime}
                 formatTimeRange={formatTimeRange}

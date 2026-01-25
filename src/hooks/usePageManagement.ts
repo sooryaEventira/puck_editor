@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Page } from '../types'
 import { logger } from '../utils/logger'
 import { API_ENDPOINTS } from '../config/env'
@@ -274,6 +274,11 @@ const getDefaultTemplateData = (pageName: string = 'Page 1', eventData?: any) =>
 
 export const usePageManagement = () => {
   const { eventData, createdEvent } = useEventForm()
+  const lastEventUuidRef = useRef<string | null>(null)
+  const getEventUuid = () =>
+    createdEvent?.uuid ?? (typeof window !== 'undefined' ? localStorage.getItem('currentEventUuid') : null)
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
   
   // Prioritize createdEvent data from API, fallback to eventData from form
   const displayEventData = createdEvent ? {
@@ -329,6 +334,46 @@ export const usePageManagement = () => {
   const [pages, setPages] = useState<Page[]>(getInitialPages())
   const [showPageManager, setShowPageManager] = useState(false)
   const [showPageNameDialog, setShowPageNameDialog] = useState(false)
+
+  // When switching between events, clear any in-memory pages/data from the previous event.
+  // This prevents "pages from another event" leaking into the new event's scratch editor sidebar.
+  useEffect(() => {
+    const nextUuid = getEventUuid() ?? null
+    const prevUuid = lastEventUuidRef.current
+    if (!nextUuid) return
+
+    if (prevUuid && prevUuid !== nextUuid) {
+      const urlParams = new URLSearchParams(window.location.search)
+      const isBlank = urlParams.get('mode') === 'blank'
+
+      // Reset to a clean baseline for the new event
+      setCurrentPage('page1')
+      setCurrentPageName('Page 1')
+      setCurrentData(
+        isBlank
+          ? {
+              content: [],
+              root: { props: { title: 'Page 1', pageTitle: 'Page 1' } },
+              zones: {}
+            }
+          : getDefaultTemplateData('Page 1', displayEventData)
+      )
+      setPages(
+        isBlank
+          ? [
+              {
+                id: 'page1',
+                name: 'Page 1',
+                filename: 'page1.json',
+                lastModified: new Date().toISOString()
+              }
+            ]
+          : []
+      )
+    }
+
+    lastEventUuidRef.current = nextUuid
+  }, [createdEvent?.uuid])
 
   // Function to update HeroSection with eventData and banner
   // Use useCallback to avoid stale closures
@@ -736,6 +781,19 @@ export const usePageManagement = () => {
         page => page.id === pageId || page.filename === filename
       )
 
+      // Guard: when switching pages, `currentPage` can update before `currentData` finishes updating.
+      // In that transient state we may see the previous page's title (often "Page 1") and would
+      // incorrectly overwrite the newly selected page's name.
+      if (pageId !== 'page1' && normalizedTitle === 'Page 1') {
+        if (existingIndex === -1) {
+          return prevPages
+        }
+        const existing = prevPages[existingIndex]
+        if (existing?.name && existing.name !== 'Page 1') {
+          return prevPages
+        }
+      }
+
       if (existingIndex === -1) {
         return [
           ...prevPages,
@@ -813,9 +871,9 @@ export const usePageManagement = () => {
     const pageId = filename.replace('.json', '')
     const serverFilename = filename.endsWith('.json') ? filename : `${filename}.json`
     
-    // Check if pageId is a UUID (webpage UUID from API)
-    // UUIDs typically have dashes and are longer than 20 characters
-    const isWebpageUuid = pageId.includes('-') && pageId.length > 20
+    // Check if pageId is a REAL UUID (webpage UUID from API).
+    // IMPORTANT: local unsaved pages also contain dashes (e.g. "page-page-2-...") and must NOT be treated as UUIDs.
+    const isWebpageUuid = uuidRegex.test(pageId)
     
     // If it's a webpage UUID, fetch the webpage data to get the name
     if (isWebpageUuid && createdEvent?.uuid) {
@@ -951,8 +1009,10 @@ export const usePageManagement = () => {
       }
     }
     
-    // Check if we're creating from scratch and loading page1
-    const isCreateFromScratch = localStorage.getItem('create-from-scratch') === 'true'
+    // Check if we're creating from scratch (check both localStorage and URL param)
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+    const isCreateFromScratch =
+      (urlParams?.get('mode') === 'blank') || localStorage.getItem('create-from-scratch') === 'true'
     const emptyPage1DataStr = localStorage.getItem('create-from-scratch-page1')
     const isPage1 = pageId === 'page1' || filename === 'page1.json' || filename === 'page1'
     
@@ -966,11 +1026,7 @@ export const usePageManagement = () => {
         setCurrentPage('page1')
         setCurrentPageName('Page 1')
         setShowPageManager(false)
-        
-        // Clear the flags after using them
-        localStorage.removeItem('create-from-scratch')
-        localStorage.removeItem('create-from-scratch-page1')
-        
+
         return
       } catch (error) {
         logger.error('loadPage: Error parsing empty page1 data:', error)
@@ -1001,17 +1057,20 @@ export const usePageManagement = () => {
           logger.debug('loadPage: Found cached data in localStorage')
           console.log('✅ Found cached data in localStorage for:', pageId)
           
-          // Check if the cached data has the correct template structure
-          if (!hasCorrectTemplateStructure(initialData)) {
-            console.warn('⚠️ Cached data does not match expected template structure, replacing with default template')
-            console.log('📋 Old template components:', initialData?.content?.map((c: any) => c.type) || [])
-            // Clear the old cached data
-            localStorage.removeItem(cachedDataKey)
-            // Use new default template
-            initialData = getDefaultTemplateData(pageInArray.name, eventData)
-            // Save the corrected template to cache
-            localStorage.setItem(cachedDataKey, JSON.stringify(initialData))
-            console.log('✅ Replaced with new template components:', initialData?.content?.map((c: any) => c.type) || [])
+          // In scratch mode, do NOT enforce "template structure" (scratch pages are empty by design).
+          // Only apply template-structure correction in template mode.
+          if (!isCreateFromScratch) {
+            if (!hasCorrectTemplateStructure(initialData)) {
+              console.warn('⚠️ Cached data does not match expected template structure, replacing with default template')
+              console.log('📋 Old template components:', initialData?.content?.map((c: any) => c.type) || [])
+              // Clear the old cached data
+              localStorage.removeItem(cachedDataKey)
+              // Use new default template
+              initialData = getDefaultTemplateData(pageInArray.name, eventData)
+              // Save the corrected template to cache
+              localStorage.setItem(cachedDataKey, JSON.stringify(initialData))
+              console.log('✅ Replaced with new template components:', initialData?.content?.map((c: any) => c.type) || [])
+            }
           }
         } catch (e) {
           logger.warn('loadPage: Failed to parse cached data:', e)
@@ -1020,11 +1079,22 @@ export const usePageManagement = () => {
         }
       }
       
-      // If no cached data, use default template data
+      // If no cached data:
+      // - scratch mode: use an empty page (NOT welcome/template)
+      // - template mode: use default template
       if (!initialData) {
-        initialData = getDefaultTemplateData(pageInArray.name, eventData)
-        logger.debug('loadPage: Using default template data for page:', pageInArray.name)
-        console.log('📄 Using default template data for:', pageInArray.name)
+        if (isCreateFromScratch) {
+          initialData = {
+            content: [],
+            root: { props: { title: pageInArray.name, pageTitle: pageInArray.name } },
+            zones: {}
+          }
+          logger.debug('loadPage: Using empty scratch data for page:', pageInArray.name)
+        } else {
+          initialData = getDefaultTemplateData(pageInArray.name, eventData)
+          logger.debug('loadPage: Using default template data for page:', pageInArray.name)
+          console.log('📄 Using default template data for:', pageInArray.name)
+        }
       }
       
       // Clean any duplicates before setting
@@ -1193,9 +1263,58 @@ export const usePageManagement = () => {
       }
     }
     
-    // If no cached data, use default template
+    // If no cached data:
+    // - scratch mode: do NOT create a new page implicitly (prevents phantom "Page 2"/welcome copies)
+    // - template mode: use default template fallback
     // Note: GET_PAGE endpoint is not used - webpages are loaded via fetchWebpage() for UUID-based pages
     if (!initialData) {
+      if (isCreateFromScratch) {
+        // In scratch mode, if a page is selected but no cache exists yet, create an empty page for it.
+        // This prevents clicking an unsaved page from "snapping back" to Page 1.
+        const nameFromList =
+          pages.find((p) => p.id === pageId || p.filename === serverFilename)?.name ??
+          (pageId === 'page1'
+            ? 'Page 1'
+            : pageId
+                .replace(/^page-/, '')
+                .replace(/-/g, ' '))
+
+        const empty = {
+          content: [],
+          root: { props: { title: nameFromList, pageTitle: nameFromList } },
+          zones: {}
+        }
+
+        try {
+          localStorage.setItem(`puck-page-${pageId}`, JSON.stringify(empty))
+        } catch {
+          // ignore
+        }
+
+        setCurrentData(empty)
+        setCurrentPage(pageId)
+        setCurrentPageName(nameFromList)
+        setShowPageManager(false)
+
+        // Ensure it exists in the pages list
+        setPages((prevPages) => {
+          const filename = pageId.endsWith('.json') ? pageId : `${pageId}.json`
+          const existingIndex = prevPages.findIndex((p) => p.id === pageId || p.filename === filename)
+          if (existingIndex === -1) {
+            return [
+              ...prevPages,
+              { id: pageId, name: nameFromList, filename, lastModified: new Date().toISOString() }
+            ]
+          }
+          const existing = prevPages[existingIndex]
+          if (existing.name === nameFromList) return prevPages
+          const next = [...prevPages]
+          next[existingIndex] = { ...existing, name: nameFromList, lastModified: new Date().toISOString() }
+          return next
+        })
+
+        return empty
+      }
       try {
         logger.debug('No cached data found, using default template for:', serverFilename)
         console.log('📡 No cached data, using default template for:', serverFilename)
@@ -1391,6 +1510,14 @@ export const usePageManagement = () => {
         },
         zones: {}
       }
+
+      // Cache immediately so refresh / page switching can restore unsaved pages
+      try {
+        const cacheKey = `puck-page-${newPageId}`
+        localStorage.setItem(cacheKey, JSON.stringify(newPageData))
+      } catch {
+        // ignore
+      }
       
       // Add the new page to the array
       const newPage: Page = {
@@ -1440,6 +1567,16 @@ export const usePageManagement = () => {
             pageTitle: pageName
           }
         }
+      }
+
+      // Move cache from old page id to new page id so refresh restores the renamed unsaved page
+      try {
+        const oldKey = `puck-page-${oldPageId}`
+        const newKey = `puck-page-${newPageId}`
+        localStorage.setItem(newKey, JSON.stringify(updatedData))
+        localStorage.removeItem(oldKey)
+      } catch {
+        // ignore
       }
       
       // Note: SAVE_PAGE endpoint is not used - pages are saved via createOrUpdateWebpage() in webpageService
@@ -1666,6 +1803,10 @@ export const usePageManagement = () => {
       const isCreateFromScratch = urlParams.get('mode') === 'blank' || 
                                    localStorage.getItem('create-from-scratch') === 'true'
       const emptyPage1DataStr = localStorage.getItem('create-from-scratch-page1')
+      // IMPORTANT: scope scratch page cache to a specific event.
+      // Do NOT use a shared fallback key, otherwise pages can leak across events.
+      const scratchEventUuid = getEventUuid()
+      const scratchPagesKey = scratchEventUuid ? `scratch-pages-${scratchEventUuid}` : null
       
       // If creating from scratch, skip backend page loading and use clean state
       if (isCreateFromScratch) {
@@ -1682,18 +1823,100 @@ export const usePageManagement = () => {
             zones: {}
           }
           
-          setCurrentData(emptyPage1Data)
-          setCurrentPage('page1')
-          setCurrentPageName('Page 1')
-          
-          // Set pages array to ONLY page1 (no backend pages)
-          // Filter out any welcome pages that might exist
-          setPages([{
-            id: 'page1',
-            name: 'Page 1',
-            filename: 'page1.json',
-            lastModified: new Date().toISOString()
-          }])
+          // Hydrate scratch pages from storage if available (prevents resetting to Page 1 / Page 2 after navigation)
+          let storedPages: Page[] | null = null
+          try {
+            const raw = scratchPagesKey ? localStorage.getItem(scratchPagesKey) : null
+            if (raw) {
+              const parsed = JSON.parse(raw)
+              if (Array.isArray(parsed)) storedPages = parsed
+            }
+          } catch {
+            // ignore
+          }
+
+          const ensurePage1 = (list: Page[]) => {
+            const hasPage1 = list.some((p) => p?.id === 'page1' || p?.filename === 'page1.json')
+            if (hasPage1) return list
+            return [
+              {
+                id: 'page1',
+                name: 'Page 1',
+                filename: 'page1.json',
+                lastModified: new Date().toISOString()
+              },
+              ...list
+            ]
+          }
+
+          const normalizedStored = storedPages
+            ? ensurePage1(
+                storedPages.filter((p: any) => p && typeof p.id === 'string' && typeof p.name === 'string')
+              )
+            : null
+
+          setPages((prev) => {
+            // If we already have more than page1, don't wipe it.
+            if (prev.length > 1) return prev
+            if (normalizedStored && normalizedStored.length > 0) return normalizedStored
+            return [
+              {
+                id: 'page1',
+                name: 'Page 1',
+                filename: 'page1.json',
+                lastModified: new Date().toISOString()
+              }
+            ]
+          })
+
+          // Keep the current data/page stable; only fall back to Page 1 if nothing is set.
+          setCurrentData((prev: any) => (prev ? prev : emptyPage1Data))
+          setCurrentPage((prev) => (prev ? prev : 'page1'))
+          setCurrentPageName((prev) => (prev ? prev : 'Page 1'))
+
+          // If the URL points to a specific editor page, restore it on refresh.
+          // - UUID pageIds: load from backend via loadPage()
+          // - Local scratch ids: load from localStorage cache (or create empty + cache)
+          try {
+            const match = window.location.pathname.match(/\/event\/website\/editor\/([^/?#]+)/)
+            const routePageId = match?.[1] ? decodeURIComponent(match[1]) : null
+            if (routePageId && routePageId !== 'page1') {
+              if (uuidRegex.test(routePageId)) {
+                await loadPage(`${routePageId}.json`)
+              } else {
+                const cached = getCachedPageData(routePageId)
+                if (cached) {
+                  const cleaned = cleanDuplicateComponents(cached)
+                  setCurrentData(cleaned)
+                  setCurrentPage(routePageId)
+                  setCurrentPageName(getPageTitleFromData(cleaned) || routePageId)
+                  setShowPageManager(false)
+                } else {
+                  // Create an empty page in cache so subsequent refreshes keep it
+                  const nameFromStored =
+                    storedPages?.find((p) => p?.id === routePageId)?.name ??
+                    normalizedStored?.find((p) => p?.id === routePageId)?.name ??
+                    routePageId
+                  const empty = {
+                    content: [],
+                    root: { props: { title: nameFromStored, pageTitle: nameFromStored } },
+                    zones: {}
+                  }
+                  try {
+                    localStorage.setItem(`puck-page-${routePageId}`, JSON.stringify(empty))
+                  } catch {
+                    // ignore
+                  }
+                  setCurrentData(empty)
+                  setCurrentPage(routePageId)
+                  setCurrentPageName(nameFromStored)
+                  setShowPageManager(false)
+                }
+              }
+            }
+          } catch {
+            // ignore
+          }
           
           // Clear WebsitePagesContext localStorage to remove any cached welcome pages
           try {
@@ -1779,6 +2002,29 @@ export const usePageManagement = () => {
     
     initializePage()
   }, [])
+
+  // Persist scratch pages list while in `mode=blank` so navigation/remount doesn't reset to generic "Page 1 / Page 2"
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const urlParams = new URLSearchParams(window.location.search)
+    const isCreateFromScratch =
+      urlParams.get('mode') === 'blank' || localStorage.getItem('create-from-scratch') === 'true'
+    if (!isCreateFromScratch) return
+    const scratchEventUuid = getEventUuid()
+    if (!scratchEventUuid) return
+    const scratchPagesKey = `scratch-pages-${scratchEventUuid}`
+    try {
+      const minimal = pages.map((p) => ({
+        id: p.id,
+        name: p.name,
+        filename: p.filename,
+        lastModified: p.lastModified
+      }))
+      localStorage.setItem(scratchPagesKey, JSON.stringify(minimal))
+    } catch {
+      // ignore
+    }
+  }, [pages, createdEvent?.uuid])
 
   // Continuously filter out welcome pages when in create-from-scratch mode
   useEffect(() => {

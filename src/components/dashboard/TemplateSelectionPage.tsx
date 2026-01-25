@@ -296,6 +296,15 @@ const TemplateSelectionPage: React.FC = () => {
     localStorage.setItem('create-from-scratch', 'true')
     // Track where scratch flow started (for back navigation behavior)
     localStorage.setItem('create-from-scratch-origin', 'template-selection')
+    // Also store origin per-event to avoid cross-event/refresh issues
+    try {
+      const eventUuid = createdEvent?.uuid ?? localStorage.getItem('currentEventUuid')
+      if (eventUuid) {
+        localStorage.setItem(`create-from-scratch-origin-${eventUuid}`, 'template-selection')
+      }
+    } catch {
+      // ignore
+    }
     
     // Navigate to editor with Page1 and mode=blank query param
     window.history.pushState({}, '', '/event/website/editor/page1?mode=blank')
