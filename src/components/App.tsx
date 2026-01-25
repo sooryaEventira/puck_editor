@@ -421,6 +421,11 @@ const App: React.FC = () => {
         if (currentViewRef.current !== 'dashboard') {
           setCurrentView('dashboard')
         }
+      } else if (path === '/dashboard') {
+        // Navigate to Dashboard root
+        if (currentViewRef.current !== 'dashboard') {
+          setCurrentView('dashboard')
+        }
       } else if (path.startsWith('/event/website/preview/') || path.startsWith('/event/website')) {
         // If navigating to preview or website management, switch to dashboard view
         // DashboardLayout will handle showing the correct page

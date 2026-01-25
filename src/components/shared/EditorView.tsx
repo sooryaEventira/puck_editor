@@ -130,8 +130,14 @@ export const EditorView: React.FC<EditorViewProps> = ({
   // This ensures we always publish the most up-to-date data
   const latestDataRef = useRef(currentData)
   
-  // Get banner URL for key generation (to force re-render when banner changes)
-  const bannerUrl = typeof window !== 'undefined' ? localStorage.getItem('event-form-banner') : null
+  // Get banner URL for key generation (to force re-render when banner changes).
+  // Use per-event storage to avoid leaking banners across events.
+  const bannerUrl = typeof window !== 'undefined'
+    ? (() => {
+        const eventUuid = localStorage.getItem('currentEventUuid')
+        return eventUuid ? localStorage.getItem(`event-form-banner-${eventUuid}`) : null
+      })()
+    : null
   const bannerKey = bannerUrl ? bannerUrl.substring(0, 20).replace(/[^a-zA-Z0-9]/g, '') : 'no-banner'
   
   // Update the ref whenever currentData changes
@@ -872,24 +878,11 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   onAddPage={editorMode === 'blank' ? () => setShowNewPageCreationModal(true) : undefined}
                   onManagePages={onManagePages}
                   onBackClick={() => {
-                    // If in create-from-scratch mode, navigate back to TemplateSelectionPage
-                    if (editorMode === 'blank') {
-                      const origin = getScratchOrigin()
-                      if (origin === 'event-website') {
-                        // scratch started from Event Website listing
-                        window.history.pushState({}, '', '/event/website')
-                        window.dispatchEvent(new PopStateEvent('popstate'))
-                      } else {
-                        // default: scratch started from TemplateSelection page
-                        handleBackToTemplateSelection()
-                      }
-                    } else {
-                      // Otherwise, navigate to website preview page for the current page
-                      if (currentPage) {
-                        window.history.pushState({}, '', `/event/website/preview/${currentPage}`)
-                        window.dispatchEvent(new PopStateEvent('popstate'))
-                      }
-                    }
+                    // Always go back to Event Website listing page.
+                    // Users expect the PageSidebar back arrow to return to `/event/website`
+                    // (not the preview page), regardless of editor mode or origin.
+                    window.history.pushState({}, '', '/event/website')
+                    window.dispatchEvent(new PopStateEvent('popstate'))
                   }}
                   editorMode={editorMode}
                 />

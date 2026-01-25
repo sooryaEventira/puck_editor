@@ -62,7 +62,14 @@ export const EventFormProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (data.banner) {
       const reader = new FileReader()
       reader.onload = () => {
-        localStorage.setItem('event-form-banner', reader.result as string)
+        const dataUrl = reader.result as string
+        // Store globally for immediate use during creation flow…
+        localStorage.setItem('event-form-banner', dataUrl)
+        // …and also store per-event when we know the event UUID.
+        const eventUuid = localStorage.getItem('currentEventUuid')
+        if (eventUuid) {
+          localStorage.setItem(`event-form-banner-${eventUuid}`, dataUrl)
+        }
       }
       reader.readAsDataURL(data.banner)
     }
@@ -73,6 +80,10 @@ export const EventFormProvider: React.FC<{ children: ReactNode }> = ({ children 
     localStorage.removeItem('event-form-data')
     localStorage.removeItem('event-form-logo')
     localStorage.removeItem('event-form-banner')
+    const eventUuid = localStorage.getItem('currentEventUuid')
+    if (eventUuid) {
+      localStorage.removeItem(`event-form-banner-${eventUuid}`)
+    }
   }
 
   const setCreatedEvent = (event: CreateEventResponseData) => {
@@ -84,15 +95,36 @@ export const EventFormProvider: React.FC<{ children: ReactNode }> = ({ children 
       localStorage.setItem('created-event', JSON.stringify(event))
       // Also store the UUID separately for easy access
       localStorage.setItem('currentEventUuid', event.uuid)
+
+      // If this event has NO uploaded banner, do not reuse a banner from another event.
+      // Let HeroSection's own default image render.
+      if (!event.banner) {
+        localStorage.removeItem('event-form-banner')
+        localStorage.removeItem(`event-form-banner-${event.uuid}`)
+      } else {
+        // If backend provides a banner URL, store it per-event as well (normalized to https).
+        let bannerUrl = event.banner
+        if (typeof bannerUrl === 'string' && bannerUrl.startsWith('http://')) {
+          bannerUrl = bannerUrl.replace('http://', 'https://')
+        }
+        if (typeof bannerUrl === 'string' && bannerUrl.trim()) {
+          localStorage.setItem(`event-form-banner-${event.uuid}`, bannerUrl)
+          localStorage.setItem('event-form-banner', bannerUrl)
+        }
+      }
     } catch (error) {
       // Error writing to localStorage
     }
   }
 
   const clearCreatedEvent = () => {
+    const prevUuid = localStorage.getItem('currentEventUuid')
     setCreatedEventState(null)
     localStorage.removeItem('created-event')
     localStorage.removeItem('currentEventUuid')
+    if (prevUuid) {
+      localStorage.removeItem(`event-form-banner-${prevUuid}`)
+    }
   }
 
   return (

@@ -14,7 +14,7 @@ interface DashboardContentProps {
   onDateRangeChange?: (range: DateRange) => void
   onFilterClick?: () => void
   onEditEvent?: (eventId: string) => void
-  onDeleteEvent?: (eventId: string) => void
+  onDeleteEvent?: (eventId: string) => void | Promise<void>
   onEventRowClick?: (event: Event) => void
   onSortEvents?: (column: string) => void
   totalEvents?: number

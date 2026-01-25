@@ -84,8 +84,9 @@ const getDefaultTemplateData = (pageName: string = 'Page 1', eventData?: any) =>
   const faqId = generateId('FAQAccordion')
   const contactFooterId = generateId('ContactFooter')
   
-  // Get banner image from localStorage or use default
-  const bannerUrl = localStorage.getItem('event-form-banner') || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'
+  // Default banner: do NOT pull from global localStorage (can be from another event).
+  // If no banner was uploaded for this event, we keep the template's default.
+  const bannerUrl = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'
   
   // Get event data values
   const eventName = eventData?.eventName || 'Event Title'
@@ -378,8 +379,10 @@ export const usePageManagement = () => {
   // Function to update HeroSection with eventData and banner
   // Use useCallback to avoid stale closures
   const updateHeroSectionWithEventData = useCallback(() => {
-    // Always check for banner in localStorage, even if eventData is not available
-    const bannerUrl = localStorage.getItem('event-form-banner')
+    // Only use a banner from localStorage if it belongs to the current event.
+    const currentEventUuid = getEventUuid()
+    const bannerUrl =
+      currentEventUuid ? localStorage.getItem(`event-form-banner-${currentEventUuid}`) : null
     
     console.log('🖼️ updateHeroSectionWithEventData - bannerUrl in storage:', bannerUrl ? (bannerUrl.startsWith('data:') ? 'data:image...' : bannerUrl.substring(0, 50) + '...') : 'NONE')
     
@@ -395,9 +398,7 @@ export const usePageManagement = () => {
       
       console.log('🖼️ Current HeroSection backgroundImage:', heroSection.props.backgroundImage?.substring(0, 50) + '...')
       
-      // ALWAYS prioritize banner from localStorage if it exists
-      // If bannerUrl exists in localStorage, use it (even if it's different from current)
-      // Otherwise, keep existing backgroundImage (don't force default)
+      // If we have a banner for THIS event, use it; otherwise keep the page's own banner image.
       const currentBannerUrl = bannerUrl || heroSection.props.backgroundImage
       
       console.log('🖼️ Will use bannerUrl:', currentBannerUrl ? (currentBannerUrl.startsWith('data:') ? 'data:image...' : currentBannerUrl.substring(0, 50) + '...') : 'NONE')
@@ -412,7 +413,7 @@ export const usePageManagement = () => {
       // Check if banner in localStorage is different from what's in the component
       // Force update if there's a banner in localStorage but component has default image
       const hasDefaultImage = heroSection.props.backgroundImage?.includes('unsplash.com/photo-1540575467063')
-      const shouldForceBannerUpdate = bannerUrl && (hasDefaultImage || heroSection.props.backgroundImage !== bannerUrl)
+      const shouldForceBannerUpdate = Boolean(bannerUrl) && (hasDefaultImage || heroSection.props.backgroundImage !== bannerUrl)
 
       // Check if update is needed
       // Always update if bannerUrl exists in localStorage and is different from current
@@ -1263,10 +1264,7 @@ export const usePageManagement = () => {
       }
     }
     
-    // If no cached data:
-    // - scratch mode: do NOT create a new page implicitly (prevents phantom "Page 2"/welcome copies)
-    // - template mode: use default template fallback
-    // Note: GET_PAGE endpoint is not used - webpages are loaded via fetchWebpage() for UUID-based pages
+
     if (!initialData) {
       if (isCreateFromScratch) {
         // In scratch mode, if a page is selected but no cache exists yet, create an empty page for it.

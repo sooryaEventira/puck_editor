@@ -60,16 +60,105 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
   }, [propSelectedDate])
   
   // Normalize sessions - convert date strings to Date objects if needed
-  const normalizedSessions = useMemo(() => {
-    return (sessions || []).map((session: any) => {
-      if (session.date && typeof session.date === 'string') {
-        return {
+  const gridSessions = useMemo(() => {
+    const raw = (sessions || []) as any[]
+
+    const toMinutes = (time?: string, period?: string) => {
+      if (!time) return 0
+      const [hRaw, mRaw] = String(time).split(':')
+      let h = Number(hRaw)
+      const m = Number(mRaw ?? 0)
+      const p = String(period ?? 'AM').toUpperCase()
+      if (p === 'PM' && h !== 12) h += 12
+      if (p === 'AM' && h === 12) h = 0
+      return h * 60 + (Number.isFinite(m) ? m : 0)
+    }
+
+    // 1) Normalize shape (date, ids, parent references)
+    const normalized: SavedSession[] = raw
+      .map((session: any) => {
+        const id = String(session?.id ?? session?.uuid ?? '')
+        if (!id) return null
+
+        const sessionTypeRaw = String(session?.sessionType ?? session?.session_type ?? '').toLowerCase()
+        const parentUuid =
+          session?.parentUuid ??
+          session?.parent_uuid ??
+          session?.parent_session_uuid ??
+          session?.parentSessionUuid ??
+          session?.parent_id ??
+          session?.parentId ??
+          session?.parentId
+
+        const date =
+          session?.date && typeof session.date === 'string'
+            ? new Date(session.date)
+            : session?.date instanceof Date
+              ? session.date
+              : undefined
+
+        const normalizedSession: SavedSession = {
           ...session,
-          date: new Date(session.date)
+          id,
+          date,
+          sessionType: sessionTypeRaw || session?.sessionType,
+          // IMPORTANT: for mapping in UI, use parentId to store parent UUID.
+          parentId:
+            sessionTypeRaw === 'child'
+              ? (parentUuid ? String(parentUuid) : undefined)
+              : undefined,
         }
+
+        return normalizedSession
+      })
+      .filter(Boolean) as SavedSession[]
+
+    // 2) Build parent map using sessionType === 'parent'
+    const parents = normalized.filter(
+      (s) => String(s.sessionType ?? '').toLowerCase() === 'parent'
+    )
+    const parentById = new Map<string, SavedSession>()
+    parents.forEach((p) => parentById.set(p.id, p))
+
+    // 3) Attach children to parents by matching child's parentUuid (stored in parentId) to parent.id
+    const children = normalized.filter(
+      (s) => String(s.sessionType ?? '').toLowerCase() === 'child'
+    )
+
+    const childrenByParent = new Map<string, SavedSession[]>()
+    const orphanChildrenAsParents: SavedSession[] = []
+
+    for (const child of children) {
+      const pid = child.parentId
+      if (pid && parentById.has(pid)) {
+        const arr = childrenByParent.get(pid) ?? []
+        arr.push(child)
+        childrenByParent.set(pid, arr)
+      } else {
+        // If no valid parent match, render as standalone (parent) so it's still visible.
+        orphanChildrenAsParents.push({ ...child, sessionType: 'parent', parentId: undefined })
       }
-      return session
-    })
+    }
+
+    // 4) Output: parents first, then their children (sorted by time)
+    const sortByStart = (a: SavedSession, b: SavedSession) =>
+      toMinutes(a.startTime, a.startPeriod) - toMinutes(b.startTime, b.startPeriod) ||
+      String(a.title ?? '').localeCompare(String(b.title ?? ''))
+
+    const uniqueParents = Array.from(
+      new Map<string, SavedSession>(
+        [...parents, ...orphanChildrenAsParents].map((p) => [p.id, p])
+      ).values()
+    ).sort(sortByStart)
+
+    const output: SavedSession[] = []
+    for (const p of uniqueParents) {
+      output.push(p)
+      const kids = (childrenByParent.get(p.id) ?? []).slice().sort(sortByStart)
+      output.push(...kids)
+    }
+
+    return output
   }, [sessions])
 
   const handleDateChange = (date: Date) => {
@@ -152,9 +241,9 @@ const ScheduleContent: React.FC<ScheduleContentProps> = ({
           </Button>
         </div>
 
-        {normalizedSessions && normalizedSessions.length > 0 ? (
+        {gridSessions && gridSessions.length > 0 ? (
           <ScheduleGrid 
-            sessions={normalizedSessions} 
+            sessions={gridSessions} 
             selectedDate={selectedDate} 
             onAddParallelSession={(parentId) => onAddSession?.(parentId)} 
           />

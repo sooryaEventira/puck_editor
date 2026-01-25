@@ -138,9 +138,7 @@ export const createWebpage = async (request: CreateWebpageRequest): Promise<Crea
       throw new Error(errorMessage)
     }
 
-    if (data.status === 'success') {
-      showToast.success(data.message || 'Webpage created successfully')
-    }
+    // Success toast is handled by the calling UI (avoid duplicate toasts).
 
     if (!data.data) {
       throw new Error('No data returned from server')
@@ -415,9 +413,7 @@ export const updateWebpage = async (
       throw new Error(errorMessage)
     }
 
-    if (data.status === 'success') {
-      showToast.success(data.message || 'Webpage updated successfully')
-    }
+    // Success toast is handled by the calling UI (avoid duplicate toasts).
 
     if (!data.data) {
       throw new Error('No data returned from server')

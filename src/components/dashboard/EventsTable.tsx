@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react'
-import { Edit05, Trash03 } from '@untitled-ui/icons-react'
+import { Trash03 } from '@untitled-ui/icons-react'
 import { DividerLineTable, type DividerLineTableColumn, type DividerLineTableSortDescriptor } from '../ui/untitled'
 import { TablePagination } from '../ui/TablePagination'
+import { ConfirmDeleteModal } from '../ui'
 
 export interface Event {
   id: string
@@ -17,7 +18,7 @@ export interface Event {
 interface EventsTableProps {
   events?: Event[]
   onEditClick?: (eventId: string) => void
-  onDeleteClick?: (eventId: string) => void
+  onDeleteClick?: (eventId: string) => void | Promise<void>
   onRowClick?: (event: Event) => void
   onSort?: (column: string) => void
   searchValue?: string
@@ -59,6 +60,9 @@ const EventsTable: React.FC<EventsTableProps> = ({
   const [sortDescriptor, setSortDescriptor] = useState<DividerLineTableSortDescriptor | undefined>()
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const [deleteTarget, setDeleteTarget] = useState<Event | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Log events received
   useEffect(() => {
@@ -178,7 +182,8 @@ const EventsTable: React.FC<EventsTableProps> = ({
               type="button"
               onClick={(e) => {
                 e.stopPropagation()
-                onDeleteClick?.(item.id)
+                setDeleteTarget(item)
+                setIsDeleteModalOpen(true)
               }}
               className="text-slate-500 hover:text-rose-600 transition-colors"
               aria-label={`Delete ${item.name}`}
@@ -193,29 +198,55 @@ const EventsTable: React.FC<EventsTableProps> = ({
   )
 
   return (
-    <DividerLineTable
-      data={paginatedEvents}
-      columns={columns}
-      getRowKey={(item) => item.id}
-      sortDescriptor={sortDescriptor}
-      onSortChange={handleSortChange}
-      onRowClick={onRowClick}
-      size="md"
-      emptyState={
-        <div className="flex min-h-[200px] items-center justify-center text-sm text-slate-500">
-          {searchValue.trim() 
-            ? `No events found matching "${searchValue}".` 
-            : 'No events available.'}
-        </div>
-      }
-      footer={
-        <TablePagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
-      }
-    />
+    <>
+      <DividerLineTable
+        data={paginatedEvents}
+        columns={columns}
+        getRowKey={(item) => item.id}
+        sortDescriptor={sortDescriptor}
+        onSortChange={handleSortChange}
+        onRowClick={onRowClick}
+        size="md"
+        emptyState={
+          <div className="flex min-h-[200px] items-center justify-center text-sm text-slate-500">
+            {searchValue.trim()
+              ? `No events found matching "${searchValue}".`
+              : 'No events available.'}
+          </div>
+        }
+        footer={
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        }
+      />
+
+      <ConfirmDeleteModal
+        isVisible={isDeleteModalOpen}
+        onClose={() => {
+          if (isDeleting) return
+          setIsDeleteModalOpen(false)
+          setDeleteTarget(null)
+        }}
+        title="Delete event"
+        itemLabel={deleteTarget?.name}
+        isLoading={isDeleting}
+        onConfirm={async () => {
+          if (!deleteTarget?.id) return
+          if (!onDeleteClick) return
+          setIsDeleting(true)
+          try {
+            await onDeleteClick(deleteTarget.id)
+            setIsDeleteModalOpen(false)
+            setDeleteTarget(null)
+          } finally {
+            setIsDeleting(false)
+          }
+        }}
+      />
+    </>
   )
 }
 

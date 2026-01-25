@@ -356,18 +356,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   }
 
   const handleDeleteEvent = async (eventId: string) => {
-    const target = events.find((e) => e.id === eventId)
-    const confirmed = window.confirm(
-      `Delete event "${target?.name ?? 'this event'}"? This action cannot be undone.`
-    )
-    if (!confirmed) return
-
     try {
       await deleteEvent(eventId)
       setEvents((prev) => prev.filter((e) => e.id !== eventId))
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to delete event. Please try again.'
       showToast.error(msg)
+      throw e
     }
   }
 

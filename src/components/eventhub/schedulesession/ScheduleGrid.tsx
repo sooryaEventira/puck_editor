@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useLayoutEffect, useRef } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Plus, ChevronUp, ChevronDown, Calendar, Attachment01, User01 } from '@untitled-ui/icons-react'
 import { SavedSession } from './sessionTypes'
 
@@ -40,11 +40,6 @@ const SessionContainer: React.FC<SessionContainerProps> = ({
   getSessionTypeLabel,
   isTimeValid
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const timeColumnRef = useRef<HTMLDivElement>(null)
-  const resizeObserverRef = useRef<ResizeObserver | null>(null)
-  const mutationObserverRef = useRef<MutationObserver | null>(null)
-  const [containerHeight, setContainerHeight] = useState<number | null>(null)
   const hasParallelSessions = parallelSessions.length > 0
   const showAddButton = !hasParallelSessions && onAddParallelSession
   const showExpandButton = hasParallelSessions
@@ -142,10 +137,13 @@ const SessionContainer: React.FC<SessionContainerProps> = ({
                     {/* Metadata Row */}
                     <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                          <Calendar className="h-3 w-3" />
-                          {formatTimeRange(child)}
-                        </span>
+                        {/* Child sessions have no duration in Excel -> don't display time */}
+                        {!child.parentId && (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                            <Calendar className="h-3 w-3" />
+                            {formatTimeRange(child)}
+                          </span>
+                        )}
 
                         {child.location && (
                           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
@@ -219,143 +217,11 @@ const SessionContainer: React.FC<SessionContainerProps> = ({
     [getChildren, isSessionExpanded, isTimeValid, onAddParallelSession, onToggleSessionExpand, formatTimeRange, getLocationLabel, getSessionTypeLabel]
   )
 
-  // Measure container height and sync time column
-  const measureHeight = React.useCallback(() => {
-    if (containerRef.current) {
-      // Force a reflow to ensure accurate measurement
-      const height = containerRef.current.offsetHeight
-      setContainerHeight(height)
-    }
-  }, [])
-
-  // Use useLayoutEffect to measure immediately when expand/collapse state changes
-  // This runs synchronously after DOM mutations but before paint
-  useLayoutEffect(() => {
-    // When collapsing, we need to wait for React to remove the elements
-    // When expanding, we need to wait for React to add the elements
-    const measureAfterUpdate = () => {
-      if (containerRef.current) {
-        // Use offsetHeight which forces a reflow and gives accurate height
-        const height = containerRef.current.offsetHeight
-        setContainerHeight(height)
-      }
-    }
-
-    // Measure immediately
-    measureAfterUpdate()
-    
-    // Use setTimeout to ensure it runs after React's DOM updates complete
-    const timeoutId = setTimeout(() => {
-      measureAfterUpdate()
-    }, 0)
-    
-    // Measure after multiple animation frames to ensure DOM has fully updated
-    let rafId1: number
-    let rafId2: number
-    let rafId3: number
-    
-    rafId1 = requestAnimationFrame(() => {
-      measureAfterUpdate()
-      rafId2 = requestAnimationFrame(() => {
-        measureAfterUpdate()
-        rafId3 = requestAnimationFrame(() => {
-          measureAfterUpdate()
-        })
-      })
-    })
-
-    return () => {
-      clearTimeout(timeoutId)
-      if (rafId1) cancelAnimationFrame(rafId1)
-      if (rafId2) cancelAnimationFrame(rafId2)
-      if (rafId3) cancelAnimationFrame(rafId3)
-    }
-  }, [isExpanded, parallelSessions.length])
-
-  // Set up ResizeObserver and MutationObserver to track all changes
-  useEffect(() => {
-    const element = containerRef.current
-    if (!element) return
-
-    // Clean up previous observers
-    if (resizeObserverRef.current) {
-      resizeObserverRef.current.disconnect()
-      resizeObserverRef.current = null
-    }
-    if (mutationObserverRef.current) {
-      mutationObserverRef.current.disconnect()
-      mutationObserverRef.current = null
-    }
-
-    // Create ResizeObserver to watch for size changes
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target === element || element.contains(entry.target)) {
-          // Use offsetHeight for more accurate measurement
-          const height = element.offsetHeight
-          setContainerHeight(height)
-          break
-        }
-      }
-    })
-
-    resizeObserverRef.current = resizeObserver
-    resizeObserver.observe(element)
-
-    // Also use MutationObserver to detect when children are added/removed
-    const mutationObserver = new MutationObserver((mutations) => {
-      // Check if any nodes were added or removed
-      const hasChanges = mutations.some(mutation => 
-        mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0
-      )
-      
-      if (hasChanges) {
-        // Multiple measurements to catch DOM updates
-        requestAnimationFrame(() => {
-          measureHeight()
-          requestAnimationFrame(() => {
-            measureHeight()
-          })
-        })
-      }
-    })
-
-    mutationObserverRef.current = mutationObserver
-    mutationObserver.observe(element, {
-      childList: true,
-      subtree: true,
-      attributes: false
-    })
-
-    // Initial measurement with a small delay to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      measureHeight()
-    }, 0)
-
-    return () => {
-      clearTimeout(timeoutId)
-      if (resizeObserverRef.current) {
-        resizeObserverRef.current.disconnect()
-        resizeObserverRef.current = null
-      }
-      if (mutationObserverRef.current) {
-        mutationObserverRef.current.disconnect()
-        mutationObserverRef.current = null
-      }
-    }
-  }, [measureHeight, isExpanded, parallelSessions.length])
-
   return (
-    <div className="flex gap-6">
-      {/* Time Column - Height matches container */}
-      <div className="flex-shrink-0 w-24">
-        <div 
-          ref={timeColumnRef}
-          className="border border-slate-200 rounded-lg bg-white shadow-sm flex flex-col justify-between"
-          style={{ 
-            height: containerHeight !== null && containerHeight > 0 ? `${containerHeight}px` : 'auto'
-          }}
-        >
+    <div className="flex items-stretch gap-6">
+      {/* Time Column - stretches to match session column height */}
+      <div className="flex-shrink-0 w-24 self-stretch">
+        <div className="h-full border border-slate-200 rounded-lg bg-white shadow-sm flex flex-col justify-between">
           <div className="text-center pt-3 flex-shrink-0">
             <div className="text-sm font-semibold text-slate-900">
               {formatTime(session.startTime, session.startPeriod || 'AM')}
@@ -374,7 +240,7 @@ const SessionContainer: React.FC<SessionContainerProps> = ({
       </div>
 
       {/* Session Cards Column */}
-      <div className="flex-1" ref={containerRef}>
+      <div className="flex-1">
         {/* Parent Session Card */}
         <div className="border border-slate-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
           <div className="p-4">
@@ -603,6 +469,13 @@ const ScheduleGrid: React.FC<ScheduleGridProps> = ({
     return total
   }
 
+  const minutesToTime24 = (minutesTotal: number): string => {
+    const m = ((minutesTotal % (24 * 60)) + (24 * 60)) % (24 * 60)
+    const hh = String(Math.floor(m / 60)).padStart(2, '0')
+    const mm = String(m % 60).padStart(2, '0')
+    return `${hh}:${mm}`
+  }
+
   // Validate parallel session time is within parent session time
   const isTimeValid = (parallelSession: SavedSession, parentSession: SavedSession): boolean => {
     // We allow children to be outside parent's time range (Excel parent linkage is title-based).
@@ -612,8 +485,11 @@ const ScheduleGrid: React.FC<ScheduleGridProps> = ({
     return true
   }
 
+  // Backend uses 24-hour time; display in 24-hour format in UI.
   const formatTime = (time: string, period: string) => {
-    return `${time} ${period}`
+    const p = String(period || 'AM').toUpperCase() as 'AM' | 'PM'
+    const mins = timeToMinutes(time, p)
+    return minutesToTime24(mins)
   }
 
   const formatTimeRange = (session: SavedSession) => {
