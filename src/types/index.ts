@@ -404,15 +404,10 @@ export interface LocationFloorPlanProps {
   backgroundColor?: string
   textColor?: string
   cardBackgroundColor?: string
-  cardBorderColor?: string
-  buttonColor?: string
-  buttonTextColor?: string
-  padding?: string
-  borderRadius?: string
 }
 
 export interface GridItem {
-  id: string
+  id?: string
   image?: string | React.ReactElement
   title?: string | React.ReactElement
   text?: string | React.ReactElement
@@ -422,6 +417,8 @@ export interface GridItem {
 
 export interface GridBlockProps {
   title?: string | React.ReactElement
+  itemTitleAlign?: 'left' | 'center' | 'right'
+  itemTitleColor?: string
   layout?: '1' | '2x1' | '2x2' | '2x3'
   items?: GridItem[]
   backgroundColor?: string

@@ -1,7 +1,7 @@
 import React from 'react'
 
 export interface GridItem {
-  id: string
+  id?: string
   image?: string | React.ReactElement
   title?: string | React.ReactElement
   text?: string | React.ReactElement
@@ -11,6 +11,8 @@ export interface GridItem {
 
 export interface GridBlockProps {
   title?: string | React.ReactElement
+  itemTitleAlign?: 'left' | 'center' | 'right'
+  itemTitleColor?: string
   layout?: '1' | '2x1' | '2x2' | '2x3'
   items?: GridItem[]
   backgroundColor?: string
@@ -25,6 +27,8 @@ export interface GridBlockProps {
 
 const GridBlock: React.FC<GridBlockProps> = ({
   title,
+  itemTitleAlign = 'left',
+  itemTitleColor,
   layout = '2x2',
   items = [],
   backgroundColor = '#ffffff',
@@ -37,14 +41,20 @@ const GridBlock: React.FC<GridBlockProps> = ({
   imageHeight = '200px'
 }) => {
   const getStringValue = (prop: any): string => {
-    if (typeof prop === 'string') return prop;
-    if (prop && typeof prop === 'object' && 'props' in prop && prop.props && 'value' in prop.props) {
-      return prop.props.value || '';
-    }
-    return '';
-  };
+    if (typeof prop === 'string') return prop
 
-  const titleValue = getStringValue(title);
+    // Some Puck fields can pass ReactElements instead of strings.
+    if (prop && typeof prop === 'object' && 'props' in prop && prop.props) {
+      if (typeof prop.props.value === 'string') return prop.props.value
+      if (typeof prop.props.defaultValue === 'string') return prop.props.defaultValue
+      if (typeof prop.props.children === 'string') return prop.props.children
+      if (typeof prop.props.src === 'string') return prop.props.src
+    }
+
+    return ''
+  }
+
+  const titleValue = getStringValue(title)
 
   const getGridClass = () => {
     switch (layout) {
@@ -122,7 +132,7 @@ const GridBlock: React.FC<GridBlockProps> = ({
           className={`grid ${getGridClass()} gap-6`}
           style={{ gap }}
         >
-          {displayItems.map((item) => {
+          {displayItems.map((item, idx) => {
             const imageValue = getStringValue(item.image)
             const titleValue = getStringValue(item.title)
             const textValue = getStringValue(item.text)
@@ -130,7 +140,7 @@ const GridBlock: React.FC<GridBlockProps> = ({
 
             return (
               <div
-                key={item.id}
+                key={item.id || `grid-item-${idx}`}
                 className="rounded-xl overflow-hidden border transition-shadow hover:shadow-lg"
                 style={{
                   backgroundColor: cardBackgroundColor,
@@ -160,7 +170,7 @@ const GridBlock: React.FC<GridBlockProps> = ({
                   {titleValue && (
                     <h3
                       className="text-xl font-bold mb-3"
-                      style={{ color: textColor }}
+                      style={{ color: itemTitleColor || textColor, textAlign: itemTitleAlign }}
                     >
                       {item.title}
                     </h3>

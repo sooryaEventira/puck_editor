@@ -206,7 +206,13 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   }
 
   const handlePublishWebsite = () => {
-    // TODO: Implement publish website functionality
+    const eventUuid = createdEvent?.uuid ?? localStorage.getItem('currentEventUuid')
+    if (!eventUuid) return
+
+    // Open public website shell in a new tab.
+    // The public shell will load navbar items from the public endpoints and render pages read-only.
+    const url = `${window.location.origin}/events/${eventUuid}`
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   // Reusable header buttons component to avoid duplication

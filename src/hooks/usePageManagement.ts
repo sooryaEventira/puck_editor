@@ -63,12 +63,56 @@ const convertJsonToPagesList = (jsonData: any): Page[] => {
 // Helper function to generate unique IDs
 const generateId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-// Helper function to format event date
-const formatEventDate = (startDate?: string): string => {
-  if (!startDate) return 'Jan 13, 2025'
+// Helper function to format event date range (start + end)
+// Desired format (same month/year): "Jan 13-14, 2026"
+const formatEventDate = (startDate?: string, endDate?: string): string => {
+  if (!startDate && !endDate) return 'Jan 13, 2025'
   try {
-    const date = new Date(startDate)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    const start = startDate ? new Date(startDate) : null
+    const end = endDate ? new Date(endDate) : null
+
+    const fmtFull = (d: Date) =>
+      d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    const fmtMonthShort = (d: Date) =>
+      d.toLocaleDateString('en-US', { month: 'short' })
+
+    if (start && !isNaN(start.getTime()) && (!end || isNaN(end.getTime()))) {
+      return fmtFull(start)
+    }
+    if (end && !isNaN(end.getTime()) && (!start || isNaN(start.getTime()))) {
+      return fmtFull(end)
+    }
+    if (!start || !end) return 'Jan 13, 2025'
+
+    // Same day
+    if (start.toDateString() === end.toDateString()) {
+      return fmtFull(start)
+    }
+
+    const sameYear = start.getFullYear() === end.getFullYear()
+    const sameMonth = sameYear && start.getMonth() === end.getMonth()
+
+    // Same month + year: "Jan 13-14, 2026"
+    if (sameMonth) {
+      const month = fmtMonthShort(start)
+      const startDay = start.getDate()
+      const endDay = end.getDate()
+      const year = start.getFullYear()
+      return `${month} ${startDay}-${endDay}, ${year}`
+    }
+
+    // Same year but different month: "Jan 31 - Feb 2, 2026"
+    if (sameYear) {
+      const startMonth = fmtMonthShort(start)
+      const endMonth = fmtMonthShort(end)
+      const startDay = start.getDate()
+      const endDay = end.getDate()
+      const year = start.getFullYear()
+      return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`
+    }
+
+    // Different years: fall back to full explicit dates
+    return `${fmtFull(start)} - ${fmtFull(end)}`
   } catch {
     return 'Jan 13, 2025'
   }
@@ -91,7 +135,7 @@ const getDefaultTemplateData = (pageName: string = 'Page 1', eventData?: any) =>
   // Get event data values
   const eventName = eventData?.eventName || 'Event Title'
   const location = eventData?.location || 'Location'
-  const eventDate = formatEventDate(eventData?.startDate)
+  const eventDate = formatEventDate(eventData?.startDate, eventData?.endDate)
   const subtitle = `${location} | ${eventDate}`
   
   return {
@@ -278,6 +322,15 @@ export const usePageManagement = () => {
   const lastEventUuidRef = useRef<string | null>(null)
   const getEventUuid = () =>
     createdEvent?.uuid ?? (typeof window !== 'undefined' ? localStorage.getItem('currentEventUuid') : null)
+  const getScratchOrigin = () => {
+    if (typeof window === 'undefined') return null
+    const eventUuid = getEventUuid()
+    if (eventUuid) {
+      const scoped = localStorage.getItem(`create-from-scratch-origin-${eventUuid}`)
+      if (scoped) return scoped
+    }
+    return localStorage.getItem('create-from-scratch-origin')
+  }
   const uuidRegex =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
   
@@ -285,6 +338,7 @@ export const usePageManagement = () => {
   const displayEventData = createdEvent ? {
     eventName: createdEvent.eventName,
     startDate: createdEvent.startDate,
+    endDate: createdEvent.endDate,
     location: createdEvent.location,
     banner: eventData?.banner // Banner might still be in eventData as File
   } : eventData
@@ -406,7 +460,10 @@ export const usePageManagement = () => {
       // Get event data - prioritize createdEvent, then eventData, then existing props or defaults
       const eventName = createdEvent?.eventName || eventData?.eventName || heroSection.props.title || 'Event Title'
       const location = createdEvent?.location || eventData?.location || ''
-      const eventDate = formatEventDate(createdEvent?.startDate || eventData?.startDate)
+      const eventDate = formatEventDate(
+        createdEvent?.startDate || eventData?.startDate,
+        createdEvent?.endDate || eventData?.endDate
+      )
       // Match WebsitePreviewPage format: "Location | Date" or just "Date" if no location
       const subtitle = location ? `${location} | ${eventDate}` : (eventDate || 'Location | Date')
 
@@ -1804,7 +1861,11 @@ export const usePageManagement = () => {
       // IMPORTANT: scope scratch page cache to a specific event.
       // Do NOT use a shared fallback key, otherwise pages can leak across events.
       const scratchEventUuid = getEventUuid()
-      const scratchPagesKey = scratchEventUuid ? `scratch-pages-${scratchEventUuid}` : null
+      const scratchOrigin = getScratchOrigin()
+      const scratchPagesKey =
+        scratchEventUuid && scratchOrigin
+          ? `scratch-pages-${scratchEventUuid}-${scratchOrigin}`
+          : null
       
       // If creating from scratch, skip backend page loading and use clean state
       if (isCreateFromScratch) {
@@ -1880,7 +1941,35 @@ export const usePageManagement = () => {
             const routePageId = match?.[1] ? decodeURIComponent(match[1]) : null
             if (routePageId && routePageId !== 'page1') {
               if (uuidRegex.test(routePageId)) {
-                await loadPage(`${routePageId}.json`)
+                // Only attempt backend UUID load if this uuid belongs to the current event sidebar webpages.
+                // This prevents cross-event UUIDs from triggering 404 + toast spam.
+                let allowed = false
+                try {
+                  if (scratchEventUuid) {
+                    const raw = localStorage.getItem(`sidebar-webpages-${scratchEventUuid}`)
+                    if (raw) {
+                      const parsed = JSON.parse(raw)
+                      if (Array.isArray(parsed)) {
+                        allowed = parsed.some((w: any) => w && w.uuid === routePageId)
+                      }
+                    }
+                  }
+                } catch {
+                  // ignore
+                }
+
+                if (allowed) {
+                  await loadPage(`${routePageId}.json`)
+                } else {
+                  // Fall back to page1 and correct the URL.
+                  const url = new URL(window.location.href)
+                  url.pathname = `/event/website/editor/page1`
+                  url.searchParams.set('mode', 'blank')
+                  window.history.replaceState({}, '', `${url.pathname}${url.search}`)
+                  setCurrentPage('page1')
+                  setCurrentPageName('Page 1')
+                  setCurrentData(emptyPage1Data)
+                }
               } else {
                 const cached = getCachedPageData(routePageId)
                 if (cached) {
@@ -2010,7 +2099,9 @@ export const usePageManagement = () => {
     if (!isCreateFromScratch) return
     const scratchEventUuid = getEventUuid()
     if (!scratchEventUuid) return
-    const scratchPagesKey = `scratch-pages-${scratchEventUuid}`
+    const scratchOrigin = getScratchOrigin()
+    if (!scratchOrigin) return
+    const scratchPagesKey = `scratch-pages-${scratchEventUuid}-${scratchOrigin}`
     try {
       const minimal = pages.map((p) => ({
         id: p.id,

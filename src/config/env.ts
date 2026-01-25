@@ -20,6 +20,17 @@ export const env = {
   AUTH_API_URL: import.meta.env.VITE_AUTH_API_URL || 'https://eventiracommon-event-api-dev-ci01-aaeddsh3hbdkcjfa.centralindia-01.azurewebsites.net',
 
   /**
+   * Public API Base URL (for published/public website endpoints)
+   * Override with: VITE_PUBLIC_API_URL environment variable
+   *
+   * NOTE: These endpoints are intended to be publicly accessible (no auth headers).
+   */
+  PUBLIC_API_URL:
+    import.meta.env.VITE_PUBLIC_API_URL ||
+    import.meta.env.VITE_AUTH_API_URL ||
+    'https://eventiracommon-event-api-dev-ci01-aaeddsh3hbdkcjfa.centralindia-01.azurewebsites.net',
+
+  /**
    * Page Management API Base URL (for page editor endpoints)
    * Default: https://eventiracommon-event-api-dev-ci01-aaeddsh3hbdkcjfa.centralindia-01.azurewebsites.net
    * Override with: VITE_PAGE_API_URL environment variable
@@ -49,6 +60,14 @@ export const env = {
 const ADMIN_API_BASE = '/api/v1/admin/'
 const AUTH_API_BASE = '/api/v1/auth/'
 const API_V1_BASE = '/api/v1/'
+const PUBLIC_API_URL = env.PUBLIC_API_URL.replace(/\/+$/, '')
+const PUBLIC_API_BASE = '/api/v1/public/'
+// Support both forms:
+// - PUBLIC_API_URL = "https://host"  (base host only)
+// - PUBLIC_API_URL = "https://host/api/v1/public" (already includes the public base path)
+const PUBLIC_API_ROOT = PUBLIC_API_URL.includes('/api/v1/public')
+  ? `${PUBLIC_API_URL}/`
+  : `${PUBLIC_API_URL}${PUBLIC_API_BASE}`
 
 /**
  * API Endpoints
@@ -82,6 +101,18 @@ export const API_ENDPOINTS = {
     CREATE: `${env.AUTH_API_URL}${ADMIN_API_BASE}webpages/`,
     LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}webpages/?event_uuid=${eventUuid}`,
     GET: (webpageUuid: string, eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}webpages/${webpageUuid}/?event_uuid=${eventUuid}`,
+  },
+  // Public website endpoints (published pages + event details)
+  PUBLIC: {
+    EVENT: {
+      GET: (eventUuid: string) => `${PUBLIC_API_ROOT}event/${eventUuid}`,
+    },
+    WEBPAGES: {
+      LIST: (eventUuid: string) =>
+        `${PUBLIC_API_ROOT}events/${eventUuid}/webpages/`,
+      GET: (eventUuid: string, webpageUuid: string) =>
+        `${PUBLIC_API_ROOT}events/${eventUuid}/webpages/${webpageUuid}/`,
+    },
   },
   // User Management endpoints
   USER_MANAGEMENT: {

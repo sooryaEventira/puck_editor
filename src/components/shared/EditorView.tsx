@@ -325,7 +325,10 @@ export const EditorView: React.FC<EditorViewProps> = ({
       // Get event data values - prioritize createdEvent, then eventData, then existing props
       const eventName = createdEvent?.eventName || eventData?.eventName || heroSection.props.title || 'Event Title'
       const location = createdEvent?.location || eventData?.location || ''
-      const eventDate = formatEventDate(createdEvent?.startDate || eventData?.startDate)
+      const eventDate = formatEventDate(
+        createdEvent?.startDate || eventData?.startDate,
+        createdEvent?.endDate || eventData?.endDate
+      )
       const subtitle = location ? `${location} | ${eventDate}` : (eventDate || 'Location | Date')
 
       const currentBanner = heroSection.props.backgroundImage || ''
@@ -728,7 +731,10 @@ export const EditorView: React.FC<EditorViewProps> = ({
 
               // If scratch flow started from Event Website, show real backend pages + any local (unsaved) pages.
               if (origin === 'event-website') {
+                const currentEventUuid = createdEvent?.uuid ?? localStorage.getItem('currentEventUuid')
                 pagesForSidebar = sidebarWebpages
+                  // Never show cross-event pages (can happen if cache is stale)
+                  .filter((w) => !currentEventUuid || w.event === currentEventUuid)
                   .filter((w) => {
                     const name = String(w.name ?? '').toLowerCase()
                     return name !== 'welcome'

@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react'
+import React, { useMemo, useState } from 'react'
 
 export interface DirectionItem {
-  id: string
+  id?: string
   title: string | React.ReactElement
   description: string | React.ReactElement
   icon?: string
@@ -10,76 +10,223 @@ export interface DirectionItem {
 
 export interface VenueDirectionsProps {
   title?: string | React.ReactElement
+  titleColor?: string
+  titleSize?: 1 | 2 | 3
+  mapUrl?: string | React.ReactElement
   mapEmbedUrl?: string
   mapImageUrl?: string
   mapPlaceholder?: string | React.ReactElement
   entranceTitle?: string | React.ReactElement
+  entranceTitleColor?: string
   entranceDescription?: string | React.ReactElement
   entranceLinkText?: string | React.ReactElement
   entranceLinkUrl?: string
   directions?: DirectionItem[]
+  directionTitleColor?: string
+  directionTextColor?: string
   backgroundColor?: string
   textColor?: string
-  cardBackgroundColor?: string
-  cardBorderColor?: string
-  iconBackgroundColor?: string
   buttonColor?: string
   buttonTextColor?: string
-  padding?: string
-  gap?: string
+  openMapsUrl?: string
+  openMapsText?: string | React.ReactElement
+  openMapsButtonColor?: string
+  openMapsButtonTextColor?: string
 }
 
 const VenueDirections: React.FC<VenueDirectionsProps> = ({
   title = 'How to Get Here',
+  titleColor,
+  titleSize = 2,
+  mapUrl,
   mapEmbedUrl,
   mapImageUrl,
   mapPlaceholder,
   entranceTitle,
+  entranceTitleColor,
   entranceDescription,
   entranceLinkText,
   entranceLinkUrl,
   directions = [],
+  directionTitleColor,
+  directionTextColor,
   backgroundColor = '#f9fafb',
   textColor = '#1f2937',
-  cardBackgroundColor = '#ffffff',
-  cardBorderColor = '#e5e7eb',
-  iconBackgroundColor = '#f3f4f6',
   buttonColor = '#3b82f6',
   buttonTextColor = '#ffffff',
-  padding = '4rem 2rem',
-  gap = '3rem'
+  openMapsUrl,
+  openMapsText = 'Open in Maps',
+  openMapsButtonColor,
+  openMapsButtonTextColor,
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
+  const [imageError, setImageError] = useState(false)
 
-  // Handle file upload
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const result = e.target?.result as string
-        setUploadedImageUrl(result)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handleImageClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    fileInputRef.current?.click()
-  }
+  // Fixed layout/styling values (no longer user-configurable via props)
+  const cardBackgroundColor = '#ffffff'
+  const cardBorderColor = '#e5e7eb'
+  const iconBackgroundColor = '#f3f4f6'
+  const sectionPadding = '4rem 2rem'
+  const layoutGap = '3rem'
 
   const getStringValue = (prop: any): string => {
-    if (typeof prop === 'string') return prop;
-    if (prop && typeof prop === 'object' && 'props' in prop && prop.props && 'value' in prop.props) {
-      return prop.props.value || '';
-    }
-    return '';
-  };
+    if (typeof prop === 'string') return prop
 
-  const titleValue = getStringValue(title);
+    // Some Puck fields can pass ReactElements instead of strings.
+    if (prop && typeof prop === 'object' && 'props' in prop && prop.props) {
+      if (typeof prop.props.value === 'string') return prop.props.value
+      if (typeof prop.props.defaultValue === 'string') return prop.props.defaultValue
+      if (typeof prop.props.children === 'string') return prop.props.children
+    }
+
+    return ''
+  }
+
+  const titleValue = getStringValue(title)
+  const mapUrlInput = getStringValue(mapUrl as any)
+  const mapEmbedInput = getStringValue(mapEmbedUrl as any)
+  const mapImageInput = getStringValue(mapImageUrl as any)
+  const resolvedTitleColor = titleColor || textColor
+  const resolvedEntranceTitleColor = entranceTitleColor || textColor
+  const resolvedDirectionTitleColor = directionTitleColor || textColor
+  const resolvedDirectionTextColor = directionTextColor || textColor
+
+  const titleSizeClass =
+    titleSize === 1 ? 'text-2xl md:text-3xl' : titleSize === 3 ? 'text-4xl md:text-5xl' : 'text-3xl md:text-4xl'
+
+  const decodeHtmlEntities = (input: string) =>
+    input.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+
+  const normalizeMapEmbedSrc = (input?: string) => {
+    const raw0 = (input || '').trim()
+    if (!raw0) return ''
+
+    const raw = decodeHtmlEntities(raw0)
+
+    const embedFromQuery = (q: string) => `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`
+
+    // If user pasted a full iframe embed snippet, extract src.
+    if (raw.toLowerCase().includes('<iframe')) {
+      const match = raw.match(/src\s*=\s*["']([^"']+)["']/i)
+      return match?.[1] ? decodeHtmlEntities(match[1]) : ''
+    }
+
+    // If user already pasted a proper embed URL, use it.
+    if (raw.includes('/maps/embed') || raw.includes('output=embed')) return raw
+
+    // If user pasted a normal Google Maps URL, try to convert to an embeddable URL.
+    try {
+      const u = new URL(raw)
+      const host = u.hostname.toLowerCase()
+      const path = u.pathname
+
+      // Short/share links generally cannot be embedded due to X-Frame-Options/CSP.
+      // Ask for the proper "Embed a map" URL instead.
+      const isShortLink =
+        host === 'maps.app.goo.gl' ||
+        host.endsWith('goo.gl') ||
+        host === 'g.co' ||
+        host === 'g.page'
+      if (isShortLink) {
+        return ''
+      }
+
+      // If user pasted a maps query URL, embed via q=...&output=embed
+      const q = u.searchParams.get('q') || u.searchParams.get('query')
+      if (q) {
+        return embedFromQuery(q)
+      }
+
+      // If URL contains "@lat,lng" coordinates (common in share URLs)
+      const atMatch = raw.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/)
+      if (atMatch) {
+        return embedFromQuery(`${atMatch[1]},${atMatch[2]}`)
+      }
+
+      // Google Maps "place" URLs often do not embed correctly just by adding output=embed.
+      // Convert them into a query-based embed which is more reliable.
+      if (host.includes('google.') && path.toLowerCase().startsWith('/maps')) {
+        const placeMatch = path.match(/\/maps\/place\/([^/]+)/i)
+        if (placeMatch?.[1]) {
+          const place = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
+          if (place.trim()) return embedFromQuery(place.trim())
+        }
+
+        const searchMatch = path.match(/\/maps\/search\/([^/]+)/i)
+        if (searchMatch?.[1]) {
+          const term = decodeURIComponent(searchMatch[1].replace(/\+/g, ' '))
+          if (term.trim()) return embedFromQuery(term.trim())
+        }
+
+        // As a fallback, try Google's output=embed on the original URL.
+        u.searchParams.set('output', 'embed')
+        return u.toString()
+      }
+
+      return embedFromQuery(u.toString())
+    } catch {
+      // Treat non-URL input as an address/query string.
+      return embedFromQuery(raw)
+    }
+  }
+
+  const embedSrc = useMemo(() => {
+    try {
+      // Prefer explicit embed field, otherwise derive from mapUrl.
+      const source = (mapEmbedInput || '').trim() || (mapUrlInput || '').trim()
+      return normalizeMapEmbedSrc(source)
+    } catch {
+      return ''
+    }
+  }, [mapEmbedInput, mapUrlInput])
+
+  const hasMapEmbedInput = Boolean((mapEmbedInput || '').trim())
+  const hasMapUrlInput = Boolean((mapUrlInput || '').trim())
+  const embedLooksValid = Boolean(embedSrc && (embedSrc.includes('/maps/embed') || embedSrc.includes('output=embed')))
+
+  const effectiveMapImageSrc = useMemo(() => {
+    if (imageError) return ''
+    const fromProps = (mapImageInput || '').trim()
+    return fromProps
+  }, [imageError, mapImageInput])
+
+  const mapImageHint = useMemo(() => {
+    const raw = (mapImageInput || '').trim()
+    if (!raw) return ''
+    try {
+      const u = new URL(raw)
+      const host = u.hostname.toLowerCase()
+      const isMapsShare =
+        host === 'maps.app.goo.gl' ||
+        host.endsWith('goo.gl') ||
+        host.includes('google.') && u.pathname.toLowerCase().startsWith('/maps')
+      if (isMapsShare) {
+        return 'This is a Google Maps page link, not a direct image. Use a direct .png/.jpg URL (or upload an image to Resource Manager and paste that URL).'
+      }
+      return ''
+    } catch {
+      return ''
+    }
+  }, [mapImageInput])
+
+  const openMapsHref = useMemo(() => {
+    if ((openMapsUrl || '').trim()) return openMapsUrl as string
+    const raw = (mapUrlInput || '').trim()
+    if (raw) {
+      // If user pasted any maps link, just open that; otherwise treat it as an address/query.
+      try {
+        // If it's a valid URL, use it as-is for "Open in Maps"
+        // (including maps.app.goo.gl short links)
+        // eslint-disable-next-line no-new
+        new URL(raw)
+        return raw
+      } catch {
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(raw)}`
+      }
+    }
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('The Moscone Center, San Francisco')}`
+  }, [mapUrlInput, openMapsUrl])
+  const openMapsButtonBg = openMapsButtonColor || buttonColor
+  const openMapsButtonFg = openMapsButtonTextColor || buttonTextColor
 
   const defaultDirections: DirectionItem[] = [
     {
@@ -105,20 +252,20 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
     }
   ];
 
-  const displayDirections = directions.length > 0 ? directions : defaultDirections;
+  const displayDirections = directions.length > 0 ? directions : defaultDirections
 
   return (
     <section
       className="w-full"
       style={{
         backgroundColor,
-        padding
+        padding: sectionPadding
       }}
     >
       <div className="max-w-7xl mx-auto">
         <div
           className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12"
-          style={{ gap }}
+          style={{ gap: layoutGap }}
         >
           {/* Left: Map */}
           <div className="flex flex-col gap-6">
@@ -132,51 +279,20 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
                 minHeight: '400px',
               }}
             >
-              {/* Hidden file input for image upload */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-              />
-              {/* Clickable overlay for image upload */}
-              <div
-                className="absolute inset-0 cursor-pointer z-10"
-                onMouseDown={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  handleImageClick(e as any)
-                }}
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  handleImageClick(e)
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = '0.95'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = '1'
-                }}
-                title="Click to upload map image"
-                style={{
-                  backgroundColor: 'transparent',
-                }}
-              />
-              {(uploadedImageUrl || mapImageUrl) ? (
+              {effectiveMapImageSrc ? (
                 <img
-                  src={uploadedImageUrl || mapImageUrl}
+                  src={effectiveMapImageSrc}
                   alt="Venue Map"
-                  className="w-full h-full object-cover pointer-events-none"
+                  className="w-full h-full object-cover"
                   style={{ zIndex: 0 }}
                   onError={(e) => {
+                    setImageError(true)
                     e.currentTarget.style.display = 'none';
                   }}
                 />
-              ) : mapEmbedUrl ? (
+              ) : embedLooksValid ? (
                 <iframe
-                  src={mapEmbedUrl}
+                  src={embedSrc}
                   width="100%"
                   height="100%"
                   style={{ border: 0, zIndex: 0 }}
@@ -196,9 +312,20 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
                       <p style={{ color: textColor, opacity: 0.6, textAlign: 'center' }}>
                         Interactive Map Component
                       </p>
+                      {mapImageHint ? (
+                        <p className="text-sm mt-2" style={{ color: textColor, opacity: 0.6, textAlign: 'center' }}>
+                          {mapImageHint}
+                        </p>
+                      ) : null}
+                      {(hasMapEmbedInput || hasMapUrlInput) && !embedLooksValid ? (
+                        <p className="text-sm mt-2" style={{ color: textColor, opacity: 0.6, textAlign: 'center' }}>
+                          This URL can’t be embedded. Use Google Maps → Share → “Embed a map” and paste the iframe <span style={{ fontWeight: 700 }}>src</span> (or the full iframe code).
+                        </p>
+                      ) : (
                       <p className="text-sm mt-2" style={{ color: textColor, opacity: 0.4 }}>
-                        Click to upload map image or add Google Maps embed URL
+                        Add a Map URL/Location, a Google Maps embed URL, or a direct map image URL.
                       </p>
+                      )}
                     </>
                   )}
                 </div>
@@ -223,7 +350,7 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
                 {entranceTitle && (
                   <h3
                     className="text-lg font-bold mb-2"
-                    style={{ color: textColor }}
+                    style={{ color: resolvedEntranceTitleColor }}
                   >
                     {entranceTitle}
                   </h3>
@@ -256,20 +383,20 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
           <div>
             {titleValue && (
               <h2
-                className="text-3xl md:text-4xl font-bold mb-8"
-                style={{ color: textColor }}
+                className={`${titleSizeClass} font-bold mb-8`}
+                style={{ color: resolvedTitleColor }}
               >
                 {title}
               </h2>
             )}
 
             <div className="space-y-6">
-              {displayDirections.map((direction) => {
+              {displayDirections.map((direction, idx) => {
                 const titleValue = getStringValue(direction.title);
                 const descriptionValue = getStringValue(direction.description);
 
                 return (
-                  <div key={direction.id} className="flex gap-4">
+                  <div key={direction.id || `direction-${idx}`} className="flex gap-4">
                     {/* Icon */}
                     <div
                       className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-2xl"
@@ -285,7 +412,7 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
                       {titleValue && (
                         <h3
                           className="text-lg font-bold mb-2"
-                          style={{ color: textColor }}
+                          style={{ color: resolvedDirectionTitleColor }}
                         >
                           {direction.title}
                         </h3>
@@ -293,7 +420,7 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
                       {descriptionValue && (
                         <p
                           className="text-base leading-relaxed opacity-80"
-                          style={{ color: textColor }}
+                          style={{ color: resolvedDirectionTextColor }}
                         >
                           {direction.description}
                         </p>
@@ -307,16 +434,16 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
             {/* Map Link Button */}
             <div className="mt-8">
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('The Moscone Center, San Francisco')}`}
+                href={openMapsHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-opacity hover:opacity-90"
                 style={{
-                  backgroundColor: buttonColor,
-                  color: buttonTextColor,
+                  backgroundColor: openMapsButtonBg,
+                  color: openMapsButtonFg,
                 }}
               >
-                Open in Maps
+                {openMapsText}
                 <span>→</span>
               </a>
             </div>

@@ -72,13 +72,6 @@ const AboutSection: React.FC<AboutSectionProps> = ({
           <h2 
             style={titleStyle}
             className="text-[24px] font-bold leading-tight tracking-tight about-section-title break-words"
-            data-puck-field="leftTitle"
-            contentEditable
-            suppressContentEditableWarning={true}
-            onInput={(e) => {
-              // Let Puck handle the input event - don't interfere
-              // Puck automatically listens to input events on data-puck-field elements
-            }}
           >
             {leftTitle}
           </h2>
@@ -86,13 +79,6 @@ const AboutSection: React.FC<AboutSectionProps> = ({
           <p 
             style={textStyle}
             className="text-[clamp(1rem,2.5vw,1.125rem)] leading-relaxed about-section-text max-w-3xl opacity-80 mx-auto break-words overflow-wrap-anywhere"
-            data-puck-field="leftText"
-            contentEditable
-            suppressContentEditableWarning={true}
-            onInput={(e) => {
-              // Let Puck handle the input event - don't interfere
-              // Puck automatically listens to input events on data-puck-field elements
-            }}
           >
             {leftText}
           </p>

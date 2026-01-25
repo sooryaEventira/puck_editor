@@ -16,6 +16,7 @@ const SchedulePage = lazy(() => import('./eventhub/schedulesession/SchedulePage'
 const CommunicationPage = lazy(() => import('./eventhub/communication/CommunicationPage'))
 const ResourceManagementPage = lazy(() => import('./eventhub/resourcemanagement/ResourceManagementPage'))
 const EditorView = lazy(() => import('./shared/EditorView'))
+const PublicEventWebsiteShell = lazy(() => import('./public/PublicEventWebsiteShell'))
 const LoginPage = lazy(() => import('../pages').then(module => ({ default: module.LoginPage })))
 const RegistrationPage = lazy(() => import('../pages').then(module => ({ default: module.RegistrationPage })))
 const EmailVerificationPage = lazy(() => import('../pages').then(module => ({ default: module.EmailVerificationPage })))
@@ -48,7 +49,7 @@ const App: React.FC = () => {
   const [organizationCreationError, setOrganizationCreationError] = useState<string | null>(null)
   
   const [showPreview, setShowPreview] = useState(false)
-  const [currentView, setCurrentView] = useState<'dashboard' | 'editor' | 'events' | 'schedule' | 'communication' | 'resource-management'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'editor' | 'events' | 'schedule' | 'communication' | 'resource-management' | 'public'>('dashboard')
   const [puckUi, setPuckUi] = useState<any>(undefined)
   const [showPageCreationModal, setShowPageCreationModal] = useState(false)
   const [showLeftSidebar] = useState(true)
@@ -466,6 +467,23 @@ const App: React.FC = () => {
       window.removeEventListener('navigate-to-schedule', handleNavigateToScheduleEvent)
     }
   }, [isAuthenticated])
+
+  // Public website routes (no auth)
+  // Supported:
+  // - /events/:event_uuid/webpages/:webpage_uuid
+  // - /events/:event_uuid/speakers
+  // - /events/:event_uuid/attendees
+  // - /events/:event_uuid/schedule
+  // - /events/:event_uuid/sessions
+  const publicPathMatch = window.location.pathname.match(/^\/events\/([^/]+)(?:\/.*)?$/)
+  const publicEventUuid = publicPathMatch ? publicPathMatch[1] : null
+  if (publicEventUuid) {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <PublicEventWebsiteShell eventUuid={publicEventUuid} />
+      </Suspense>
+    )
+  }
 
   // Show eventspace setup if authenticated but no organization (or if explicitly shown during registration)
   if (showEventspaceSetup && (!isAuthenticated || !hasOrganization())) {

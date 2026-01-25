@@ -809,12 +809,10 @@ export const config = {
         title: { 
           type: 'text' as const,
           label: 'Event Title',
-          contentEditable: true
         },
         subtitle: { 
           type: 'textarea' as const,
           label: 'Location | Date',
-          contentEditable: true
         },
         buttons: {
           type: 'array' as const,
@@ -823,7 +821,6 @@ export const config = {
             text: { 
               type: 'text' as const,
               label: 'Button Text',
-              contentEditable: true
             },
             link: { 
               type: 'text' as const,
@@ -1302,13 +1299,11 @@ export const config = {
                type: 'text' as const,
                label: 'Title',
                placeholder: 'Our Mission',
-               contentEditable: true
              },
              leftText: {
                type: 'textarea' as const,
                label: 'Text',
                placeholder: 'We are dedicated to providing innovative solutions...',
-               contentEditable: true,
                rows: 6
              },
              backgroundColor: {
@@ -2197,13 +2192,11 @@ export const config = {
           type: 'text' as const,
           label: 'Heading',
           placeholder: 'Headlining Speakers',
-          contentEditable: true
         },
         subtitle: {
           type: 'text' as const,
           label: 'Subtitle',
           placeholder: 'Learn from the pioneers shaping the industry.',
-          contentEditable: true
         },
         speakers: {
           type: 'array' as const,
@@ -2213,31 +2206,26 @@ export const config = {
               type: 'text' as const,
               label: 'Name',
               placeholder: 'Sarah Jenkins',
-              contentEditable: true
             },
             title: {
               type: 'text' as const,
               label: 'Title',
               placeholder: 'CMO',
-              contentEditable: true
             },
             company: {
               type: 'text' as const,
               label: 'Company',
               placeholder: 'TechGlobal',
-              contentEditable: true
             },
             quote: {
               type: 'textarea' as const,
               label: 'Quote',
               placeholder: 'The Future of AI in Marketing',
-              contentEditable: true
             },
             photo: {
               type: 'text' as const,
               label: 'Photo URL',
               placeholder: 'https://example.com/photo.jpg',
-              contentEditable: true
             }
           },
           getItemSummary: (item: any, index: number) => {
@@ -3261,17 +3249,79 @@ export const config = {
     },
     VenueDirections: {
       label: "🗺️ Venue Directions",
+      resolveData: (item: any, { trigger }: any) => {
+        const defaultDirections = [
+          {
+            id: '1',
+            title: 'By Air',
+            description:
+              'Fly into SFO (San Francisco International). The venue is a 20-minute drive or 30-minute BART ride from the airport.',
+            icon: '✈️'
+          },
+          {
+            id: '2',
+            title: 'Public Transit (BART)',
+            description:
+              'Take the Yellow Line to Powell Street Station. The Moscone Center is a short 5-minute walk down 4th Street.',
+            icon: '🚇'
+          },
+          {
+            id: '3',
+            title: 'Parking',
+            description:
+              'Underground parking is available at the venue garage (Entrance on 3rd St). Daily max rate is $35. Valet available for VIPs.',
+            icon: '🚗'
+          }
+        ]
+
+        // Populate directions once so they show in the property sidebar (editable).
+        // This also fixes older pages where directions were saved as [].
+        if (!item?.props?.__directionsInitialized) {
+          const dirs = Array.isArray(item?.props?.directions) ? item.props.directions : []
+          const shouldInit = dirs.length === 0 && (trigger === 'insert' || trigger === 'load' || trigger === 'replace' || trigger === 'force')
+          if (shouldInit) {
+            return {
+              props: {
+                ...item.props,
+                directions: defaultDirections,
+                __directionsInitialized: true
+              }
+            }
+          }
+          return { props: { ...item.props, __directionsInitialized: true } }
+        }
+
+        return { props: item.props }
+      },
       fields: {
         title: {
           type: 'text' as const,
           label: 'Title',
           placeholder: 'How to Get Here',
-          contentEditable: true
+        },
+        titleColor: {
+          type: 'text' as const,
+          label: 'Title Color (hex)',
+          placeholder: '#1f2937'
+        },
+        titleSize: {
+          type: 'select' as const,
+          label: 'Title Size (3 options)',
+          options: [
+            { label: 'Size 1 (small)', value: 1 },
+            { label: 'Size 2 (medium)', value: 2 },
+            { label: 'Size 3 (large)', value: 3 }
+          ]
+        },
+        mapUrl: {
+          type: 'text' as const,
+          label: 'Map URL / Location',
+          placeholder: 'Paste a Google Maps link (or type an address/place)'
         },
         mapEmbedUrl: {
           type: 'text' as const,
           label: 'Google Maps Embed URL',
-          placeholder: 'https://www.google.com/maps/embed?pb=...'
+          placeholder: 'https://www.google.com/maps/embed?pb=... (or paste full <iframe> embed code)'
         },
         mapImageUrl: {
           type: 'text' as const,
@@ -3287,24 +3337,36 @@ export const config = {
           type: 'text' as const,
           label: 'Entrance Title',
           placeholder: 'Main Entrance (South Hall)',
-          contentEditable: true
+        },
+        entranceTitleColor: {
+          type: 'text' as const,
+          label: 'Entrance Title Color (hex)',
+          placeholder: '#1f2937'
         },
         entranceDescription: {
           type: 'textarea' as const,
           label: 'Entrance Description',
           placeholder: 'Best drop-off point for Uber/Lyft.',
-          contentEditable: true
         },
         entranceLinkText: {
           type: 'text' as const,
           label: 'Entrance Link Text',
           placeholder: 'Get Directions',
-          contentEditable: true
         },
         entranceLinkUrl: {
           type: 'text' as const,
           label: 'Entrance Link URL',
           placeholder: 'https://maps.google.com/...'
+        },
+        directionTitleColor: {
+          type: 'text' as const,
+          label: 'Direction Title Color (hex)',
+          placeholder: '#1f2937'
+        },
+        directionTextColor: {
+          type: 'text' as const,
+          label: 'Direction Text Color (hex)',
+          placeholder: '#1f2937'
         },
         directions: {
           type: 'array' as const,
@@ -3314,13 +3376,11 @@ export const config = {
               type: 'text' as const,
               label: 'Title',
               placeholder: 'By Air',
-              contentEditable: true
             },
             description: {
               type: 'textarea' as const,
               label: 'Description',
               placeholder: 'Fly into SFO...',
-              contentEditable: true
             },
             icon: {
               type: 'text' as const,
@@ -3333,97 +3393,92 @@ export const config = {
           }
         },
         backgroundColor: {
-          type: 'select' as const,
-          label: 'Background Color',
-          options: [
-            { label: 'Light Gray', value: '#f9fafb' },
-            { label: 'White', value: '#ffffff' },
-            { label: 'Custom...', value: '' }
-          ]
+          type: 'text' as const,
+          label: 'Background Color (hex)',
+          placeholder: '#f9fafb'
         },
         textColor: {
-          type: 'select' as const,
-          label: 'Text Color',
-          options: [
-            { label: 'Dark Gray', value: '#1f2937' },
-            { label: 'Gray', value: '#6b7280' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
-        cardBackgroundColor: {
-          type: 'select' as const,
-          label: 'Card Background Color',
-          options: [
-            { label: 'White', value: '#ffffff' },
-            { label: 'Light Gray', value: '#f9fafb' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
-        cardBorderColor: {
-          type: 'select' as const,
-          label: 'Card Border Color',
-          options: [
-            { label: 'Light Gray', value: '#e5e7eb' },
-            { label: 'Gray', value: '#d1d5db' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
-        iconBackgroundColor: {
-          type: 'select' as const,
-          label: 'Icon Background Color',
-          options: [
-            { label: 'Light Gray', value: '#f3f4f6' },
-            { label: 'White', value: '#ffffff' },
-            { label: 'Custom...', value: '' }
-          ]
+          type: 'text' as const,
+          label: 'Text Color (hex)',
+          placeholder: '#1f2937'
         },
         buttonColor: {
-          type: 'select' as const,
-          label: 'Button Color',
-          options: [
-            { label: 'Blue', value: '#3b82f6' },
-            { label: 'Purple', value: '#6938EF' },
-            { label: 'Green', value: '#10b981' },
-            { label: 'Custom...', value: '' }
-          ]
+          type: 'text' as const,
+          label: 'Button Color (hex)',
+          placeholder: '#3b82f6'
         },
         buttonTextColor: {
-          type: 'select' as const,
-          label: 'Button Text Color',
-          options: [
-            { label: 'White', value: '#ffffff' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
-        padding: {
           type: 'text' as const,
-          label: 'Padding',
-          placeholder: '4rem 2rem'
+          label: 'Button Text Color (hex)',
+          placeholder: '#ffffff'
         },
-        gap: {
+        openMapsUrl: {
           type: 'text' as const,
-          label: 'Gap',
-          placeholder: '3rem'
+          label: 'Open Maps Link URL (optional)',
+          placeholder: 'https://www.google.com/maps/search/?api=1&query=...'
+        },
+        openMapsText: {
+          type: 'text' as const,
+          label: 'Open Maps Button Text',
+          placeholder: 'Open in Maps'
+        },
+        openMapsButtonColor: {
+          type: 'text' as const,
+          label: 'Open Maps Button Color (hex)',
+          placeholder: '#3b82f6'
+        },
+        openMapsButtonTextColor: {
+          type: 'text' as const,
+          label: 'Open Maps Button Text Color (hex)',
+          placeholder: '#ffffff'
         }
       },
       defaultProps: {
         title: 'How to Get Here',
+        titleColor: '#1f2937',
+        titleSize: 2,
+        mapUrl: '',
         mapEmbedUrl: '',
         mapPlaceholder: '',
         entranceTitle: 'Main Entrance (South Hall)',
+        entranceTitleColor: '#1f2937',
         entranceDescription: 'Best drop-off point for Uber/Lyft.',
         entranceLinkText: 'Get Directions',
         entranceLinkUrl: '',
-        directions: [],
+        directions: [
+          {
+            id: '1',
+            title: 'By Air',
+            description:
+              'Fly into SFO (San Francisco International). The venue is a 20-minute drive or 30-minute BART ride from the airport.',
+            icon: '✈️'
+          },
+          {
+            id: '2',
+            title: 'Public Transit (BART)',
+            description:
+              'Take the Yellow Line to Powell Street Station. The Moscone Center is a short 5-minute walk down 4th Street.',
+            icon: '🚇'
+          },
+          {
+            id: '3',
+            title: 'Parking',
+            description:
+              'Underground parking is available at the venue garage (Entrance on 3rd St). Daily max rate is $35. Valet available for VIPs.',
+            icon: '🚗'
+          }
+        ],
+        __directionsInitialized: true,
+        directionTitleColor: '#1f2937',
+        directionTextColor: '#1f2937',
         backgroundColor: '#f9fafb',
         textColor: '#1f2937',
-        cardBackgroundColor: '#ffffff',
-        cardBorderColor: '#e5e7eb',
-        iconBackgroundColor: '#f3f4f6',
         buttonColor: '#3b82f6',
         buttonTextColor: '#ffffff',
-        padding: '4rem 2rem',
-        gap: '3rem'
+        openMapsUrl: '',
+        openMapsText: 'Open in Maps',
+        openMapsButtonColor: '#3b82f6',
+        openMapsButtonTextColor: '#ffffff'
       },
       render: VenueDirections
     },
@@ -3453,68 +3508,19 @@ export const config = {
           placeholder: 'https://example.com/floor-plan.jpg'
         },
         backgroundColor: {
-          type: 'select' as const,
-          label: 'Background Color',
-          options: [
-            { label: 'White', value: '#ffffff' },
-            { label: 'Light Gray', value: '#f9fafb' },
-            { label: 'Custom...', value: '' }
-          ]
+          type: 'text' as const,
+          label: 'Background Color (hex)',
+          placeholder: '#ffffff'
         },
         textColor: {
-          type: 'select' as const,
-          label: 'Text Color',
-          options: [
-            { label: 'Dark Gray', value: '#1f2937' },
-            { label: 'Gray', value: '#6b7280' },
-            { label: 'Custom...', value: '' }
-          ]
+          type: 'text' as const,
+          label: 'Text Color (hex)',
+          placeholder: '#1f2937'
         },
         cardBackgroundColor: {
-          type: 'select' as const,
-          label: 'Card Background Color',
-          options: [
-            { label: 'White', value: '#ffffff' },
-            { label: 'Light Gray', value: '#f9fafb' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
-        cardBorderColor: {
-          type: 'select' as const,
-          label: 'Card Border Color',
-          options: [
-            { label: 'Light Gray', value: '#e5e7eb' },
-            { label: 'Gray', value: '#d1d5db' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
-        buttonColor: {
-          type: 'select' as const,
-          label: 'Button Color',
-          options: [
-            { label: 'Blue', value: '#3b82f6' },
-            { label: 'Purple', value: '#6938EF' },
-            { label: 'Green', value: '#10b981' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
-        buttonTextColor: {
-          type: 'select' as const,
-          label: 'Button Text Color',
-          options: [
-            { label: 'White', value: '#ffffff' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
-        padding: {
           type: 'text' as const,
-          label: 'Padding',
-          placeholder: '4rem 2rem'
-        },
-        borderRadius: {
-          type: 'text' as const,
-          label: 'Border Radius',
-          placeholder: '12px'
+          label: 'Card Background Color (hex)',
+          placeholder: '#ffffff'
         }
       },
       defaultProps: {
@@ -3524,12 +3530,7 @@ export const config = {
         imageUrl: '',
         backgroundColor: '#ffffff',
         textColor: '#1f2937',
-        cardBackgroundColor: '#ffffff',
-        cardBorderColor: '#e5e7eb',
-        buttonColor: '#3b82f6',
-        buttonTextColor: '#ffffff',
-        padding: '4rem 2rem',
-        borderRadius: '12px'
+        cardBackgroundColor: '#ffffff'
       },
       render: LocationFloorPlan
     },
@@ -3541,6 +3542,20 @@ export const config = {
           label: 'Section Title (optional)',
           placeholder: 'Featured Content',
           contentEditable: true
+        },
+        itemTitleAlign: {
+          type: 'select' as const,
+          label: 'Grid Item Title Alignment',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
+          ]
+        },
+        itemTitleColor: {
+          type: 'text' as const,
+          label: 'Grid Item Title Color (hex)',
+          placeholder: '#1f2937'
         },
         layout: {
           type: 'select' as const,
@@ -3653,6 +3668,8 @@ export const config = {
       },
       defaultProps: {
         title: '',
+        itemTitleAlign: 'left',
+        itemTitleColor: '',
         layout: '2x2',
         items: [
           {
@@ -3810,18 +3827,261 @@ export const config = {
     },
     Table: {
       label: "📊 Table",
+      resolveFields: ({ props }: any) => {
+        const slugify = (input: string) =>
+          input
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+
+        const defaultCols = [
+          { id: 'title', label: 'Title', align: 'left' },
+          { id: 'refNumber', label: 'Ref. Number', align: 'left' },
+          { id: 'author', label: 'Author', align: 'left' },
+          { id: 'link', label: 'Link', align: 'left' },
+        ]
+
+        const cols = Array.isArray(props?.columns) && props.columns.length > 0 ? props.columns : defaultCols
+        const rowFields: Record<string, any> = {}
+
+        for (const [i, col] of cols.entries()) {
+          const label = String(col?.label || '').trim()
+          let colId = String(col?.id || '').trim()
+          // If user only filled Column Label (e.g. "Year") but not ID, derive a stable id.
+          if (!colId && label) colId = slugify(label)
+          if (!colId) colId = `col_${i + 1}`
+          if (!colId || colId === 'serial') continue
+          if (colId === 'link') {
+            rowFields.link = {
+              type: 'text' as const,
+              label: 'Link URL',
+              placeholder: 'https://example.com or /page-path',
+            }
+            rowFields.linkText = {
+              type: 'text' as const,
+              label: 'Link Text',
+              placeholder: 'View',
+            }
+            continue
+          }
+          rowFields[colId] = {
+            type: 'text' as const,
+            label: String(label || colId),
+            placeholder: `Enter ${String(label || colId)}...`,
+          }
+        }
+
+        return {
+          title: {
+            type: 'text' as const,
+            label: 'Table Title',
+            placeholder: 'Related Publishing Materials',
+          },
+          titleColor: {
+            type: 'text' as const,
+            label: 'Title Color (hex)',
+            placeholder: '#1f2937'
+          },
+          titleAlign: {
+            type: 'select' as const,
+            label: 'Title Alignment',
+            options: [
+              { label: 'Left', value: 'left' },
+              { label: 'Center', value: 'center' },
+              { label: 'Right', value: 'right' }
+            ]
+          },
+          description: {
+            type: 'textarea' as const,
+            label: 'Subtitle / Description',
+            placeholder: 'A list of technical documents and standards referenced in this guide.',
+          },
+          descriptionColor: {
+            type: 'text' as const,
+            label: 'Subtitle Color (hex)',
+            placeholder: '#6b7280'
+          },
+          descriptionAlign: {
+            type: 'select' as const,
+            label: 'Subtitle Alignment',
+            options: [
+              { label: 'Left', value: 'left' },
+              { label: 'Center', value: 'center' },
+              { label: 'Right', value: 'right' }
+            ]
+          },
+          descriptionSize: {
+            type: 'select' as const,
+            label: 'Subtitle Size (3 options)',
+            options: [
+              { label: 'Size 1 (small)', value: 1 },
+              { label: 'Size 2 (medium)', value: 2 },
+              { label: 'Size 3 (large)', value: 3 }
+            ]
+          },
+          columns: {
+            type: 'array' as const,
+            label: 'Table Columns',
+            arrayFields: {
+              id: {
+                type: 'text' as const,
+                label: 'Column ID',
+                placeholder: 'year'
+              },
+              label: {
+                type: 'text' as const,
+                label: 'Column Label',
+                placeholder: 'Year',
+              },
+              align: {
+                type: 'select' as const,
+                label: 'Alignment',
+                options: [
+                  { label: 'Left', value: 'left' },
+                  { label: 'Center', value: 'center' },
+                  { label: 'Right', value: 'right' }
+                ]
+              }
+            },
+            getItemSummary: (item: any, index: number) => {
+              return item?.label || item?.id || `Column ${index + 1}`
+            }
+          },
+          rows: {
+            type: 'array' as const,
+            label: 'Table Rows',
+            arrayFields: rowFields,
+            getItemSummary: (item: any, index: number) => {
+              return item?.title || `Row ${index + 1}`
+            }
+          },
+          showSerialNumber: {
+            type: 'radio' as const,
+            label: 'Show Serial Number',
+            options: [
+              { label: 'Yes', value: true },
+              { label: 'No', value: false }
+            ]
+          },
+          backgroundColor: {
+            type: 'select' as const,
+            label: 'Background Color',
+            options: [
+              { label: 'White', value: '#ffffff' },
+              { label: 'Light Gray', value: '#f9fafb' },
+              { label: 'Custom...', value: '' }
+            ]
+          },
+          headerBackgroundColor: {
+            type: 'select' as const,
+            label: 'Header Background Color',
+            options: [
+              { label: 'Light Gray', value: '#f9fafb' },
+              { label: 'Gray', value: '#f3f4f6' },
+              { label: 'Custom...', value: '' }
+            ]
+          },
+          headerTextColor: {
+            type: 'select' as const,
+            label: 'Header Text Color',
+            options: [
+              { label: 'Dark Gray', value: '#1f2937' },
+              { label: 'Black', value: '#000000' },
+              { label: 'Custom...', value: '' }
+            ]
+          },
+          textColor: {
+            type: 'select' as const,
+            label: 'Text Color',
+            options: [
+              { label: 'Dark Gray', value: '#1f2937' },
+              { label: 'Gray', value: '#6b7280' },
+              { label: 'Custom...', value: '' }
+            ]
+          },
+          borderColor: {
+            type: 'select' as const,
+            label: 'Border Color',
+            options: [
+              { label: 'Light Gray', value: '#e5e7eb' },
+              { label: 'Gray', value: '#d1d5db' },
+              { label: 'Custom...', value: '' }
+            ]
+          },
+          linkColor: {
+            type: 'select' as const,
+            label: 'Link Color',
+            options: [
+              { label: 'Blue', value: '#3b82f6' },
+              { label: 'Purple', value: '#6938EF' },
+              { label: 'Green', value: '#10b981' },
+              { label: 'Custom...', value: '' }
+            ]
+          },
+          padding: {
+            type: 'text' as const,
+            label: 'Padding',
+            placeholder: '3rem 2rem'
+          },
+          maxWidth: {
+            type: 'text' as const,
+            label: 'Max Width',
+            placeholder: '100%'
+          }
+        }
+      },
+      resolveData: ({ props }: any) => {
+        const slugify = (input: string) =>
+          input
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+
+        const columns = Array.isArray(props?.columns) ? props.columns : []
+        const normalizedColumns = columns.map((c: any, i: number) => {
+          const label = String(c?.label || '').trim()
+          let id = String(c?.id || '').trim()
+          if (!id && label) id = slugify(label)
+          if (!id) id = `col_${i + 1}`
+          return { ...c, id }
+        })
+
+        const colIds = normalizedColumns
+          .map((c: any) => String(c?.id || '').trim())
+          .filter((id: string) => id && id !== 'serial')
+
+        const rows = Array.isArray(props?.rows) ? props.rows : []
+        const normalizedRows = rows.map((r: any) => {
+          const next = { ...r }
+          for (const id of colIds) {
+            if (id === 'link') {
+              if (next.link === undefined) next.link = ''
+              if (next.linkText === undefined) next.linkText = 'View'
+              continue
+            }
+            if (next[id] === undefined) next[id] = ''
+          }
+          return next
+        })
+
+        return {
+          ...props,
+          columns: normalizedColumns,
+          rows: normalizedRows,
+        }
+      },
       fields: {
         title: {
           type: 'text' as const,
           label: 'Table Title',
           placeholder: 'Related Publishing Materials',
-          contentEditable: true
         },
         description: {
           type: 'textarea' as const,
           label: 'Description',
           placeholder: 'A list of technical documents and standards referenced in this guide.',
-          contentEditable: true
         },
         columns: {
           type: 'array' as const,
@@ -3836,7 +4096,6 @@ export const config = {
               type: 'text' as const,
               label: 'Column Label',
               placeholder: 'Title',
-              contentEditable: true
             },
             align: {
               type: 'select' as const,
@@ -3860,7 +4119,6 @@ export const config = {
               type: 'text' as const,
               label: 'Title',
               placeholder: 'Digital Typography Standards',
-              contentEditable: true
             },
             refNumber: {
               type: 'text' as const,
@@ -3871,7 +4129,6 @@ export const config = {
               type: 'text' as const,
               label: 'Author',
               placeholder: 'W3C Working Group',
-              contentEditable: true
             },
             link: {
               type: 'text' as const,
@@ -3882,7 +4139,6 @@ export const config = {
               type: 'text' as const,
               label: 'Link Text',
               placeholder: 'View',
-              contentEditable: true
             }
           },
           getItemSummary: (item: any, index: number) => {
@@ -3952,24 +4208,7 @@ export const config = {
             { label: 'Custom...', value: '' }
           ]
         },
-        titleColor: {
-          type: 'select' as const,
-          label: 'Title Color',
-          options: [
-            { label: 'Dark Gray', value: '#1f2937' },
-            { label: 'Black', value: '#000000' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
-        descriptionColor: {
-          type: 'select' as const,
-          label: 'Description Color',
-          options: [
-            { label: 'Gray', value: '#6b7280' },
-            { label: 'Dark Gray', value: '#4b5563' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
+        // (fields are dynamically resolved above via resolveFields)
         padding: {
           type: 'text' as const,
           label: 'Padding',
@@ -3984,6 +4223,11 @@ export const config = {
       defaultProps: {
         title: 'Related Publishing Materials',
         description: 'A list of technical documents and standards referenced in this guide.',
+        titleAlign: 'left',
+        descriptionAlign: 'left',
+        descriptionSize: 2,
+        titleColor: '#1f2937',
+        descriptionColor: '#6b7280',
         columns: [
           { id: 'title', label: 'Title', align: 'left' },
           { id: 'refNumber', label: 'Ref. Number', align: 'left' },
@@ -4031,8 +4275,6 @@ export const config = {
         textColor: '#1f2937',
         borderColor: '#e5e7eb',
         linkColor: '#3b82f6',
-        titleColor: '#1f2937',
-        descriptionColor: '#6b7280',
         padding: '3rem 2rem',
         maxWidth: '100%'
       },

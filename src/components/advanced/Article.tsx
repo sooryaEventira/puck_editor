@@ -12,14 +12,21 @@ export interface ArticleSection {
   type: 'heading' | 'paragraph' | 'image' | 'links'
   // For heading section
   heading?: string | React.ReactElement
+  headingColor?: string
+  headingAlign?: 'left' | 'center' | 'right'
+  headingSize?: 1 | 2 | 3
   // For paragraph section
   paragraph?: string | React.ReactElement
+  paragraphColor?: string
   // For image section
   imageUrl?: string
   imageHeight?: string
   // For links section
   links?: ArticleLink[]
   linkDisplayStyle?: 'list' | 'buttons'
+  linkColor?: string
+  buttonColor?: string
+  buttonTextColor?: string
 }
 
 export interface ArticleProps {
@@ -30,6 +37,103 @@ export interface ArticleProps {
   linkColor?: string
   padding?: string
   maxWidth?: string
+}
+
+const escapeHtml = (input: string) =>
+  input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+const looksLikeHtml = (input: string) => /<[^>]+>/.test(input)
+
+const toBasicParagraphHtml = (plainText: string) => {
+  const chunks = plainText.split(/\n\n+/).map((c) => c.trim()).filter(Boolean)
+  if (chunks.length === 0) return ''
+  return chunks
+    .map((c) => {
+      const escaped = escapeHtml(c).replace(/\n/g, '<br />')
+      return `<p>${escaped}</p>`
+    })
+    .join('')
+}
+
+const sanitizeHtml = (rawHtml: string) => {
+  // Article content is user-authored. We still sanitize to prevent script injection.
+  // This runs client-side only.
+  if (typeof window === 'undefined' || typeof DOMParser === 'undefined') {
+    return rawHtml
+  }
+
+  const allowedTags = new Set(['A', 'B', 'STRONG', 'I', 'EM', 'U', 'BR', 'P', 'UL', 'OL', 'LI', 'SPAN'])
+  const allowedAttrs: Record<string, Set<string>> = {
+    A: new Set(['href', 'target', 'rel']),
+    SPAN: new Set([]),
+  }
+
+  const isSafeHref = (href: string) => {
+    const h = (href || '').trim()
+    if (!h) return false
+    if (h.startsWith('#') || h.startsWith('/')) return true
+    try {
+      const u = new URL(h)
+      return ['http:', 'https:', 'mailto:', 'tel:'].includes(u.protocol)
+    } catch {
+      // Relative URLs without leading slash are allowed (e.g. "page")
+      return !h.toLowerCase().startsWith('javascript:')
+    }
+  }
+
+  const doc = new DOMParser().parseFromString(rawHtml, 'text/html')
+
+  const walk = (node: Element) => {
+    const children = Array.from(node.children)
+
+    // Process children first so unwrapping works correctly.
+    for (const child of children) {
+      walk(child)
+    }
+
+    const tag = node.tagName
+    if (!allowedTags.has(tag)) {
+      // Unwrap node (keep its children)
+      const parent = node.parentNode
+      if (!parent) return
+      while (node.firstChild) parent.insertBefore(node.firstChild, node)
+      parent.removeChild(node)
+      return
+    }
+
+    // Strip attributes
+    const keep = allowedAttrs[tag] || new Set<string>()
+    for (const attr of Array.from(node.attributes)) {
+      if (!keep.has(attr.name)) {
+        node.removeAttribute(attr.name)
+      }
+    }
+
+    if (tag === 'A') {
+      const href = node.getAttribute('href') || ''
+      if (!isSafeHref(href)) {
+        node.removeAttribute('href')
+      }
+      const target = node.getAttribute('target')
+      if (target === '_blank') {
+        node.setAttribute('rel', 'noopener noreferrer')
+      } else {
+        node.removeAttribute('target')
+        node.removeAttribute('rel')
+      }
+    }
+  }
+
+  // Remove script/style outright
+  doc.querySelectorAll('script, style').forEach((el) => el.remove())
+  Array.from(doc.body.children).forEach((child) => walk(child as Element))
+
+  return doc.body.innerHTML
 }
 
 const Article: React.FC<ArticleProps> = ({
@@ -97,12 +201,22 @@ const Article: React.FC<ArticleProps> = ({
       case 'heading': {
         const headingValue = getStringValue(section.heading)
         if (!headingValue) return null
+
+        const size = section.headingSize ?? 3
+        const sizeClass =
+          size === 1
+            ? 'text-2xl md:text-3xl'
+            : size === 2
+              ? 'text-3xl md:text-4xl'
+              : 'text-4xl md:text-5xl'
+        const align = section.headingAlign ?? 'left'
+        const color = section.headingColor || headingColor
         
         return (
           <h1
             key={section.id || `heading-${index}`}
-            className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight"
-            style={{ color: headingColor }}
+            className={`${sizeClass} font-bold mb-6 leading-tight`}
+            style={{ color, textAlign: align }}
           >
             {section.heading}
           </h1>
@@ -112,22 +226,19 @@ const Article: React.FC<ArticleProps> = ({
       case 'paragraph': {
         const paragraphValue = getStringValue(section.paragraph)
         if (!paragraphValue) return null
-        
-        // Split paragraph by double newlines for multiple paragraphs
-        const paragraphs = paragraphValue.split(/\n\n+/).filter(p => p.trim())
-        
+
+        const raw = paragraphValue
+        const html = looksLikeHtml(raw) ? sanitizeHtml(raw) : toBasicParagraphHtml(raw)
+        if (!html) return null
+        const color = section.paragraphColor || textColor
+
         return (
-          <div key={section.id || `paragraph-${index}`} className="prose prose-lg max-w-none mb-6">
-            {paragraphs.map((paragraph, pIndex) => (
-              <p
-                key={pIndex}
-                className="text-base md:text-lg leading-relaxed mb-4"
-                style={{ color: textColor }}
-              >
-                {paragraph.trim()}
-              </p>
-            ))}
-          </div>
+          <div
+            key={section.id || `paragraph-${index}`}
+            className="prose prose-lg max-w-none mb-6"
+            style={{ color }}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
         )
       }
 
@@ -166,6 +277,9 @@ const Article: React.FC<ArticleProps> = ({
         if (links.length === 0) return null
         
         const displayStyle = section.linkDisplayStyle || 'list'
+        const listLinkColor = section.linkColor || linkColor
+        const buttonBg = section.buttonColor || linkColor
+        const buttonText = section.buttonTextColor || '#ffffff'
         
         return (
           <div key={section.id || `links-${index}`} className="mb-6">
@@ -178,7 +292,7 @@ const Article: React.FC<ArticleProps> = ({
                       href={link.url}
                       onClick={(e) => handleLinkClick(e, link)}
                       className="inline-flex items-center gap-2 font-semibold transition-opacity hover:opacity-80 underline"
-                      style={{ color: linkColor }}
+                      style={{ color: listLinkColor }}
                       {...(link.openInNewTab && { target: '_blank', rel: 'noopener noreferrer' })}
                     >
                       {link.label}
@@ -199,8 +313,8 @@ const Article: React.FC<ArticleProps> = ({
                     onClick={(e) => handleLinkClick(e, link)}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all hover:opacity-90"
                     style={{
-                      backgroundColor: linkColor,
-                      color: '#ffffff'
+                      backgroundColor: buttonBg,
+                      color: buttonText
                     }}
                     {...(link.openInNewTab && { target: '_blank', rel: 'noopener noreferrer' })}
                   >

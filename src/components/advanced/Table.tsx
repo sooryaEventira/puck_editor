@@ -24,6 +24,9 @@ export interface TableProps {
   linkColor?: string
   titleColor?: string
   descriptionColor?: string
+  titleAlign?: 'left' | 'center' | 'right'
+  descriptionAlign?: 'left' | 'center' | 'right'
+  descriptionSize?: 1 | 2 | 3
   padding?: string
   maxWidth?: string
   showSerialNumber?: boolean
@@ -42,6 +45,9 @@ const Table: React.FC<TableProps> = ({
   linkColor = '#3b82f6',
   titleColor = '#1f2937',
   descriptionColor = '#6b7280',
+  titleAlign = 'left',
+  descriptionAlign = 'left',
+  descriptionSize = 2,
   padding = '3rem 2rem',
   maxWidth = '100%',
   showSerialNumber = true
@@ -57,6 +63,9 @@ const Table: React.FC<TableProps> = ({
 
   const titleValue = getStringValue(title)
   const descriptionValue = getStringValue(description)
+
+  const descriptionSizeClass =
+    descriptionSize === 1 ? 'text-sm' : descriptionSize === 3 ? 'text-lg' : 'text-base'
 
   // Determine if link is external
   const isExternalLink = (url: string) => {
@@ -199,7 +208,7 @@ const Table: React.FC<TableProps> = ({
         {titleValue && (
           <h2
             className="text-2xl md:text-3xl font-bold mb-2"
-            style={{ color: titleColor }}
+            style={{ color: titleColor, textAlign: titleAlign }}
           >
             {title}
           </h2>
@@ -208,8 +217,8 @@ const Table: React.FC<TableProps> = ({
         {/* Description */}
         {descriptionValue && (
           <p
-            className="text-base mb-6"
-            style={{ color: descriptionColor }}
+            className={`${descriptionSizeClass} mb-6`}
+            style={{ color: descriptionColor, textAlign: descriptionAlign }}
           >
             {description}
           </p>

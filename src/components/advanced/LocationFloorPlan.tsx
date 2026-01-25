@@ -8,11 +8,6 @@ export interface LocationFloorPlanProps {
   backgroundColor?: string
   textColor?: string
   cardBackgroundColor?: string
-  cardBorderColor?: string
-  buttonColor?: string
-  buttonTextColor?: string
-  padding?: string
-  borderRadius?: string
 }
 
 const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
@@ -23,16 +18,18 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
   backgroundColor = '#ffffff',
   textColor = '#1f2937',
   cardBackgroundColor = '#ffffff',
-  cardBorderColor = '#e5e7eb',
-  buttonColor = '#3b82f6',
-  buttonTextColor = '#ffffff',
-  padding = '4rem 2rem',
-  borderRadius = '12px'
 }) => {
   const [zoomLevel, setZoomLevel] = useState(1)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('')
+
+  // Fixed styling values (no longer configurable via sidebar)
+  const cardBorderColor = '#e5e7eb'
+  const buttonColor = '#3b82f6'
+  const buttonTextColor = '#ffffff'
+  const padding = '4rem 2rem'
+  const borderRadius = '12px'
 
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

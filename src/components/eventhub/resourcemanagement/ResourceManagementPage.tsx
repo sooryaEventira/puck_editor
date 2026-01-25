@@ -13,6 +13,7 @@ import RestrictAccessModal from './RestrictAccessModal'
 import CreateFolderModal from './CreateFolderModal'
 import { UploadModal } from '../../ui'
 import { fetchFolders, fetchAllFolders, uploadFile, fetchFiles } from '../../../services/resourceService'
+import { showToast } from '../../../utils/toast'
 
 export interface MediaFile {
   id: string
@@ -20,6 +21,7 @@ export interface MediaFile {
   type: 'image' | 'document' | 'video' | 'other'
   file: File | null // Can be null for files loaded from API
   preview?: string
+  url?: string
   folderId?: string | null
 }
 
@@ -243,6 +245,7 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
           type: fileType,
           file: null, // We don't have the original File object from API
           preview: fileType === 'image' ? file.file : undefined, // Use API URL for images
+          url: file.file, // Keep API URL for copy/share actions
           folderId: file.folder || currentFolderId || null
         }
       })
@@ -437,6 +440,42 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
         name: `${file.name.replace(/\.[^/.]+$/, '')} (copy)${file.name.match(/\.[^/.]+$/)?.[0] || ''}`
       }
       setFiles((prev) => [...prev, duplicatedFile])
+    }
+  }
+
+  const copyTextToClipboard = async (text: string) => {
+    // Prefer Clipboard API, fallback for older browsers.
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return
+    }
+
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.top = '0'
+    textarea.style.left = '0'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.focus()
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+  }
+
+  const handleCopyFileLink = async (file: MediaFile) => {
+    const link = (file.url || file.preview || '').trim()
+    if (!link) {
+      showToast.error('No file link available to copy.')
+      return
+    }
+
+    try {
+      await copyTextToClipboard(link)
+      showToast.success('Link copied')
+    } catch (err) {
+      console.error('Failed to copy link:', err)
+      showToast.error('Failed to copy link. Please try again.')
     }
   }
 
@@ -704,6 +743,12 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
           label: 'Rename',
           action: () => {
             handleStartRenameFile(file.id)
+          }
+        },
+        {
+          label: 'Copy link',
+          action: () => {
+            void handleCopyFileLink(file)
           }
         },
         {
