@@ -2,14 +2,19 @@ import React from 'react'
 
 interface Sponsor {
   id: string
-  name: string
+  name: string | React.ReactElement
+  title?: string | React.ReactElement
+  titleColor?: string
+  titleSize?: 1 | 2 | 3
   logo?: string
   logoUrl?: string
   link?: string
 }
 
 interface SponsorsProps {
-  title?: string
+  title?: string | React.ReactElement
+  titleColor?: string
+  titleSize?: 1 | 2 | 3
   sponsors?: Sponsor[]
   backgroundColor?: string
   textColor?: string
@@ -18,6 +23,8 @@ interface SponsorsProps {
 
 const Sponsors: React.FC<SponsorsProps> = ({
   title = "Our Sponsors",
+  titleColor,
+  titleSize = 2,
   sponsors = [
     { id: '1', name: 'Sponsor 1', logoUrl: '' },
     { id: '2', name: 'Sponsor 2', logoUrl: '' },
@@ -28,10 +35,25 @@ const Sponsors: React.FC<SponsorsProps> = ({
   textColor = "#1f2937",
   padding = "3rem 2rem"
 }) => {
+  const getStringValue = (prop: any): string => {
+    if (typeof prop === 'string') return prop
+    if (prop && typeof prop === 'object' && 'props' in prop && prop.props) {
+      if (typeof prop.props.value === 'string') return prop.props.value
+      if (typeof prop.props.defaultValue === 'string') return prop.props.defaultValue
+      if (typeof prop.props.children === 'string') return prop.props.children
+    }
+    return ''
+  }
+
   const containerStyle: React.CSSProperties = {
     backgroundColor,
     padding
   }
+
+  const titleValue = getStringValue(title)
+
+  const titleSizeClass =
+    titleSize === 1 ? 'text-xl md:text-2xl' : titleSize === 3 ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl'
 
   // Default placeholder logos (matching the image description)
   const getDefaultLogo = (index: number) => {
@@ -59,17 +81,24 @@ const Sponsors: React.FC<SponsorsProps> = ({
   return (
     <section style={containerStyle} className="w-full">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-[24px] md:text-[24px] font-bold mb-8 text-center" style={{ color: textColor }}>
-          {title}
-        </h2>
+        {titleValue && (
+          <h2 className={`${titleSizeClass} font-bold mb-8 text-center`} style={{ color: titleColor || textColor }}>
+            {title}
+          </h2>
+        )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
           {sponsors.map((sponsor, index) => {
+            const sponsorNameValue = getStringValue(sponsor.name)
+            const sponsorTitleValue = getStringValue(sponsor.title) || sponsorNameValue
+            const sponsorTitleSize = sponsor.titleSize || 1
+            const sponsorTitleSizeClass =
+              sponsorTitleSize === 1 ? 'text-sm' : sponsorTitleSize === 3 ? 'text-lg' : 'text-base'
             const SponsorContent = () => (
-              <>
+              <div className="flex flex-col items-center justify-center text-center">
                 {sponsor.logoUrl || sponsor.logo ? (
                   <img
                     src={sponsor.logoUrl || sponsor.logo}
-                    alt={sponsor.name}
+                    alt={sponsorTitleValue || 'Sponsor logo'}
                     className="max-w-full max-h-32 object-contain"
                     onError={(e) => {
                       // Hide image and show placeholder instead
@@ -79,7 +108,16 @@ const Sponsors: React.FC<SponsorsProps> = ({
                   />
                 ) : null}
                 {(!sponsor.logoUrl && !sponsor.logo) && getDefaultLogo(index)}
-              </>
+
+                {sponsorTitleValue ? (
+                  <div
+                    className={`mt-3 font-medium ${sponsorTitleSizeClass}`}
+                    style={{ color: sponsor.titleColor || textColor }}
+                  >
+                    {sponsor.title || sponsor.name}
+                  </div>
+                ) : null}
+              </div>
             )
 
             if (sponsor.link) {

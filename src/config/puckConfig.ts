@@ -105,7 +105,7 @@ export const config = {
       title: "Landing / Home Page",
       icon: "fa-solid fa-home",
       defaultExpanded: true,
-      components: ["HeroSection", "EventNumbers", "SpeakerHighlight", "SessionHighlight", "ContactFooter", "RegistrationCTA"]
+      components: ["HeroSection", "EventNumbers", "SpeakerHighlight", "SessionHighlight", "Sponsors", "ContactFooter", "RegistrationCTA"]
     },
     // Venue Page Category
     venue: {
@@ -140,12 +140,12 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "Sponsors", "Navigation", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
+      components: ["Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "Navigation", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
       subcategories: {
         sections: {
           title: "Sections",
           icon: "fa-solid fa-window-maximize",
-          components: ["SchedulePage", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "Sponsors", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm"]
+          components: ["SchedulePage", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm"]
         },
         media: {
           title: "Media",
@@ -1796,19 +1796,16 @@ export const config = {
           type: 'text' as const,
           label: 'Title',
           placeholder: 'Register now to enjoy exclusive benefits!',
-          contentEditable: true
         },
         subtitle: {
           type: 'text' as const,
           label: 'Subtitle',
           placeholder: "Don't miss out on this opportunity, join us today!",
-          contentEditable: true
         },
         buttonText: {
           type: 'text' as const,
           label: 'Button Text',
           placeholder: 'Register Now',
-          contentEditable: true
         },
         backgroundColor: {
           type: 'text' as const,
@@ -1849,7 +1846,20 @@ export const config = {
           type: 'text' as const,
           label: 'Title',
           placeholder: 'Our Sponsors',
-          contentEditable: true
+        },
+        titleColor: {
+          type: 'text' as const,
+          label: 'Title Color (hex)',
+          placeholder: '#1f2937'
+        },
+        titleSize: {
+          type: 'select' as const,
+          label: 'Title Size (3 options)',
+          options: [
+            { label: 'Size 1 (small)', value: 1 },
+            { label: 'Size 2 (medium)', value: 2 },
+            { label: 'Size 3 (large)', value: 3 }
+          ]
         },
         sponsors: {
           type: 'array' as const,
@@ -1860,11 +1870,29 @@ export const config = {
               label: 'ID',
               placeholder: 'sponsor-1'
             },
+            title: {
+              type: 'text' as const,
+              label: 'Sponsor Title',
+              placeholder: 'Sponsor Name'
+            },
+            titleColor: {
+              type: 'text' as const,
+              label: 'Sponsor Title Color (hex)',
+              placeholder: '#1f2937'
+            },
+            titleSize: {
+              type: 'select' as const,
+              label: 'Sponsor Title Size (3 options)',
+              options: [
+                { label: 'Size 1 (small)', value: 1 },
+                { label: 'Size 2 (medium)', value: 2 },
+                { label: 'Size 3 (large)', value: 3 }
+              ]
+            },
             name: {
               type: 'text' as const,
-              label: 'Name',
-              placeholder: 'Sponsor Name',
-              contentEditable: true
+              label: 'Legacy Name (optional)',
+              placeholder: 'Sponsor Name'
             },
             logoUrl: {
               type: 'text' as const,
@@ -1896,11 +1924,13 @@ export const config = {
       },
       defaultProps: {
         title: "Our Sponsors",
+        titleColor: '',
+        titleSize: 2,
         sponsors: [
-          { id: '1', name: 'Sponsor 1', logoUrl: '' },
-          { id: '2', name: 'Sponsor 2', logoUrl: '' },
-          { id: '3', name: 'Sponsor 3', logoUrl: '' },
-          { id: '4', name: 'Sponsor 4', logoUrl: '' }
+          { id: '1', title: 'Sponsor 1', titleColor: '', titleSize: 1, name: 'Sponsor 1', logoUrl: '' },
+          { id: '2', title: 'Sponsor 2', titleColor: '', titleSize: 1, name: 'Sponsor 2', logoUrl: '' },
+          { id: '3', title: 'Sponsor 3', titleColor: '', titleSize: 1, name: 'Sponsor 3', logoUrl: '' },
+          { id: '4', title: 'Sponsor 4', titleColor: '', titleSize: 1, name: 'Sponsor 4', logoUrl: '' }
         ],
         backgroundColor: "#ffffff",
         textColor: "#1f2937",
@@ -1915,7 +1945,6 @@ export const config = {
           type: 'text' as const,
           label: 'Title',
           placeholder: 'Contact Us',
-          contentEditable: true
         },
         items: {
           type: 'array' as const,
@@ -1939,19 +1968,16 @@ export const config = {
               type: 'text' as const,
               label: 'Title',
               placeholder: 'Email',
-              contentEditable: true
             },
             description: {
               type: 'text' as const,
               label: 'Description',
               placeholder: 'Our friendly team is here to help.',
-              contentEditable: true
             },
             actionText: {
               type: 'text' as const,
               label: 'Action Text',
               placeholder: 'Send us an email',
-              contentEditable: true
             },
             actionEmail: {
               type: 'text' as const,
@@ -2037,7 +2063,6 @@ export const config = {
           type: 'text' as const,
           label: 'Copyright Text',
           placeholder: 'Copyright © 2024',
-          contentEditable: true
         }
       },
       defaultProps: {
@@ -2087,13 +2112,11 @@ export const config = {
               type: 'text' as const,
               label: 'Value (Number)',
               placeholder: '50+',
-              contentEditable: true
             },
             label: {
               type: 'text' as const,
               label: 'Label',
               placeholder: 'SPEAKERS',
-              contentEditable: true
             }
           },
           getItemSummary: (item: any, index: number) => {
@@ -2843,25 +2866,21 @@ export const config = {
           type: 'text' as const,
           label: 'Venue Name',
           placeholder: 'The Moscone Center',
-          contentEditable: true
         },
         address: {
           type: 'text' as const,
           label: 'Address',
           placeholder: '747 Howard St',
-          contentEditable: true
         },
         city: {
           type: 'text' as const,
           label: 'City',
           placeholder: 'San Francisco',
-          contentEditable: true
         },
         state: {
           type: 'text' as const,
           label: 'State',
           placeholder: 'CA',
-          contentEditable: true
         },
         backgroundImage: {
           type: 'text' as const,
@@ -2927,7 +2946,6 @@ export const config = {
           type: 'text' as const,
           label: 'Heading',
           placeholder: 'Venue Information',
-          contentEditable: true
         },
         imagePosition: {
           type: 'select' as const,
@@ -2946,31 +2964,26 @@ export const config = {
           type: 'text' as const,
           label: 'Venue Name',
           placeholder: 'The Moscone Center',
-          contentEditable: true
         },
         address: {
           type: 'text' as const,
           label: 'Address',
           placeholder: '747 Howard St',
-          contentEditable: true
         },
         city: {
           type: 'text' as const,
           label: 'City',
           placeholder: 'San Francisco',
-          contentEditable: true
         },
         state: {
           type: 'text' as const,
           label: 'State',
           placeholder: 'CA',
-          contentEditable: true
         },
         description: {
           type: 'textarea' as const,
           label: 'Description',
           placeholder: 'A premier event venue in the heart of the city.',
-          contentEditable: true
         },
         backgroundColor: {
           type: 'select' as const,
@@ -3026,13 +3039,11 @@ export const config = {
           type: 'text' as const,
           label: 'Title',
           placeholder: 'Official Hotel Partners',
-          contentEditable: true
         },
         description: {
           type: 'textarea' as const,
           label: 'Description',
           placeholder: "We've secured exclusive discounted rates for attendees.",
-          contentEditable: true
         },
         hotels: {
           type: 'array' as const,
@@ -3042,7 +3053,6 @@ export const config = {
               type: 'text' as const,
               label: 'Hotel Name',
               placeholder: 'The Grand Hyatt',
-              contentEditable: true
             },
             image: {
               type: 'text' as const,
@@ -3064,7 +3074,6 @@ export const config = {
               type: 'text' as const,
               label: 'Distance',
               placeholder: '2 min walk to venue',
-              contentEditable: true
             },
             distanceType: {
               type: 'select' as const,
@@ -3083,7 +3092,6 @@ export const config = {
                   type: 'text' as const,
                   label: 'Feature',
                   placeholder: 'Free WiFi',
-                  contentEditable: true
                 }
               }
             },
@@ -3091,7 +3099,6 @@ export const config = {
               type: 'text' as const,
               label: 'Badge (optional)',
               placeholder: 'Most Popular',
-              contentEditable: true
             },
             link: {
               type: 'text' as const,
@@ -3541,7 +3548,6 @@ export const config = {
           type: 'text' as const,
           label: 'Section Title (optional)',
           placeholder: 'Featured Content',
-          contentEditable: true
         },
         itemTitleAlign: {
           type: 'select' as const,
@@ -3580,13 +3586,11 @@ export const config = {
               type: 'text' as const,
               label: 'Title',
               placeholder: 'The Design',
-              contentEditable: true
             },
             text: {
               type: 'textarea' as const,
               label: 'Description',
               placeholder: 'CSS frameworks like Tailwind allow for rapid prototyping...',
-              contentEditable: true
             },
             link: {
               type: 'text' as const,
@@ -3597,7 +3601,6 @@ export const config = {
               type: 'text' as const,
               label: 'Link Text',
               placeholder: 'Visit Link',
-              contentEditable: true
             }
           },
           getItemSummary: (item: any, index: number) => {

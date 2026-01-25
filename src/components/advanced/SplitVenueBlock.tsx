@@ -141,9 +141,6 @@ const SplitVenueBlock: React.FC<SplitVenueBlockProps> = ({
           <h2 
             className="text-3xl md:text-4xl lg:text-5xl font-bold"
             style={{ color: textColor }}
-            data-puck-field="venueName"
-            contentEditable
-            suppressContentEditableWarning={true}
           >
             {venueName}
           </h2>
@@ -156,9 +153,6 @@ const SplitVenueBlock: React.FC<SplitVenueBlockProps> = ({
             <p
               className="text-lg md:text-xl"
               style={{ color: textColor }}
-              data-puck-field="address"
-              contentEditable
-              suppressContentEditableWarning={true}
             >
               {address}
             </p>
@@ -170,9 +164,6 @@ const SplitVenueBlock: React.FC<SplitVenueBlockProps> = ({
           <p
             className="text-base md:text-lg opacity-80"
             style={{ color: textColor }}
-            data-puck-field="city"
-            contentEditable
-            suppressContentEditableWarning={true}
           >
             {cityValue && stateValue ? `${cityValue}, ${stateValue}` : cityValue || stateValue}
           </p>
@@ -183,9 +174,6 @@ const SplitVenueBlock: React.FC<SplitVenueBlockProps> = ({
           <p
             className="text-base md:text-lg leading-relaxed opacity-90"
             style={{ color: textColor }}
-            data-puck-field="description"
-            contentEditable
-            suppressContentEditableWarning={true}
           >
             {description}
           </p>
@@ -209,9 +197,6 @@ const SplitVenueBlock: React.FC<SplitVenueBlockProps> = ({
             <h1
               className="text-3xl md:text-4xl lg:text-5xl font-bold"
               style={{ color: finalHeadingColor }}
-              data-puck-field="heading"
-              contentEditable
-              suppressContentEditableWarning={true}
             >
               {heading}
             </h1>

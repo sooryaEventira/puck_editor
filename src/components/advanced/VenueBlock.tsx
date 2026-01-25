@@ -166,9 +166,6 @@ const VenueBlock: React.FC<VenueBlockProps> = ({
           <h1
             className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4"
             style={{ color: textColor, pointerEvents: 'auto' }}
-            data-puck-field="venueName"
-            contentEditable
-            suppressContentEditableWarning={true}
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
@@ -181,9 +178,6 @@ const VenueBlock: React.FC<VenueBlockProps> = ({
           <p
             className="text-lg md:text-xl opacity-90"
             style={{ color: textColor, pointerEvents: 'auto' }}
-            data-puck-field="address"
-            contentEditable
-            suppressContentEditableWarning={true}
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >

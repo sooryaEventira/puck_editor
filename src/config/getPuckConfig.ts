@@ -77,7 +77,7 @@ export const getPuckConfig = (pageType?: string, pageName?: string) => {
   }
   
   // Define component lists for each category
-  const landingComponents = ["HeroSection", "HeroVideo", "HeroSplitScreen", "EventNumbers", "SpeakerHighlight", "SessionHighlight", "SessionHighlightKeynote", "SessionHighlightWorkshop", "ContactFooter", "PricingPlans", "CountdownTimer", "ProgressCircleStats", "RegistrationCTA"]
+  const landingComponents = ["HeroSection", "HeroVideo", "HeroSplitScreen", "EventNumbers", "SpeakerHighlight", "SessionHighlight", "SessionHighlightKeynote", "SessionHighlightWorkshop", "Sponsors", "ContactFooter", "PricingPlans", "CountdownTimer", "ProgressCircleStats", "RegistrationCTA"]
   const venueComponents = ["VenueBlock", "SplitVenueBlock", "HotelPartners", "VenueDirections"]
   const locationComponents = ["LocationFloorPlan"]
   const generalComponents = ["GridBlock", "Article"]
