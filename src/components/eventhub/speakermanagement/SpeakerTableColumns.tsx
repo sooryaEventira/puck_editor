@@ -17,19 +17,6 @@ interface SpeakerTableColumnsProps {
   onDeleteSpeaker?: (speakerId: string) => void
 }
 
-const getStatusBadgeVariant = (status: string) => {
-  switch (status) {
-    case 'active':
-      return 'success' as const
-    case 'pending':
-      return 'warning' as const
-    case 'inactive':
-      return 'muted' as const
-    default:
-      return 'neutral' as const
-  }
-}
-
 const getUserGroupVariant = (variant?: string): 'primary' | 'info' | 'muted' => {
   if (variant === 'primary') return 'primary'
   if (variant === 'info') return 'info'
@@ -47,64 +34,8 @@ export const useSpeakerTableColumns = ({
 }: SpeakerTableColumnsProps): DividerLineTableColumn<SpeakerTableRowData>[] => {
   return useMemo<DividerLineTableColumn<SpeakerTableRowData>[]>(
     () => [
-      // {
-      //   id: 'name',
-      //   header: (
-      //     <div className="flex items-center gap-2">
-      //       <SelectAllCheckbox
-      //         checked={allVisibleSelected}
-      //         indeterminate={partiallySelected}
-      //         onChange={onToggleAllVisible}
-      //         ariaLabel="Select all speakers"
-      //       />
-      //       <span>Name</span>
-      //     </div>
-      //   ),
-      //   sortable: true,
-      //   sortAccessor: ({ speaker }) => speaker?.name || '',
-      //   render: ({ speaker }) => {
-      //     if (!speaker) return null
-      //     return (
-      //       <div className="flex items-center gap-3">
-      //         <input
-      //           type="checkbox"
-      //           className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/40"
-      //           aria-label={`Select ${speaker.name}`}
-      //           checked={selectedSpeakerIds.has(speaker.id)}
-      //           onChange={(event) => {
-      //             event.stopPropagation()
-      //             onToggleRow(speaker.id, event.target.checked)
-      //           }}
-      //           onClick={(e) => e.stopPropagation()}
-      //         />
-      //         {speaker.avatarUrl ? (
-      //           <img
-      //             src={speaker.avatarUrl}
-      //             alt={speaker.name}
-      //             className="h-8 w-8 rounded-full object-cover"
-      //           />
-      //         ) : (
-      //           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600">
-      //             {speaker.name
-      //               .split(' ')
-      //               .map((n) => n[0])
-      //               .join('')
-      //               .toUpperCase()
-      //               .slice(0, 2)}
-      //           </div>
-      //         )}
-      //         <span 
-      //           className="text-sm font-medium text-slate-900 cursor-pointer hover:text-primary transition-colors"
-      //           onClick={() => onEditSpeaker?.(speaker.id)}
-      //         >
-      //           {speaker.name || 'Unknown'}
-      //         </span>
-      //       </div>
-      //     )
-      //   }
-      // },
       {
-        id: 'email',
+        id: 'name',
         header: (
           <div className="flex items-center gap-2">
             <SelectAllCheckbox
@@ -113,11 +44,11 @@ export const useSpeakerTableColumns = ({
               onChange={onToggleAllVisible}
               ariaLabel="Select all speakers"
             />
-            <span>Email address</span>
+            <span>Name</span>
           </div>
         ),
         sortable: true,
-        sortAccessor: ({ speaker }) => speaker?.email || '',
+        sortAccessor: ({ speaker }) => speaker?.name || '',
         render: ({ speaker }) => {
           if (!speaker) return null
           return (
@@ -125,7 +56,7 @@ export const useSpeakerTableColumns = ({
               <input
                 type="checkbox"
                 className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/40"
-                aria-label={`Select ${speaker.email || 'speaker'}`}
+                aria-label={`Select ${speaker.name || 'speaker'}`}
                 checked={selectedSpeakerIds.has(speaker.id)}
                 onChange={(event) => {
                   event.stopPropagation()
@@ -133,10 +64,61 @@ export const useSpeakerTableColumns = ({
                 }}
                 onClick={(e) => e.stopPropagation()}
               />
-              <span className="text-sm text-slate-600">
-                {speaker.email || '-'}
-              </span>
+              {speaker.avatarUrl ? (
+                <img
+                  src={speaker.avatarUrl}
+                  alt={speaker.name}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600">
+                  {(speaker.name || 'U')
+                    .split(' ')
+                    .filter(Boolean)
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </div>
+              )}
+              <div className="min-w-0">
+                <div
+                  className="text-sm font-medium text-slate-900 cursor-pointer hover:text-primary transition-colors truncate"
+                  onClick={() => onEditSpeaker?.(speaker.id)}
+                >
+                  {speaker.name || 'Unknown'}
+                </div>
+              
+              </div>
             </div>
+          )
+        }
+      },
+      {
+        id: 'inviteCode',
+        header: 'Invite code',
+        sortable: true,
+        sortAccessor: ({ speaker }) => speaker?.inviteCode || '',
+        render: ({ speaker }) => {
+          if (!speaker) return null
+          return (
+            <span className="text-sm text-slate-600">
+              {speaker.inviteCode || '-'}
+            </span>
+          )
+        }
+      },
+      {
+        id: 'email',
+        header: 'Email',
+        sortable: true,
+        sortAccessor: ({ speaker }) => speaker?.email || '',
+        render: ({ speaker }) => {
+          if (!speaker) return null
+          return (
+            <span className="text-sm text-slate-600">
+              {speaker.email || '-'}
+            </span>
           )
         }
       },
@@ -165,6 +147,32 @@ export const useSpeakerTableColumns = ({
             <span className="text-sm text-slate-600">
               {speaker.role || '-'}
             </span>
+          )
+        }
+      },
+      {
+        id: 'groups',
+        header: 'Group',
+        sortable: true,
+        sortAccessor: ({ speaker }) =>
+          speaker?.groups?.map((g) => g.name).join(', ') || '',
+        render: ({ speaker }) => {
+          if (!speaker) return null
+          const groups = speaker.groups || []
+          if (!groups.length) {
+            return <span className="text-sm text-slate-600">-</span>
+          }
+          return (
+            <div className="flex flex-wrap gap-1">
+              {groups.slice(0, 2).map((g) => (
+                <Badge key={g.id} variant={getUserGroupVariant(g.variant)}>
+                  {g.name}
+                </Badge>
+              ))}
+              {groups.length > 2 ? (
+                <Badge variant="muted">+{groups.length - 2}</Badge>
+              ) : null}
+            </div>
           )
         }
       },

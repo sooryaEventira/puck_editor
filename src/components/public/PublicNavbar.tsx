@@ -42,7 +42,7 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({
             <div className="truncate text-sm font-semibold text-slate-900">
               {eventName || 'Event'}
             </div>
-            <div className="truncate text-xs text-slate-500">Event website</div>
+           
           </div>
         </button>
 

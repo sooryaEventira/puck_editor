@@ -9,6 +9,7 @@ import SchedulePage from './schedulesession/SchedulePage'
 import EventWebsitePage from './EventWebsitePage'
 import AttendeeManagementPage from './attendeemanagement/AttendeeManagementPage'
 import SpeakerManagementPage from './speakermanagement/SpeakerManagementPage'
+import OrganizationManagementPage from './organizationmanagement/OrganizationManagementPage'
 import WebsiteSettingsPage from './websitesettings/WebsiteSettingsPage'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 
@@ -161,6 +162,16 @@ const EventHubPage: React.FC<EventHubPageProps> = ({
       case 'speaker-management':
         return (
           <SpeakerManagementPage
+            eventName={eventName}
+            isDraft={isDraft}
+            onBackClick={onBackClick}
+            userAvatarUrl={userAvatarUrl}
+            hideNavbarAndSidebar={true}
+          />
+        )
+      case 'organization-management':
+        return (
+          <OrganizationManagementPage
             eventName={eventName}
             isDraft={isDraft}
             onBackClick={onBackClick}

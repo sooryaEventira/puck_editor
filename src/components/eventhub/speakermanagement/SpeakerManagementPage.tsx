@@ -15,6 +15,7 @@ import { Speaker, SpeakerTab, Group, CustomField } from './speakerTypes'
 import { defaultCards, ContentCard } from '../EventHubContent'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 import attendeeSpeakerTemplate from '../../../assets/excel/Attendee Speaker template.xlsx?url'
+import { writeEventStoreJSON } from '../../../utils/eventLocalStore'
 
 interface SpeakerManagementPageProps {
   eventName?: string
@@ -131,6 +132,7 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
       console.log('📤 SpeakerManagementPage: Uploading file:', file.name)
       try {
         const response = await uploadSpeakerFile(file, eventUuid)
+        console.log('🧾 Speaker Excel Import (create) response:', response)
         console.log('✅ SpeakerManagementPage: Upload response:', JSON.stringify(response, null, 2))
       } catch (error) {
         console.error('❌ SpeakerManagementPage: Upload error:', error)
@@ -156,41 +158,206 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
     setIsLoadingSpeakers(true)
     try {
       const speakersData = await fetchSpeakers(eventUuid)
+      console.log('🧾 Speaker Excel Import (list) response:', {
+        count: speakersData.length,
+        speakers: speakersData
+      })
       
       // Map API response to Speaker interface
-      const mappedSpeakers: Speaker[] = speakersData.map((speakerData: SpeakerData) => {
-        // Get email from API response
-        const email = speakerData.email || ''
-        
-        // Get name from direct fields
-        let name = speakerData.name
-        if (!name && (speakerData.first_name || speakerData.last_name)) {
-          const firstName = speakerData.first_name || ''
-          const lastName = speakerData.last_name || ''
-          name = `${firstName} ${lastName}`.trim()
+      const mappedSpeakers: Speaker[] = speakersData.map((speakerData: SpeakerData, idx: number) => {
+        const profile: any = (speakerData as any).profile
+        const user: any = (speakerData as any).user
+
+        // Email can come in different shapes depending on backend
+        const email =
+          (speakerData.email ||
+            (speakerData as any).user_email ||
+            (speakerData as any).userEmail ||
+            profile?.email ||
+            user?.email ||
+            '') as string
+
+        // Ensure we always have a stable non-empty ID for table row keys/selection
+        const rawId =
+          (speakerData as any).id ||
+          (speakerData as any).uuid ||
+          profile?.id ||
+          profile?.uuid ||
+          user?.id ||
+          user?.uuid ||
+          ''
+        const id = String(rawId || email || `speaker-${idx}`).trim()
+
+        const titleCaseFromEmail = (rawEmail: string) => {
+          const local = (rawEmail || '').split('@')[0] || ''
+          if (!local) return ''
+          const parts = local
+            .replace(/[._-]+/g, ' ')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 4)
+          return parts
+            .map((p) => (p.length <= 2 ? p.toUpperCase() : p[0].toUpperCase() + p.slice(1).toLowerCase()))
+            .join(' ')
         }
-        if (!name) {
-          name = 'Unknown'
+
+        const pickStr = (...vals: any[]) => {
+          for (const v of vals) {
+            if (typeof v === 'string' && v.trim()) return v.trim()
+          }
+          return ''
         }
+
+        // Name can be nested or split into first/last
+        const firstName = pickStr(
+          (speakerData as any).first_name,
+          (speakerData as any).firstName,
+          profile?.first_name,
+          profile?.firstName,
+          user?.first_name,
+          user?.firstName
+        )
+        const lastName = pickStr(
+          (speakerData as any).last_name,
+          (speakerData as any).lastName,
+          profile?.last_name,
+          profile?.lastName,
+          user?.last_name,
+          user?.lastName
+        )
+
+        const fullNameFromParts = `${firstName} ${lastName}`.trim()
+        let name = pickStr(
+          speakerData.name,
+          (speakerData as any).full_name,
+          (speakerData as any).fullName,
+          profile?.name,
+          profile?.full_name,
+          profile?.fullName,
+          user?.name,
+          user?.full_name,
+          user?.fullName,
+          fullNameFromParts
+        )
+        if (!name) name = titleCaseFromEmail(email)
+        if (!name) name = 'Unknown'
         
         // Get phone number from direct field
-        const phoneNumber = speakerData.phone_number || ''
+        const phoneNumber =
+          (speakerData as any).phone_number ||
+          (speakerData as any).phoneNumber ||
+          profile?.phone_number ||
+          profile?.phoneNumber ||
+          user?.phone_number ||
+          user?.phoneNumber ||
+          ''
+
+        // Invite code can come in different shapes depending on backend
+        const inviteCodeRaw =
+          (speakerData as any).invite_code ||
+          (speakerData as any).inviteCode ||
+          (speakerData as any).invitecode ||
+          (speakerData as any).invite ||
+          (speakerData as any).code ||
+          (speakerData as any).invite_token ||
+          (speakerData as any).inviteToken ||
+          (speakerData as any).invitation_code ||
+          (speakerData as any).invitation_code ||
+          (speakerData as any).invitationCode ||
+          (speakerData as any).invitationCode ||
+          (speakerData as any).invitation?.code ||
+          (speakerData as any).invitation?.invite_code ||
+          (speakerData as any).invitation?.inviteCode ||
+          profile?.invite_code ||
+          profile?.inviteCode ||
+          user?.invite_code ||
+          user?.inviteCode ||
+          ''
+        const inviteCode = inviteCodeRaw ? String(inviteCodeRaw) : ''
+
+        // Map groups/tags if backend provides them
+        const rawGroupsValue =
+          (speakerData as any).groups ??
+          (speakerData as any).group ??
+          (speakerData as any).tags ??
+          (speakerData as any).tag ??
+          (speakerData as any).tag_ids ??
+          (speakerData as any).tagIds ??
+          (speakerData as any).group_ids ??
+          (speakerData as any).groupIds ??
+          (speakerData as any).user_tags ??
+          (speakerData as any).userTags ??
+          profile?.groups ??
+          profile?.tags ??
+          user?.groups ??
+          user?.tags ??
+          []
+
+        const rawGroups: any[] = (() => {
+          if (rawGroupsValue === null || typeof rawGroupsValue === 'undefined') return []
+          if (Array.isArray(rawGroupsValue)) return rawGroupsValue
+          if (typeof rawGroupsValue === 'string') {
+            const parts = rawGroupsValue
+              .split(',')
+              .map((p) => p.trim())
+              .filter(Boolean)
+            return parts
+          }
+          // Single object or number/string id
+          return [rawGroupsValue]
+        })()
+
+        const groupNameById = (id: string) => {
+          const match = groups.find((g) => String(g.id) === String(id))
+          return match?.name || ''
+        }
+
+        const mappedSpeakerGroups = rawGroups
+          .map((g: any) => {
+            if (g === null || g === undefined) return null
+
+            // Case 1: backend sends IDs as strings/numbers
+            if (typeof g === 'string' || typeof g === 'number') {
+              const id = String(g)
+              const resolvedName = groupNameById(id)
+              return { id, name: resolvedName || id, variant: 'muted' }
+            }
+
+            // Case 2: backend sends objects
+            const id = String(
+              g.id ||
+                g.uuid ||
+                g.tag_uuid ||
+                g.tagUuid ||
+                g.group_uuid ||
+                g.groupUuid ||
+                g.value ||
+                g.name ||
+                ''
+            )
+            const name = String(g.name || g.title || g.label || '').trim() || groupNameById(id)
+            if (!id && !name) return null
+            return { id: id || name, name: name || id, variant: g.variant || 'muted' }
+          })
+          .filter((x: any) => x && x.name) as Speaker['groups']
         
         return {
-          id: String(speakerData.id || speakerData.uuid || ''),
+          id,
           name: name,
-          firstName: speakerData.first_name,
-          lastName: speakerData.last_name,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
           email: email,
           phoneNumber: phoneNumber,
-          role: speakerData.role || '',
-          avatarUrl: speakerData.avatar_url,
+          inviteCode: inviteCode || undefined,
+          role: (speakerData as any).role || profile?.role || user?.role || '',
+          avatarUrl: (speakerData as any).avatar_url || profile?.avatar_url || user?.avatar_url,
           bannerUrl: undefined,
           status: 'active' as Speaker['status'],
           bio: undefined,
-          organization: speakerData.organization,
-          title: speakerData.title,
-          groups: [],
+          organization: (speakerData as any).organization || profile?.organization || user?.organization,
+          title: (speakerData as any).title || profile?.title || user?.title,
+          groups: mappedSpeakerGroups,
           sessions: undefined,
           socialLinks: undefined
         }
@@ -207,6 +374,12 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
       setIsLoadingSpeakers(false)
     }
   }
+
+  // Persist speakers for public pages (no new API on public site)
+  useEffect(() => {
+    const eventUuidForStore = createdEvent?.uuid || localStorage.getItem('createdEventUuid') || 'unknown-event'
+    writeEventStoreJSON(eventUuidForStore, 'speakers', speakers)
+  }, [createdEvent?.uuid, speakers])
 
   // Load tags from API
   const loadTags = async () => {
@@ -251,6 +424,28 @@ const SpeakerManagementPage: React.FC<SpeakerManagementPageProps> = ({
       setIsLoadingGroups(false)
     }
   }
+
+  // When groups (tags) load, refresh speaker group names if we only had IDs before.
+  useEffect(() => {
+    if (!groups.length) return
+    setSpeakers((prev) =>
+      prev.map((s) => {
+        if (!s.groups?.length) return s
+        const nextGroups = s.groups
+          .map((g) => {
+            const match = groups.find((x) => String(x.id) === String(g.id))
+            if (!match) return g
+            // If we were showing the raw id as the name, replace with real name
+            if (!g.name || g.name === g.id) {
+              return { ...g, name: match.name }
+            }
+            return g
+          })
+          .filter((g) => g.name)
+        return { ...s, groups: nextGroups }
+      })
+    )
+  }, [groups])
 
   // Load speakers on mount and when event changes
   useEffect(() => {

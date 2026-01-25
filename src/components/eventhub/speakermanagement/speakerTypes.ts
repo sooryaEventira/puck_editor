@@ -13,6 +13,7 @@ export interface Speaker {
   lastName?: string
   email: string
   phoneNumber?: string
+  inviteCode?: string
   role?: string
   avatarUrl?: string
   bannerUrl?: string

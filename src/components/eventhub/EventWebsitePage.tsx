@@ -15,6 +15,7 @@ import {
   Eye,
   Edit05,
   Trash01,
+  Link01,
   Plus
 } from '@untitled-ui/icons-react'
 
@@ -43,6 +44,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ id: string; name: string } | null>(null)
   const [webpages, setWebpages] = useState<WebpageData[]>([])
   const [isLoadingWebpages, setIsLoadingWebpages] = useState(false)
+  const [navigationPreviewActive, setNavigationPreviewActive] = useState<string | null>(null)
 
   // Fetch webpages from backend
   const loadWebpages = useCallback(async () => {
@@ -213,6 +215,118 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
     // The public shell will load navbar items from the public endpoints and render pages read-only.
     const url = `${window.location.origin}/events/${eventUuid}`
     window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const renderNavigationTab = () => {
+    const eventUuid = createdEvent?.uuid ?? localStorage.getItem('currentEventUuid') ?? ''
+    const items = webpages.map((w) => ({
+      id: w.uuid,
+      label: w.name
+    }))
+    const activeId = navigationPreviewActive ?? items[0]?.id ?? null
+
+    return (
+      <div className="flex flex-col gap-6 min-h-[520px]">
+        {/* List of menu items (webpages) that will appear in published navbar */}
+        <div className="space-y-2 flex-1">
+          <div className="text-sm font-semibold text-slate-900">Menu items</div>
+          <div className="text-sm text-slate-600">
+            These are the webpages that will appear in the published website navbar.
+          </div>
+
+          <div className="space-y-0 border border-slate-200 rounded-lg bg-white">
+            {isLoadingWebpages ? (
+              <div className="flex items-center justify-center py-8 text-slate-500">
+                <p>Loading webpages...</p>
+              </div>
+            ) : items.length === 0 ? (
+              <div className="flex items-center justify-center py-8 text-slate-500">
+                <p>No pages yet. Create pages to see them here.</p>
+              </div>
+            ) : (
+              items.map((item) => {
+                const isWelcome = String(item.label || '').toLowerCase() === 'welcome'
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 py-2 px-4 border-b border-slate-200 last:border-b-0 hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-slate-400 cursor-grab select-none" aria-hidden="true">
+                        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M7 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM7 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM7 14a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 14a2 2 0 1 1 0 4 2 2 0 0 1 0-4z" />
+                        </svg>
+                      </span>
+                      <span className="text-sm font-medium text-slate-900 capitalize truncate">
+                        {item.label}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="tertiary"
+                        size="sm"
+                        onClick={() => {
+                          if (!eventUuid) return
+                          const publicUrl = `${window.location.origin}/events/${eventUuid}/webpages/${item.id}`
+                          // Copy link silently
+                          navigator.clipboard?.writeText(publicUrl).catch(() => {})
+                        }}
+                        className="p-2 text-slate-400 hover:text-slate-600"
+                        aria-label="Copy link"
+                        iconLeading={<Link01 className="h-4 w-4" />}
+                      />
+
+                      <Button
+                        variant="tertiary"
+                        size="sm"
+                        onClick={() => handlePageAction(item.id, 'delete')}
+                        className={`p-2 hover:text-red-600 ${
+                          isWelcome ? 'text-slate-300 cursor-not-allowed opacity-50' : 'text-slate-400'
+                        }`}
+                        aria-label="Delete"
+                        disabled={isWelcome}
+                        iconLeading={<Trash01 className="h-4 w-4" />}
+                      />
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Demo navbar preview */}
+        <div className="space-y-2 mt-auto">
+          <div className="text-sm font-semibold text-slate-900">Preview</div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
+            <div className="flex items-center gap-2 overflow-x-auto">
+              {items.length === 0 ? (
+                <span className="text-sm text-slate-500">No menu items to preview.</span>
+              ) : (
+                items.map((item) => {
+                  const isActive = item.id === activeId
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setNavigationPreviewActive(item.id)}
+                      className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-violet-100 text-violet-700'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Reusable header buttons component to avoid duplication
@@ -473,7 +587,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                     : 'text-slate-600 hover:text-slate-900 border-b-transparent'
                 }`}
               >
-                Website header
+                Navigation
               </Button>
             </div>
             <Button
@@ -557,11 +671,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
             </div>
           )}
 
-          {activeSubItem === 'website-header' && (
-            <div>
-              <p className="text-slate-600">Website header settings will be implemented here.</p>
-            </div>
-          )}
+          {activeSubItem === 'website-header' && renderNavigationTab()}
         </div>
 
         {/* Page Creation Modal */}
@@ -658,7 +768,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                   : 'text-slate-600 hover:text-slate-900 border-b-transparent'
               }`}
             >
-              Website header
+              Navigation
             </Button>
           </div>
           <Button
@@ -742,11 +852,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
           </div>
         )}
 
-        {activeSubItem === 'website-header' && (
-          <div>
-            <p className="text-slate-600">Website header settings will be implemented here.</p>
-          </div>
-        )}
+        {activeSubItem === 'website-header' && renderNavigationTab()}
       </div>
 
       {/* Page Creation Modal */}

@@ -176,6 +176,13 @@ export const uploadSpeakerFile = async (file: File, eventUuid?: string): Promise
     // Success response
     if (data.status === 'success') {
       console.log('✅ uploadSpeakerFile: Success response:', data)
+
+      // Speaker Excel import: "create" response (what backend created)
+      console.log('🧾 Speaker Excel Import (create) response:', {
+        message: (data as any).message,
+        count: Array.isArray((data as any).data) ? (data as any).data.length : undefined,
+        data: (data as any).data
+      })
       
       // Log uploaded speakers details
       if (data.data && Array.isArray(data.data) && data.data.length > 0) {
@@ -358,6 +365,11 @@ export const fetchSpeakers = async (eventUuid: string): Promise<SpeakerData[]> =
     }
 
     console.log('📡 fetchSpeakers: Extracted speakers:', speakers)
+    // Speaker Excel import: "list" response (raw speaker records returned by backend)
+    console.log('🧾 Speaker Excel Import (list) response:', {
+      count: Array.isArray(speakers) ? speakers.length : 0,
+      speakers
+    })
     // Note: Profile data should ideally be included in the API response
     // If profile is just an ID, the mapping in SpeakerManagementPage will handle it
     return speakers || []

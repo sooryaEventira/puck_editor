@@ -4,13 +4,31 @@ import { fetchPublicEvent, type PublicEventData } from '../../services/publicEve
 import { fetchPublicWebpages, type PublicWebpageData } from '../../services/publicWebpageService'
 import PublicWebpageRenderer from './PublicWebpageRenderer'
 
-type PublicSection = 'webpage' | 'speakers' | 'attendees' | 'schedule' | 'sessions'
+type PublicSection =
+  | 'webpage'
+  | 'speakers'
+  | 'speaker'
+  | 'attendees'
+  | 'attendee'
+  | 'schedule'
+  | 'sessions'
+  | 'organizations'
+  | 'organization'
 
 interface PublicEventWebsiteShellProps {
   eventUuid: string
 }
 
-const getSectionFromPath = (eventUuid: string, pathname: string): { section: PublicSection; webpageUuid?: string } => {
+const getSectionFromPath = (
+  eventUuid: string,
+  pathname: string
+): {
+  section: PublicSection
+  webpageUuid?: string
+  organizationId?: string
+  speakerId?: string
+  attendeeId?: string
+} => {
   const base = `/events/${eventUuid}`
   const rest = pathname.startsWith(base) ? pathname.slice(base.length) : pathname
 
@@ -19,6 +37,22 @@ const getSectionFromPath = (eventUuid: string, pathname: string): { section: Pub
     return { section: 'webpage', webpageUuid: webpageMatch[1] }
   }
 
+  const speakerDetailMatch = rest.match(/^\/speakers\/([^/]+)\/?$/)
+  if (speakerDetailMatch) {
+    return { section: 'speaker', speakerId: speakerDetailMatch[1] }
+  }
+
+  const attendeeDetailMatch = rest.match(/^\/attendees\/([^/]+)\/?$/)
+  if (attendeeDetailMatch) {
+    return { section: 'attendee', attendeeId: attendeeDetailMatch[1] }
+  }
+
+  const orgDetailMatch = rest.match(/^\/organizations\/([^/]+)\/?$/)
+  if (orgDetailMatch) {
+    return { section: 'organization', organizationId: orgDetailMatch[1] }
+  }
+
+  if (rest.startsWith('/organizations')) return { section: 'organizations' }
   if (rest.startsWith('/speakers')) return { section: 'speakers' }
   if (rest.startsWith('/attendees')) return { section: 'attendees' }
   if (rest.startsWith('/schedule')) return { section: 'schedule' }
@@ -27,6 +61,13 @@ const getSectionFromPath = (eventUuid: string, pathname: string): { section: Pub
   // Default: if no explicit section, treat it as "webpage" and show first available page
   return { section: 'webpage' }
 }
+
+const OrganizationsListPage = React.lazy(() => import('./organizations/OrganizationsListPage'))
+const OrganizationDetailPage = React.lazy(() => import('./organizations/OrganizationDetailPage'))
+const SpeakersListPage = React.lazy(() => import('./speakers/SpeakersListPage'))
+const SpeakerDetailPage = React.lazy(() => import('./speakers/SpeakerDetailPage'))
+const AttendeesListPage = React.lazy(() => import('./attendees/AttendeesListPage'))
+const AttendeeDetailPage = React.lazy(() => import('./attendees/AttendeeDetailPage'))
 
 const PublicEventWebsiteShell: React.FC<PublicEventWebsiteShellProps> = ({ eventUuid }) => {
   const [event, setEvent] = useState<PublicEventData | null>(null)
@@ -64,6 +105,7 @@ const PublicEventWebsiteShell: React.FC<PublicEventWebsiteShellProps> = ({ event
 
   const navbarItems: PublicNavbarItem[] = useMemo(() => {
     const SYSTEM_PAGES: PublicNavbarItem[] = [
+      { label: 'Organizations', path: `/events/${eventUuid}/organizations` },
       { label: 'Speakers', path: `/events/${eventUuid}/speakers` },
       { label: 'Attendees', path: `/events/${eventUuid}/attendees` },
       { label: 'Schedule', path: `/events/${eventUuid}/schedule` },
@@ -107,6 +149,45 @@ const PublicEventWebsiteShell: React.FC<PublicEventWebsiteShellProps> = ({ event
             <div className="text-lg font-semibold text-rose-900">Unable to load this event</div>
             <div className="mt-1 text-sm text-rose-800">{loadError}</div>
           </div>
+        ) : current.section === 'organizations' ? (
+          <React.Suspense fallback={<div className="py-10 text-sm text-slate-600">Loading…</div>}>
+            <OrganizationsListPage
+              eventUuid={eventUuid}
+              onNavigate={handleNavigate}
+            />
+          </React.Suspense>
+        ) : current.section === 'speakers' ? (
+          <React.Suspense fallback={<div className="py-10 text-sm text-slate-600">Loading…</div>}>
+            <SpeakersListPage eventUuid={eventUuid} onNavigate={handleNavigate} />
+          </React.Suspense>
+        ) : current.section === 'speaker' ? (
+          <React.Suspense fallback={<div className="py-10 text-sm text-slate-600">Loading…</div>}>
+            <SpeakerDetailPage
+              eventUuid={eventUuid}
+              speakerId={current.speakerId || ''}
+              onNavigate={handleNavigate}
+            />
+          </React.Suspense>
+        ) : current.section === 'attendees' ? (
+          <React.Suspense fallback={<div className="py-10 text-sm text-slate-600">Loading…</div>}>
+            <AttendeesListPage eventUuid={eventUuid} onNavigate={handleNavigate} />
+          </React.Suspense>
+        ) : current.section === 'attendee' ? (
+          <React.Suspense fallback={<div className="py-10 text-sm text-slate-600">Loading…</div>}>
+            <AttendeeDetailPage
+              eventUuid={eventUuid}
+              attendeeId={current.attendeeId || ''}
+              onNavigate={handleNavigate}
+            />
+          </React.Suspense>
+        ) : current.section === 'organization' ? (
+          <React.Suspense fallback={<div className="py-10 text-sm text-slate-600">Loading…</div>}>
+            <OrganizationDetailPage
+              eventUuid={eventUuid}
+              organizationId={current.organizationId || ''}
+              onNavigate={handleNavigate}
+            />
+          </React.Suspense>
         ) : current.section === 'webpage' ? (
           webpageUuid ? (
             <PublicWebpageRenderer eventUuid={eventUuid} webpageUuid={webpageUuid} />

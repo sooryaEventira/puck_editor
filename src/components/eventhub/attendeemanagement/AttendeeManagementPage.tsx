@@ -14,6 +14,7 @@ import { Attendee, AttendeeTab, Group, CustomField } from './attendeeTypes'
 import { defaultCards, ContentCard } from '../EventHubContent'
 import { InfoCircle, CodeBrowser, Globe01 } from '@untitled-ui/icons-react'
 import attendeeSpeakerTemplate from '../../../assets/excel/Attendee Speaker template.xlsx?url'
+import { writeEventStoreJSON } from '../../../utils/eventLocalStore'
 
 interface AttendeeManagementPageProps {
   eventName?: string
@@ -102,6 +103,12 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
   const [selectedAttendee, setSelectedAttendee] = useState<Attendee | null>(null)
   const [isLoadingAttendees, setIsLoadingAttendees] = useState(false)
   const [isLoadingGroups, setIsLoadingGroups] = useState(false)
+
+  // Persist attendees for public pages (no new API on public site)
+  useEffect(() => {
+    const eventUuidForStore = createdEvent?.uuid || localStorage.getItem('createdEventUuid') || 'unknown-event'
+    writeEventStoreJSON(eventUuidForStore, 'attendees', attendees)
+  }, [createdEvent?.uuid, attendees])
 
   const handleUpload = () => {
     setIsUploadModalOpen(true)
