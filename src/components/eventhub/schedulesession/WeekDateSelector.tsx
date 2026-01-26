@@ -15,7 +15,13 @@ const WeekDateSelector: React.FC<WeekDateSelectorProps> = ({
   onDateRangeChange,
   className = ''
 }) => {
-  const [currentDate, setCurrentDate] = useState(initialDate)
+  const normalizeDay = useCallback((d: Date) => {
+    const nd = new Date(d)
+    nd.setHours(0, 0, 0, 0)
+    return nd
+  }, [])
+
+  const [currentDate, setCurrentDate] = useState(() => normalizeDay(initialDate))
   const [showCalendar, setShowCalendar] = useState(false)
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
@@ -26,14 +32,16 @@ const WeekDateSelector: React.FC<WeekDateSelectorProps> = ({
 
   // Generate week dates
   const getWeekDates = (date: Date) => {
-    const startOfWeek = new Date(date)
+    const startOfWeek = normalizeDay(date)
     const day = startOfWeek.getDay()
     const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1) // Monday as start
     startOfWeek.setDate(diff)
+    startOfWeek.setHours(0, 0, 0, 0)
 
     return Array.from({ length: 7 }, (_, i) => {
       const date = new Date(startOfWeek)
       date.setDate(startOfWeek.getDate() + i)
+      date.setHours(0, 0, 0, 0)
       return date
     })
   }
@@ -59,8 +67,9 @@ const WeekDateSelector: React.FC<WeekDateSelectorProps> = ({
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate)
     newDate.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7))
-    setCurrentDate(newDate)
-    onDateChange?.(newDate)
+    const normalized = normalizeDay(newDate)
+    setCurrentDate(normalized)
+    onDateChange?.(normalized)
   }
 
   const isCurrentDay = (date: Date) => {
@@ -88,8 +97,9 @@ const WeekDateSelector: React.FC<WeekDateSelectorProps> = ({
   }
 
   const selectDate = (date: Date) => {
-    setCurrentDate(date)
-    onDateChange?.(date)
+    const normalized = normalizeDay(date)
+    setCurrentDate(normalized)
+    onDateChange?.(normalized)
   }
 
   // Calendar utilities
@@ -194,6 +204,12 @@ const WeekDateSelector: React.FC<WeekDateSelectorProps> = ({
   useEffect(() => {
     setFirstMonth(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1))
   }, [currentDate])
+
+  // Keep internal state in sync if initialDate prop changes (ex: on refresh or schedule switch)
+  useEffect(() => {
+    setCurrentDate(normalizeDay(initialDate))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialDate])
 
   const formatDate = (date: Date | null) => {
     if (!date) return ''

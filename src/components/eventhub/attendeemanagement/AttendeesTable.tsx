@@ -62,23 +62,8 @@ const AttendeesTable: React.FC<AttendeesTableProps> = ({
     if (!query) return attendees
 
     return attendees.filter((attendee) => {
-      const tagsText = attendee.tags 
-        ? (Array.isArray(attendee.tags) ? attendee.tags.join(' ') : attendee.tags)
-        : ''
-      
-      const haystack = [
-        attendee.name,
-        attendee.email,
-        // attendee.status,
-        attendee.inviteCode,
-        ...attendee.groups.map((g) => g.name),
-        tagsText
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-
-      return haystack.includes(query)
+      // Search by attendee name only
+      return String(attendee.name ?? '').toLowerCase().includes(query)
     })
   }, [searchQuery, attendees])
 

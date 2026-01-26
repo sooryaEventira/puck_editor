@@ -68,6 +68,7 @@ const SpeakersListPage = React.lazy(() => import('./speakers/SpeakersListPage'))
 const SpeakerDetailPage = React.lazy(() => import('./speakers/SpeakerDetailPage'))
 const AttendeesListPage = React.lazy(() => import('./attendees/AttendeesListPage'))
 const AttendeeDetailPage = React.lazy(() => import('./attendees/AttendeeDetailPage'))
+const PublicSchedulePage = React.lazy(() => import('./schedule/PublicSchedulePage'))
 
 const PublicEventWebsiteShell: React.FC<PublicEventWebsiteShellProps> = ({ eventUuid }) => {
   const [event, setEvent] = useState<PublicEventData | null>(null)
@@ -104,18 +105,30 @@ const PublicEventWebsiteShell: React.FC<PublicEventWebsiteShellProps> = ({ event
   }, [eventUuid])
 
   const navbarItems: PublicNavbarItem[] = useMemo(() => {
-    const SYSTEM_PAGES: PublicNavbarItem[] = [
-      { label: 'Organizations', path: `/events/${eventUuid}/organizations` },
-      { label: 'Speakers', path: `/events/${eventUuid}/speakers` },
-      { label: 'Attendees', path: `/events/${eventUuid}/attendees` },
-      { label: 'Schedule', path: `/events/${eventUuid}/schedule` },
-      { label: 'Sessions', path: `/events/${eventUuid}/sessions` },
-    ]
+    const hiddenKey = `navigation-hidden-${eventUuid}`
+    let hiddenIds = new Set<string>()
+    try {
+      const raw = localStorage.getItem(hiddenKey)
+      const parsed = raw ? JSON.parse(raw) : []
+      if (Array.isArray(parsed)) hiddenIds = new Set(parsed.map(String))
+    } catch {
+      hiddenIds = new Set()
+    }
 
-    const dynamic: PublicNavbarItem[] = webpages.map((p) => ({
-      label: p.name,
-      path: `/events/${eventUuid}/webpages/${p.uuid}`
-    }))
+    const SYSTEM_PAGES: PublicNavbarItem[] = [
+      { id: 'system:organizations', label: 'Organizations', path: `/events/${eventUuid}/organizations` },
+      { id: 'system:speakers', label: 'Speakers', path: `/events/${eventUuid}/speakers` },
+      { id: 'system:attendees', label: 'Attendees', path: `/events/${eventUuid}/attendees` },
+      { id: 'system:schedule', label: 'Schedule', path: `/events/${eventUuid}/schedule` },
+    ].filter((i) => !hiddenIds.has(i.id || ''))
+
+    const dynamic: PublicNavbarItem[] = webpages
+      .map((p) => ({
+        id: String(p.uuid),
+        label: p.name,
+        path: `/events/${eventUuid}/webpages/${p.uuid}`
+      }))
+      .filter((i) => !hiddenIds.has(i.id || ''))
 
     return [...SYSTEM_PAGES, ...dynamic]
   }, [eventUuid, webpages])
@@ -161,7 +174,21 @@ const PublicEventWebsiteShell: React.FC<PublicEventWebsiteShellProps> = ({ event
             <SpeakersListPage eventUuid={eventUuid} onNavigate={handleNavigate} />
           </React.Suspense>
         ) : current.section === 'speaker' ? (
-          <React.Suspense fallback={<div className="py-10 text-sm text-slate-600">Loading…</div>}>
+          <React.Suspense
+            fallback={
+              <div className="rounded-xl border border-slate-200 bg-white p-6">
+                <span className="sr-only">Loading speaker</span>
+                <div className="animate-pulse">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="h-32 w-32 rounded-xl bg-slate-100 ring-1 ring-slate-200" />
+                    <div className="mt-6 h-7 w-56 rounded bg-slate-100" />
+                    <div className="mt-2 h-4 w-72 rounded bg-slate-100" />
+                    <div className="mt-6 h-20 w-full max-w-2xl rounded bg-slate-100" />
+                  </div>
+                </div>
+              </div>
+            }
+          >
             <SpeakerDetailPage
               eventUuid={eventUuid}
               speakerId={current.speakerId || ''}
@@ -173,7 +200,20 @@ const PublicEventWebsiteShell: React.FC<PublicEventWebsiteShellProps> = ({ event
             <AttendeesListPage eventUuid={eventUuid} onNavigate={handleNavigate} />
           </React.Suspense>
         ) : current.section === 'attendee' ? (
-          <React.Suspense fallback={<div className="py-10 text-sm text-slate-600">Loading…</div>}>
+          <React.Suspense
+            fallback={
+              <div className="rounded-xl border border-slate-200 bg-white p-6">
+                <span className="sr-only">Loading attendee</span>
+                <div className="animate-pulse">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="h-32 w-32 rounded-xl bg-slate-100 ring-1 ring-slate-200" />
+                    <div className="mt-6 h-7 w-56 rounded bg-slate-100" />
+                    <div className="mt-2 h-4 w-72 rounded bg-slate-100" />
+                  </div>
+                </div>
+              </div>
+            }
+          >
             <AttendeeDetailPage
               eventUuid={eventUuid}
               attendeeId={current.attendeeId || ''}
@@ -187,6 +227,10 @@ const PublicEventWebsiteShell: React.FC<PublicEventWebsiteShellProps> = ({ event
               organizationId={current.organizationId || ''}
               onNavigate={handleNavigate}
             />
+          </React.Suspense>
+        ) : current.section === 'schedule' || current.section === 'sessions' ? (
+          <React.Suspense fallback={<div className="py-10 text-sm text-slate-600">Loading…</div>}>
+            <PublicSchedulePage eventUuid={eventUuid} />
           </React.Suspense>
         ) : current.section === 'webpage' ? (
           webpageUuid ? (

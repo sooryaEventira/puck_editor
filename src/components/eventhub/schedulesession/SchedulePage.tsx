@@ -15,6 +15,7 @@ import { API_ENDPOINTS } from '../../../config/env'
 import { showToast } from '../../../utils/toast'
 import { fetchTimezones } from '../../../services/timezoneService'
 import * as XLSX from 'xlsx'
+import { writeEventStoreJSON } from '../../../utils/eventLocalStore'
 
 interface SchedulePageProps {
   eventName?: string
@@ -340,6 +341,35 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
   })
   const [parentSessionId, setParentSessionId] = React.useState<string | undefined>(undefined)
 
+  // After refresh, selectedDate becomes "today". If today's date has no sessions, the grid looks empty.
+  // Auto-pick the first session day for the active schedule so sessions show immediately.
+  React.useEffect(() => {
+    const schedule =
+      (activeScheduleId ? savedSchedules.find((s) => s.id === activeScheduleId) : undefined) ??
+      savedSchedules[0]
+    if (!schedule) return
+    const list = Array.isArray(schedule.sessions) ? schedule.sessions : []
+    if (list.length === 0) return
+
+    const dates: Date[] = []
+    for (const s of list) {
+      if (!s?.date) continue
+      const d = new Date(s.date as any)
+      if (Number.isNaN(d.getTime())) continue
+      d.setHours(0, 0, 0, 0)
+      dates.push(d)
+    }
+    if (dates.length === 0) return
+    dates.sort((a, b) => a.getTime() - b.getTime())
+
+    const normalizedSelected = new Date(selectedDate)
+    normalizedSelected.setHours(0, 0, 0, 0)
+    const hasSelected = dates.some((d) => d.getTime() === normalizedSelected.getTime())
+    if (!hasSelected) {
+      setSelectedDate(dates[0])
+    }
+  }, [activeScheduleId, savedSchedules, selectedDate])
+
   const loadSchedules = useCallback(async () => {
     const eventUuid = createdEvent?.uuid
     const accessToken = localStorage.getItem('accessToken')
@@ -459,6 +489,19 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       loadSchedules()
     }
   }, [createdEvent?.uuid, loadSchedules])
+
+  // Persist schedules + sessions for published website (no admin UI there)
+  useEffect(() => {
+    const eventUuidForStore = createdEvent?.uuid || localStorage.getItem('createdEventUuid') || 'unknown-event'
+    // store full schedules including sessions (already sorted in loadSessions)
+    writeEventStoreJSON(eventUuidForStore, 'schedule', savedSchedules)
+    // also store a flattened sessions map for convenience
+    const sessionsBySchedule: Record<string, SavedSession[]> = {}
+    for (const s of savedSchedules) {
+      sessionsBySchedule[s.id] = Array.isArray(s.sessions) ? s.sessions : []
+    }
+    writeEventStoreJSON(eventUuidForStore, 'sessions', sessionsBySchedule)
+  }, [createdEvent?.uuid, savedSchedules])
 
   const loadSessions = useCallback(async (fallbackScheduleUuid?: string | null) => {
     const eventUuid = createdEvent?.uuid
@@ -755,27 +798,53 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
             s?.start_at ??
             s?.starts_at ??
             null
-          const rawDateObj = rawDate ? new Date(rawDate) : undefined
-          let date: Date | undefined = rawDateObj && !Number.isNaN(rawDateObj.getTime()) ? rawDateObj : undefined
-          if (date && eventTimeZone) {
-            // Normalize to event timezone day
-            try {
-              const ymd = new Intl.DateTimeFormat('en-CA', {
-                timeZone: eventTimeZone,
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-              }).format(date)
-              const d = new Date(`${ymd}T00:00:00`)
-              if (!Number.isNaN(d.getTime())) {
-                d.setHours(0, 0, 0, 0)
-                date = d
-              }
-            } catch {
-              // keep local fallback
+          const rawStr = typeof rawDate === 'string' ? rawDate.trim() : ''
+          const isYmdOnly = Boolean(rawStr && /^\d{4}-\d{2}-\d{2}$/.test(rawStr))
+
+          // Important: if backend returns YYYY-MM-DD, do NOT timezone-shift it.
+          // Treat it as the intended session day.
+          let date: Date | undefined
+          if (isYmdOnly) {
+            const d = new Date(`${rawStr}T00:00:00`)
+            if (!Number.isNaN(d.getTime())) {
+              d.setHours(0, 0, 0, 0)
+              date = d
             }
-          } else if (date && !Number.isNaN(date.getTime())) {
-            date.setHours(0, 0, 0, 0)
+          } else {
+            const rawDateObj = rawDate ? new Date(rawDate as any) : undefined
+            date = rawDateObj && !Number.isNaN(rawDateObj.getTime()) ? rawDateObj : undefined
+
+            if (date && eventTimeZone) {
+              // Normalize to event timezone day (for full datetimes)
+              try {
+                const ymd = new Intl.DateTimeFormat('en-CA', {
+                  timeZone: eventTimeZone,
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                }).format(date)
+                const d = new Date(`${ymd}T00:00:00`)
+                if (!Number.isNaN(d.getTime())) {
+                  d.setHours(0, 0, 0, 0)
+                  date = d
+                }
+              } catch {
+                // keep local fallback
+              }
+            } else if (date && !Number.isNaN(date.getTime())) {
+              // If we have an ISO datetime but no timezone info, at least anchor to local day
+              // using the date portion (avoids UTC -> local shifting issues).
+              if (rawStr && rawStr.includes('T') && /^\d{4}-\d{2}-\d{2}T/.test(rawStr)) {
+                const ymd = rawStr.slice(0, 10)
+                const d = new Date(`${ymd}T00:00:00`)
+                if (!Number.isNaN(d.getTime())) {
+                  d.setHours(0, 0, 0, 0)
+                  date = d
+                }
+              } else {
+                date.setHours(0, 0, 0, 0)
+              }
+            }
           }
 
           const description = s?.description ?? s?.summary ?? ''
@@ -1131,17 +1200,6 @@ const SchedulePage: React.FC<SchedulePageProps> = ({
       // Final safety pass:
       // - If a child has no valid parent, do NOT guess by time when backend provides explicit links
       //   (time-guessing can attach children to wrong parents). Render it as standalone parent instead.
-      const minutesToTimePeriodLocal = (minutesTotal: number): { time: string; period: 'AM' | 'PM' } => {
-        const m = ((minutesTotal % (24 * 60)) + (24 * 60)) % (24 * 60)
-        const hours24 = Math.floor(m / 60)
-        const mins = String(m % 60).padStart(2, '0')
-        const period: 'AM' | 'PM' = hours24 >= 12 ? 'PM' : 'AM'
-        let hours12 = hours24 % 12
-        if (hours12 === 0) hours12 = 12
-        const hh = String(hours12).padStart(2, '0')
-        return { time: `${hh}:${mins}`, period }
-      }
-
       const parentsByIdGlobal = new Map<string, SavedSession>()
       const parentsByDay: Record<string, SavedSession[]> = {}
       for (const item of deduped) {

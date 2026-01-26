@@ -12,7 +12,7 @@ import {
 import ScheduleContent from '../components/eventhub/schedulesession/ScheduleContent'
 import TwoColumnContent from '../components/advanced/TwoColumnContent'
 import FeedbackForm from '../components/advanced/FeedbackForm'
-import ImageSimple from '../components/advanced/ImageSimple'
+import ImageSimple from '../components/basic/ImageSimple'
 import CustomButtonField from '../components/fields/CustomButtonField'
 import ArticleSectionsField from '../components/fields/ArticleSectionsField'
 import SchedulesSectionField from '../components/fields/SchedulesSectionField'
@@ -33,12 +33,17 @@ export const config = {
       title: "Basic Elements",
       icon: "fa-solid fa-font",
       defaultExpanded: true,
-      components: ["Heading", "Text", "Button", "Checkbox", "Divider", "Spacer", "TextBlock", "InputField", "SelectField"],
+      components: ["Heading", "Text", "Button", "Image", "Checkbox", "Divider", "Spacer", "TextBlock", "InputField", "SelectField"],
       subcategories: {
         typography: {
           title: "Typography",
           icon: "fa-solid fa-text-width",
           components: ["Heading", "Text", "TextBlock"]
+        },
+        media: {
+          title: "Media",
+          icon: "fa-solid fa-image",
+          components: ["Image"]
         },
         interactive: {
           title: "Interactive",
@@ -140,7 +145,7 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["Slider", "Image", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "Navigation", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
+      components: ["Slider", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "Navigation", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
       subcategories: {
         sections: {
           title: "Sections",
@@ -150,7 +155,7 @@ export const config = {
         media: {
           title: "Media",
           icon: "fa-solid fa-image",
-          components: ["Image", "Slider", "PdfViewer"]
+          components: ["Slider", "PdfViewer"]
         },
         interactive: {
           title: "Interactive",
@@ -3490,7 +3495,7 @@ export const config = {
       render: VenueDirections
     },
     LocationFloorPlan: {
-      label: "📍 Location Floor Plan",
+      label: "📄 PDF/Image Download",
       fields: {
         title: {
           type: 'text' as const,

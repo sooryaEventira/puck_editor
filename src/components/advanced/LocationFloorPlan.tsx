@@ -269,12 +269,6 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
                   >
                     Conference
                   </h3>
-                  <p
-                    className="text-sm mb-4 opacity-60"
-                    style={{ color: textColor }}
-                  >
-                    1 Floor Plan
-                  </p>
                   <div
                     className="px-4 py-2 rounded text-sm font-medium border inline-block"
                     style={{

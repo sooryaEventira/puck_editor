@@ -1,5 +1,6 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { SearchLg, FilterLines } from '@untitled-ui/icons-react'
+import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 
 export interface TableTab {
   id: string
@@ -11,6 +12,8 @@ interface TableHeaderProps {
   activeTabId: string
   searchQuery: string
   searchPlaceholder?: string
+  debounceMs?: number
+  debounceSearch?: boolean
   onTabChange: (tabId: string) => void
   onSearchChange: (query: string) => void
   onFilterClick?: () => void
@@ -24,6 +27,8 @@ export const useTableHeader = ({
   activeTabId,
   searchQuery,
   searchPlaceholder = 'Search...',
+  debounceMs = 250,
+  debounceSearch = true,
   onTabChange,
   onSearchChange,
   onFilterClick,
@@ -31,6 +36,18 @@ export const useTableHeader = ({
   filterLabel = 'Filter',
   customActions
 }: TableHeaderProps) => {
+  const [localQuery, setLocalQuery] = useState(searchQuery)
+  const debouncedQuery = useDebouncedValue(localQuery, debounceMs)
+
+  useEffect(() => {
+    setLocalQuery(searchQuery)
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (!debounceSearch) return
+    onSearchChange(debouncedQuery)
+  }, [debouncedQuery, debounceSearch, onSearchChange])
+
   return useMemo(
     () => {
       const tableHeaderLeading = (
@@ -61,14 +78,19 @@ export const useTableHeader = ({
           <div className="flex flex-1 md:flex-none w-full md:w-auto max-w-2xl border border-slate-200 rounded-md overflow-hidden">
             <input
               type="search"
-              value={searchQuery}
-              onChange={(event) => onSearchChange(event.target.value)}
+              value={localQuery}
+              onChange={(event) => {
+                const next = event.target.value
+                setLocalQuery(next)
+                if (!debounceSearch) onSearchChange(next)
+              }}
               placeholder={searchPlaceholder}
               className="w-full md:w-[350px] px-3 py-2 text-sm text-slate-600 focus:outline-none min-w-0"
               aria-label={searchPlaceholder}
             />
             <button
               type="button"
+              onClick={() => onSearchChange(localQuery)}
               className="inline-flex h-full -mr-1 items-center justify-center bg-primary px-3 py-2.5 text-white transition 
               hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               aria-label="Search"
@@ -97,7 +119,19 @@ export const useTableHeader = ({
         actions: tableHeaderActions
       }
     },
-    [tabs, activeTabId, searchQuery, searchPlaceholder, onTabChange, onSearchChange, onFilterClick, showFilter, filterLabel, customActions]
+    [
+      tabs,
+      activeTabId,
+      localQuery,
+      searchPlaceholder,
+      onTabChange,
+      onSearchChange,
+      onFilterClick,
+      showFilter,
+      filterLabel,
+      customActions,
+      debounceSearch
+    ]
   )
 }
 

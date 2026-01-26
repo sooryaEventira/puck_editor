@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { SearchLg, FilterLines } from '@untitled-ui/icons-react'
 import { readEventStoreJSON } from '../../../utils/eventLocalStore'
+import { fetchPublicAttendees } from '../../../services/publicAttendeeService'
+import { buildSearchIndex, normalizeSearchText } from '../../../utils/indexedSearch'
 
 type PublicAttendee = {
   id: string
@@ -45,67 +47,167 @@ const AttendeeRow = ({ attendee }: { attendee: PublicAttendee }) => {
 }
 
 const AttendeesListPage: React.FC<AttendeesListPageProps> = ({ eventUuid, onNavigate }) => {
-  const [query, setQuery] = useState('')
+  const [queryInput, setQueryInput] = useState('') // live query
+  const [instituteFilter, setInstituteFilter] = useState<string>('all')
+  const [apiAttendees, setApiAttendees] = useState<PublicAttendee[] | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const attendees = useMemo(() => {
-    return readEventStoreJSON<PublicAttendee[]>(eventUuid, 'attendees', [])
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      setIsLoading(true)
+      try {
+        const raw = await fetchPublicAttendees(eventUuid)
+        const mapped: PublicAttendee[] = (Array.isArray(raw) ? raw : []).map((a: any, idx: number) => {
+          const id = String(a.uuid ?? a.id ?? `attendee-${idx}`)
+          const name =
+            String(a.name ?? '').trim() ||
+            String([a.first_name, a.last_name].filter(Boolean).join(' ')).trim() ||
+            'Unknown'
+          return {
+            id,
+            name,
+            post: a.post ?? a.title ?? undefined,
+            institute: a.institute ?? a.company ?? undefined,
+            avatarUrl: a.avatarUrl ?? a.avatar_url ?? undefined,
+          }
+        })
+        if (!cancelled) setApiAttendees(mapped)
+      } catch {
+        if (!cancelled) setApiAttendees(null)
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
   }, [eventUuid])
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return attendees
-    return attendees.filter((a) => {
-      const haystack = [a.name, a.post, a.institute].filter(Boolean).join(' ').toLowerCase()
-      return haystack.includes(q)
+  const attendees = useMemo(() => {
+    return apiAttendees ?? readEventStoreJSON<PublicAttendee[]>(eventUuid, 'attendees', [])
+  }, [apiAttendees, eventUuid])
+
+  // Normalize IDs (localStorage data can contain missing/duplicate ids, which breaks React list rendering)
+  const normalizedAttendees = useMemo(() => {
+    const seen = new Set<string>()
+    return attendees.map((a, idx) => {
+      const baseId = String((a as any)?.id ?? '').trim()
+      const nameKey = normalizeSearchText((a as any)?.name).replace(/\s+/g, '-') || 'attendee'
+      let id = baseId || `${nameKey}-${idx}`
+      while (seen.has(id)) id = `${id}-${idx}`
+      seen.add(id)
+      return { ...a, id }
     })
-  }, [attendees, query])
+  }, [attendees])
+
+  const instituteOptions = useMemo(() => {
+    const set = new Set<string>()
+    normalizedAttendees.forEach((a) => {
+      const v = String(a.institute ?? '').trim()
+      if (v) set.add(v)
+    })
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [normalizedAttendees])
+
+  const baseAttendees = useMemo(() => {
+    if (instituteFilter === 'all') return normalizedAttendees
+    return normalizedAttendees.filter((a) => String(a.institute ?? '').trim() === instituteFilter)
+  }, [normalizedAttendees, instituteFilter])
+
+  const attendeeIndex = useMemo(() => {
+    // Search by attendee name only
+    return buildSearchIndex(baseAttendees, (a) => a.name)
+  }, [baseAttendees])
+
+  const filtered = useMemo(() => {
+    const q = normalizeSearchText(queryInput)
+    if (!q) return baseAttendees
+    const tokens = q.split(' ').filter(Boolean)
+    return attendeeIndex
+      .filter((e) => tokens.every((t) => e.text.includes(t)))
+      .map((e) => e.item)
+  }, [attendeeIndex, baseAttendees, queryInput])
 
   return (
     <div className="space-y-6">
+      {/* Header row with search + filter (match screenshot) */}
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-slate-900">Attendees</h1>
+        <h1 className="text-xl font-semibold text-slate-900">Attendees</h1>
 
         <div className="flex items-center gap-2">
-          <div className="flex w-[280px] items-center overflow-hidden rounded-md border border-slate-200 bg-white">
+          {/* Search input */}
+          <div className="flex items-center overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
             <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={queryInput}
+              onChange={(e) => {
+                setQueryInput(e.target.value)
+              }}
               placeholder="Search attendees"
-              className="w-full px-3 py-2 text-sm text-slate-600 focus:outline-none"
-              aria-label="Search attendees"
+              className="w-[240px] px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none hover:border-primary"
+              onKeyDown={(e) => {
+                // Live search already applies; keep Enter as no-op to match UX.
+                if (e.key === 'Enter') e.currentTarget.blur()
+              }}
             />
             <button
               type="button"
-              className="inline-flex items-center justify-center bg-primary px-3 py-2.5 text-white transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="flex h-9 w-10 items-center justify-center bg-primary text-white"
               aria-label="Search"
+              onClick={() => {
+                // Live search already applies; keep button for UI parity.
+              }}
             >
-              <SearchLg className="h-4 w-4" strokeWidth={2} />
+              <SearchLg className="h-4 w-4" />
             </button>
           </div>
-          <button
-            type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition hover:border-primary/40 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            aria-label="Filter attendees"
-            onClick={() => console.log('Attendee filter clicked')}
-          >
-            <FilterLines className="h-4 w-4" strokeWidth={2} />
-          </button>
+
+          {/* Filter icon button + hidden select overlay */}
+          <div className="relative">
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
+              aria-label="Filter"
+            >
+              <FilterLines className="h-4 w-4" />
+            </button>
+            <select
+              value={instituteFilter}
+              onChange={(e) => setInstituteFilter(e.target.value)}
+              className="absolute inset-0 h-9 w-9 cursor-pointer opacity-0"
+              aria-label="Filter by institute"
+            >
+              <option value="all">All institutes</option>
+              {instituteOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
+      </div>
+
+      <div className="text-xs text-slate-500">
+        Showing <span className="font-semibold text-slate-700">{filtered.length}</span> of{' '}
+        <span className="font-semibold text-slate-700">{baseAttendees.length}</span>
       </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white p-6">
-          <div className="text-base font-semibold text-slate-900">No attendees found</div>
+          <div className="text-base font-semibold text-slate-900">
+            {isLoading ? 'Loading attendees…' : 'No attendees found'}
+          </div>
           <div className="mt-1 text-sm text-slate-600">
             Add attendees in Attendee Management to see them here.
           </div>
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((a) => (
+          {filtered.map((a, idx) => (
             <button
-              key={a.id}
+              key={`${a.id}-${idx}`}
               type="button"
               className="w-full text-left"
               onClick={() => onNavigate(`/events/${eventUuid}/attendees/${a.id}`)}

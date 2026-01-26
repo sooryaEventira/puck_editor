@@ -1,6 +1,7 @@
 import React from 'react'
 
 export interface PublicNavbarItem {
+  id?: string
   label: string
   path: string
 }
@@ -20,8 +21,24 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({
   activePath,
   onNavigate
 }) => {
+  void eventName
+
+  const normalizePath = (p?: string) => {
+    const s = (p || '').trim()
+    if (!s) return ''
+    return s.length > 1 && s.endsWith('/') ? s.slice(0, -1) : s
+  }
+
+  // Keep section nav highlighted for nested routes like:
+  // /events/:uuid/attendees/:attendeeId  -> Attendees
+  const isActiveForItem = (currentPath: string, itemPath: string) => {
+    const cur = normalizePath(currentPath)
+    const base = normalizePath(itemPath)
+    return cur === base || (base && cur.startsWith(`${base}/`))
+  }
+
   return (
-    <header className="fixed top-0 left-0 z-[1000] w-full border-b border-slate-200 bg-white/90 backdrop-blur">
+    <header className="fixed top-0 left-0 z-[1000] w-full border-b border-slate-200 bg-primary-dark backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <button
           type="button"
@@ -38,27 +55,27 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({
           ) : (
             <div className="h-9 w-9 rounded-md bg-slate-100 ring-1 ring-slate-200" />
           )}
-          <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-slate-900">
+          {/* <div className="min-w-0">
+            <div className="truncate text-md font-semibold text-white">
               {eventName || 'Event'}
             </div>
            
-          </div>
+          </div> */}
         </button>
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
           {items.map((item) => {
-            const isActive = activePath === item.path
+            const isActive = isActiveForItem(activePath || '', item.path)
             return (
               <button
                 key={item.path}
                 type="button"
                 onClick={() => onNavigate(item.path)}
                 className={[
-                  'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
                   isActive
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-700 hover:bg-slate-100'
+                    ? 'bg-slate-100 text-black '
+                    : 'text-white hover:bg-slate-100 hover:text-black'
                 ].join(' ')}
               >
                 {item.label}
@@ -70,7 +87,7 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({
         {/* Mobile: simple menu as horizontal scroll */}
         <nav className="flex flex-1 items-center justify-end gap-2 overflow-x-auto md:hidden">
           {items.map((item) => {
-            const isActive = activePath === item.path
+            const isActive = isActiveForItem(activePath || '', item.path)
             return (
               <button
                 key={item.path}

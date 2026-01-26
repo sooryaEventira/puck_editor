@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { readEventStoreJSON } from '../../../utils/eventLocalStore'
+import { fetchPublicAttendees } from '../../../services/publicAttendeeService'
 
 type PublicAttendee = {
   id: string
@@ -16,10 +17,73 @@ interface AttendeeDetailPageProps {
 }
 
 const AttendeeDetailPage: React.FC<AttendeeDetailPageProps> = ({ eventUuid, attendeeId, onNavigate }) => {
+  const [apiAttendees, setApiAttendees] = useState<PublicAttendee[] | null>(null)
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
+
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      if (!cancelled) setStatus('loading')
+      try {
+        const raw = await fetchPublicAttendees(eventUuid)
+        const mapped: PublicAttendee[] = (Array.isArray(raw) ? raw : []).map((a: any, idx: number) => {
+          const id = String(a.uuid ?? a.id ?? `attendee-${idx}`)
+          const name =
+            String(a.name ?? '').trim() ||
+            String([a.first_name, a.last_name].filter(Boolean).join(' ')).trim() ||
+            'Unknown'
+          return {
+            id,
+            name,
+            post: a.post ?? a.title ?? undefined,
+            institute: a.institute ?? a.company ?? undefined,
+            avatarUrl: a.avatarUrl ?? a.avatar_url ?? undefined,
+          }
+        })
+        if (!cancelled) {
+          setApiAttendees(mapped)
+          setStatus('success')
+        }
+      } catch {
+        if (!cancelled) {
+          setApiAttendees(null)
+          setStatus('error')
+        }
+      }
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [eventUuid])
+
   const attendee = useMemo(() => {
-    const all = readEventStoreJSON<PublicAttendee[]>(eventUuid, 'attendees', [])
+    const all = apiAttendees ?? readEventStoreJSON<PublicAttendee[]>(eventUuid, 'attendees', [])
     return all.find((a) => String(a.id) === String(attendeeId)) || null
-  }, [eventUuid, attendeeId])
+  }, [apiAttendees, attendeeId, eventUuid])
+
+  // Avoid flashing "not found" while the network request is still in-flight.
+  if (!attendee && status === 'loading') {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-6">
+        <button
+          type="button"
+          onClick={() => onNavigate(`/events/${eventUuid}/attendees`)}
+          className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-slate-900"
+        >
+          ← Back
+        </button>
+        <span className="sr-only">Loading attendee</span>
+        <div className="animate-pulse">
+          <div className="flex flex-col items-center text-center">
+            <div className="h-32 w-32 rounded-xl bg-slate-100 ring-1 ring-slate-200" />
+            <div className="mt-6 h-7 w-56 rounded bg-slate-100" />
+            <div className="mt-2 h-4 w-72 rounded bg-slate-100" />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!attendee) {
     return (

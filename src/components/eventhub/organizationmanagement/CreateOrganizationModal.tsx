@@ -4,6 +4,7 @@ import Modal from '../../ui/Modal'
 interface CreateOrganizationModalProps {
   isOpen: boolean
   onClose: () => void
+  isSaving?: boolean
   initialValues?: {
     name?: string
     website?: string
@@ -25,6 +26,7 @@ interface CreateOrganizationModalProps {
 const CreateOrganizationModal = ({
   isOpen,
   onClose,
+  isSaving = false,
   initialValues,
   onSave
 }: CreateOrganizationModalProps) => {
@@ -61,6 +63,7 @@ const CreateOrganizationModal = ({
   }
 
   const handleSave = () => {
+    if (isSaving) return
     const trimmedName = name.trim()
     if (!trimmedName) {
       alert('Please enter organization name')
@@ -75,7 +78,6 @@ const CreateOrganizationModal = ({
       logoLink: logoLink.trim() || undefined,
       stallNumber: stallNumber.trim() || undefined
     })
-    onClose()
   }
 
   return (
@@ -91,16 +93,18 @@ const CreateOrganizationModal = ({
           <button
             type="button"
             onClick={handleClose}
-            className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            disabled={isSaving}
+            className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            disabled={isSaving}
+            className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Save
+            {isSaving ? 'Saving...' : 'Save'}
           </button>
         </div>
       }
@@ -152,7 +156,7 @@ const CreateOrganizationModal = ({
           />
         </div>
 
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Stall number</label>
           <input
             type="text"
@@ -161,7 +165,7 @@ const CreateOrganizationModal = ({
             placeholder="Stall number"
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
           />
-        </div>
+        </div> */}
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Logo link</label>

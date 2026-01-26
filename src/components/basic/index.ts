@@ -1,6 +1,8 @@
 export { default as Heading } from './Heading'
 export { default as Text } from './Text'
 export { default as Button } from './Button'
+export { default as Image } from './Image'
+export { default as ImageSimple } from './ImageSimple'
 export { default as Card } from './Card'
 export { default as List } from './List'
 export { default as Divider } from './Divider'

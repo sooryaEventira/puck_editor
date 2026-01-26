@@ -7,15 +7,16 @@ import { defaultCards, ContentCard } from './EventHubContent'
 import PageCreationModal, { type PageType } from '../page/PageCreationModal'
 import { fetchWebpages, type WebpageData } from '../../services/webpageService'
 import Button from '../ui/untitled/Button'
+import { readEventStoreJSON } from '../../utils/eventLocalStore'
 import { 
   InfoCircle, 
   CodeBrowser, 
   Globe01,
   Copy01,
   Eye,
+  EyeOff,
   Edit05,
   Trash01,
-  Link01,
   Plus
 } from '@untitled-ui/icons-react'
 
@@ -45,6 +46,152 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   const [webpages, setWebpages] = useState<WebpageData[]>([])
   const [isLoadingWebpages, setIsLoadingWebpages] = useState(false)
   const [navigationPreviewActive, setNavigationPreviewActive] = useState<string | null>(null)
+  const [navigationOrderIds, setNavigationOrderIds] = useState<string[]>([])
+  const [draggingNavId, setDraggingNavId] = useState<string | null>(null)
+  const [dragOverNavId, setDragOverNavId] = useState<string | null>(null)
+
+  const eventUuidForNavigation = useMemo(
+    () => createdEvent?.uuid ?? localStorage.getItem('currentEventUuid') ?? '',
+    [createdEvent?.uuid]
+  )
+
+  const getNavigationOrderStorageKey = (eventUuid: string) => `navigation-order-${eventUuid}`
+  const getNavigationHiddenStorageKey = (eventUuid: string) => `navigation-hidden-${eventUuid}`
+
+  const [hiddenNavIds, setHiddenNavIds] = useState<Set<string>>(() => new Set())
+
+  // Load hidden menu items per event
+  useEffect(() => {
+    if (!eventUuidForNavigation) return
+    try {
+      const raw = localStorage.getItem(getNavigationHiddenStorageKey(eventUuidForNavigation))
+      const parsed = raw ? JSON.parse(raw) : []
+      if (Array.isArray(parsed)) {
+        setHiddenNavIds(new Set(parsed.map(String)))
+      } else {
+        setHiddenNavIds(new Set())
+      }
+    } catch {
+      setHiddenNavIds(new Set())
+    }
+  }, [eventUuidForNavigation])
+
+  const toggleHiddenNavId = useCallback(
+    (id: string) => {
+      if (!eventUuidForNavigation) return
+      setHiddenNavIds((prev) => {
+        const next = new Set(prev)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        try {
+          localStorage.setItem(getNavigationHiddenStorageKey(eventUuidForNavigation), JSON.stringify(Array.from(next)))
+        } catch {
+          // ignore
+        }
+        return next
+      })
+    },
+    [eventUuidForNavigation]
+  )
+
+  const systemItemsForNavigation = useMemo(() => {
+    const eventUuid = eventUuidForNavigation
+    if (!eventUuid) return [] as Array<{ id: string; label: string; kind: 'system' }>
+    const speakers = readEventStoreJSON<any[]>(eventUuid, 'speakers', [])
+    const attendees = readEventStoreJSON<any[]>(eventUuid, 'attendees', [])
+    const organizations = readEventStoreJSON<any[]>(eventUuid, 'organizations', [])
+    const schedules = readEventStoreJSON<any[]>(eventUuid, 'schedule', [])
+    const sessionsMap = readEventStoreJSON<Record<string, any[]>>(eventUuid, 'sessions', {})
+    const sessionsCount = Object.values(sessionsMap || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0)
+
+    const out: Array<{ id: string; label: string; kind: 'system' }> = []
+    if (organizations.length) out.push({ id: 'system:organizations', label: 'Organizations', kind: 'system' })
+    if (speakers.length) out.push({ id: 'system:speakers', label: 'Speakers', kind: 'system' })
+    if (attendees.length) out.push({ id: 'system:attendees', label: 'Attendees', kind: 'system' })
+    if (schedules.length || sessionsCount > 0) out.push({ id: 'system:schedule', label: 'Schedule', kind: 'system' })
+    return out
+  }, [eventUuidForNavigation])
+
+  // Load + reconcile persisted navigation order per event
+  useEffect(() => {
+    if (!eventUuidForNavigation) return
+    const availableIds = [
+      ...systemItemsForNavigation.map((i) => i.id),
+      ...webpages.map((w) => w.uuid).filter(Boolean)
+    ]
+    if (availableIds.length === 0) {
+      setNavigationOrderIds([])
+      return
+    }
+
+    let stored: unknown = null
+    try {
+      const raw = localStorage.getItem(getNavigationOrderStorageKey(eventUuidForNavigation))
+      stored = raw ? JSON.parse(raw) : null
+    } catch {
+      stored = null
+    }
+
+    const storedIds = Array.isArray(stored) ? (stored as unknown[]).map(String) : []
+    const reconciled = [
+      ...storedIds.filter((id) => availableIds.includes(id)),
+      ...availableIds.filter((id) => !storedIds.includes(id))
+    ]
+
+    // Avoid needless state updates
+    setNavigationOrderIds((prev) => {
+      const prevNormalized = prev.length ? prev : []
+      if (
+        prevNormalized.length === reconciled.length &&
+        prevNormalized.every((id, idx) => id === reconciled[idx])
+      ) {
+        return prevNormalized
+      }
+      return reconciled
+    })
+  }, [eventUuidForNavigation, webpages])
+
+  const persistNavigationOrder = useCallback(
+    (nextOrder: string[]) => {
+      if (!eventUuidForNavigation) return
+      try {
+        localStorage.setItem(getNavigationOrderStorageKey(eventUuidForNavigation), JSON.stringify(nextOrder))
+      } catch {
+        // ignore
+      }
+    },
+    [eventUuidForNavigation]
+  )
+
+  const orderedWebpagesForNavigation = useMemo(() => {
+    if (webpages.length === 0) return []
+    const byId = new Map(webpages.map((w) => [w.uuid, w]))
+    const baseIds = navigationOrderIds.length ? navigationOrderIds : webpages.map((w) => w.uuid)
+    const ordered = baseIds.map((id) => byId.get(id)).filter(Boolean) as WebpageData[]
+    const missing = webpages.filter((w) => !baseIds.includes(w.uuid))
+    return [...ordered, ...missing]
+  }, [webpages, navigationOrderIds])
+
+  const moveNavigationItem = useCallback(
+    (dragId: string, targetId: string) => {
+      if (!dragId || !targetId || dragId === targetId) return
+      const currentIds = (navigationOrderIds.length
+        ? navigationOrderIds
+        : webpages.map((w) => w.uuid)
+      ).filter(Boolean)
+
+      const fromIndex = currentIds.indexOf(dragId)
+      const toIndex = currentIds.indexOf(targetId)
+      if (fromIndex === -1 || toIndex === -1) return
+
+      const next = [...currentIds]
+      next.splice(fromIndex, 1)
+      next.splice(toIndex, 0, dragId)
+      setNavigationOrderIds(next)
+      persistNavigationOrder(next)
+    },
+    [navigationOrderIds, webpages, persistNavigationOrder]
+  )
 
   // Fetch webpages from backend
   const loadWebpages = useCallback(async () => {
@@ -200,8 +347,8 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
 
   const handlePreview = () => {
     // Navigate to preview of the first webpage
-    if (webpages.length > 0) {
-      const firstWebpage = webpages[0]
+    if (orderedWebpagesForNavigation.length > 0) {
+      const firstWebpage = orderedWebpagesForNavigation[0]
       window.history.pushState({}, '', `/event/website/preview/${firstWebpage.uuid}`)
       window.dispatchEvent(new PopStateEvent('popstate'))
     }
@@ -218,12 +365,20 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
   }
 
   const renderNavigationTab = () => {
-    const eventUuid = createdEvent?.uuid ?? localStorage.getItem('currentEventUuid') ?? ''
-    const items = webpages.map((w) => ({
+    const eventUuid = eventUuidForNavigation
+    const webpageItems = orderedWebpagesForNavigation.map((w) => ({
       id: w.uuid,
-      label: w.name
+      label: w.name,
+      kind: 'webpage' as const
     }))
-    const activeId = navigationPreviewActive ?? items[0]?.id ?? null
+
+    const allItems = [...systemItemsForNavigation, ...webpageItems]
+    const byId = new Map(allItems.map((i) => [i.id, i] as const))
+    const baseIds = navigationOrderIds.length ? navigationOrderIds : allItems.map((i) => i.id)
+    const items = [...baseIds.map((id) => byId.get(id)).filter(Boolean), ...allItems.filter((i) => !baseIds.includes(i.id))] as typeof allItems
+
+    const visibleItems = items.filter((i) => !hiddenNavIds.has(i.id))
+    const activeId = navigationPreviewActive ?? visibleItems[0]?.id ?? null
 
     return (
       <div className="flex flex-col gap-6 min-h-[520px]">
@@ -231,7 +386,7 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
         <div className="space-y-2 flex-1">
           <div className="text-sm font-semibold text-slate-900">Menu items</div>
           <div className="text-sm text-slate-600">
-            These are the webpages that will appear in the published website navbar.
+            These are the pages that will appear in the published website navbar.
           </div>
 
           <div className="space-y-0 border border-slate-200 rounded-lg bg-white">
@@ -245,19 +400,68 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
               </div>
             ) : (
               items.map((item) => {
-                const isWelcome = String(item.label || '').toLowerCase() === 'welcome'
+                const isWebpage = item.kind === 'webpage'
+                const isWelcome = isWebpage && String(item.label || '').toLowerCase() === 'welcome'
+                const isHidden = hiddenNavIds.has(item.id)
+                const publicUrl =
+                  !eventUuid
+                    ? ''
+                    : isWebpage
+                      ? `${window.location.origin}/events/${eventUuid}/webpages/${item.id}`
+                      : item.id === 'system:organizations'
+                        ? `${window.location.origin}/events/${eventUuid}/organizations`
+                        : item.id === 'system:speakers'
+                          ? `${window.location.origin}/events/${eventUuid}/speakers`
+                          : item.id === 'system:attendees'
+                            ? `${window.location.origin}/events/${eventUuid}/attendees`
+                            : item.id === 'system:schedule'
+                              ? `${window.location.origin}/events/${eventUuid}/schedule`
+                              : `${window.location.origin}/events/${eventUuid}/sessions`
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between gap-3 py-2 px-4 border-b border-slate-200 last:border-b-0 hover:bg-slate-50 transition-colors"
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      if (dragOverNavId !== item.id) setDragOverNavId(item.id)
+                    }}
+                    onDragLeave={() => {
+                      setDragOverNavId((prev) => (prev === item.id ? null : prev))
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      if (draggingNavId) moveNavigationItem(draggingNavId, item.id)
+                      setDraggingNavId(null)
+                      setDragOverNavId(null)
+                    }}
+                    className={[
+                      'flex items-center justify-between gap-3 py-2 px-4 border-b border-slate-200 last:border-b-0 transition-colors',
+                      dragOverNavId === item.id ? 'bg-violet-50' : 'hover:bg-slate-50'
+                    ].join(' ')}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-slate-400 cursor-grab select-none" aria-hidden="true">
+                      <span
+                        className="text-slate-400 cursor-grab select-none"
+                        aria-hidden="true"
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggingNavId(item.id)
+                          try {
+                            e.dataTransfer.effectAllowed = 'move'
+                            e.dataTransfer.setData('text/plain', item.id)
+                          } catch {
+                            // ignore
+                          }
+                        }}
+                        onDragEnd={() => {
+                          setDraggingNavId(null)
+                          setDragOverNavId(null)
+                        }}
+                      >
                         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M7 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM7 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM7 14a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 14a2 2 0 1 1 0 4 2 2 0 0 1 0-4z" />
                         </svg>
                       </span>
-                      <span className="text-sm font-medium text-slate-900 capitalize truncate">
+                      <span className={`text-sm font-medium capitalize truncate ${isHidden ? 'text-slate-400' : 'text-slate-900'}`}>
                         {item.label}
                       </span>
                     </div>
@@ -267,27 +471,27 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
                         variant="tertiary"
                         size="sm"
                         onClick={() => {
-                          if (!eventUuid) return
-                          const publicUrl = `${window.location.origin}/events/${eventUuid}/webpages/${item.id}`
-                          // Copy link silently
-                          navigator.clipboard?.writeText(publicUrl).catch(() => {})
+                          void publicUrl
+                          toggleHiddenNavId(item.id)
                         }}
                         className="p-2 text-slate-400 hover:text-slate-600"
-                        aria-label="Copy link"
-                        iconLeading={<Link01 className="h-4 w-4" />}
+                        aria-label={isHidden ? 'Show in navbar' : 'Hide from navbar'}
+                        iconLeading={isHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       />
 
-                      <Button
-                        variant="tertiary"
-                        size="sm"
-                        onClick={() => handlePageAction(item.id, 'delete')}
-                        className={`p-2 hover:text-red-600 ${
-                          isWelcome ? 'text-slate-300 cursor-not-allowed opacity-50' : 'text-slate-400'
-                        }`}
-                        aria-label="Delete"
-                        disabled={isWelcome}
-                        iconLeading={<Trash01 className="h-4 w-4" />}
-                      />
+                      {isWebpage ? (
+                        <Button
+                          variant="tertiary"
+                          size="sm"
+                          onClick={() => handlePageAction(item.id, 'delete')}
+                          className={`p-2 hover:text-red-600 ${
+                            isWelcome ? 'text-slate-300 cursor-not-allowed opacity-50' : 'text-slate-400'
+                          }`}
+                          aria-label="Delete"
+                          disabled={isWelcome}
+                          iconLeading={<Trash01 className="h-4 w-4" />}
+                        />
+                      ) : null}
                     </div>
                   </div>
                 )
@@ -301,10 +505,10 @@ const EventWebsitePage: React.FC<EventWebsitePageProps> = ({
           <div className="text-sm font-semibold text-slate-900">Preview</div>
           <div className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="flex items-center gap-2 overflow-x-auto">
-              {items.length === 0 ? (
+              {visibleItems.length === 0 ? (
                 <span className="text-sm text-slate-500">No menu items to preview.</span>
               ) : (
-                items.map((item) => {
+                visibleItems.map((item) => {
                   const isActive = item.id === activeId
                   return (
                     <button

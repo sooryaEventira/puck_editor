@@ -113,6 +113,19 @@ export const API_ENDPOINTS = {
       GET: (eventUuid: string, webpageUuid: string) =>
         `${PUBLIC_API_ROOT}events/${eventUuid}/webpages/${webpageUuid}/`,
     },
+    SPEAKERS: {
+      LIST: (eventUuid: string) => `${PUBLIC_API_ROOT}events/${eventUuid}/speakers/`,
+    },
+    ATTENDEES: {
+      LIST: (eventUuid: string) => `${PUBLIC_API_ROOT}events/${eventUuid}/attendees/`,
+    },
+    SCHEDULES: {
+      LIST: (eventUuid: string) => `${PUBLIC_API_ROOT}events/${eventUuid}/schedules/`,
+    },
+    SESSIONS: {
+      LIST: (eventUuid: string, scheduleUuid: string) =>
+        `${PUBLIC_API_ROOT}events/${eventUuid}/schedules/${scheduleUuid}/sessions/`,
+    },
   },
   // User Management endpoints
   USER_MANAGEMENT: {
@@ -126,9 +139,6 @@ export const API_ENDPOINTS = {
     LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}user-tags/?event_uuid=${eventUuid}`,
   },
   // Schedule session tags (creatable multiselect in ScheduleDetailsSlideout)
-  // Uses legacy tags endpoints as requested:
-  // - POST {{admin_url}}tags/
-  // - GET  {{admin_url}}tags/?event_uuid={{event_uuid}}
   SCHEDULE_TAGS: {
     CREATE: `${env.AUTH_API_URL}${ADMIN_API_BASE}tags/`,
     LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}tags/?event_uuid=${eventUuid}`,
@@ -153,6 +163,16 @@ export const API_ENDPOINTS = {
   SPEAKER_MANAGEMENT: {
     UPLOAD_SPEAKER: `${env.AUTH_API_URL}${ADMIN_API_BASE}speakers/import/`,
     LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}speakers/?event=${eventUuid}`,
+  },
+  // Organization/Exhibitors endpoints
+  EXHIBITORS: {
+    // Listing organizations/exhibitors for Organization table
+    LIST: (eventUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}exhibitors/?event_uuid=${eventUuid}`,
+    // Delete an exhibitor/organization by UUID
+    DELETE: (exhibitorUuid: string) => `${env.AUTH_API_URL}${ADMIN_API_BASE}exhibitors/${exhibitorUuid}/`,
+    // Bulk upload/import for organizations/exhibitors
+    IMPORT: (eventUuid: string) =>
+      `${env.AUTH_API_URL}${ADMIN_API_BASE}exhibitors/import/?event_uuid=${eventUuid}`,
   },
   // Resource Management endpoints
   RESOURCE: {

@@ -1,0 +1,221 @@
+import React, { useCallback, useMemo, useState } from 'react'
+import { ChevronDown, ChevronUp, Attachment01, Calendar } from '@untitled-ui/icons-react'
+import type { SavedSession } from '../../eventhub/schedulesession/sessionTypes'
+
+interface PublicScheduleGridProps {
+  sessions: SavedSession[]
+}
+
+const timeToMinutes = (time: string, period: string) => {
+  const [hRaw, mRaw] = String(time || '00:00').split(':')
+  let h = Number(hRaw || 0)
+  const m = Number(mRaw || 0)
+  const p = String(period || 'AM').toUpperCase()
+  if (p === 'PM' && h !== 12) h += 12
+  if (p === 'AM' && h === 12) h = 0
+  return h * 60 + m
+}
+
+const formatTime = (time: string, period: string) => {
+  // Display 24h time only (no AM/PM)
+  const minutes = timeToMinutes(time, period)
+  const hh24 = Math.floor(minutes / 60) % 24
+  const mm = minutes % 60
+  return `${String(hh24).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+}
+
+const getLocationLabel = (location: string) => location
+
+const PublicScheduleGrid: React.FC<PublicScheduleGridProps> = ({ sessions }) => {
+  const parents = useMemo(() => sessions.filter((s) => !s.parentId), [sessions])
+  const childrenByParent = useMemo(() => {
+    const map = new Map<string, SavedSession[]>()
+    sessions.forEach((s) => {
+      if (!s.parentId) return
+      const arr = map.get(s.parentId) ?? []
+      arr.push(s)
+      map.set(s.parentId, arr)
+    })
+    // keep child ordering consistent with existing session sort if possible
+    map.forEach((arr) => {
+      arr.sort((a, b) => {
+        const aStart = timeToMinutes(a.startTime, a.startPeriod || 'AM')
+        const bStart = timeToMinutes(b.startTime, b.startPeriod || 'AM')
+        if (aStart !== bStart) return aStart - bStart
+        return String(a.title).localeCompare(String(b.title))
+      })
+    })
+    return map
+  }, [sessions])
+
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const isExpanded = useCallback((id: string) => expanded[id] !== false, [expanded])
+  const toggleExpanded = useCallback((id: string) => {
+    setExpanded((prev) => ({ ...prev, [id]: !(prev[id] !== false) }))
+  }, [])
+
+  const renderChildren = useCallback(
+    (parent: SavedSession, depth: number) => {
+      const children = childrenByParent.get(parent.id) ?? []
+      if (children.length === 0) return null
+      if (!isExpanded(parent.id) && depth > 0) return null
+
+      return (
+        <div className="mt-2 space-y-2">
+          {children.map((child) => {
+            const hasMore = (childrenByParent.get(child.id) ?? []).length > 0
+            const childExpanded = isExpanded(child.id)
+            return (
+              <div key={child.id} className="relative">
+                {/* guideline */}
+                <div
+                  className="absolute top-0 bottom-0 w-0.5 bg-slate-300"
+                  style={{ left: `${16 + (depth - 1) * 20}px` }}
+                />
+
+                <div
+                  className="border border-slate-200 rounded-lg bg-white shadow-sm"
+                  style={{ marginLeft: `${24 + (depth - 1) * 20}px` }}
+                >
+                  <div className="p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-900 text-sm truncate">{child.title}</div>
+                      </div>
+
+                      {hasMore ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleExpanded(child.id)}
+                          className="p-1 text-slate-500 hover:text-slate-700 rounded"
+                          aria-label={childExpanded ? 'Collapse' : 'Expand'}
+                        >
+                          {childExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      {!child.parentId ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                          <Calendar className="h-3 w-3" />
+                          {formatTime(child.startTime, child.startPeriod || 'AM')} – {formatTime(child.endTime, child.endPeriod || 'AM')}
+                        </span>
+                      ) : null}
+
+                      {child.location ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                          {getLocationLabel(child.location)}
+                        </span>
+                      ) : null}
+
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                        child
+                      </span>
+                    </div>
+
+                    <div className="mt-2">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                        <Attachment01 className="h-3 w-3" />
+                        {child.attachments?.length || 0}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {hasMore && childExpanded ? renderChildren(child, depth + 1) : null}
+              </div>
+            )
+          })}
+        </div>
+      )
+    },
+    [childrenByParent, isExpanded, toggleExpanded]
+  )
+
+  return (
+    <div className="space-y-4">
+      {parents.map((session) => {
+        const kids = childrenByParent.get(session.id) ?? []
+        const hasChildren = kids.length > 0
+        const open = isExpanded(session.id)
+
+        return (
+          <div key={session.id} className="flex items-stretch gap-6">
+            {/* Time column */}
+            <div className="flex-shrink-0 w-24 self-stretch">
+              <div className="h-full border border-slate-200 rounded-lg bg-white shadow-sm flex flex-col justify-between">
+                <div className="text-center pt-3 flex-shrink-0">
+                  <div className="text-sm font-semibold text-slate-900">
+                    {formatTime(session.startTime, session.startPeriod || 'AM')}
+                  </div>
+                </div>
+                <div className="flex-1 flex items-center justify-center min-h-0">
+                  <div className="w-px h-full bg-slate-200" />
+                </div>
+                <div className="text-center pb-3 flex-shrink-0">
+                  <div className="text-sm font-semibold text-slate-900">
+                    {formatTime(session.endTime, session.endPeriod || 'AM')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Session card */}
+            <div className="flex-1">
+              <div className="border border-slate-200 rounded-lg bg-white shadow-sm">
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-slate-900 text-base truncate">{session.title}</div>
+                    </div>
+
+                    {hasChildren ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(session.id)}
+                        className="p-1 text-slate-500 hover:text-slate-700 rounded"
+                        aria-label={open ? 'Collapse' : 'Expand'}
+                      >
+                        {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                      <Calendar className="h-3 w-3" />
+                      {formatTime(session.startTime, session.startPeriod || 'AM')} – {formatTime(session.endTime, session.endPeriod || 'AM')}
+                    </span>
+
+                    {session.location ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                        {getLocationLabel(session.location)}
+                      </span>
+                    ) : null}
+
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                      parent
+                    </span>
+                  </div>
+
+                  <div className="mt-3">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                      <Attachment01 className="h-3 w-3" />
+                      {session.attachments?.length || 0}
+                    </span>
+                  </div>
+
+                  {hasChildren && open ? renderChildren(session, 1) : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+export default PublicScheduleGrid
+

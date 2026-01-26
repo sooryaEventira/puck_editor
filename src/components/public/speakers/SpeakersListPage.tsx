@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react'
-import { SearchLg, FilterLines } from '@untitled-ui/icons-react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { SearchLg } from '@untitled-ui/icons-react'
 import { readEventStoreJSON } from '../../../utils/eventLocalStore'
+import { fetchPublicSpeakers } from '../../../services/publicSpeakerService'
+import { buildSearchIndex, normalizeSearchText } from '../../../utils/indexedSearch'
 
 type PublicSpeaker = {
   id: string
@@ -46,67 +48,119 @@ const SpeakerRow = ({ speaker }: { speaker: PublicSpeaker }) => {
 }
 
 const SpeakersListPage: React.FC<SpeakersListPageProps> = ({ eventUuid, onNavigate }) => {
-  const [query, setQuery] = useState('')
+  const [queryInput, setQueryInput] = useState('')
+  const [apiSpeakers, setApiSpeakers] = useState<PublicSpeaker[] | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const speakers = useMemo(() => {
-    return readEventStoreJSON<PublicSpeaker[]>(eventUuid, 'speakers', [])
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      setIsLoading(true)
+      try {
+        const raw = await fetchPublicSpeakers(eventUuid)
+        const mapped: PublicSpeaker[] = (Array.isArray(raw) ? raw : []).map((s: any, idx: number) => {
+          const id = String(s.uuid ?? s.id ?? `speaker-${idx}`)
+          const name =
+            String(s.name ?? '').trim() ||
+            String([s.first_name, s.last_name].filter(Boolean).join(' ')).trim() ||
+            'Unknown'
+          return {
+            id,
+            name,
+            title: s.title ?? s.role ?? undefined,
+            organization: s.organization ?? s.company ?? undefined,
+            avatarUrl: s.avatarUrl ?? s.avatar_url ?? undefined,
+            bio: s.bio ?? s.description ?? undefined
+          }
+        })
+        if (!cancelled) setApiSpeakers(mapped)
+      } catch {
+        // If public API fails, fall back to local store
+        if (!cancelled) setApiSpeakers(null)
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
   }, [eventUuid])
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return speakers
-    return speakers.filter((s) => {
-      const haystack = [s.name, s.title, s.organization, s.bio].filter(Boolean).join(' ').toLowerCase()
-      return haystack.includes(q)
+  const speakers = useMemo(() => {
+    // Prefer API speakers, fallback to local store
+    return apiSpeakers ?? readEventStoreJSON<PublicSpeaker[]>(eventUuid, 'speakers', [])
+  }, [apiSpeakers, eventUuid])
+
+  // Normalize IDs (API/localStorage can contain missing/duplicate ids, which breaks React list rendering)
+  const normalizedSpeakers = useMemo(() => {
+    const seen = new Set<string>()
+    return speakers.map((s, idx) => {
+      const baseId = String((s as any)?.id ?? '').trim()
+      const nameKey = normalizeSearchText((s as any)?.name).replace(/\s+/g, '-') || 'speaker'
+      let id = baseId || `${nameKey}-${idx}`
+      while (seen.has(id)) id = `${id}-${idx}`
+      seen.add(id)
+      return { ...s, id }
     })
-  }, [query, speakers])
+  }, [speakers])
+
+  const speakerIndex = useMemo(() => {
+    // Search by speaker name only
+    return buildSearchIndex(normalizedSpeakers, (s) => s.name)
+  }, [normalizedSpeakers])
+
+  const filtered = useMemo(() => {
+    const q = normalizeSearchText(queryInput)
+    if (!q) return normalizedSpeakers
+    const tokens = q.split(' ').filter(Boolean)
+    return speakerIndex.filter((e) => tokens.every((t) => e.text.includes(t))).map((e) => e.item)
+  }, [normalizedSpeakers, queryInput, speakerIndex])
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-slate-900">Speakers</h1>
+        <h1 className="text-xl font-semibold text-slate-900">Speakers</h1>
 
+        {/* Search (match attendees design) */}
         <div className="flex items-center gap-2">
-          <div className="flex w-[280px] items-center overflow-hidden rounded-md border border-slate-200 bg-white">
+          <div className="flex items-center overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
             <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={queryInput}
+              onChange={(e) => setQueryInput(e.target.value)}
               placeholder="Search speakers"
-              className="w-full px-3 py-2 text-sm text-slate-600 focus:outline-none"
-              aria-label="Search speakers"
+              className="w-[240px] px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
             />
             <button
               type="button"
-              className="inline-flex items-center justify-center bg-primary px-3 py-2.5 text-white transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="flex h-9 w-10 items-center justify-center bg-primary text-white"
               aria-label="Search"
             >
-              <SearchLg className="h-4 w-4" strokeWidth={2} />
+              <SearchLg className="h-4 w-4" />
             </button>
           </div>
-          <button
-            type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition hover:border-primary/40 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            aria-label="Filter speakers"
-            onClick={() => console.log('Speaker filter clicked')}
-          >
-            <FilterLines className="h-4 w-4" strokeWidth={2} />
-          </button>
         </div>
+      </div>
+
+      <div className="text-xs text-slate-500">
+        Showing <span className="font-semibold text-slate-700">{filtered.length}</span> of{' '}
+        <span className="font-semibold text-slate-700">{normalizedSpeakers.length}</span>
       </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white p-6">
-          <div className="text-base font-semibold text-slate-900">No speakers found</div>
+          <div className="text-base font-semibold text-slate-900">
+            {isLoading ? 'Loading speakers…' : 'No speakers found'}
+          </div>
           <div className="mt-1 text-sm text-slate-600">
             Add speakers in Speaker Management to see them here.
           </div>
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((s) => (
+          {filtered.map((s, idx) => (
             <button
-              key={s.id}
+              key={`${s.id}-${idx}`}
               type="button"
               className="w-full text-left"
               onClick={() => onNavigate(`/events/${eventUuid}/speakers/${s.id}`)}

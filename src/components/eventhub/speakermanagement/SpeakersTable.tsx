@@ -63,19 +63,8 @@ const SpeakersTable: React.FC<SpeakersTableProps> = ({
     if (!query) return speakers
 
     return speakers.filter((speaker) => {
-      const haystack = [
-        speaker.name,
-        speaker.email,
-        speaker.phoneNumber,
-        speaker.role,
-        speaker.organization,
-        ...speaker.groups.map((g) => g.name)
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-
-      return haystack.includes(query)
+      // Search by speaker name only
+      return String(speaker.name ?? '').toLowerCase().includes(query)
     })
   }, [searchQuery, speakers])
 
