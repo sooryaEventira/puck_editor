@@ -18,8 +18,10 @@ module.exports = {
       },
       colors: {
         primary: {
-          DEFAULT: '#6838EE',
-          dark: '#3E1C96'
+          // Use CSS variables so public pages can override theme easily.
+          // Values are RGB triplets (e.g. "104 56 238") to support Tailwind opacity modifiers like bg-primary/90.
+          DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
+          dark: 'rgb(var(--color-primary-dark) / <alpha-value>)'
         }
       },
       fontFamily: {

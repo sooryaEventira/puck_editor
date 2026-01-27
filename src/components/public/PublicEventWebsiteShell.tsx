@@ -3,6 +3,7 @@ import PublicNavbar, { type PublicNavbarItem } from './PublicNavbar'
 import { fetchPublicEvent, type PublicEventData } from '../../services/publicEventService'
 import { fetchPublicWebpages, type PublicWebpageData } from '../../services/publicWebpageService'
 import PublicWebpageRenderer from './PublicWebpageRenderer'
+import { buildPublicThemeVars } from '../../config/publicTheme'
 
 type PublicSection =
   | 'webpage'
@@ -142,8 +143,20 @@ const PublicEventWebsiteShell: React.FC<PublicEventWebsiteShellProps> = ({ event
     window.dispatchEvent(new PopStateEvent('popstate'))
   }
 
+  // Public-site theme: set ONE primary hex and derive other tokens.
+  // If backend later provides a brand color, we can wire it here (common keys supported).
+  const publicThemeVars = useMemo(() => {
+    const fromEvent =
+      (event as any)?.primaryColor ||
+      (event as any)?.primary_color ||
+      (event as any)?.brandColor ||
+      (event as any)?.brand_color ||
+      ''
+    return buildPublicThemeVars(String(fromEvent || '').trim() || undefined)
+  }, [event])
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white" style={publicThemeVars as any}>
       <PublicNavbar
         eventName={event?.eventName}
         logoUrl={event?.logo ?? null}

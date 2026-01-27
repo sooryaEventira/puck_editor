@@ -532,6 +532,12 @@ const PublicSchedulePage: React.FC<PublicSchedulePageProps> = ({ eventUuid }) =>
     setActiveDayIndex(0)
   }, [activeScheduleId])
 
+  const toCapital = (input: string) => {
+    const raw = String(input || '').trim()
+    if (!raw) return ''
+    return raw.toUpperCase()
+  }
+
   return (
     <div className="space-y-6">
       {/* Schedule tabs */}
@@ -556,7 +562,7 @@ const PublicSchedulePage: React.FC<PublicSchedulePageProps> = ({ eventUuid }) =>
                   isActive ? 'border-primary' : 'border-transparent hover:border-slate-300'
                 ].join(' ')}
               >
-                {s.name || 'Schedule'}
+                {toCapital(s.name || 'Schedule')}
               </span>
             </button>
           )

@@ -15,8 +15,13 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       open: true,
       headers: {
-        'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: http: https:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' http: https: ws: wss:; frame-src 'self' data: blob: https://docs.google.com;"
+        'Content-Security-Policy': `default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: http: https:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' http: https: ws: wss:; frame-src 'self' data: blob: https://www.google.com 
+        https://maps.google.com 
+        https://www.youtube.com 
+        https://www.youtube-nocookie.com 
+        https://player.vimeo.com;`.replace(/\s+/g, ' ').trim()
       },
+    
       proxy: {
         // Proxy API requests to the backend server to avoid CORS issues
         // Defaults to Azure backend, can be overridden with VITE_PROXY_TARGET env variable

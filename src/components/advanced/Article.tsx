@@ -10,6 +10,7 @@ export interface ArticleLink {
 export interface ArticleSection {
   id?: string
   type: 'heading' | 'paragraph' | 'image' | 'links'
+  align?: 'left' | 'center' | 'right'
   // For heading section
   heading?: string | React.ReactElement
   headingColor?: string
@@ -197,6 +198,7 @@ const Article: React.FC<ArticleProps> = ({
 
   // Render a section based on its type
   const renderSection = (section: ArticleSection, index: number) => {
+    const sectionAlign = section.align ?? section.headingAlign ?? 'left'
     switch (section.type) {
       case 'heading': {
         const headingValue = getStringValue(section.heading)
@@ -209,7 +211,7 @@ const Article: React.FC<ArticleProps> = ({
             : size === 2
               ? 'text-3xl md:text-4xl'
               : 'text-4xl md:text-5xl'
-        const align = section.headingAlign ?? 'left'
+        const align = section.headingAlign ?? sectionAlign ?? 'left'
         const color = section.headingColor || headingColor
         
         return (
@@ -236,7 +238,7 @@ const Article: React.FC<ArticleProps> = ({
           <div
             key={section.id || `paragraph-${index}`}
             className="prose prose-lg max-w-none mb-6"
-            style={{ color }}
+            style={{ color, textAlign: sectionAlign }}
             dangerouslySetInnerHTML={{ __html: html }}
           />
         )
@@ -248,26 +250,34 @@ const Article: React.FC<ArticleProps> = ({
         if (!normalizedSrc) return null
         
         const imageHeight = section.imageHeight || '400px'
+        const justify =
+          sectionAlign === 'center'
+            ? 'center'
+            : sectionAlign === 'right'
+              ? 'flex-end'
+              : 'flex-start'
         
         return (
           <div
             key={section.id || `image-${index}`}
-            className="w-full mb-8 rounded-lg overflow-hidden"
-            style={{ height: imageHeight }}
+            className="w-full mb-8"
+            style={{ display: 'flex', justifyContent: justify }}
           >
-            <img
-              src={normalizedSrc}
-              alt="Article image"
-              className="w-full h-full object-cover"
-              // If the previous URL errored, it may have hidden the img element.
-              // Reset visibility on successful load so changing Image URL works.
-              onLoad={(e) => {
-                e.currentTarget.style.display = ''
-              }}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-              }}
-            />
+            <div className="w-full rounded-lg overflow-hidden" style={{ height: imageHeight, maxWidth: '100%' }}>
+              <img
+                src={normalizedSrc}
+                alt="Article image"
+                className="w-full h-full object-cover"
+                // If the previous URL errored, it may have hidden the img element.
+                // Reset visibility on successful load so changing Image URL works.
+                onLoad={(e) => {
+                  e.currentTarget.style.display = ''
+                }}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            </div>
           </div>
         )
       }
@@ -280,9 +290,15 @@ const Article: React.FC<ArticleProps> = ({
         const listLinkColor = section.linkColor || linkColor
         const buttonBg = section.buttonColor || linkColor
         const buttonText = section.buttonTextColor || '#ffffff'
+        const justifyClass =
+          sectionAlign === 'center'
+            ? 'justify-center'
+            : sectionAlign === 'right'
+              ? 'justify-end'
+              : 'justify-start'
         
         return (
-          <div key={section.id || `links-${index}`} className="mb-6">
+          <div key={section.id || `links-${index}`} className="mb-6" style={{ textAlign: sectionAlign }}>
             {displayStyle === 'list' ? (
               // Vertical list style
               <ul className="space-y-3">
@@ -305,7 +321,7 @@ const Article: React.FC<ArticleProps> = ({
               </ul>
             ) : (
               // Inline buttons style
-              <div className="flex flex-wrap gap-3">
+              <div className={`flex flex-wrap gap-3 ${justifyClass}`}>
                 {links.map((link, linkIndex) => (
                   <a
                     key={link.id || `link-${linkIndex}`}

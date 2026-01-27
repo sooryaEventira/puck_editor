@@ -157,9 +157,9 @@ const LoginPage: React.FC<LoginPageProps> = ({
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
                         <Eye className="h-5 w-5" />
+                      ) : (
+                        <EyeOff className="h-5 w-5" />
                       )}
                     </button>
                   </div>

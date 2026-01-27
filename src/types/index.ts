@@ -115,6 +115,8 @@ export interface HeroButton {
 export interface HeroSectionProps {
   title: string
   subtitle?: string
+  startDate?: string
+  endDate?: string
   buttons?: HeroButton[]
   backgroundColor?: string
   textColor?: string

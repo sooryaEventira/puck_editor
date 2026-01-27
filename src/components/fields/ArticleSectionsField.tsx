@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { Plus, Trash03 } from '@untitled-ui/icons-react'
 import { UploadModal } from '../ui'
 import { fetchAllFolders, fetchFiles, uploadFile, type FileData } from '../../services/resourceService'
 
@@ -14,6 +15,7 @@ type ArticleLink = {
 type ArticleSection = {
   id?: string
   type: ArticleSectionType
+  align?: 'left' | 'center' | 'right'
   heading?: string
   headingColor?: string
   headingAlign?: 'left' | 'center' | 'right'
@@ -49,26 +51,60 @@ const ArticleSectionsField: React.FC<ArticleSectionsFieldProps> = ({ value = [],
     setSections(sections.filter((_, i) => i !== index))
   }
 
+  const moveSection = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return
+    if (fromIndex < 0 || fromIndex >= sections.length) return
+    if (toIndex < 0 || toIndex >= sections.length) return
+    const next = [...sections]
+    const [moved] = next.splice(fromIndex, 1)
+    next.splice(toIndex, 0, moved)
+    setSections(next)
+  }
+
   const [imagePickerIndex, setImagePickerIndex] = useState<number | null>(null)
   const [uploadIndex, setUploadIndex] = useState<number | null>(null)
+  const [newSectionType, setNewSectionType] = useState<ArticleSectionType>('heading')
 
   const addSection = (type: ArticleSectionType) => {
-    const base: ArticleSection = { id: makeId(type), type }
-    const next =
-      type === 'heading'
-        ? { ...base, heading: 'New heading', headingSize: 3, headingAlign: 'left', headingColor: '#111827' }
-        : type === 'paragraph'
-          ? { ...base, paragraph: 'New paragraph...', paragraphColor: '#111827' }
-          : type === 'image'
-            ? { ...base, imageUrl: '', imageHeight: '400px' }
-            : {
-                ...base,
-                linkDisplayStyle: 'list',
-                linkColor: '#3b82f6',
-                buttonColor: '#3b82f6',
-                buttonTextColor: '#ffffff',
-                links: [{ id: makeId('link'), label: 'Learn more', url: '#', openInNewTab: false }]
-              }
+    const base: ArticleSection = { id: makeId(type), type, align: 'left' }
+
+    let next: ArticleSection
+    switch (type) {
+      case 'heading':
+        next = {
+          ...base,
+          heading: 'New heading',
+          headingSize: 3,
+          headingAlign: 'left',
+          headingColor: '#111827',
+        }
+        break
+      case 'paragraph':
+        next = {
+          ...base,
+          paragraph: 'New paragraph...',
+          paragraphColor: '#111827',
+        }
+        break
+      case 'image':
+        next = {
+          ...base,
+          imageUrl: '',
+          imageHeight: '400px',
+        }
+        break
+      case 'links':
+      default:
+        next = {
+          ...base,
+          linkDisplayStyle: 'list',
+          linkColor: '#3b82f6',
+          buttonColor: '#3b82f6',
+          buttonTextColor: '#ffffff',
+          links: [{ id: makeId('link'), label: 'Learn more', url: '#', openInNewTab: false }],
+        }
+        break
+    }
 
     setSections([...sections, next])
   }
@@ -90,47 +126,58 @@ const ArticleSectionsField: React.FC<ArticleSectionsFieldProps> = ({ value = [],
 
   return (
     <div style={{ width: '100%' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-        <button type="button" onClick={() => addSection('heading')} style={btnStyle}>
-          + Heading
-        </button>
-        <button type="button" onClick={() => addSection('paragraph')} style={btnStyle}>
-          + Paragraph
-        </button>
-        <button type="button" onClick={() => addSection('image')} style={btnStyle}>
-          + Image
-        </button>
-        <button type="button" onClick={() => addSection('links')} style={btnStyle}>
-          + Links
-        </button>
-      </div>
-
       {sections.length === 0 ? (
-        <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>No sections yet. Add a section above.</p>
+        <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>No sections yet. Add a section below.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {sections.map((section, index) => (
             <div key={section.id || `${section.type}-${index}`} style={cardStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
-                  {index + 1}. {typeLabel(section.type)}
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{typeLabel(section.type)}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <label
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#64748b'
+                    }}
+                  >
+                    Order
+                    <select
+                      value={String(index + 1)}
+                      onChange={(e) => {
+                        const nextPos = Number(e.target.value || 1)
+                        if (!Number.isFinite(nextPos)) return
+                        moveSection(index, Math.max(0, Math.min(sections.length - 1, nextPos - 1)))
+                      }}
+                      style={{
+                        ...inputStyle,
+                        width: 84,
+                        padding: '6px 8px',
+                        fontSize: 12
+                      }}
+                      aria-label="Section order"
+                    >
+                      {Array.from({ length: sections.length }).map((_, i) => (
+                        <option key={`pos-${i + 1}`} value={String(i + 1)}>
+                          {i + 1}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => removeSection(index)}
+                    aria-label="Delete section"
+                    title="Delete section"
+                    style={iconDangerBtnStyle}
+                  >
+                    <Trash03 className="h-4 w-4" strokeWidth={1.8} />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeSection(index)}
-                  style={{
-                    padding: '6px 8px',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    borderRadius: 8,
-                    border: '1px solid #fecaca',
-                    backgroundColor: '#fff1f2',
-                    color: '#b91c1c',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Delete
-                </button>
               </div>
 
               <div style={{ marginTop: 10 }}>
@@ -146,6 +193,25 @@ const ArticleSectionsField: React.FC<ArticleSectionsFieldProps> = ({ value = [],
           ))}
         </div>
       )}
+
+      {/* Add section (consistent with other sidebars; no top row of buttons) */}
+      <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <select
+          value={newSectionType}
+          onChange={(e) => setNewSectionType(e.target.value as ArticleSectionType)}
+          style={{ ...inputStyle, width: 180 }}
+          aria-label="Section type"
+        >
+          <option value="heading">Heading</option>
+          <option value="paragraph">Paragraph</option>
+          <option value="image">Image</option>
+          <option value="links">Links</option>
+        </select>
+        <button type="button" onClick={() => addSection(newSectionType)} style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <Plus className="h-4 w-4" />
+          Add section
+        </button>
+      </div>
 
       <ImagePickerModal
         isOpen={imagePickerIndex !== null}
@@ -231,6 +297,16 @@ const btnStyle: React.CSSProperties = {
   cursor: 'pointer'
 }
 
+const iconDangerBtnStyle: React.CSSProperties = {
+  width: 32,
+  height: 32,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#b91c1c',
+  cursor: 'pointer'
+}
+
 export default ArticleSectionsField
 
 const isHexColor = (value: string) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value.trim())
@@ -282,11 +358,26 @@ function renderSectionEditor(args: {
   openUpload: () => void
 }) {
   const { section, index, patchSection, openImagePicker, openUpload } = args
+  const alignValue =
+    (section.align as any) || (section.headingAlign as any) || ('left' as const)
+  const setAlign = (next: 'left' | 'center' | 'right') => {
+    const patch: Partial<ArticleSection> = { align: next }
+    if (section.type === 'heading') patch.headingAlign = next
+    patchSection(index, patch)
+  }
 
   switch (section.type) {
     case 'paragraph':
       return (
         <>
+          <Field label="Alignment">
+            <select value={alignValue} onChange={(e) => setAlign(e.target.value as any)} style={inputStyle}>
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </Field>
+          <div style={{ height: 10 }} />
           <Field label="Paragraph Text (supports HTML paste for bold/italic)">
             <textarea
               value={section.paragraph || ''}
@@ -320,6 +411,14 @@ function renderSectionEditor(args: {
     case 'image':
       return (
         <>
+          <Field label="Alignment">
+            <select value={alignValue} onChange={(e) => setAlign(e.target.value as any)} style={inputStyle}>
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </Field>
+          <div style={{ height: 10 }} />
           <Field label="Image (Resource Manager URL or direct link)">
             <input
               value={section.imageUrl || ''}
@@ -352,6 +451,14 @@ function renderSectionEditor(args: {
     case 'heading':
       return (
         <>
+          <Field label="Alignment">
+            <select value={alignValue} onChange={(e) => setAlign(e.target.value as any)} style={inputStyle}>
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </Field>
+          <div style={{ height: 10 }} />
           <Field label="Heading Text">
             <input
               value={section.heading || ''}
@@ -362,18 +469,6 @@ function renderSectionEditor(args: {
           </Field>
           <div style={{ height: 10 }} />
           <ColorField label="Heading Color (hex)" value={section.headingColor || '#111827'} onChange={(v) => patchSection(index, { headingColor: v })} />
-          <div style={{ height: 10 }} />
-          <Field label="Heading Alignment">
-            <select
-              value={section.headingAlign || 'left'}
-              onChange={(e) => patchSection(index, { headingAlign: e.target.value as 'left' | 'center' | 'right' })}
-              style={inputStyle}
-            >
-              <option value="left">Left</option>
-              <option value="center">Center</option>
-              <option value="right">Right</option>
-            </select>
-          </Field>
           <div style={{ height: 10 }} />
           <Field label="Heading Size (3 options)">
             <select
@@ -392,6 +487,14 @@ function renderSectionEditor(args: {
     case 'links':
       return (
         <>
+          <Field label="Alignment">
+            <select value={alignValue} onChange={(e) => setAlign(e.target.value as any)} style={inputStyle}>
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </Field>
+          <div style={{ height: 10 }} />
           <Field label="Link Display Style">
             <select
               value={section.linkDisplayStyle || 'list'}
@@ -420,25 +523,18 @@ function renderSectionEditor(args: {
               {(section.links || []).map((link, linkIndex) => (
                 <div key={link.id || `link-${linkIndex}`} style={subCardStyle}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#111827' }}>Link {linkIndex + 1}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#111827' }}>Link</div>
                     <button
                       type="button"
                       onClick={() => {
                         const nextLinks = (section.links || []).filter((_, i) => i !== linkIndex)
                         patchSection(index, { links: nextLinks })
                       }}
-                      style={{
-                        padding: '6px 8px',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        borderRadius: 8,
-                        border: '1px solid #fecaca',
-                        backgroundColor: '#fff1f2',
-                        color: '#b91c1c',
-                        cursor: 'pointer'
-                      }}
+                      aria-label="Delete link"
+                      title="Delete link"
+                      style={iconDangerBtnStyle}
                     >
-                      Delete
+                      <Trash03 className="h-4 w-4" strokeWidth={1.8} />
                     </button>
                   </div>
 

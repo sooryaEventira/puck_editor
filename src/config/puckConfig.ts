@@ -7,7 +7,7 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import {
-  HeroSection, HeroVideo, HeroSplitScreen, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer, RegistrationCTA, Sponsors, ContactFooter, EventNumbers, SpeakerHighlight, SessionHighlight, SessionHighlightKeynote, SessionHighlightWorkshop, VenueBlock, SplitVenueBlock, HotelPartners, VenueDirections, LocationFloorPlan, GridBlock, Article, Table
+  HeroSection, HeroVideo, HeroSplitScreen, YouTubeVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer, RegistrationCTA, Sponsors, ContactFooter, EventNumbers, SpeakerHighlight, SessionHighlight, SessionHighlightKeynote, SessionHighlightWorkshop, VenueBlock, SplitVenueBlock, HotelPartners, VenueDirections, LocationFloorPlan, GridBlock, Article, Table
 } from '../components/advanced'
 import ScheduleContent from '../components/eventhub/schedulesession/ScheduleContent'
 import TwoColumnContent from '../components/advanced/TwoColumnContent'
@@ -145,7 +145,7 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["Slider", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "Navigation", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
+      components: ["Slider", "YouTubeVideo", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "Navigation", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
       subcategories: {
         sections: {
           title: "Sections",
@@ -155,7 +155,7 @@ export const config = {
         media: {
           title: "Media",
           icon: "fa-solid fa-image",
-          components: ["Slider", "PdfViewer"]
+          components: ["YouTubeVideo", "Slider", "PdfViewer"]
         },
         interactive: {
           title: "Interactive",
@@ -816,8 +816,19 @@ export const config = {
           label: 'Event Title',
         },
         subtitle: { 
-          type: 'textarea' as const,
-          label: 'Location | Date',
+          type: 'text' as const,
+          label: 'Location',
+          placeholder: 'Location (optional)'
+        },
+        startDate: {
+          type: 'text' as const,
+          label: 'Start Date',
+          placeholder: 'e.g. 2026-03-15'
+        },
+        endDate: {
+          type: 'text' as const,
+          label: 'End Date',
+          placeholder: 'e.g. 2026-03-17'
         },
         buttons: {
           type: 'array' as const,
@@ -908,7 +919,9 @@ export const config = {
       },
       defaultProps: {
         title: 'Event Title',
-        subtitle: 'Location | Date',
+        subtitle: 'Location',
+        startDate: '',
+        endDate: '',
         buttons: [
           {
             text: 'Register Now',
@@ -980,6 +993,50 @@ export const config = {
         backgroundColor: '#f8f9fa' as const
       },
       render: Slider
+    },
+    YouTubeVideo: {
+      label: "▶️ YouTube Video",
+      fields: {
+        videoUrl: {
+          type: 'text' as const,
+          label: 'YouTube Video URL',
+          placeholder: 'https://www.youtube.com/watch?v=VIDEO_ID or https://youtu.be/VIDEO_ID',
+        },
+        height: {
+          type: 'text' as const,
+          label: 'Height (optional)',
+          placeholder: 'auto (16:9) or e.g. 360px',
+        },
+        autoplay: {
+          type: 'radio' as const,
+          label: 'Autoplay',
+          options: [
+            { label: 'Yes', value: true },
+            { label: 'No', value: false },
+          ],
+        },
+        controls: {
+          type: 'radio' as const,
+          label: 'Controls',
+          options: [
+            { label: 'Show', value: true },
+            { label: 'Hide', value: false },
+          ],
+        },
+        startTime: {
+          type: 'number' as const,
+          label: 'Start Time (seconds)',
+          min: 0,
+        },
+      },
+      defaultProps: {
+        videoUrl: '',
+        height: '',
+        autoplay: false,
+        controls: true,
+        startTime: 0,
+      },
+      render: YouTubeVideo,
     },
     Image: {
       label: "🖼️ Image",

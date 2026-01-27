@@ -5,6 +5,8 @@ import { HeroSectionProps, HeroButton } from '../../types'
 const HeroSection = ({ 
   title, 
   subtitle = '', 
+  startDate = '',
+  endDate = '',
   buttons = [
     {
       text: 'Register Now',
@@ -24,6 +26,15 @@ const HeroSection = ({
 }: HeroSectionProps) => {
   const buttonRefs = useRef<(HTMLAnchorElement | null)[]>([])
 
+  // Puck sometimes wraps text fields as React elements with a `value` prop.
+  const getStringValue = (prop: any): string => {
+    if (typeof prop === 'string') return prop
+    if (prop && typeof prop === 'object' && 'props' in prop && prop.props && 'value' in prop.props) {
+      return prop.props.value || ''
+    }
+    return ''
+  }
+
   // Register all buttons as overlay portals to keep them interactive
   useEffect(() => {
     buttonRefs.current.forEach((buttonRef) => {
@@ -35,14 +46,148 @@ const HeroSection = ({
 
   // NOTE: Inline editing is disabled for HeroSection.
   // This component should be edited from the property sidebar only (editor + preview/public).
-  const currentBackgroundImage = backgroundImage
+  const DEFAULT_BANNER_IMAGE =
+    'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'
+
+  // Banner image precedence:
+  // 1) event-form-banner from localStorage (uploaded by user)
+  // 2) backgroundImage prop (from editor)
+  // 3) default banner image
+  const currentBackgroundImage = (() => {
+    try {
+      const stored = typeof window !== 'undefined' ? (localStorage.getItem('event-form-banner') || '').trim() : ''
+      if (stored) return stored
+    } catch {
+      // ignore
+    }
+    const fromProps = (backgroundImage || '').trim()
+    return fromProps || DEFAULT_BANNER_IMAGE
+  })()
+  const safeHeight = (height || '500px').toString().trim() || '500px'
+
+  const readEventMetaFromStorage = () => {
+    const out = { location: '', startDate: '', endDate: '' }
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('event-form-data') : null
+      const parsed = raw ? JSON.parse(raw) : null
+      out.location = (parsed?.location || parsed?.eventLocation || parsed?.venue || '').toString().trim()
+      out.startDate = (parsed?.startDate || parsed?.start_date || '').toString().trim()
+      out.endDate = (parsed?.endDate || parsed?.end_date || '').toString().trim()
+    } catch {
+      // ignore
+    }
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('created-event') : null
+      const parsed = raw ? JSON.parse(raw) : null
+      if (!out.location) out.location = (parsed?.location || parsed?.eventLocation || parsed?.venue || '').toString().trim()
+      if (!out.startDate) out.startDate = (parsed?.startDate || parsed?.start_date || parsed?.event_date || '').toString().trim()
+      if (!out.endDate) out.endDate = (parsed?.endDate || parsed?.end_date || '').toString().trim()
+    } catch {
+      // ignore
+    }
+    return out
+  }
+
+  const formatDateText = () => {
+    let sRaw = getStringValue(startDate).trim()
+    let eRaw = getStringValue(endDate).trim()
+
+    // If component props are missing/incomplete, fall back to event creation data
+    // so dragging the component immediately shows the event date range.
+    if (!sRaw || !eRaw) {
+      const stored = readEventMetaFromStorage()
+      if (!sRaw && stored.startDate) sRaw = stored.startDate
+      if (!eRaw && stored.endDate) eRaw = stored.endDate
+    }
+
+    if (!sRaw && !eRaw) return ''
+
+    const parseDate = (raw: string): Date | null => {
+      const r = (raw || '').trim()
+      if (!r) return null
+      // Support YYYY-MM-DD (treat as local date at midnight to avoid timezone shift)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(r)) {
+        const d = new Date(`${r}T00:00:00`)
+        return Number.isNaN(d.getTime()) ? null : d
+      }
+      const d = new Date(r)
+      return Number.isNaN(d.getTime()) ? null : d
+    }
+
+    const s = parseDate(sRaw)
+    const e = parseDate(eRaw)
+
+    // If parsing fails, fall back to raw text.
+    if (!s && !e) {
+      if (sRaw && eRaw) return `${sRaw} - ${eRaw}`
+      return sRaw || eRaw
+    }
+    // If only one side parses, still return a compact date when possible
+    if (s && !e) return `${s.getDate()}, ${s.getFullYear()}`
+    if (!s && e) return `${e.getDate()}, ${e.getFullYear()}`
+
+    const sDay = s!.getDate()
+    const eDay = e!.getDate()
+    const sMonth = s!.getMonth()
+    const eMonth = e!.getMonth()
+    const sYear = s!.getFullYear()
+    const eYear = e!.getFullYear()
+
+    // Desired compact format (example): "12-15, 2026"
+    if (sYear === eYear) {
+      if (sMonth === eMonth) {
+        if (sDay === eDay) return `${sDay}, ${sYear}`
+        return `${sDay}-${eDay}, ${sYear}`
+      }
+      // Different months but same year: include month numbers for clarity.
+      const sm = sMonth + 1
+      const em = eMonth + 1
+      return `${sm}/${sDay}-${em}/${eDay}, ${sYear}`
+    }
+
+    // Different years: include both years.
+    const sm = sMonth + 1
+    const em = eMonth + 1
+    return `${sm}/${sDay}, ${sYear} - ${em}/${eDay}, ${eYear}`
+  }
+
+  const dateText = formatDateText()
+  const subtitleText = (() => {
+    const rawSubtitle = getStringValue(subtitle).trim()
+    // Backward-compat: older saved pages store "Location | Date" inside `subtitle`.
+    // We only want Location here; date should come from start/end date fields.
+    const parts = rawSubtitle.split(/[|｜]/).map((p) => p.trim()).filter(Boolean)
+    let loc = parts[0] || ''
+    if (!loc) {
+      // Refresh-safe fallback: event creation form saves location in localStorage.
+      try {
+        const maybe = readEventMetaFromStorage().location
+        if (maybe) loc = maybe
+      } catch {
+        // ignore
+      }
+      if (!loc) {
+        try {
+          const maybe = readEventMetaFromStorage().location
+          if (maybe) loc = maybe
+        } catch {
+          // ignore
+        }
+      }
+    }
+    if (!loc && !dateText) return ''
+    if (loc && dateText) return `${loc} | ${dateText}`
+    return loc || dateText
+  })()
   
   // Container style - fixed height, full width
   const heroStyle: React.CSSProperties = {
     backgroundColor: currentBackgroundImage ? '#ffffff' : (backgroundColor || '#1a1a1a'),
     color: textColor,
-    minHeight: currentBackgroundImage ? '500px' : '300px',
-    height: currentBackgroundImage ? (height || '500px') : (height || '500px'),
+    // Fix: previously forced 500px minHeight when background image exists,
+    // which made Small/Medium heights not work.
+    minHeight: safeHeight,
+    height: safeHeight,
     justifyContent: alignment === 'left' ? 'flex-start' : alignment === 'right' ? 'flex-end' : 'center',
     padding: 'clamp(40px, 8vw, 80px) clamp(20px, 4vw, 40px)',
     width: '100%',
@@ -62,9 +207,12 @@ const HeroSection = ({
       currentBackgroundImage: currentBackgroundImage ? currentBackgroundImage.substring(0, 50) + '...' : 'EMPTY',
       heroStyleBackground: bgString ? bgString.substring(0, 80) + '...' : '',
       title,
-      subtitle
+      subtitle: subtitleText,
+      startDate,
+      endDate,
+      height: safeHeight
     })
-  }, [backgroundImage, currentBackgroundImage, heroStyle.background, title, subtitle])
+  }, [backgroundImage, currentBackgroundImage, heroStyle.background, title, subtitleText, startDate, endDate, safeHeight])
 
   const heroClassName = 'w-full flex items-center m-0 relative overflow-hidden block'
 
@@ -178,11 +326,11 @@ const HeroSection = ({
         >
           {title}
         </h1>
-        {subtitle && (
+        {subtitleText && (
           <p 
             className="m-0 mb-5 text-[clamp(0.875rem,2vw,1.25rem)] opacity-95 text-white drop-shadow-[1px_1px_2px_rgba(0,0,0,0.5)] leading-snug"
           >
-            {subtitle}
+            {subtitleText}
           </p>
         )}
         {buttons && buttons.length > 0 && (

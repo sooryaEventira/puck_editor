@@ -99,8 +99,10 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
   const normalizeMapEmbedSrc = (input?: string) => {
     const raw0 = (input || '').trim()
     if (!raw0) return ''
-
-    const raw = decodeHtmlEntities(raw0)
+    const firstQuoteIndex = raw0.indexOf('"')
+    const cleanedInput =
+      firstQuoteIndex !== -1 ? raw0.slice(0, firstQuoteIndex) : raw0
+    const raw = decodeHtmlEntities(cleanedInput)
 
     const embedFromQuery = (q: string) => `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`
 
@@ -172,7 +174,10 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
   const embedSrc = useMemo(() => {
     try {
       // Prefer explicit embed field, otherwise derive from mapUrl.
-      const source = (mapEmbedInput || '').trim() || (mapUrlInput || '').trim()
+      const source =
+  normalizeMapEmbedSrc(mapEmbedInput) ||
+  normalizeMapEmbedSrc(mapUrlInput)
+
       return normalizeMapEmbedSrc(source)
     } catch {
       return ''
@@ -181,7 +186,7 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
 
   const hasMapEmbedInput = Boolean((mapEmbedInput || '').trim())
   const hasMapUrlInput = Boolean((mapUrlInput || '').trim())
-  const embedLooksValid = Boolean(embedSrc && (embedSrc.includes('/maps/embed') || embedSrc.includes('output=embed')))
+  const embedLooksValid = Boolean(embedSrc && (embedSrc.startsWith('https://www.google.com/maps')))
 
   const effectiveMapImageSrc = useMemo(() => {
     if (imageError) return ''
@@ -207,7 +212,11 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
       return ''
     }
   }, [mapImageInput])
-
+  console.log('[VenueDirections] mapEmbedInput:', mapEmbedInput)
+  console.log('[VenueDirections] mapUrlInput:', mapUrlInput)
+  console.log('[VenueDirections] embedSrc:', embedSrc)
+  console.log('[VenueDirections] embedLooksValid:', embedLooksValid)
+  
   const openMapsHref = useMemo(() => {
     if ((openMapsUrl || '').trim()) return openMapsUrl as string
     const raw = (mapUrlInput || '').trim()
@@ -271,7 +280,7 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
           <div className="flex flex-col gap-6">
             {/* Map */}
             <div
-              className="w-full rounded-xl overflow-hidden border relative"
+              className="relative w-full rounded-xl overflow-hidden border"
               style={{
                 backgroundColor: cardBackgroundColor,
                 borderColor: cardBorderColor,
@@ -292,14 +301,14 @@ const VenueDirections: React.FC<VenueDirectionsProps> = ({
                 />
               ) : embedLooksValid ? (
                 <iframe
-                  src={embedSrc}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0, zIndex: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
+                src={embedSrc}
+                className="absolute inset-0 w-full h-full"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+              
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center p-8 pointer-events-none" style={{ zIndex: 0 }}>
                   {mapPlaceholder ? (
