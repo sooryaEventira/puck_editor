@@ -261,6 +261,7 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
     group?: string
     description?: string
     avatarUrl?: string
+    customFields?: Array<{ label: string; value: string }>
   }) => {
     const newAttendee: Attendee = {
       id: Date.now().toString(),
@@ -277,7 +278,8 @@ const AttendeeManagementPage: React.FC<AttendeeManagementPageProps> = ({
               variant: 'primary'
             }
           ]
-        : []
+        : [],
+      customFields: data.customFields
     }
     setAttendees((prev) => [...prev, newAttendee])
   }

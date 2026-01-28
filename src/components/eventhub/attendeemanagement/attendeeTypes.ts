@@ -20,9 +20,11 @@ export interface Attendee {
   tags?: string[]
   institute?: string
   post?: string
+  description?: string
   emailVerified?: boolean
   emailVerifiedDate?: string
   feedbackIncomplete?: boolean
+  customFields?: Array<{ label: string; value: string }>
 }
 
 export interface Group {

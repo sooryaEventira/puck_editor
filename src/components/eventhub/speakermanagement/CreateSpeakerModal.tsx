@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react'
-import { XClose, Upload01, HelpCircle } from '@untitled-ui/icons-react'
+import { XClose, Upload01, HelpCircle, Plus, Trash03 } from '@untitled-ui/icons-react'
 
 interface CreateSpeakerModalProps {
   isOpen: boolean
@@ -9,10 +9,11 @@ interface CreateSpeakerModalProps {
     lastName: string
     email: string
     organization?: string
-    title?: string
+    role?: string
     bio?: string
     group?: string
     avatarUrl?: string
+    customFields?: Array<{ label: string; value: string }>
   }) => void
 }
 
@@ -25,13 +26,13 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [organization, setOrganization] = useState('')
-  const [title, setTitle] = useState('')
+  const [role, setRole] = useState('')
   const [bio, setBio] = useState('')
   const [group, setGroup] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
+  const [customFields, setCustomFields] = useState<Array<{ id: string; label: string; value: string }>>([])
   if (!isOpen) return null
 
   const handleFileSelect = (file: File) => {
@@ -82,15 +83,20 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
       return
     }
 
+    const cleanedCustomFields = customFields
+      .map((f) => ({ label: (f.label || '').trim(), value: (f.value || '').trim() }))
+      .filter((f) => f.label || f.value)
+
     onSave({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim(),
       organization: organization.trim() || undefined,
-      title: title.trim() || undefined,
+      role: role.trim() || undefined,
       bio: bio.trim() || undefined,
       group: group.trim() || undefined,
-      avatarUrl: avatarUrl || undefined
+      avatarUrl: avatarUrl || undefined,
+      customFields: cleanedCustomFields.length ? cleanedCustomFields : undefined
     })
 
     // Reset form
@@ -98,10 +104,11 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
     setLastName('')
     setEmail('')
     setOrganization('')
-    setTitle('')
+    setRole('')
     setBio('')
     setGroup('')
     setAvatarUrl(null)
+    setCustomFields([])
     onClose()
   }
 
@@ -111,10 +118,11 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
     setLastName('')
     setEmail('')
     setOrganization('')
-    setTitle('')
+    setRole('')
     setBio('')
     setGroup('')
     setAvatarUrl(null)
+    setCustomFields([])
     onClose()
   }
 
@@ -147,7 +155,7 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="px-6 py-4 space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto">
+        <div className="px-6 py-4 space-y-4 max-h-[min(600px,calc(100vh-250px))] overflow-y-auto">
           {/* Profile Picture Upload */}
           <div>
             <div
@@ -238,27 +246,27 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
+          <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Organization
+               Group
               </label>
               <input
                 type="text"
-                value={organization}
-                onChange={(e) => setOrganization(e.target.value)}
-                placeholder="Organization"
+                value={group}
+                onChange={(e) => setGroup(e.target.value)}
+                placeholder="Group"
                 className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Title
+                Role
               </label>
               <input
                 type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Title/Position"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                placeholder="Role"
                 className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
@@ -266,13 +274,13 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Group
+              Organization
             </label>
             <input
               type="text"
-              value={group}
-              onChange={(e) => setGroup(e.target.value)}
-              placeholder="Group"
+              value={organization}
+              onChange={(e) => setOrganization(e.target.value)}
+              placeholder="Organization"
               className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
             />
           </div>
@@ -288,6 +296,66 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
               rows={3}
               className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary resize-y"
             />
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-slate-700">Custom fields</label>
+              <button
+                type="button"
+                onClick={() => {
+                  if (customFields.length >= 10) return
+                  setCustomFields((prev) => [
+                    ...prev,
+                    { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, label: '', value: '' }
+                  ])
+                }}
+                disabled={customFields.length >= 10}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Plus className="h-4 w-4" />
+                Add field
+              </button>
+            </div>
+
+            {customFields.length === 0 ? (
+              <div className="text-xs text-slate-500"></div>
+            ) : (
+              <div className="space-y-2">
+                {customFields.map((field) => (
+                  <div key={field.id} className="grid grid-cols-12 gap-2">
+                    <input
+                      type="text"
+                      value={field.label}
+                      onChange={(e) => {
+                        const next = e.target.value
+                        setCustomFields((prev) => prev.map((f) => (f.id === field.id ? { ...f, label: next } : f)))
+                      }}
+                      placeholder="Label"
+                      className="col-span-5 w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                    />
+                    <input
+                      type="text"
+                      value={field.value}
+                      onChange={(e) => {
+                        const next = e.target.value
+                        setCustomFields((prev) => prev.map((f) => (f.id === field.id ? { ...f, value: next } : f)))
+                      }}
+                      placeholder="Value"
+                      className="col-span-6 w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCustomFields((prev) => prev.filter((f) => f.id !== field.id))}
+                      className="col-span-1 flex h-9 w-9 items-center justify-center rounded-md text-slate-500 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/60"
+                      aria-label="Remove custom field"
+                      title="Remove"
+                    >
+                      <Trash03 className="h-4 w-4" strokeWidth={1.8} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

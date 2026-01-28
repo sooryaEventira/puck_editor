@@ -24,6 +24,7 @@ const AttendeeDetailsSlideout: React.FC<AttendeeDetailsSlideoutProps> = ({
   const [email, setEmail] = useState('')
   const [institute, setInstitute] = useState('')
   const [post, setPost] = useState('')
+  const [description, setDescription] = useState('')
   const [selectedGroups, setSelectedGroups] = useState<AttendeeGroup[]>([])
 
 
@@ -36,6 +37,7 @@ const AttendeeDetailsSlideout: React.FC<AttendeeDetailsSlideoutProps> = ({
       setEmail(attendee.email || '')
       setInstitute(attendee.institute || '')
       setPost(attendee.post || '')
+      setDescription((attendee as any).description || '')
       setSelectedGroups([...attendee.groups])
     }
   }, [attendee, isOpen])
@@ -62,6 +64,7 @@ const AttendeeDetailsSlideout: React.FC<AttendeeDetailsSlideoutProps> = ({
       email,
       institute,
       post,
+      description,
       groups: selectedGroups
     }
 
@@ -256,63 +259,84 @@ const AttendeeDetailsSlideout: React.FC<AttendeeDetailsSlideoutProps> = ({
           )}
         </div>
 
-        {/* Institute/Company */}
+        {/* Organization */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
-            Institute/Company
+            Organization
           </label>
           <input
             type="text"
             value={institute}
             onChange={(e) => setInstitute(e.target.value)}
-            placeholder="Institute/Company"
+            placeholder="Organization"
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
-        {/* Post */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Post
-          </label>
-          <input
-            type="text"
-            value={post}
-            onChange={(e) => setPost(e.target.value)}
-            placeholder="Post"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
-
-        {/* Groups */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Groups
-          </label>
-          <select
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary bg-white"
-            onChange={(e) => {
-              if (e.target.value) {
-                const newGroup: AttendeeGroup = {
-                  id: Date.now().toString(),
-                  name: e.target.value,
-                  variant: 'primary'
+        {/* Role + Group (same row) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Role
+            </label>
+            <input
+              type="text"
+              value={post}
+              onChange={(e) => setPost(e.target.value)}
+              placeholder="Role"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Group
+            </label>
+            <select
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary bg-white"
+              onChange={(e) => {
+                if (e.target.value) {
+                  const newGroup: AttendeeGroup = {
+                    id: Date.now().toString(),
+                    name: e.target.value,
+                    variant: 'primary'
+                  }
+                  setSelectedGroups((prev) => [...prev, newGroup])
+                  e.target.value = ''
                 }
-                setSelectedGroups((prev) => [...prev, newGroup])
-                e.target.value = ''
-              }
-            }}
-          >
-            <option value="">Select groups</option>
-            <option value="Speaker">Speaker</option>
-            <option value="VIP">VIP</option>
-            <option value="Attendee">Attendee</option>
-            <option value="Volunteer">Volunteer</option>
-            <option value="Press">Press</option>
-            <option value="Sponsor">Sponsor</option>
-          </select>
-          {selectedGroups.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
+              }}
+            >
+              <option value="">Select group</option>
+              <option value="Speaker">Speaker</option>
+              <option value="VIP">VIP</option>
+              <option value="Attendee">Attendee</option>
+              <option value="Volunteer">Volunteer</option>
+              <option value="Press">Press</option>
+              <option value="Sponsor">Sponsor</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Description
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Write a brief description..."
+            rows={4}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-y"
+          />
+        </div>
+
+        {/* Selected groups */}
+        {selectedGroups.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Groups
+            </label>
+            <div className="flex flex-wrap gap-2">
               {selectedGroups.map((group) => (
                 <Badge
                   key={group.id}
@@ -331,8 +355,8 @@ const AttendeeDetailsSlideout: React.FC<AttendeeDetailsSlideoutProps> = ({
                 </Badge>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </Slideout>
   )
