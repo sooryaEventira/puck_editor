@@ -13,7 +13,7 @@ interface CreateSpeakerModalProps {
     bio?: string
     group?: string
     avatarUrl?: string
-    customFields?: Array<{ label: string; value: string }>
+    customFields?: Array<{ label: string; value: string; hideFromProfile?: boolean }>
   }) => void
 }
 
@@ -32,7 +32,9 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [customFields, setCustomFields] = useState<Array<{ id: string; label: string; value: string }>>([])
+  const [customFields, setCustomFields] = useState<
+    Array<{ id: string; label: string; value: string; hideFromProfile?: boolean }>
+  >([])
   if (!isOpen) return null
 
   const handleFileSelect = (file: File) => {
@@ -84,7 +86,11 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
     }
 
     const cleanedCustomFields = customFields
-      .map((f) => ({ label: (f.label || '').trim(), value: (f.value || '').trim() }))
+      .map((f) => ({
+        label: (f.label || '').trim(),
+        value: (f.value || '').trim(),
+        hideFromProfile: !!f.hideFromProfile
+      }))
       .filter((f) => f.label || f.value)
 
     onSave({
@@ -299,14 +305,18 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-slate-700">Custom fields</label>
               <button
                 type="button"
                 onClick={() => {
                   if (customFields.length >= 10) return
                   setCustomFields((prev) => [
                     ...prev,
-                    { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, label: '', value: '' }
+                    {
+                      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                      label: '',
+                      value: '',
+                      hideFromProfile: false
+                    }
                   ])
                 }}
                 disabled={customFields.length >= 10}
@@ -322,36 +332,53 @@ const CreateSpeakerModal: React.FC<CreateSpeakerModalProps> = ({
             ) : (
               <div className="space-y-2">
                 {customFields.map((field) => (
-                  <div key={field.id} className="grid grid-cols-12 gap-2">
-                    <input
-                      type="text"
-                      value={field.label}
-                      onChange={(e) => {
-                        const next = e.target.value
-                        setCustomFields((prev) => prev.map((f) => (f.id === field.id ? { ...f, label: next } : f)))
-                      }}
-                      placeholder="Label"
-                      className="col-span-5 w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-                    />
-                    <input
-                      type="text"
-                      value={field.value}
-                      onChange={(e) => {
-                        const next = e.target.value
-                        setCustomFields((prev) => prev.map((f) => (f.id === field.id ? { ...f, value: next } : f)))
-                      }}
-                      placeholder="Value"
-                      className="col-span-6 w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setCustomFields((prev) => prev.filter((f) => f.id !== field.id))}
-                      className="col-span-1 flex h-9 w-9 items-center justify-center rounded-md text-slate-500 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/60"
-                      aria-label="Remove custom field"
-                      title="Remove"
-                    >
-                      <Trash03 className="h-4 w-4" strokeWidth={1.8} />
-                    </button>
+                  <div key={field.id} className="space-y-2">
+                    <div className="grid grid-cols-12 gap-2">
+                      <input
+                        type="text"
+                        value={field.label}
+                        onChange={(e) => {
+                          const next = e.target.value
+                          setCustomFields((prev) => prev.map((f) => (f.id === field.id ? { ...f, label: next } : f)))
+                        }}
+                        placeholder="Label"
+                        className="col-span-5 w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                      />
+                      <input
+                        type="text"
+                        value={field.value}
+                        onChange={(e) => {
+                          const next = e.target.value
+                          setCustomFields((prev) => prev.map((f) => (f.id === field.id ? { ...f, value: next } : f)))
+                        }}
+                        placeholder="Value"
+                        className="col-span-6 w-full px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setCustomFields((prev) => prev.filter((f) => f.id !== field.id))}
+                        className="col-span-1 flex h-9 w-9 items-center justify-center rounded-md text-slate-500 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/60"
+                        aria-label="Remove custom field"
+                        title="Remove"
+                      >
+                        <Trash03 className="h-4 w-4" strokeWidth={1.8} />
+                      </button>
+                    </div>
+
+                    <label className="inline-flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={!!field.hideFromProfile}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                          setCustomFields((prev) =>
+                            prev.map((f) => (f.id === field.id ? { ...f, hideFromProfile: next } : f))
+                          )
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/40"
+                      />
+                      Hide from Profile
+                    </label>
                   </div>
                 ))}
               </div>

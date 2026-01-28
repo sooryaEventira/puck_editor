@@ -5,6 +5,7 @@ export interface LocationFloorPlanProps {
   subtitle?: string | React.ReactElement
   pdfUrl?: string
   imageUrl?: string
+  height?: number
   backgroundColor?: string
   textColor?: string
   cardBackgroundColor?: string
@@ -15,6 +16,7 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
   subtitle = 'Overview of the venue layout',
   pdfUrl,
   imageUrl,
+  height = 600,
   backgroundColor = '#ffffff',
   textColor = '#1f2937',
   cardBackgroundColor = '#ffffff',
@@ -60,6 +62,36 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
 
   const titleValue = getStringValue(title);
   const subtitleValue = getStringValue(subtitle);
+
+  const resolvedHeight = (() => {
+    const n = typeof height === 'number' ? height : Number.parseInt(String(height || ''), 10)
+    return Number.isFinite(n) && n > 0 ? n : 600
+  })()
+  const heightPx = `${resolvedHeight}px`
+
+  // Normalize and embed PDF URLs:
+  // - Local paths like "a/event_resources/file.pdf" -> "/a/event_resources/file.pdf"
+  // - External URLs often block iframes; use Google Docs viewer embed.
+  const getPdfUrl = (raw: string) => {
+    const s = (raw || '').trim()
+    if (!s) return ''
+    if (s.startsWith('http://') || s.startsWith('https://')) {
+      // Avoid CSP mismatch: backend should be loaded over https
+      if (s.startsWith('http://eventiracommon-event-api-dev-ci01-aaeddsh3hbdkcjfa.centralindia-01.azurewebsites.net')) {
+        return s.replace(/^http:\/\//, 'https://')
+      }
+      return s
+    }
+    return s.startsWith('/') ? s : `/${s}`
+  }
+
+  const pdfUrlFinal = pdfUrl ? getPdfUrl(getStringValue(pdfUrl)) : ''
+  const isExternalPdf = pdfUrlFinal.startsWith('http://') || pdfUrlFinal.startsWith('https://')
+  const embedPdfUrl = pdfUrlFinal
+    ? (isExternalPdf
+        ? `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrlFinal)}&embedded=true`
+        : pdfUrlFinal)
+    : ''
 
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev + 0.25, 3))
@@ -109,14 +141,14 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
   }, [])
 
   const handleDownload = () => {
-    const url = pdfUrl || uploadedImageUrl || imageUrl
+    const url = pdfUrlFinal || uploadedImageUrl || imageUrl
     if (url) {
       // For same-origin resources, try to download directly
       // For cross-origin, open in new tab
       try {
         const link = document.createElement('a')
         link.href = url
-        link.download = url.split('/').pop() || (pdfUrl ? 'floor-plan.pdf' : 'floor-plan.jpg')
+        link.download = url.split('/').pop() || (pdfUrlFinal ? 'floor-plan.pdf' : 'floor-plan.jpg')
         link.target = '_blank'
         link.rel = 'noopener noreferrer'
         document.body.appendChild(link)
@@ -172,12 +204,13 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
             backgroundColor: cardBackgroundColor,
             borderColor: cardBorderColor,
             borderRadius,
-            minHeight: '600px',
+            minHeight: heightPx,
+            height: heightPx,
             position: 'relative'
           }}
         >
           {/* Document Viewer */}
-          <div className="relative w-full h-full" style={{ minHeight: '600px' }}>
+          <div className="relative w-full h-full" style={{ minHeight: heightPx, height: heightPx }}>
             {/* Hidden file input for image upload */}
             <input
               ref={fileInputRef}
@@ -186,12 +219,13 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
               onChange={handleFileUpload}
               style={{ display: 'none' }}
             />
-            {pdfUrl ? (
+            {pdfUrlFinal ? (
               <iframe
-                src={pdfUrl}
+                src={embedPdfUrl}
                 className="w-full h-full"
                 style={{
-                  minHeight: '600px',
+                  minHeight: heightPx,
+                  height: heightPx,
                   border: 'none'
                 }}
                 title="Floor Plan PDF"
@@ -200,7 +234,8 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
               <div
                 className="w-full h-full flex items-center justify-center overflow-auto bg-gray-100 relative cursor-pointer"
                 style={{
-                  minHeight: '600px',
+                  minHeight: heightPx,
+                  height: heightPx,
                 }}
                 onClick={(e) => {
                   // Don't trigger if clicking on toolbar or download button
@@ -246,7 +281,7 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
             ) : (
               <div 
                 className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" 
-                style={{ minHeight: '600px' }}
+                style={{ minHeight: heightPx, height: heightPx }}
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -297,10 +332,10 @@ const LocationFloorPlan: React.FC<LocationFloorPlanProps> = ({
               zIndex: 50,
               pointerEvents: 'auto'
             }}
-            title={pdfUrl || uploadedImageUrl || imageUrl ? `Download ${pdfUrl ? 'PDF' : 'Image'}` : 'Add PDF or Image URL to enable download'}
+            title={pdfUrlFinal || uploadedImageUrl || imageUrl ? `Download ${pdfUrlFinal ? 'PDF' : 'Image'}` : 'Add PDF or Image URL to enable download'}
           >
             <span>📥</span>
-            <span>Download {pdfUrl ? 'PDF' : imageUrl ? 'Image' : 'File'}</span>
+            <span>Download {pdfUrlFinal ? 'PDF' : imageUrl ? 'Image' : 'File'}</span>
           </button>
 
           {/* Viewer Controls (only for images) */}

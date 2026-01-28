@@ -15,11 +15,12 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       open: true,
       headers: {
-        'Content-Security-Policy': `default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: http: https:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' http: https: ws: wss:; frame-src 'self' data: blob: https://www.google.com 
+        'Content-Security-Policy': `default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: http: https:; media-src 'self' data: blob: http: https:; font-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' http: https: ws: wss:; frame-src 'self' data: blob: https://docs.google.com https://www.google.com 
         https://maps.google.com 
         https://www.youtube.com 
         https://www.youtube-nocookie.com 
-        https://player.vimeo.com;`.replace(/\s+/g, ' ').trim()
+        https://player.vimeo.com 
+        https://eventiracommon-event-api-dev-ci01-aaeddsh3hbdkcjfa.centralindia-01.azurewebsites.net;`.replace(/\s+/g, ' ').trim()
       },
     
       proxy: {

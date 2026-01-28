@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Plus, Trash03 } from '@untitled-ui/icons-react'
+import { Plus, Trash03, ChevronDown, ChevronUp } from '@untitled-ui/icons-react'
 import { UploadModal } from '../ui'
 import { fetchAllFolders, fetchFiles, uploadFile, type FileData } from '../../services/resourceService'
 
@@ -63,7 +63,11 @@ const ArticleSectionsField: React.FC<ArticleSectionsFieldProps> = ({ value = [],
 
   const [imagePickerIndex, setImagePickerIndex] = useState<number | null>(null)
   const [uploadIndex, setUploadIndex] = useState<number | null>(null)
-  const [newSectionType, setNewSectionType] = useState<ArticleSectionType>('heading')
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [expandedLinkSectionIds, setExpandedLinkSectionIds] = useState<Set<string>>(() => new Set())
+
+  const getSectionKey = (section: ArticleSection, index: number) => section.id || `idx-${index}`
 
   const addSection = (type: ArticleSectionType) => {
     const base: ArticleSection = { id: makeId(type), type, align: 'left' }
@@ -126,48 +130,125 @@ const ArticleSectionsField: React.FC<ArticleSectionsFieldProps> = ({ value = [],
 
   return (
     <div style={{ width: '100%' }}>
+      {/* Quick add */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+        <button type="button" onClick={() => addSection('heading')} style={btnStyle}>
+          + Heading
+        </button>
+        <button type="button" onClick={() => addSection('paragraph')} style={btnStyle}>
+          + Paragraph
+        </button>
+        <button type="button" onClick={() => addSection('image')} style={btnStyle}>
+          + Image
+        </button>
+        <button type="button" onClick={() => addSection('links')} style={btnStyle}>
+          + Links
+        </button>
+      </div>
+
       {sections.length === 0 ? (
-        <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>No sections yet. Add a section below.</p>
+        <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>No sections yet. Add a section above.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {sections.map((section, index) => (
-            <div key={section.id || `${section.type}-${index}`} style={cardStyle}>
+            (() => {
+              const sectionKey = getSectionKey(section, index)
+              const isLinks = section.type === 'links'
+              const isExpanded = !isLinks || expandedLinkSectionIds.has(sectionKey)
+              const linksCount = Array.isArray(section.links) ? section.links.length : 0
+
+              return (
+            <div
+              key={section.id || `${section.type}-${index}`}
+              style={{
+                ...cardStyle,
+                backgroundColor: dragOverIndex === index ? '#f5f3ff' : '#ffffff',
+                borderColor: dragOverIndex === index ? '#c4b5fd' : '#e5e7eb'
+              }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                if (dragOverIndex !== index) setDragOverIndex(index)
+              }}
+              onDragLeave={() => setDragOverIndex((prev) => (prev === index ? null : prev))}
+              onDrop={(e) => {
+                e.preventDefault()
+                if (draggingIndex === null) return
+                moveSection(draggingIndex, index)
+                setDraggingIndex(null)
+                setDragOverIndex(null)
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{typeLabel(section.type)}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <label
+                  <span
+                    aria-label="Drag to reorder"
+                    title="Drag to reorder"
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggingIndex(index)
+                      try {
+                        e.dataTransfer.effectAllowed = 'move'
+                        e.dataTransfer.setData('text/plain', String(index))
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                    onDragEnd={() => {
+                      setDraggingIndex(null)
+                      setDragOverIndex(null)
+                    }}
                     style={{
+                      width: 32,
+                      height: 32,
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 6,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: '#64748b'
+                      justifyContent: 'center',
+                      color: '#94a3b8',
+                      cursor: 'grab',
+                      userSelect: 'none'
                     }}
                   >
-                    Order
-                    <select
-                      value={String(index + 1)}
-                      onChange={(e) => {
-                        const nextPos = Number(e.target.value || 1)
-                        if (!Number.isFinite(nextPos)) return
-                        moveSection(index, Math.max(0, Math.min(sections.length - 1, nextPos - 1)))
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path d="M7 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM7 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM7 14a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM13 14a2 2 0 1 1 0 4 2 2 0 0 1 0-4z" />
+                    </svg>
+                  </span>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{typeLabel(section.type)}</div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {isLinks ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExpandedLinkSectionIds((prev) => {
+                          const next = new Set(prev)
+                          if (next.has(sectionKey)) next.delete(sectionKey)
+                          else next.add(sectionKey)
+                          return next
+                        })
                       }}
+                      aria-label={isExpanded ? 'Collapse links section' : 'Expand links section'}
+                      title={isExpanded ? 'Collapse' : 'Expand'}
                       style={{
-                        ...inputStyle,
-                        width: 84,
-                        padding: '6px 8px',
-                        fontSize: 12
+                        width: 32,
+                        height: 32,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#64748b',
+                        cursor: 'pointer',
+                        borderRadius: 8,
+                        border: '1px solid #e5e7eb',
+                        backgroundColor: '#ffffff'
                       }}
-                      aria-label="Section order"
                     >
-                      {Array.from({ length: sections.length }).map((_, i) => (
-                        <option key={`pos-${i + 1}`} value={String(i + 1)}>
-                          {i + 1}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4" strokeWidth={1.8} />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" strokeWidth={1.8} />
+                      )}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => removeSection(index)}
@@ -180,38 +261,27 @@ const ArticleSectionsField: React.FC<ArticleSectionsFieldProps> = ({ value = [],
                 </div>
               </div>
 
-              <div style={{ marginTop: 10 }}>
-                {renderSectionEditor({
-                  section,
-                  index,
-                  patchSection,
-                  openImagePicker: () => setImagePickerIndex(index),
-                  openUpload: () => setUploadIndex(index)
-                })}
-              </div>
+              {!isExpanded && isLinks ? (
+                <div style={{ marginTop: 10, fontSize: 12, color: '#64748b' }}>
+                  {linksCount} link{linksCount === 1 ? '' : 's'} (collapsed)
+                </div>
+              ) : (
+                <div style={{ marginTop: 10 }}>
+                  {renderSectionEditor({
+                    section,
+                    index,
+                    patchSection,
+                    openImagePicker: () => setImagePickerIndex(index),
+                    openUpload: () => setUploadIndex(index)
+                  })}
+                </div>
+              )}
             </div>
+              )
+            })()
           ))}
         </div>
       )}
-
-      {/* Add section (consistent with other sidebars; no top row of buttons) */}
-      <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <select
-          value={newSectionType}
-          onChange={(e) => setNewSectionType(e.target.value as ArticleSectionType)}
-          style={{ ...inputStyle, width: 180 }}
-          aria-label="Section type"
-        >
-          <option value="heading">Heading</option>
-          <option value="paragraph">Paragraph</option>
-          <option value="image">Image</option>
-          <option value="links">Links</option>
-        </select>
-        <button type="button" onClick={() => addSection(newSectionType)} style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          <Plus className="h-4 w-4" />
-          Add section
-        </button>
-      </div>
 
       <ImagePickerModal
         isOpen={imagePickerIndex !== null}

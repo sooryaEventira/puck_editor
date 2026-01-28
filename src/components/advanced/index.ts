@@ -39,5 +39,6 @@ export { default as LocationFloorPlan } from './LocationFloorPlan'
 export { default as GridBlock } from './GridBlock'
 export { default as Article } from './Article'
 export { default as Table } from './Table'
+export { default as ResourceCards } from './ResourceCards'
 
 

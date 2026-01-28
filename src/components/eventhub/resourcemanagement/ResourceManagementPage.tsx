@@ -3,7 +3,7 @@ import { useEventForm } from '../../../contexts/EventFormContext'
 import EventHubNavbar from '../EventHubNavbar'
 import EventHubSidebar from '../EventHubSidebar'
 import { defaultCards, ContentCard } from '../EventHubContent'
-import { InfoCircle, CodeBrowser, Globe01, Folder, Upload01, Plus, DotsVertical, ChevronRight, File01, Image01, SearchLg, FilterLines } from '@untitled-ui/icons-react'
+import { InfoCircle, CodeBrowser, Globe01, Folder, Upload01, Plus, DotsVertical, ChevronRight, File01, SearchLg, FilterLines } from '@untitled-ui/icons-react'
 import { Button } from '../../ui/untitled'
 import ResourceContextMenu from './ResourceContextMenu'
 import MoveToFolderModal from './MoveToFolderModal'
@@ -94,6 +94,9 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
   const handleSearchClick = () => {
     console.log('Search clicked')
   }
+
+  // Currently only used to drive async behavior; keep for future UI loading indicator.
+  void isLoadingFolders
 
   const handleNotificationClick = () => {
     console.log('Notification clicked')
@@ -239,12 +242,13 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
           fileType = 'video'
         }
 
+        const isPdf = fileType === 'document' && fileExtension === 'pdf'
         return {
           id: file.uuid,
           name: file.name,
           type: fileType,
           file: null, // We don't have the original File object from API
-          preview: fileType === 'image' ? file.file : undefined, // Use API URL for images
+          preview: fileType === 'image' || fileType === 'video' || isPdf ? file.file : undefined, // Use API URL for images/videos/pdfs
           url: file.file, // Keep API URL for copy/share actions
           folderId: file.folder || currentFolderId || null
         }
@@ -273,7 +277,7 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
     setShowCreateFolderModal(true)
   }
 
-  const handleFolderCreate = (folderData: { uuid: string; name: string }) => {
+  const handleFolderCreate = (_folderData: { uuid: string; name: string }) => {
     // Reload all folders and current level folders after creation
     // This ensures allFolders is updated for breadcrumb navigation
     loadAllFolders()
@@ -562,6 +566,7 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
         } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExtension) || contentType.startsWith('video/')) {
           fileType = 'video'
         }
+        const isPdf = fileType === 'document' && (fileExtension === 'pdf' || contentType.includes('pdf'))
 
         // Create MediaFile from API response
         const mediaFile: MediaFile = {
@@ -569,7 +574,8 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
           name: response.name,
           type: fileType,
           file: file, // Keep original file object for preview
-          preview: fileType === 'image' ? response.file : undefined, // Use API URL for images
+          preview: fileType === 'image' || fileType === 'video' || isPdf ? response.file : undefined, // Use API URL for images/videos/pdfs
+          url: response.file,
           folderId: response.folder || currentFolderId || null
         }
 
@@ -601,13 +607,14 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
       } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(fileExtension)) {
         fileType = 'video'
       }
+      const isPdf = fileType === 'document' && fileExtension === 'pdf'
 
       const mediaFile: MediaFile = {
         id: fileId,
         name: file.name,
         type: fileType,
         file: file,
-        preview: fileType === 'image' ? URL.createObjectURL(file) : undefined,
+        preview: fileType === 'image' || fileType === 'video' || isPdf ? URL.createObjectURL(file) : undefined,
         folderId: currentFolderId
       }
 
@@ -659,6 +666,12 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
     return ['doc', 'docx', 'docm'].includes(ext)
   }
 
+  // Helper function to check if file is PDF
+  const isPdfFile = (file: MediaFile): boolean => {
+    const ext = getFileExtension(file.name)
+    return ext === 'pdf'
+  }
+
   const getFileIcon = (file: MediaFile) => {
     // Don't show icon for images - they will be rendered as <img>
     if (file.type === 'image') {
@@ -691,6 +704,21 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
             <div className="absolute left-5 top-0.5 h-2.5 w-2.5 bg-white opacity-30 rounded-sm" />
             <div className="absolute left-0.5 top-[18px] w-7 text-center text-[8px] font-bold leading-none text-white" style={{ fontFamily: 'Inter' }}>
               {ext}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // PDF files - red icon
+    if (isPdfFile(file)) {
+      return (
+        <div className="relative h-12 w-12 flex-shrink-0 flex items-center justify-center">
+          <div className="relative h-10 w-8">
+            <div className="absolute left-0 top-0 h-10 w-8 bg-[#E11D48] rounded-sm" />
+            <div className="absolute left-5 top-0.5 h-2.5 w-2.5 bg-white opacity-30 rounded-sm" />
+            <div className="absolute left-0.5 top-[18px] w-7 text-center text-[8px] font-bold leading-none text-white" style={{ fontFamily: 'Inter' }}>
+              PDF
             </div>
           </div>
         </div>
@@ -1046,7 +1074,31 @@ const ResourceManagementPage: React.FC<ResourceManagementPageProps> = ({
                             }}
                           />
                         ) : null}
-                        <div className={`absolute inset-0 flex items-center justify-center file-icon-fallback ${file.type === 'image' && file.preview ? 'hidden' : ''}`}>
+                        {file.type === 'video' && (file.preview || file.url) ? (
+                          <video
+                            src={file.preview || file.url}
+                            className="absolute inset-0 h-full w-full object-cover"
+                            muted
+                            playsInline
+                            preload="metadata"
+                            onError={(e) => {
+                              const target = e.currentTarget
+                              target.style.display = 'none'
+                              const iconContainer = target.parentElement?.querySelector('.file-icon-fallback') as HTMLElement
+                              if (iconContainer) {
+                                iconContainer.style.display = 'flex'
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className={`absolute inset-0 flex items-center justify-center file-icon-fallback ${
+                            (file.type === 'image' && file.preview) ||
+                            (file.type === 'video' && (file.preview || file.url))
+                              ? 'hidden'
+                              : ''
+                          }`}
+                        >
                           {getFileIcon(file)}
                         </div>
                         <button

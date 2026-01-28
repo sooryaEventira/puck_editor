@@ -13,7 +13,7 @@ interface CreateProfileModalProps {
     group?: string
     description?: string
     avatarUrl?: string
-    customFields?: Array<{ label: string; value: string }>
+    customFields?: Array<{ id: string; label: string; value: string; hideFromProfile?: boolean }>
   }) => void
 }
 
@@ -32,7 +32,9 @@ const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [customFields, setCustomFields] = useState<Array<{ id: string; label: string; value: string }>>([])
+  const [customFields, setCustomFields] = useState<
+    Array<{ id: string; label: string; value: string; hideFromProfile?: boolean }>
+  >([])
 
   if (!isOpen) return null
 
@@ -85,7 +87,12 @@ const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
     }
 
     const cleanedCustomFields = customFields
-      .map((f) => ({ label: (f.label || '').trim(), value: (f.value || '').trim() }))
+      .map((f) => ({
+        id: f.id,
+        label: (f.label || '').trim(),
+        value: (f.value || '').trim(),
+        hideFromProfile: !!f.hideFromProfile
+      }))
       .filter((f) => f.label || f.value)
 
     onSave({
@@ -302,14 +309,18 @@ const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
           {/* Custom fields (up to 10) */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-slate-700">Custom fields</label>
               <button
                 type="button"
                 onClick={() => {
                   if (customFields.length >= 10) return
                   setCustomFields((prev) => [
                     ...prev,
-                    { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, label: '', value: '' }
+                    {
+                      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                      label: '',
+                      value: '',
+                      hideFromProfile: false
+                    }
                   ])
                 }}
                 disabled={customFields.length >= 10}
@@ -355,6 +366,20 @@ const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
                     >
                       <Trash03 className="h-4 w-4" strokeWidth={1.8} />
                     </button>
+                    <label className="inline-flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={!!field.hideFromProfile}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                          setCustomFields((prev) =>
+                            prev.map((f) => (f.id === field.id ? { ...f, hideFromProfile: next } : f))
+                          )
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/40"
+                      />
+                      Hide from Profile
+                    </label>
                   </div>
                 ))}
               </div>

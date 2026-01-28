@@ -7,7 +7,7 @@ import {
   Container, FlexContainer, GridContainer, SimpleContainer, PositionedElement 
 } from '../components/containers'
 import {
-  HeroSection, HeroVideo, HeroSplitScreen, YouTubeVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer, RegistrationCTA, Sponsors, ContactFooter, EventNumbers, SpeakerHighlight, SessionHighlight, SessionHighlightKeynote, SessionHighlightWorkshop, VenueBlock, SplitVenueBlock, HotelPartners, VenueDirections, LocationFloorPlan, GridBlock, Article, Table
+  HeroSection, HeroVideo, HeroSplitScreen, YouTubeVideo, Slider, SpeakerCard, SpeakersSection, SchedulePage, ScheduleSection, AboutSection, PricingPlans, FAQSection, FAQAccordion, Navigation, CountdownTimer, ProgressCircleStats, HTMLContent, RegistrationForm, GoogleForm, LiveChat, ApiTestComponent, SessionForm, PdfViewer, RegistrationCTA, Sponsors, ContactFooter, EventNumbers, SpeakerHighlight, SessionHighlight, SessionHighlightKeynote, SessionHighlightWorkshop, VenueBlock, SplitVenueBlock, HotelPartners, VenueDirections, LocationFloorPlan, GridBlock, Article, Table, ResourceCards
 } from '../components/advanced'
 import ScheduleContent from '../components/eventhub/schedulesession/ScheduleContent'
 import TwoColumnContent from '../components/advanced/TwoColumnContent'
@@ -18,6 +18,7 @@ import ArticleSectionsField from '../components/fields/ArticleSectionsField'
 import SchedulesSectionField from '../components/fields/SchedulesSectionField'
 import PdfSelectField from '../components/fields/PdfSelectField'
 import SessionSelectField from '../components/fields/SessionSelectField'
+import ResourceFolderAssetsField from '../components/fields/ResourceFolderAssetsField'
 
 // Import split config modules
 import { viewports } from './puck/viewports'
@@ -145,7 +146,7 @@ export const config = {
       title: "Advanced Components",
       icon: "fa-solid fa-magic",
       defaultExpanded: false,
-      components: ["Slider", "YouTubeVideo", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "Navigation", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
+      components: ["Slider", "YouTubeVideo", "ResourceCards", "SpeakerCard", "SpeakersSection", "SchedulePage", "ScheduleSection", "AboutSection", "TwoColumnContent", "FAQSection", "FAQAccordion", "Navigation", "HTMLContent", "FeedbackForm", "RegistrationForm", "SessionForm", "LiveChat", "ApiTestComponent", "PdfViewer"],
       subcategories: {
         sections: {
           title: "Sections",
@@ -155,7 +156,7 @@ export const config = {
         media: {
           title: "Media",
           icon: "fa-solid fa-image",
-          components: ["YouTubeVideo", "Slider", "PdfViewer"]
+          components: ["ResourceCards", "YouTubeVideo", "Slider", "PdfViewer"]
         },
         interactive: {
           title: "Interactive",
@@ -3590,6 +3591,11 @@ export const config = {
           type: 'text' as const,
           label: 'Card Background Color (hex)',
           placeholder: '#ffffff'
+        },
+        height: {
+          type: 'number' as const,
+          label: 'Viewer height (px)',
+          placeholder: '600'
         }
       },
       defaultProps: {
@@ -3599,7 +3605,8 @@ export const config = {
         imageUrl: '',
         backgroundColor: '#ffffff',
         textColor: '#1f2937',
-        cardBackgroundColor: '#ffffff'
+        cardBackgroundColor: '#ffffff',
+        height: 600
       },
       render: LocationFloorPlan
     },
@@ -3813,15 +3820,6 @@ export const config = {
             { label: 'Custom...', value: '' }
           ]
         },
-        headingColor: {
-          type: 'select' as const,
-          label: 'Heading Color',
-          options: [
-            { label: 'Dark Gray', value: '#1f2937' },
-            { label: 'Black', value: '#000000' },
-            { label: 'Custom...', value: '' }
-          ]
-        },
         linkColor: {
           type: 'select' as const,
           label: 'Link Color',
@@ -3831,11 +3829,6 @@ export const config = {
             { label: 'Green', value: '#10b981' },
             { label: 'Custom...', value: '' }
           ]
-        },
-        padding: {
-          type: 'text' as const,
-          label: 'Padding',
-          placeholder: '3rem 2rem'
         },
         maxWidth: {
           type: 'text' as const,
@@ -3883,9 +3876,7 @@ export const config = {
         ],
         backgroundColor: '#ffffff',
         textColor: '#1f2937',
-        headingColor: '#1f2937',
         linkColor: '#3b82f6',
-        padding: '3rem 2rem',
         maxWidth: '800px'
       },
       render: Article
@@ -5351,6 +5342,79 @@ export const config = {
         padding: '40px'
       },
       render: SessionForm
+    },
+    ResourceCards: {
+      label: "🖼️ Gallery",
+      fields: {
+        source: {
+          type: 'custom' as const,
+          label: 'Resource folder',
+          render: (props: any) => {
+            return React.createElement(ResourceFolderAssetsField, {
+              ...props,
+              value: props.value || {},
+              onChange: props.onChange
+            })
+          }
+        },
+        heading: {
+          type: 'text' as const,
+          label: 'Heading',
+          placeholder: '(auto from folder name)'
+        },
+        headingAlign: {
+          type: 'select' as const,
+          label: 'Heading alignment',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
+          ]
+        },
+        headingColor: {
+          type: 'text' as const,
+          label: 'Heading color (hex)',
+          placeholder: '#0f172a'
+        },
+        columns: {
+          type: 'select' as const,
+          label: 'Columns',
+          options: [
+            { label: '2', value: 2 },
+            { label: '3', value: 3 },
+            { label: '4', value: 4 }
+          ]
+        },
+        showMeta: {
+          type: 'radio' as const,
+          label: 'Show meta',
+          options: [
+            { label: 'Yes', value: true },
+            { label: 'No', value: false }
+          ]
+        },
+        cardBackgroundColor: {
+          type: 'text' as const,
+          label: 'Card Background (hex)',
+          placeholder: '#ffffff'
+        },
+        cardBorderColor: {
+          type: 'text' as const,
+          label: 'Card Border (hex)',
+          placeholder: '#e2e8f0'
+        }
+      },
+      defaultProps: {
+        heading: '',
+        columns: 3,
+        showMeta: true,
+        headingAlign: 'left',
+        headingColor: '#0f172a',
+        cardBackgroundColor: '#ffffff',
+        cardBorderColor: '#e2e8f0',
+        source: { folderUuid: '', folderName: '', assets: [] }
+      },
+      render: ResourceCards
     },
     PdfViewer: {
       label: "📄 PDF Viewer",
